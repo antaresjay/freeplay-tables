@@ -1,0 +1,808 @@
+[game]
+name = "Placid Plastic Duck Simulator"
+exe = "placid plastic duck simulator.exe"
+notes = "Converted from a Cheat Engine table by HOAMTH. Source: https://fearlessrevolution.com/viewtopic.php?t=35681"
+verified = []
+author = "HOAMTH"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "current-progress-to-next-duck"
+name = "Current Progress to Next Duck"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x40",
+    "+0x60",
+    "+0xa0",
+    "+0x258",
+    "+0x48",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "current-spawning-interval"
+name = "Current Spawning Interval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x40",
+    "+0x60",
+    "+0xa0",
+    "+0x258",
+    "+0x48",
+    "+0x140",
+]
+
+[[cheat]]
+id = "override-spawning-interval"
+name = "Override Spawning Interval"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Placid Plastic Duck Simulator.exe
+  Version:
+  Date   : 2025-10-04
+  Author : HOAMTH
+
+  This script overrides the target time for the spawning timer. First, we write our custom interval to xmm0, and then to the actual address.
+  We can do this because xmm0 is already used for that in ealier opcodes.
+}
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048,"GameAssembly.dll"+69CE6B)
+label(returnhere)
+label(originalcode)
+label(exit)
+registersymbol(interval)
+alloc(interval,4,"GameAssembly.dll"+69CE6B)
+interval:
+dd (float)30.0
+
+newmem: //this is allocated memory, you have read,write,execute access
+movss xmm0,[interval]
+
+originalcode:
+movss [rdi+00000140],xmm0
+
+exit:
+jmp returnhere
+
+"GameAssembly.dll"+69CE6B:
+jmp newmem
+nop 3
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+dealloc(interval)
+unregistersymbol(interval)
+"GameAssembly.dll"+69CE6B:
+db F3 0F 11 87 40 01 00 00
+
+//movss [rbx+00000140],xmm0"""
+
+[[cheat]]
+id = "custom-spawning-interval"
+name = "Custom Spawning Interval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "interval"
+hops = []
+
+[[cheat]]
+id = "auto-assemble-script"
+name = "Auto Assemble script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Placid Plastic Duck Simulator.exe
+  Version: 
+  Date   : 2025-10-04
+  Author : HOAMTH
+
+  This script uses a different approach to spawn dicks faster. It compares the current progress to our custom spawn interval
+  and spawns ducks once the custom time has been surpassed. Downside is only that the duck timer in the top-right doesn't
+  fill nicely.
+}
+
+define(address,"GameAssembly.dll"+69CDDC)
+define(bytes,0F 2F 87 40 01 00 00)
+
+[ENABLE]
+
+
+assert(address,bytes)
+alloc(newmem,$1000,"GameAssembly.dll"+69CDDC)
+
+label(code)
+label(return)
+registersymbol(interval)
+alloc(interval,4,"GameAssembly.dll"+69CDDC)
+interval:
+dd (float)30.0
+
+newmem:
+  comiss xmm0,[interval]
+  jmp return
+
+code:
+  comiss xmm0,[rdi+00000140]
+  jmp return
+
+address:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // comiss xmm0,[rdi+00000140]
+
+dealloc(newmem)
+dealloc(interval)
+unregistersymbol(interval)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+69CDDC
+
+GameAssembly.dll+69CDAA: 0F 84 F7 03 00 00        - je GameAssembly.dll+69D1A7
+GameAssembly.dll+69CDB0: 8B 87 D8 01 00 00        - mov eax,[rdi+000001D8]
+GameAssembly.dll+69CDB6: 39 41 18                 - cmp [rcx+18],eax
+GameAssembly.dll+69CDB9: 0F 8D 85 01 00 00        - jnl GameAssembly.dll+69CF44
+GameAssembly.dll+69CDBF: 0F 29 74 24 50           - movaps [rsp+50],xmm6
+GameAssembly.dll+69CDC4: F3 0F 10 B7 3C 01 00 00  - movss xmm6,[rdi+0000013C]
+GameAssembly.dll+69CDCC: 33 C9                    - xor ecx,ecx
+GameAssembly.dll+69CDCE: E8 5D 0C A5 01           - call GameAssembly.dll+20EDA30
+GameAssembly.dll+69CDD3: F3 0F 58 C6              - addss xmm0,xmm6
+GameAssembly.dll+69CDD7: 0F 28 74 24 50           - movaps xmm6,[rsp+50]
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+69CDDC: 0F 2F 87 40 01 00 00     - comiss xmm0,[rdi+00000140]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+69CDE3: F3 0F 11 87 3C 01 00 00  - movss [rdi+0000013C],xmm0
+GameAssembly.dll+69CDEB: 0F 82 53 01 00 00        - jb GameAssembly.dll+69CF44
+GameAssembly.dll+69CDF1: 48 8B 05 38 2E 66 02     - mov rax,[GameAssembly.dll+2CFFC30]
+GameAssembly.dll+69CDF8: 39 B0 E0 00 00 00        - cmp [rax+000000E0],esi
+GameAssembly.dll+69CDFE: 75 0F                    - jne GameAssembly.dll+69CE0F
+GameAssembly.dll+69CE00: 48 8B C8                 - mov rcx,rax
+GameAssembly.dll+69CE03: E8 38 28 C3 FF           - call GameAssembly.il2cpp_runtime_class_init
+GameAssembly.dll+69CE08: 48 8B 05 21 2E 66 02     - mov rax,[GameAssembly.dll+2CFFC30]
+GameAssembly.dll+69CE0F: 48 8B 80 B8 00 00 00     - mov rax,[rax+000000B8]
+GameAssembly.dll+69CE16: 48 8B 00                 - mov rax,[rax]
+}"""
+
+[[cheat]]
+id = "pointerscan-result"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-2"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-3"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-4"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-5"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0xa0",
+    "+0x258",
+    "+0x48",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-6"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x258",
+    "+0x48",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-7"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0xa0",
+    "+0x258",
+    "+0x48",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-8"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x258",
+    "+0x48",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-9"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0x98",
+    "+0x198",
+    "+0x130",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-10"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0x98",
+    "+0x198",
+    "+0x130",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-11"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0x98",
+    "+0x198",
+    "+0x130",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-12"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0x98",
+    "+0x198",
+    "+0x130",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-13"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ce8a40"
+hops = [
+    "+0x10",
+    "+0x0",
+    "+0x100",
+    "+0x60",
+    "+0xf0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-14"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x40",
+    "+0x60",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-15"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa0",
+    "+0x40",
+    "+0x60",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-16"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa8",
+    "+0x40",
+    "+0x60",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-17"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa8",
+    "+0x40",
+    "+0x60",
+    "+0xa0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-18"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0x98",
+    "+0x1f0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-19"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0x98",
+    "+0x1f0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-20"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0x98",
+    "+0x1f0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-21"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0x98",
+    "+0x1f0",
+    "+0x1c0",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-22"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x158",
+    "+0x58",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-23"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x158",
+    "+0x58",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-24"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x70",
+    "+0x108",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-25"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa0",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x70",
+    "+0x108",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-26"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1c80a18"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x70",
+    "+0x108",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "pointerscan-result-27"
+name = "pointerscan result"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "UnityPlayer.dll"
+offset = "0x1ceadc0"
+hops = [
+    "+0xa8",
+    "+0x78",
+    "+0xa0",
+    "+0x1c0",
+    "+0x70",
+    "+0x108",
+    "+0x13c",
+]

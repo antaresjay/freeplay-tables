@@ -1,0 +1,1055 @@
+[game]
+name = "Diablo 3 Table (D3 Reflection)"
+exe = "iii.exe"
+notes = "Converted from a Cheat Engine table by Tokumei232. Source: https://fearlessrevolution.com/viewtopic.php?t=14515"
+verified = []
+author = "Tokumei232"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "reciever-manipulator"
+name = "Reciever Manipulator"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,"Diablo III.exe"+92E56B)
+define(bytes,89 48 08 8B 4D F4)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(return)
+label(vSave)
+label(vPoint)
+
+// Labels handling Stats Freez
+label(fMon)
+registerSymbol(fMon)
+label(fMon2)
+registerSymbol(fMon2)
+label(iMon)
+registerSymbol(iMon)
+// Labels handling Stats Change
+label(fChng)
+registerSymbol(fChng)
+label(fRes)
+registerSymbol(fRes)
+label(iChng)
+registerSymbol(iChng)
+label(iRes)
+registerSymbol(iRes)
+
+newmem:
+    mov [vSave],ecx // Backup
+    mov ecx,[eax+08]
+    //mov [vPoint],ecx
+    //mov ecx,[vPoint+0008]
+
+    cmp ecx,[fMon]
+    jne L1
+    jmp L3
+  L1:
+    cmp ecx,[fMon2]
+    jne L2
+    jmp L3
+  L2:
+    cmp ecx,[iMon]
+    jne L4
+    jmp L3
+  L4:
+    mov ecx,[fChng]
+    mov [temp],ecx
+
+    sub [hold],#20 //allocate 20bytes for local storage (original xmm0 register(16) and temp float value(4))
+    movdqu [hold],xmm0 //save xmm0 (128 bit register, so 16 bytes)
+    mov [hold+10],(float)0.01 //prepare an address with the float value 50000
+    movss xmm0,[hold+10] //write the float value into xmm0 (note that the upper bits of xmm0 will get erased by doing this, which is why we use movdqu to save it and not movss)
+    addss xmm0,[temp] //increase xmm0 with the float value at edx+c4
+    movss [temp],xmm0 //write the result of the calculation to edx+c4
+    movss xmm0,[hold] //restore with original
+    add [hold],#20 //free local variable space
+
+    mov ecx,[vSave] // Restore
+    cmp ecx,[fChng]
+    jl L5
+    cmp ecx,[temp]
+    jg L5
+    mov ecx,[fRes]
+    jmp L3
+  L5:
+    cmp ecx,[iChng]
+    jne L3
+    mov ecx,[iRes]
+    jmp L3
+  L3:
+    mov [eax+08],ecx
+    mov ecx,[ebp-0C]
+    jmp return
+
+  vPoint:
+    dd 0
+  vSave:
+    dd 0
+  fMon:
+    dd (float)-1
+  fMon2:
+    dd (float)-1
+  iMon:
+    dd (int)9999999
+  fChng:
+    dd (float)-1
+  fRes:
+    dd (float)1
+  iChng:
+    dd (int)9999999
+  iRes:
+    dd (int)1
+  temp:
+   dd (float)0
+  hold:
+   dd (float)0
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [eax+08],ecx
+  // mov ecx,[ebp-0C]
+
+unregistersymbol(iRes)
+unregistersymbol(fRes)
+unregistersymbol(iChng)
+unregistersymbol(fChng)
+unregistersymbol(iMon)
+unregistersymbol(fMon2)
+unregistersymbol(fMon)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "f-freez-1"
+name = "[F] Freez 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMon"
+hops = []
+
+[[cheat]]
+id = "f-freez-2"
+name = "[F] Freez 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMon2"
+hops = []
+
+[[cheat]]
+id = "i-freez-1"
+name = "[I] Freez 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMon"
+hops = []
+
+[[cheat]]
+id = "f-changer"
+name = "[F] Changer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fRes"
+hops = []
+
+[[cheat]]
+id = "i-changer"
+name = "[I] Changer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iRes"
+hops = []
+
+[[cheat]]
+id = "sender-manipulator"
+name = "Sender Manipulator"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,"Diablo III.exe"+92F225)
+define(bytes,8B 48 08 B8 01 00 00 00)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(vSave)
+
+label(fsChng)
+registerSymbol(fsChng)
+label(fsRes)
+registerSymbol(fsRes)
+label(isChng)
+registerSymbol(isChng)
+label(isRes)
+registerSymbol(isRes)
+
+newmem:
+  code:
+    mov ecx,[eax+08]
+    mov [vSave],ecx // Backup
+
+    mov ecx,[fsChng]
+    mov [temp],ecx
+
+    sub [hold],#20 //allocate 20bytes for local storage (original xmm0 register(16) and temp float value(4))
+    movdqu [hold],xmm0 //save xmm0 (128 bit register, so 16 bytes)
+    mov [hold+10],(float)0.01 //prepare an address with the float value 50000
+    movss xmm0,[hold+10] //write the float value into xmm0 (note that the upper bits of xmm0 will get erased by doing this, which is why we use movdqu to save it and not movss)
+    addss xmm0,[temp] //increase xmm0 with the float value at edx+c4
+    movss [temp],xmm0 //write the result of the calculation to edx+c4
+    movss xmm0,[hold] //restore with original
+    add [hold],#20 //free local variable space
+
+    mov ecx,[vSave] // Restore
+    cmp ecx,[fsChng]
+    jl L2
+    cmp ecx,[temp]
+    jg L2
+    mov ecx,[fsRes]
+    L2:
+    cmp [isChng],ecx
+    jne L1
+    mov ecx,[isRes]
+    L1:
+    mov eax,00000001
+    jmp return
+
+  vSave:
+    dd 0
+  fsChng:
+    dd (float)-1
+  fsRes:
+    dd (float)1
+  isChng:
+    dd (int)999999999
+  isRes:
+    dd (int)1
+  temp:
+   dd (float)0
+  hold:
+   dd (float)0
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+address:
+  db bytes
+  // mov ecx,[eax+08]
+  // mov eax,00000001
+
+unregistersymbol(isRes)
+unregistersymbol(isChng)
+unregistersymbol(fsRes)
+unregistersymbol(fsChng)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "f-changer-2"
+name = "[F] Changer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fsRes"
+hops = []
+
+[[cheat]]
+id = "i-changer-2"
+name = "[I] Changer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "isRes"
+hops = []
+
+[[cheat]]
+id = "salvage-anywhere"
+name = "Salvage Anywhere"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(salvage,Diablo III.exe,8B 46 18 85 C0 75 06) // should be unique
+alloc(newmem,$1000)
+label(code)
+label(return)
+
+newmem:
+
+code:
+  cmp [esi+18],#0
+  jne L1
+  mov [esi+18],#4
+  L1:
+  mov eax,[esi+18]
+  test eax,eax
+  jmp return
+
+salvage:
+  jmp newmem
+return:
+registersymbol(salvage)
+
+[DISABLE]
+
+salvage:
+  db 8B 46 18 85 C0
+
+unregistersymbol(salvage)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Diablo III.exe.text+1594A3
+
+Diablo III.exe.text+159498: CC              - int 3 
+Diablo III.exe.text+159499: CC              - int 3 
+Diablo III.exe.text+15949A: CC              - int 3 
+Diablo III.exe.text+15949B: CC              - int 3 
+Diablo III.exe.text+15949C: CC              - int 3 
+Diablo III.exe.text+15949D: CC              - int 3 
+Diablo III.exe.text+15949E: CC              - int 3 
+Diablo III.exe.text+15949F: CC              - int 3 
+Diablo III.exe.text+1594A0: 56              - push esi
+Diablo III.exe.text+1594A1: 8B F1           - mov esi,ecx
+// ---------- INJECTING HERE ----------
+Diablo III.exe.text+1594A3: 8B 46 18        - mov eax,[esi+18]
+// ---------- DONE INJECTING  ----------
+Diablo III.exe.text+1594A6: 85 C0           - test eax,eax
+Diablo III.exe.text+1594A8: 75 06           - jne Diablo III.exe.text+1594B0
+Diablo III.exe.text+1594AA: 5E              - pop esi
+Diablo III.exe.text+1594AB: E9 40 BE FF FF  - jmp Diablo III.exe.text+1552F0
+Diablo III.exe.text+1594B0: 83 F8 02        - cmp eax,02
+Diablo III.exe.text+1594B3: 75 5C           - jne Diablo III.exe.text+159511
+Diablo III.exe.text+1594B5: 53              - push ebx
+Diablo III.exe.text+1594B6: 8D 5E 30        - lea ebx,[esi+30]
+Diablo III.exe.text+1594B9: 57              - push edi
+Diablo III.exe.text+1594BA: 8B 3B           - mov edi,[ebx]
+}"""
+
+[[cheat]]
+id = "skills-editor"
+name = "Skills Editor"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(arraystart,68 01 00 00 ?? ?? ?? 00 68 01 00 00 02 00 00 00 FF FF FF FF 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF)
+registersymbol(_special)
+label(_special)
+
+arraystart+7C:
+_special:
+ 
+[DISABLE]
+unregistersymbol(_special)"""
+
+[[cheat]]
+id = "primary"
+name = "Primary"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special"
+hops = []
+
+[[cheat]]
+id = "secondary"
+name = "Secondary"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special"
+hops = []
+
+[[cheat]]
+id = "1-slot"
+name = "[1] Slot"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special"
+hops = []
+
+[[cheat]]
+id = "2-slot"
+name = "[2] Slot"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special"
+hops = []
+
+[[cheat]]
+id = "3-slot"
+name = "[3] Slot"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special"
+hops = []
+
+[[cheat]]
+id = "4-slot"
+name = "[4] Slot"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special"
+hops = []
+
+[[cheat]]
+id = "passive-editor"
+name = "Passive Editor"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(arraystart,52 52 01 00 03 00 00 00 FD 00 02 00 02 00 00 00 0E FF 01 00 02 00 00 00 B2 FE 01 00 01 00 00 00 EA 2E 01 00 01 00 00 00 8E 0B 02 00 00 00 00 00)
+registersymbol(_special2)
+label(_special2)
+
+arraystart+30:
+_special2:
+ 
+[DISABLE]
+unregistersymbol(_special2)"""
+
+[[cheat]]
+id = "1-slot-2"
+name = "[1] Slot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 209734
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special2"
+hops = []
+
+[[cheat]]
+id = "2-slot-2"
+name = "[2] Slot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 209734
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special2"
+hops = []
+
+[[cheat]]
+id = "3-slot-2"
+name = "[3] Slot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 352920
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special2"
+hops = []
+
+[[cheat]]
+id = "4-slot-2"
+name = "[4] Slot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 338859
+
+[cheat.locator]
+find = "symbol"
+symbol = "_special2"
+hops = []
+
+[[cheat]]
+id = "camera-view"
+name = "Camera View"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(camera_view,Diablo III.exe,C1 F3 0F 11 40 38) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(cView)
+registersymbol(cView)
+
+newmem:
+
+code:
+  mulss xmm0,[cView]
+  movss [eax+38],xmm0
+  jmp return
+
+  align 10 CC
+  cView:
+   dd (float)1.03
+
+camera_view+01:
+  jmp newmem
+return:
+registersymbol(camera_view)
+
+[DISABLE]
+
+camera_view+01:
+  db F3 0F 11 40 38
+
+unregistersymbol(cView)
+unregistersymbol(camera_view)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Diablo III.exe.text+E9BA5
+
+Diablo III.exe.text+E9B7B: 0F 57 C6                 - xorps xmm0,xmm6
+Diablo III.exe.text+E9B7E: F3 0F 11 40 34           - movss [eax+34],xmm0
+Diablo III.exe.text+E9B83: F3 0F 10 01              - movss xmm0,[ecx]
+Diablo III.exe.text+E9B87: F3 0F 10 49 04           - movss xmm1,[ecx+04]
+Diablo III.exe.text+E9B8C: F3 0F 59 C2              - mulss xmm0,xmm2
+Diablo III.exe.text+E9B90: F3 0F 59 CB              - mulss xmm1,xmm3
+Diablo III.exe.text+E9B94: F3 0F 58 C1              - addss xmm0,xmm1
+Diablo III.exe.text+E9B98: F3 0F 10 49 08           - movss xmm1,[ecx+08]
+Diablo III.exe.text+E9B9D: F3 0F 59 CC              - mulss xmm1,xmm4
+Diablo III.exe.text+E9BA1: F3 0F 58 C1              - addss xmm0,xmm1
+// ---------- INJECTING HERE ----------
+Diablo III.exe.text+E9BA5: F3 0F 11 40 38           - movss [eax+38],xmm0
+// ---------- DONE INJECTING  ----------
+Diablo III.exe.text+E9BAA: F3 0F 10 05 00 9A 8A 01  - movss xmm0,[Diablo III.exe.rdata+160A00]
+Diablo III.exe.text+E9BB2: F3 0F 11 40 3C           - movss [eax+3C],xmm0
+Diablo III.exe.text+E9BB7: 8B E5                    - mov esp,ebp
+Diablo III.exe.text+E9BB9: 5D                       - pop ebp
+Diablo III.exe.text+E9BBA: C3                       - ret 
+Diablo III.exe.text+E9BBB: CC                       - int 3 
+Diablo III.exe.text+E9BBC: CC                       - int 3 
+Diablo III.exe.text+E9BBD: CC                       - int 3 
+Diablo III.exe.text+E9BBE: CC                       - int 3 
+Diablo III.exe.text+E9BBF: CC                       - int 3 
+}"""
+
+[[cheat]]
+id = "multiplier"
+name = "Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cView"
+hops = []
+
+[[cheat]]
+id = "get-item-id"
+name = "Get Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Diablo III.exe
+  Version: 
+  Date   : 2020-12-03
+  Author : stenl
+
+  This script does blah blah blah
+}
+
+define(address,"Diablo III.exe"+93ADA3)
+define(bytes,8B 7D 08 8B 07)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(return)
+
+label(bID)
+registersymbol(bID)
+label(cID)
+registersymbol(cID)
+label(cName)
+registersymbol(cName)
+label(newID)
+registersymbol(newID)
+
+newmem:
+  mov edi,[ebp+08]
+  cmp [newID],0
+  jne L1
+  jmp L2
+  L1:
+  mov ecx,[newID]
+  mov [edi+b4],ecx
+  mov [newID],0
+  L2:
+  mov [bID],edi
+  mov [cID],edi
+  mov [cName],edi
+  mov eax,[edi]
+  jmp return
+
+  newID:
+   dd 0
+  cName:
+   dd FFFFFF
+  cID:
+   dd #0
+  bID:
+   dd #0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov edi,[ebp+08]
+  // mov eax,[edi]
+
+  unregistersymbol(newID)
+  unregistersymbol(cName)
+  unregistersymbol(cID)
+  unregistersymbol(bID)
+  dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Diablo III.exe.text+939DA3
+
+Diablo III.exe.text+939D85: E8 86 9D 81 FF  - call Diablo III.exe.text+153B10
+Diablo III.exe.text+939D8A: 85 C0           - test eax,eax
+Diablo III.exe.text+939D8C: 74 15           - je Diablo III.exe.text+939DA3
+Diablo III.exe.text+939D8E: 8B 4D 0C        - mov ecx,[ebp+0C]
+Diablo III.exe.text+939D91: 8B 11           - mov edx,[ecx]
+Diablo III.exe.text+939D93: 52              - push edx
+Diablo III.exe.text+939D94: E8 97 72 81 FF  - call Diablo III.exe.text+151030
+Diablo III.exe.text+939D99: 83 C4 04        - add esp,04
+Diablo III.exe.text+939D9C: 8B F8           - mov edi,eax
+Diablo III.exe.text+939D9E: E8 AD FD FF FF  - call Diablo III.exe.text+939B50
+// ---------- INJECTING HERE ----------
+Diablo III.exe.text+939DA3: 8B 7D 08        - mov edi,[ebp+08]
+// ---------- DONE INJECTING  ----------
+Diablo III.exe.text+939DA6: 8B 07           - mov eax,[edi]
+Diablo III.exe.text+939DA8: 8B 4D 0C        - mov ecx,[ebp+0C]
+Diablo III.exe.text+939DAB: 89 01           - mov [ecx],eax
+Diablo III.exe.text+939DAD: E8 1E 95 F4 FF  - call Diablo III.exe.text+8832D0
+Diablo III.exe.text+939DB2: 85 C0           - test eax,eax
+Diablo III.exe.text+939DB4: 75 67           - jne Diablo III.exe.text+939E1D
+Diablo III.exe.text+939DB6: 57              - push edi
+Diablo III.exe.text+939DB7: E8 14 F1 FF FF  - call Diablo III.exe.text+938ED0
+Diablo III.exe.text+939DBC: 8B F8           - mov edi,eax
+Diablo III.exe.text+939DBE: 83 C4 04        - add esp,04
+}"""
+
+[[cheat]]
+id = "replace-id"
+name = "Replace ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "newID"
+hops = []
+
+[[cheat]]
+id = "change-difficulty"
+name = "Change Difficulty"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,"Diablo III.exe"+259406)
+define(bytes,89 46 20 8B 4F 24)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(return)
+label(newDiff)
+registersymbol(newDiff)
+
+newmem:
+  mov eax,[newDiff]
+  mov [esi+20],eax
+  mov ecx,[edi+24]
+  jmp return
+
+  newDiff:
+    dd (int)0
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [esi+20],eax
+  // mov ecx,[edi+24]
+
+  unregistersymbol(newDiff)
+  dealloc(newmem)"""
+
+[[cheat]]
+id = "difficulty"
+name = "Difficulty"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Normal",
+    "1:Hard",
+    "2:Expert",
+    "3:Master",
+    "4:Torment I",
+    "5:Torment II",
+    "6:Torment III",
+    "7:Torment IV",
+    "8:Torment V",
+    "9:Torment VI",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "newDiff"
+hops = []
+
+[[cheat]]
+id = "reciever-monitor"
+name = "Reciever Monitor"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,"Diablo III.exe"+92E56B)
+define(bytes,89 48 08 8B 4D F4)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(continue)
+label(aSpeed)
+label(aSpeed2)
+
+label(flMonitor)
+registerSymbol(flMonitor)
+label(flAdd)
+registerSymbol(flAdd)
+label(flMonitor2)
+registerSymbol(flMonitor2)
+label(flAdd2)
+registerSymbol(flAdd2)
+
+newmem:
+  code:
+    cmp [flMonitor],ecx
+    je aSpeed
+    cmp [flMonitor2],ecx
+    je aSpeed2
+    jmp continue
+
+  continue:
+    mov [eax+08],ecx
+    mov ecx,[ebp-0C]
+    jmp return
+
+  aSpeed:
+    mov ecx,[flAdd]
+    jmp continue
+
+  aSpeed2:
+    mov ecx,[flAdd2]
+    jmp continue
+
+  flMonitor:
+    dd (int)999999999
+  flAdd:
+    dd (int)1
+  flMonitor2:
+    dd (float)-1
+  flAdd2:
+    dd (float)1
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [eax+08],ecx
+  // mov ecx,[ebp-0C]
+
+unregistersymbol(flAdd2)
+unregistersymbol(flMonitor2)
+unregistersymbol(flAdd)
+unregistersymbol(flMonitor)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "i-changer-3"
+name = "[I] Changer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "flAdd"
+hops = []
+
+[[cheat]]
+id = "f-changer-3"
+name = "[F] Changer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "flAdd2"
+hops = []
+
+[[cheat]]
+id = "move-when-dead"
+name = "Move when dead"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,"Diablo III.exe"+9043D0)
+define(bytes,0F B6 81 9C 01 00 00)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+label(return)
+
+newmem:
+  //movzx eax,byte ptr [ecx+0000019C]
+  mov eax,0
+  jmp return
+
+address:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // movzx eax,byte ptr [ecx+0000019C]
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "rapid-cd"
+name = "Rapid CD"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(spell_rapid,Diablo III.exe,8B 06 83 F8 FF 74 16 8B 4D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  nop
+  cmp eax,-01
+  jmp return
+
+spell_rapid:
+  jmp newmem
+return:
+registersymbol(spell_rapid)
+
+[DISABLE]
+
+spell_rapid:
+  db 8B 06 83 F8 FF
+
+unregistersymbol(spell_rapid)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Diablo III.exe.text+160038
+
+Diablo III.exe.text+160023: E8 78 FD FF FF  - call Diablo III.exe.text+15FDA0
+Diablo III.exe.text+160028: 83 C4 14        - add esp,14
+Diablo III.exe.text+16002B: 5F              - pop edi
+Diablo III.exe.text+16002C: 5E              - pop esi
+Diablo III.exe.text+16002D: 5B              - pop ebx
+Diablo III.exe.text+16002E: 8B E5           - mov esp,ebp
+Diablo III.exe.text+160030: 5D              - pop ebp
+Diablo III.exe.text+160031: C3              - ret 
+Diablo III.exe.text+160032: 83 7D 08 00     - cmp dword ptr [ebp+08],00
+Diablo III.exe.text+160036: 75 61           - jne Diablo III.exe.text+160099
+// ---------- INJECTING HERE ----------
+Diablo III.exe.text+160038: 8B 06           - mov eax,[esi]
+// ---------- DONE INJECTING  ----------
+Diablo III.exe.text+16003A: 83 F8 FF        - cmp eax,-01
+Diablo III.exe.text+16003D: 74 16           - je Diablo III.exe.text+160055
+Diablo III.exe.text+16003F: 8B 4D FC        - mov ecx,[ebp-04]
+Diablo III.exe.text+160042: 51              - push ecx
+Diablo III.exe.text+160043: 57              - push edi
+Diablo III.exe.text+160044: 53              - push ebx
+Diablo III.exe.text+160045: 50              - push eax
+Diablo III.exe.text+160046: E8 05 EE FF FF  - call Diablo III.exe.text+15EE50
+Diablo III.exe.text+16004B: 83 C4 10        - add esp,10
+Diablo III.exe.text+16004E: 5F              - pop edi
+}"""

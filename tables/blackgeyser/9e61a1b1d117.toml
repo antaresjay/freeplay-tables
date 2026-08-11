@@ -1,0 +1,829 @@
+[game]
+name = "Black Geyser Couriers of Darkness"
+exe = "blackgeyser.exe"
+notes = "Converted from a Cheat Engine table by sanitka. Source: https://fearlessrevolution.com/viewtopic.php?t=22241"
+verified = []
+author = "sanitka"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "always-zero-weight-of-inventory"
+name = "Always zero weight of inventory"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//define(address,BGModel.Runtime.Items:Inventory:RecalcWeight+1bb)
+//define(bytes,F3 41 0F 11 AC 24 C0 00 00 00)
+define(address,BGModel.Runtime.Items.Inventory:RecalcWeight+177)
+define(bytes,F3 41 0F 11 AC 24 C0 00 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,100)
+
+label(code)
+label(return)
+
+newmem:
+  xorps xmm5,xmm5
+code:
+  movss [r12+000000C0],xmm5
+  jmp return
+
+address:
+  jmp newmem
+  nop 5
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // movss [r12+000000B0],xmm5
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.Runtime.Items.Inventory:RecalcWeight+1bb
+
+BGModel.Runtime.Items.Inventory:RecalcWeight+18f: F2 0F 10 45 80                 - movsd xmm0,[rbp-80]
+BGModel.Runtime.Items.Inventory:RecalcWeight+194: F2 0F 10 C8                    - movsd xmm1,xmm0
+BGModel.Runtime.Items.Inventory:RecalcWeight+198: F2 0F 59 CA                    - mulsd xmm1,xmm2
+BGModel.Runtime.Items.Inventory:RecalcWeight+19c: F2 0F 10 45 90                 - movsd xmm0,[rbp-70]
+BGModel.Runtime.Items.Inventory:RecalcWeight+1a1: F2 0F 58 C1                    - addsd xmm0,xmm1
+BGModel.Runtime.Items.Inventory:RecalcWeight+1a5: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+BGModel.Runtime.Items.Inventory:RecalcWeight+1a9: F3 0F 11 6D 9C                 - movss [rbp-64],xmm5
+BGModel.Runtime.Items.Inventory:RecalcWeight+1ae: F3 0F 10 45 9C                 - movss xmm0,[rbp-64]
+BGModel.Runtime.Items.Inventory:RecalcWeight+1b3: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+BGModel.Runtime.Items.Inventory:RecalcWeight+1b7: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+// ---------- INJECTING HERE ----------
+BGModel.Runtime.Items.Inventory:RecalcWeight+1bb: F3 41 0F 11 AC 24 B8 00 00 00  - movss [r12+000000C0],xmm5
+// ---------- DONE INJECTING  ----------
+BGModel.Runtime.Items.Inventory:RecalcWeight+1c5: 41 FF C6                       - inc r14d
+BGModel.Runtime.Items.Inventory:RecalcWeight+1c8: 49 63 47 18                    - movsxd  rax,dword ptr [r15+18]
+BGModel.Runtime.Items.Inventory:RecalcWeight+1cc: 44 3B F0                       - cmp r14d,eax
+BGModel.Runtime.Items.Inventory:RecalcWeight+1cf: 0F 8C D3 FE FF FF              - jl BGModel.Runtime.Items.Inventory:RecalcWeight+a8
+BGModel.Runtime.Items.Inventory:RecalcWeight+1d5: 48 8B CD                       - mov rcx,rbp
+BGModel.Runtime.Items.Inventory:RecalcWeight+1d8: 48 83 C1 A0                    - add rcx,-60
+BGModel.Runtime.Items.Inventory:RecalcWeight+1dc: 66 90                          - nop 2
+BGModel.Runtime.Items.Inventory:RecalcWeight+1de: 49 BB B0 1B A8 EC CD 01 00 00  - mov r11,System.Collections.Generic.Dictionary`2+ValueCollection+Enumerator[BGModel.Runtime.Items.BGInvSlotType,BGModel.Runtime.Items.Item[]]:MoveNext
+BGModel.Runtime.Items.Inventory:RecalcWeight+1e8: 41 FF D3                       - call r11
+BGModel.Runtime.Items.Inventory:RecalcWeight+1eb: 85 C0                          - test eax,eax
+}"""
+
+[[cheat]]
+id = "amount-of-stacked-items-does-not-decrease"
+name = "Amount of stacked items does not decrease"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,BGModel.Runtime.Items.Item:set_Amount+40)
+// define(bytes,89 B0 80 00 00 00)
+define(bytes,89 B0 88 00 00 00 48 8B 47 48)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,100)
+
+label(code)
+label(return)
+
+newmem:
+  mov rcx,[rdi+000000c0]          // BGModel.Runtime.Items.Item.<PrimarySlotType>k__BackingField
+  cmp cl,06                       // BGModel.Runtime.Items.BGInvSlotType.Wearable
+  je @
+
+  cmp cl,01                       // BGModel.Runtime.Items.BGInvSlotType.GeneralConsumable
+  je @
+
+  cmp cl,02                       // BGModel.Runtime.Items.BGInvSlotType.PowderAndPotion
+  jne return
+
+@:
+  inc esi
+  cmp esi,[rax+00000088]          // [] old amount, esi new amount
+  je return                       // one arrow / bullet / bolt
+
+  dec esi
+
+code:
+  mov [rax+00000088],esi
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+address:
+  db bytes
+  // mov [rax+00000088],esi
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.Runtime.Items.Item:set_Amount+40
+
+BGModel.Runtime.Items.Item:set_Amount+1d: 83 39 00              - cmp dword ptr [rcx],00
+BGModel.Runtime.Items.Item:set_Amount+20: 48 63 80 80 00 00 00  - movsxd  rax,dword ptr [rax+00000080]
+BGModel.Runtime.Items.Item:set_Amount+27: 3B C6                 - cmp eax,esi
+BGModel.Runtime.Items.Item:set_Amount+29: 40 0F 94 C0           - sete al
+BGModel.Runtime.Items.Item:set_Amount+2d: 48 0F B6 C0           - movzx rax,al
+BGModel.Runtime.Items.Item:set_Amount+31: 48 0F B6 C0           - movzx rax,al
+BGModel.Runtime.Items.Item:set_Amount+35: 85 C0                 - test eax,eax
+BGModel.Runtime.Items.Item:set_Amount+37: 75 27                 - jne BGModel.Runtime.Items.Item:set_Amount+60
+BGModel.Runtime.Items.Item:set_Amount+39: 48 8B 47 68           - mov rax,[rdi+68]
+BGModel.Runtime.Items.Item:set_Amount+3d: 83 38 00              - cmp dword ptr [rax],00
+// ---------- INJECTING HERE ----------
+BGModel.Runtime.Items.Item:set_Amount+40: 89 B0 80 00 00 00     - mov [rax+00000080],esi
+// ---------- DONE INJECTING  ----------
+BGModel.Runtime.Items.Item:set_Amount+46: 48 8B 47 48           - mov rax,[rdi+48]
+BGModel.Runtime.Items.Item:set_Amount+4a: 48 8B C8              - mov rcx,rax
+BGModel.Runtime.Items.Item:set_Amount+4d: 48 8B F1              - mov rsi,rcx
+BGModel.Runtime.Items.Item:set_Amount+50: 48 85 C0              - test rax,rax
+BGModel.Runtime.Items.Item:set_Amount+53: 75 02                 - jne BGModel.Runtime.Items.Item:set_Amount+57
+BGModel.Runtime.Items.Item:set_Amount+55: EB 09                 - jmp BGModel.Runtime.Items.Item:set_Amount+60
+BGModel.Runtime.Items.Item:set_Amount+57: 48 8B CE              - mov rcx,rsi
+BGModel.Runtime.Items.Item:set_Amount+5a: 48 8B D7              - mov rdx,rdi
+BGModel.Runtime.Items.Item:set_Amount+5d: FF 56 18              - call qword ptr [rsi+18]
+BGModel.Runtime.Items.Item:set_Amount+60: 48 8B 75 F0           - mov rsi,[rbp-10]
+}"""
+
+[[cheat]]
+id = "dont-spent-points-at-levelup"
+name = "Dont spent points at levelup"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address1,BG.UI.CharacterInfo:GeneralSkillUIController:AddBargainLevel+25)
+define(bytes1,FF C8)
+define(address2,BG.UI.CharacterInfo:ClassSkillRaw:IncreaseLevel+27)
+define(bytes2,FF C9)
+define(address3,BG.UI.CharacterInfo:WeaponSkillRaw:IncreaseLevel+2d)
+define(bytes3,FF C9)
+
+[ENABLE]
+assert(address1,bytes1)
+assert(address2,bytes2)
+assert(address3,bytes3)
+
+address1:
+  nop 2
+
+address2:
+  nop 2
+
+address3:
+  nop 2
+
+[DISABLE]
+
+address1:
+  db bytes1
+address2:
+  db bytes2
+address3:
+  db bytes3
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+25
+
+18B1EA1E1AF: 00 55 48                       - add [rbp+48],dl
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+2: 8B EC                          - mov ebp,esp
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+4: 48 83 EC 30                    - sub rsp,30
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+8: 48 89 75 F8                    - mov [rbp-08],rsi
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+c: 48 8B F1                       - mov rsi,rcx
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+f: 48 63 86 08 01 00 00           - movsxd  rax,dword ptr [rsi+00000108]
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+16: 85 C0                          - test eax,eax
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+18: 0F 8E 75 00 00 00              - jng BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+93
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+1e: 48 63 86 08 01 00 00           - movsxd  rax,dword ptr [rsi+00000108]
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+25: FF C8                          - dec eax
+// ---------- INJECTING HERE ----------
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+27: 89 86 08 01 00 00              - mov [rsi+00000108],eax
+// ---------- DONE INJECTING  ----------
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+2d: 48 63 86 F0 00 00 00           - movsxd  rax,dword ptr [rsi+000000F0]
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+34: FF C0                          - inc eax
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+36: 89 86 F0 00 00 00              - mov [rsi+000000F0],eax
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+3c: 48 63 86 10 01 00 00           - movsxd  rax,dword ptr [rsi+00000110]
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+43: FF C0                          - inc eax
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+45: 89 86 10 01 00 00              - mov [rsi+00000110],eax
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+4b: 48 8B CE                       - mov rcx,rsi
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+4e: 49 BB B0 45 A6 1E 8B 01 00 00  - mov r11,BG.UI.CharacterInfo.GeneralSkillUIController:UpdateSkillPoints
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+58: 41 FF D3                       - call r11
+BG.UI.CharacterInfo.GeneralSkillUIController:AddBargainLevel+5b: 48 8B 86 E8 00 00 00           - mov rax,[rsi+000000E8]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+27
+
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+1: 48 8B EC              - mov rbp,rsp
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+4: 48 83 EC 30           - sub rsp,30
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+8: 48 89 75 F8           - mov [rbp-08],rsi
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+c: 48 8B F1              - mov rsi,rcx
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+f: 48 8B 46 70           - mov rax,[rsi+70]
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+13: 48 63 40 60           - movsxd  rax,dword ptr [rax+60]
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+17: 85 C0                 - test eax,eax
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+19: 0F 8E 8C 00 00 00     - jng BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+ab
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+1f: 48 8B 46 70           - mov rax,[rsi+70]
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+23: 48 63 48 60           - movsxd  rcx,dword ptr [rax+60]
+// ---------- INJECTING HERE ----------
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+27: FF C9                 - dec ecx
+// ---------- DONE INJECTING  ----------
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+29: 89 48 60              - mov [rax+60],ecx
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+2c: 48 63 86 88 00 00 00  - movsxd  rax,dword ptr [rsi+00000088]
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+33: FF C0                 - inc eax
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+35: 89 86 88 00 00 00     - mov [rsi+00000088],eax
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+3b: 48 8B 46 70           - mov rax,[rsi+70]
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+3f: 48 63 48 68           - movsxd  rcx,dword ptr [rax+68]
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+43: FF C1                 - inc ecx
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+45: 89 48 68              - mov [rax+68],ecx
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+48: 48 8B 56 20           - mov rdx,[rsi+20]
+BG.UI.CharacterInfo.ClassSkillRaw:IncreaseLevel+4c: 4C 63 86 8C 00 00 00  - movsxd  r8,dword ptr [rsi+0000008C]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+2d
+
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+1: 48 8B EC              - mov rbp,rsp
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+4: 48 83 EC 30           - sub rsp,30
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+8: 48 89 75 F8           - mov [rbp-08],rsi
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+c: 48 8B F1              - mov rsi,rcx
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+f: 48 8B 46 18           - mov rax,[rsi+18]
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+13: 48 63 80 A0 00 00 00  - movsxd  rax,dword ptr [rax+000000A0]
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+1a: 85 C0                 - test eax,eax
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+1c: 0F 8E 91 00 00 00     - jng BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+b3
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+22: 48 8B 46 18           - mov rax,[rsi+18]
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+26: 48 63 88 A0 00 00 00  - movsxd  rcx,dword ptr [rax+000000A0]
+// ---------- INJECTING HERE ----------
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+2d: FF C9                 - dec ecx
+// ---------- DONE INJECTING  ----------
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+2f: 89 88 A0 00 00 00     - mov [rax+000000A0],ecx
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+35: 48 63 46 78           - movsxd  rax,dword ptr [rsi+78]
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+39: FF C0                 - inc eax
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+3b: 89 46 78              - mov [rsi+78],eax
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+3e: 48 8B 46 18           - mov rax,[rsi+18]
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+42: 48 63 88 A8 00 00 00  - movsxd  rcx,dword ptr [rax+000000A8]
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+49: FF C1                 - inc ecx
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+4b: 89 88 A8 00 00 00     - mov [rax+000000A8],ecx
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+51: 48 8B CE              - mov rcx,rsi
+BG.UI.CharacterInfo.WeaponSkillRaw:IncreaseLevel+54: 66 90                 - nop 2
+}"""
+
+[[cheat]]
+id = "unlock-console-by-notpikachu-enable-it-press-f1-type-help-and-press-enter"
+name = "Unlock Console by notpikachu (Enable it, press F1, type help and press enter)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Original Author: notpikachu.
+  I only adopted his code and used the mono addresses instead of an AOB scan
+  ... and updated it to the current version on 2022-02-06
+}
+
+define(address,BG.controller:DevConsoleController:Update+45)
+define(bytes,0F 84 F6 09 00 00)
+
+[ENABLE]
+assert(address,bytes)
+
+address:
+  nop 6
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BG.controller.DevConsoleController:Update+41
+
+BG.controller.DevConsoleController:Update+13: 48 89 7D D8                    - mov [rbp-28],rdi
+BG.controller.DevConsoleController:Update+17: 4C 89 65 E0                    - mov [rbp-20],r12
+BG.controller.DevConsoleController:Update+1b: 4C 89 6D E8                    - mov [rbp-18],r13
+BG.controller.DevConsoleController:Update+1f: 4C 89 75 F0                    - mov [rbp-10],r14
+BG.controller.DevConsoleController:Update+23: 4C 89 7D F8                    - mov [rbp-08],r15
+BG.controller.DevConsoleController:Update+27: 48 8B F1                       - mov rsi,rcx
+BG.controller.DevConsoleController:Update+2a: 48 C7 45 A8 00 00 00 00        - mov qword ptr [rbp-58],00000000
+BG.controller.DevConsoleController:Update+32: 48 B8 E0 0E B7 B3 F2 01 00 00  - mov rax,000001F2B3B70EE0
+BG.controller.DevConsoleController:Update+3c: 0F B6 00                       - movzx eax,byte ptr [rax]
+BG.controller.DevConsoleController:Update+3f: 85 C0                          - test eax,eax
+// ---------- INJECTING HERE ----------
+BG.controller.DevConsoleController:Update+41: 0F 84 D1 05 00 00              - je BG.controller.DevConsoleController:Update+618
+// ---------- DONE INJECTING  ----------
+BG.controller.DevConsoleController:Update+47: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+BG.controller.DevConsoleController:Update+4e: 49 BB 10 FA AB 93 F5 01 00 00  - mov r11,BG.controller.DevConsoleController+FPSProvider:Update
+BG.controller.DevConsoleController:Update+58: 41 FF D3                       - call r11
+BG.controller.DevConsoleController:Update+5b: 48 8B CE                       - mov rcx,rsi
+BG.controller.DevConsoleController:Update+5e: 49 BB 90 FC AB 93 F5 01 00 00  - mov r11,BG.controller.DevConsoleController:HandleF1Console
+BG.controller.DevConsoleController:Update+68: 41 FF D3                       - call r11
+BG.controller.DevConsoleController:Update+6b: 66 66 90                       - nop 3
+BG.controller.DevConsoleController:Update+6e: 49 BB 20 13 D9 B2 F6 01 00 00  - mov r11,UnityEngine.Input:get_anyKeyDown
+BG.controller.DevConsoleController:Update+78: 41 FF D3                       - call r11
+BG.controller.DevConsoleController:Update+7b: 85 C0                          - test eax,eax
+}"""
+
+[[cheat]]
+id = "get-group-gold"
+name = "Get GROUP Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+// define(address,BGModel.Runtime.Controllers:PartyLevelController:GetPartyLevel+5e)
+// define(bytes,F3 0F 10 80 d0 01 00 00)
+define(address,BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+61)
+//define(bytes,F3 0F 10 80 08 02 00 00)
+define(bytes,F3 0F 10 80 10 02 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,100)
+
+label(code)
+label(return)
+registersymbol(groupxpaddy)
+
+newmem:
+  mov [groupxpaddy],rax
+code:
+  movss xmm0,[rax+00000208]
+  jmp return
+
+groupxpaddy:
+  dq 0
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // movss xmm0,[rax+00000208]
+
+dealloc(*)
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+5e
+
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+3c: 48 8D 6D 00              - lea rbp,[rbp+00]
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+40: 48 8B 46 30              - mov rax,[rsi+30]
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+44: 48 8B C8                 - mov rcx,rax
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+47: 83 39 00                 - cmp dword ptr [rcx],00
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+4a: 48 8B 40 78              - mov rax,[rax+78]
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+4e: 48 8B C8                 - mov rcx,rax
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+51: 83 39 00                 - cmp dword ptr [rcx],00
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+54: 48 8B 40 18              - mov rax,[rax+18]
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+58: 48 8B C8                 - mov rcx,rax
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+5b: 83 39 00                 - cmp dword ptr [rcx],00
+// ---------- INJECTING HERE ----------
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+5e: F3 0F 10 80 D0 01 00 00  - movss xmm0,[rax+000001D0]
+// ---------- DONE INJECTING  ----------
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+66: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+6a: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+6e: F3 0F 11 6D CC           - movss [rbp-34],xmm5
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+73: F3 0F 10 45 CC           - movss xmm0,[rbp-34]
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+78: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+7c: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+80: F3 0F 11 6D CC           - movss [rbp-34],xmm5
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+85: F3 0F 10 45 CC           - movss xmm0,[rbp-34]
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+8a: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+BGModel.Runtime.Controllers.PartyLevelController:GetPartyLevel+8e: F2 0F 11 45 C0           - movsd [rbp-40],xmm0
+}"""
+
+[[cheat]]
+id = "get-stats-of-mainchar-press-c-ingame"
+name = "Get Stats of Mainchar (press C ingame)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,BGModel.RuleSystem:GetMaxSpellLevel+26)
+define(bytes,F3 0F 10 80 1C 02 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,100)
+
+label(code)
+label(return)
+label(dataptr)
+
+newmem:
+  mov [dataptr],rax
+code:
+  movss xmm0,[rax+0000021C]
+  jmp return
+
+dataptr:
+  dq 0
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+registersymbol(dataptr)
+
+[DISABLE]
+
+address:
+  db bytes
+  // movss xmm0,[rax+00000204]
+
+dealloc(newmem)
+unregistersymbol(dataptr)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.RuleSystem:GetMaxSpellLevel+26
+
+BGModel.RuleSystem:GetMaxSpellLevel+1: 48 8B EC                 - mov rbp,rsp
+BGModel.RuleSystem:GetMaxSpellLevel+4: 48 83 EC 40              - sub rsp,40
+BGModel.RuleSystem:GetMaxSpellLevel+8: 48 89 75 F0              - mov [rbp-10],rsi
+BGModel.RuleSystem:GetMaxSpellLevel+c: 48 89 7D F8              - mov [rbp-08],rdi
+BGModel.RuleSystem:GetMaxSpellLevel+10: 48 8B F9                 - mov rdi,rcx
+BGModel.RuleSystem:GetMaxSpellLevel+13: 48 8B F2                 - mov rsi,rdx
+BGModel.RuleSystem:GetMaxSpellLevel+16: 83 3E 00                 - cmp dword ptr [rsi],00
+BGModel.RuleSystem:GetMaxSpellLevel+19: 48 8B 86 90 01 00 00     - mov rax,[rsi+00000190]
+BGModel.RuleSystem:GetMaxSpellLevel+20: 48 8B C8                 - mov rcx,rax
+BGModel.RuleSystem:GetMaxSpellLevel+23: 83 39 00                 - cmp dword ptr [rcx],00
+// ---------- INJECTING HERE ----------
+BGModel.RuleSystem:GetMaxSpellLevel+26: F3 0F 10 80 1C 02 00 00  - movss xmm0,[rax+0000021C]
+// ---------- DONE INJECTING  ----------
+BGModel.RuleSystem:GetMaxSpellLevel+2e: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+BGModel.RuleSystem:GetMaxSpellLevel+32: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+BGModel.RuleSystem:GetMaxSpellLevel+36: F3 0F 11 6D EC           - movss [rbp-14],xmm5
+BGModel.RuleSystem:GetMaxSpellLevel+3b: F3 0F 10 45 EC           - movss xmm0,[rbp-14]
+BGModel.RuleSystem:GetMaxSpellLevel+40: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+BGModel.RuleSystem:GetMaxSpellLevel+44: F2 0F 2C D0              - cvttsd2si edx,xmm0
+BGModel.RuleSystem:GetMaxSpellLevel+48: 83 3E 00                 - cmp dword ptr [rsi],00
+BGModel.RuleSystem:GetMaxSpellLevel+4b: 48 8B 86 90 01 00 00     - mov rax,[rsi+00000190]
+BGModel.RuleSystem:GetMaxSpellLevel+52: 48 8B C8                 - mov rcx,rax
+BGModel.RuleSystem:GetMaxSpellLevel+55: 83 39 00                 - cmp dword ptr [rcx],00
+}"""
+
+[[cheat]]
+id = "get-stats-of-selected-char-press-c-ingame-select-char"
+name = "Get Stats of selected Char (press C ingame, select char)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,BGModel.Runtime.Creatures.Creature:get_Sex+2a)
+define(bytes,83 39 00 48 05 C8 02 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,100)
+
+label(code)
+label(return)
+label(charaddy)
+
+newmem:
+  mov [charaddy],rcx
+code:
+  cmp dword ptr [rcx],00
+  add rax,000002C8
+  jmp return
+
+charaddy:
+  dq deadbeef
+
+address:
+  jmp newmem
+  nop 4
+return:
+
+registersymbol(charaddy)
+[DISABLE]
+
+address:
+  db bytes
+  // cmp dword ptr [rcx],00
+  // add rax,000002C8
+
+dealloc(newmem)
+unregistersymbol(charaddy)
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.Runtime.Creatures.Creature:get_Sex+2a
+
+19341E0977C: 00 00                    - add [rax],al
+19341E0977E: 00 00                    - add [rax],al
+BGModel.Runtime.Creatures.Creature:get_Sex: 48 83 EC 18              - sub rsp,18
+BGModel.Runtime.Creatures.Creature:get_Sex+4: 48 89 34 24              - mov [rsp],rsi
+BGModel.Runtime.Creatures.Creature:get_Sex+8: 48 89 7C 24 08           - mov [rsp+08],rdi
+BGModel.Runtime.Creatures.Creature:get_Sex+d: 48 8B F1                 - mov rsi,rcx
+BGModel.Runtime.Creatures.Creature:get_Sex+10: C7 44 24 10 00 00 00 00  - mov [rsp+10],00000000
+BGModel.Runtime.Creatures.Creature:get_Sex+18: C7 44 24 14 00 00 00 00  - mov [rsp+14],00000000
+BGModel.Runtime.Creatures.Creature:get_Sex+20: 48 8B 86 90 01 00 00     - mov rax,[rsi+00000190]
+BGModel.Runtime.Creatures.Creature:get_Sex+27: 48 8B C8                 - mov rcx,rax
+// ---------- INJECTING HERE ----------
+BGModel.Runtime.Creatures.Creature:get_Sex+2a: 83 39 00                 - cmp dword ptr [rcx],00
+// ---------- DONE INJECTING  ----------
+BGModel.Runtime.Creatures.Creature:get_Sex+2d: 48 05 C8 02 00 00        - add rax,000002C8
+BGModel.Runtime.Creatures.Creature:get_Sex+33: 48 63 08                 - movsxd  rcx,dword ptr [rax]
+BGModel.Runtime.Creatures.Creature:get_Sex+36: 89 4C 24 10              - mov [rsp+10],ecx
+BGModel.Runtime.Creatures.Creature:get_Sex+3a: 48 63 40 04              - movsxd  rax,dword ptr [rax+04]
+BGModel.Runtime.Creatures.Creature:get_Sex+3e: 89 44 24 14              - mov [rsp+14],eax
+BGModel.Runtime.Creatures.Creature:get_Sex+42: 0F B6 44 24 14           - movzx eax,byte ptr [rsp+14]
+BGModel.Runtime.Creatures.Creature:get_Sex+47: 85 C0                    - test eax,eax
+BGModel.Runtime.Creatures.Creature:get_Sex+49: 75 16                    - jne BGModel.Runtime.Creatures.Creature:get_Sex+61
+BGModel.Runtime.Creatures.Creature:get_Sex+4b: 48 8B 86 30 01 00 00     - mov rax,[rsi+00000130]
+BGModel.Runtime.Creatures.Creature:get_Sex+52: 48 8B C8                 - mov rcx,rax
+}"""
+
+[[cheat]]
+id = "custom-xp-multiplier"
+name = "Custom XP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : BlackGeyser.exe
+  Version:
+  Date   : 2022-11-27
+  Author : SanitKa
+
+  This script does blah blah blah
+}
+define(address,BGModel.Runtime.Controllers.PartyManager:ReceiveXp+1e)
+define(bytes,F3 0F 11 4D 90 33 C0)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,100)
+
+label(code)
+label(return)
+registersymbol(xpmulti)
+
+newmem:
+  mulss xmm1,[xpmulti]
+
+code:
+  movss [rbp-70],xmm1
+  jmp return
+
+xpmulti:
+  dq (float)4.0
+
+address:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.Runtime.Controllers.PartyManager:ReceiveXp+1e
+
+7693B6CC: 00 00                 - add [rax],al
+7693B6CE: 00 00                 - add [rax],al
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp: 55                    - push rbp
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+1: 48 8B EC              - mov rbp,rsp
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+4: 48 81 EC 90 00 00 00  - sub rsp,00000090
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+b: 48 89 75 E0           - mov [rbp-20],rsi
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+f: 48 89 7D E8           - mov [rbp-18],rdi
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+13: 4C 89 75 F0           - mov [rbp-10],r14
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+17: 4C 89 7D F8           - mov [rbp-08],r15
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+1b: 48 8B F1              - mov rsi,rcx
+// ---------- INJECTING HERE ----------
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+1e: F3 0F 11 4D 90        - movss [rbp-70],xmm1
+// ---------- DONE INJECTING  ----------
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+23: 33 C0                 - xor eax,eax
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+25: 48 89 45 B0           - mov [rbp-50],rax
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+29: 48 89 45 B8           - mov [rbp-48],rax
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+2d: 48 89 45 C0           - mov [rbp-40],rax
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+31: F3 0F 10 45 90        - movss xmm0,[rbp-70]
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+36: F3 0F 5A C0           - cvtss2sd xmm0,xmm0
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+3a: 48 8B 86 80 00 00 00  - mov rax,[rsi+00000080]
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+41: 48 8B C8              - mov rcx,rax
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+44: 83 39 00              - cmp dword ptr [rcx],00
+BGModel.Runtime.Controllers.PartyManager:ReceiveXp+47: 48 63 40 18           - movsxd  rax,dword ptr [rax+18]
+}"""
+
+[[cheat]]
+id = "xp-multiplier"
+name = "XP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "xpmulti"
+hops = []
+
+[[cheat]]
+id = "custom-hp-bonus-malus"
+name = "Custom HP Bonus / Malus"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : BlackGeyser.exe
+  Version: 
+  Date   : 2022-12-03
+  Author : SanitKa
+
+  This script does blah blah blah
+}
+
+define(address,BGModel.RuleSystem:GetMaxHp+467)
+define(bytes,F3 0F 11 6D D8)
+
+define(address2,BGModel.RuleSystem:GetMaxHp+4ab)
+define(bytes2,F3 0F 10 45 D8)
+
+
+[ENABLE]
+
+assert(address,bytes)
+assert(address2,bytes2)
+
+alloc(newmem,100)
+
+label(code)
+label(return)
+label(code2)
+label(return2)
+label(newmem2)
+
+registersymbol(hpbonus)
+registersymbol(hpmin)
+
+newmem:
+  movss [temp],xmm5
+  comiss xmm5,[hpmin]
+  jle code
+
+  movss xmm5,[hpmin]
+
+code:
+  movss [rbp-28],xmm5
+  jmp return
+
+//newmem+50:
+newmem2:
+  movss xmm0,[temp]        // restore previous value
+  addss xmm0,[hpbonus]
+  addss xmm0,[rbp-28]
+  movss [rbp-28],xmm0
+
+code2:
+//  movss xmm0,[rbp-28]
+  jmp return2
+
+hpbonus:
+  dq (float)1000.0
+hpmin:
+  dq (float)0.1
+temp:
+  dq (float)1.0
+
+address:
+  jmp newmem
+return:
+
+address2:
+  jmp newmem2
+return2:
+
+[DISABLE]
+
+address:
+  db bytes
+  // movss [rbp-28],xmm5
+
+address2:
+  db bytes2
+  // movss xmm0,[rbp-28]
+
+dealloc(*)
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.RuleSystem:GetMaxHp+4ab
+
+BGModel.RuleSystem:GetMaxHp+47f: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+BGModel.RuleSystem:GetMaxHp+486: 49 BB 20 C6 99 6E 00 00 00 00  - mov r11,BGModel.Runtime.Creatures.Creature:IsInPCParty
+BGModel.RuleSystem:GetMaxHp+490: 41 FF D3                       - call r11
+BGModel.RuleSystem:GetMaxHp+493: 4C 8B E8                       - mov r13,rax
+BGModel.RuleSystem:GetMaxHp+496: EB 03                          - jmp BGModel.RuleSystem:GetMaxHp+49b
+BGModel.RuleSystem:GetMaxHp+498: 45 33 ED                       - xor r13d,r13d
+BGModel.RuleSystem:GetMaxHp+49b: 49 0F B6 C5                    - movzx rax,r13l
+BGModel.RuleSystem:GetMaxHp+49f: 40 88 45 B8                    - mov [rbp-48],al
+BGModel.RuleSystem:GetMaxHp+4a3: 85 C0                          - test eax,eax
+BGModel.RuleSystem:GetMaxHp+4a5: 0F 84 3B 00 00 00              - je BGModel.RuleSystem:GetMaxHp+4e6
+// ---------- INJECTING HERE ----------
+BGModel.RuleSystem:GetMaxHp+4ab: F3 0F 10 45 D8                 - movss xmm0,[rbp-28]
+// ---------- DONE INJECTING  ----------
+BGModel.RuleSystem:GetMaxHp+4b0: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+BGModel.RuleSystem:GetMaxHp+4b4: F2 0F 11 45 80                 - movsd [rbp-80],xmm0
+BGModel.RuleSystem:GetMaxHp+4b9: 48 8B 47 60                    - mov rax,[rdi+60]
+BGModel.RuleSystem:GetMaxHp+4bd: 48 8B C8                       - mov rcx,rax
+BGModel.RuleSystem:GetMaxHp+4c0: 48 8B 00                       - mov rax,[rax]
+BGModel.RuleSystem:GetMaxHp+4c3: 49 BA 50 D7 A5 8B 02 00 00 00  - mov r10,000000028BA5D750
+BGModel.RuleSystem:GetMaxHp+4cd: FF 50 C8                       - call qword ptr [rax-38]
+BGModel.RuleSystem:GetMaxHp+4d0: F3 0F 5A C8                    - cvtss2sd xmm1,xmm0
+BGModel.RuleSystem:GetMaxHp+4d4: F2 0F 10 45 80                 - movsd xmm0,[rbp-80]
+BGModel.RuleSystem:GetMaxHp+4d9: F2 0F 59 C1                    - mulsd xmm0,xmm1
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: BGModel.RuleSystem:GetMaxHp+467
+
+BGModel.RuleSystem:GetMaxHp+437: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+BGModel.RuleSystem:GetMaxHp+43b: F3 0F 11 6D DC                 - movss [rbp-24],xmm5
+BGModel.RuleSystem:GetMaxHp+440: F3 0F 10 45 DC                 - movss xmm0,[rbp-24]
+BGModel.RuleSystem:GetMaxHp+445: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+BGModel.RuleSystem:GetMaxHp+449: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+BGModel.RuleSystem:GetMaxHp+44e: 49 BB B0 F2 BD 64 00 00 00 00  - mov r11,System.Math:Ceiling
+BGModel.RuleSystem:GetMaxHp+458: 41 FF D3                       - call r11
+BGModel.RuleSystem:GetMaxHp+45b: F2 0F 5A C0                    - cvtsd2ss xmm0,xmm0
+BGModel.RuleSystem:GetMaxHp+45f: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+BGModel.RuleSystem:GetMaxHp+463: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+// ---------- INJECTING HERE ----------
+BGModel.RuleSystem:GetMaxHp+467: F3 0F 11 6D D8                 - movss [rbp-28],xmm5
+// ---------- DONE INJECTING  ----------
+BGModel.RuleSystem:GetMaxHp+46c: 48 8B 47 60                    - mov rax,[rdi+60]
+BGModel.RuleSystem:GetMaxHp+470: 48 85 C0                       - test rax,rax
+BGModel.RuleSystem:GetMaxHp+473: 0F 84 1F 00 00 00              - je BGModel.RuleSystem:GetMaxHp+498
+BGModel.RuleSystem:GetMaxHp+479: 48 8B CE                       - mov rcx,rsi
+BGModel.RuleSystem:GetMaxHp+47c: 83 3E 00                       - cmp dword ptr [rsi],00
+BGModel.RuleSystem:GetMaxHp+47f: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+BGModel.RuleSystem:GetMaxHp+486: 49 BB 20 C6 99 6E 00 00 00 00  - mov r11,BGModel.Runtime.Creatures.Creature:IsInPCParty
+BGModel.RuleSystem:GetMaxHp+490: 41 FF D3                       - call r11
+BGModel.RuleSystem:GetMaxHp+493: 4C 8B E8                       - mov r13,rax
+BGModel.RuleSystem:GetMaxHp+496: EB 03                          - jmp BGModel.RuleSystem:GetMaxHp+49b
+}"""
+
+[[cheat]]
+id = "max-enemy-hp"
+name = "max Enemy HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "hpmin"
+hops = []
+
+[[cheat]]
+id = "player-hp-bonus"
+name = "player HP Bonus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "hpbonus"
+hops = []

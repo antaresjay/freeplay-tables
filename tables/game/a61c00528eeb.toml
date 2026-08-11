@@ -1,0 +1,1710 @@
+[game]
+name = "Persona 5 Strikers"
+exe = "game.exe"
+notes = "Converted from a Cheat Engine table by DhaosCollider. Source: https://fearlessrevolution.com/viewtopic.php?t=15332"
+verified = []
+author = "DhaosCollider"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "stealth-mode"
+name = "Stealth Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+call_stealth:
+  ret
+
+seachlight_bypass:
+  db EB
+
+call_alert:
+  ret
+
+[DISABLE]
+
+call_stealth:
+  db 40
+
+seachlight_bypass:
+  db 74
+
+call_alert:
+  db 48"""
+
+[[cheat]]
+id = "ignore-skill-costs"
+name = "Ignore Skill Costs"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+call_skill_damage:
+  ret
+
+read_sp:
+  xor edi,edi
+
+[DISABLE]
+
+call_skill_damage:
+  db 48
+
+read_sp:
+  db 2B D7"""
+
+[[cheat]]
+id = "showtime-at-any-time"
+name = "SHOWTIME At Any Time"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_showtime)
+label(code_showtime,undo_showtime,showtime_offset)
+registersymbol(code_showtime,undo_showtime,showtime_offset)
+
+newmem:
+  code_showtime:
+    push rbp
+    mov rbp,[showtime_offset]
+    add rbp,08
+    movss xmm0,[rbp+rcx]
+    sub rbp,08
+    movss [rbp+rcx],xmm0
+    pop rbp
+
+  undo_showtime:
+    readmem(read_showtime,8)
+    jmp return
+    align 10 CC
+
+  showtime_offset:
+    readmem(read_showtime+04,4)
+    align 08
+
+read_showtime:
+  jmp code_showtime
+  nop 3
+return:
+
+[DISABLE]
+
+read_showtime:
+  readmem(undo_showtime,8)
+
+unregistersymbol(code_showtime,undo_showtime,showtime_offset)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "take-no-damage"
+name = "Take No Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,trace_damage_action)
+label(code_damage_action,undo_damage_action)
+registersymbol(code_damage_action,undo_damage_action)
+
+newmem:
+  code_damage_action:
+    cmp rdx,[battle_ptr]
+    jne @f
+    or al,01
+    readmem(trace_damage_action+04,7)
+  @@:
+    test al,al
+    je trace_damage_action+73
+    jmp return
+    align 10 CC
+
+  undo_damage_action:
+    readmem(trace_damage_action,11)
+
+trace_damage_action:
+  jmp code_damage_action
+  nop 6
+return:
+
+[DISABLE]
+
+trace_damage_action:
+  readmem(undo_damage_action,11)
+
+unregistersymbol(code_damage_action,undo_damage_action)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "damage-multiplier"
+name = "Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,trace_damage)
+label(code_damage,damage_multiplier)
+registersymbol(code_damage,damage_multiplier)
+
+newmem:
+  code_damage:
+    readmem(trace_damage,5)
+    cmp rcx,[battle_ptr]
+    jne return
+    mulss xmm6,[damage_multiplier]
+    jmp return
+    align 10 CC
+
+  damage_multiplier:
+    dd (float)2.0
+
+trace_damage:
+  jmp code_damage
+return:
+
+[DISABLE]
+
+trace_damage:
+  readmem(code_damage,5)
+
+unregistersymbol(code_damage,damage_multiplier)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "times"
+name = "Times"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "damage_multiplier"
+hops = []
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,trace_exp_gain)
+label(code_exp_gain,undo_exp_gain,exp_multiplier)
+registersymbol(code_exp_gain,undo_exp_gain,exp_multiplier)
+
+newmem:
+  code_exp_gain:
+    imul eax,[exp_multiplier]
+
+  undo_exp_gain:
+    readmem(trace_exp_gain,6)
+    jmp return
+    align 10 CC
+
+  exp_multiplier:
+    dd #4
+
+trace_exp_gain:
+  jmp code_exp_gain
+  nop
+return:
+
+[DISABLE]
+
+trace_exp_gain:
+  readmem(undo_exp_gain,6)
+
+unregistersymbol(code_exp_gain,undo_exp_gain,exp_multiplier)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "times-2"
+name = "Times"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "exp_multiplier"
+hops = []
+
+[[cheat]]
+id = "money-multiplier"
+name = "Money Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,trace_money_gain)
+label(code_money_gain,undo_money_gain,money_multiplier)
+registersymbol(code_money_gain,undo_money_gain,money_multiplier)
+
+newmem:
+  code_money_gain:
+    imul eax,[money_multiplier]
+
+  undo_money_gain:
+    readmem(trace_money_gain,6)
+    jmp return
+    align 10 CC
+
+  money_multiplier:
+    dd #4
+
+trace_money_gain:
+  jmp code_money_gain
+  nop
+return:
+
+[DISABLE]
+
+trace_money_gain:
+  readmem(undo_money_gain,6)
+
+unregistersymbol(code_money_gain,undo_money_gain,money_multiplier)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "times-3"
+name = "Times"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "money_multiplier"
+hops = []
+
+[[cheat]]
+id = "band-exp-multiplier"
+name = "Band EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,call_band_exp)
+label(code_band_exp,band_exp_multiplier)
+registersymbol(code_band_exp,band_exp_multiplier)
+
+newmem:
+  code_band_exp:
+    readmem(call_band_exp,5)
+    imul edx,[band_exp_multiplier]
+    jmp return
+    align 10 CC
+
+  band_exp_multiplier:
+    dd #4
+
+call_band_exp:
+  jmp code_band_exp
+return:
+
+[DISABLE]
+
+call_band_exp:
+  readmem(code_band_exp,5)
+
+unregistersymbol(code_band_exp,band_exp_multiplier)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "times-4"
+name = "Times"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "band_exp_multiplier"
+hops = []
+
+[[cheat]]
+id = "get-master-arts-quicker"
+name = "Get MASTER ARTS Quicker"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_arts_exp)
+label(code_arts_exp)
+registersymbol(code_arts_exp)
+
+newmem:
+  code_arts_exp:
+    readmem(read_arts_exp,7)
+    db 89 4F
+    readmem(read_arts_exp+09,1)
+    jmp return
+
+read_arts_exp:
+  jmp code_arts_exp
+  nop 2
+return:
+
+
+[DISABLE]
+
+read_arts_exp:
+  readmem(code_arts_exp,7)
+
+unregistersymbol(code_arts_exp)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "request-already-completed"
+name = "Request Already Completed"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_request)
+label(code_request)
+registersymbol(code_request)
+
+newmem:
+  code_request:
+    readmem(read_request,5)
+    mov ecx,r8d
+    jmp return
+
+read_request:
+  jmp code_request
+return:
+
+[DISABLE]
+
+read_request:
+  readmem(code_request,5)
+
+unregistersymbol(code_request)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "character-stats-editor"
+name = "Character Stats Editor"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,call_chara_level)
+label(code_chara_level,chara_ptr)
+registersymbol(code_chara_level,chara_ptr)
+
+newmem:
+  code_chara_level:
+    readmem(call_chara_level,7)
+    mov [chara_ptr],rcx
+    jmp return
+    align 10 CC
+
+  chara_ptr:
+    dq 0
+
+call_chara_level:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+call_chara_level:
+  readmem(code_chara_level,7)
+
+unregistersymbol(code_chara_level,chara_ptr)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "total-exp"
+name = "Total EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "chara_ptr"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "chara_ptr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "hp"
+name = "HP+"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "chara_ptr"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "sp"
+name = "SP+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "chara_ptr"
+hops = ["+0x26"]
+
+[[cheat]]
+id = "atk"
+name = "ATK+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "chara_ptr"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "def"
+name = "DEF+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "chara_ptr"
+hops = ["+0x2a"]
+
+[[cheat]]
+id = "persona-stats-editor"
+name = "Persona Stats Editor"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,call_persona_level)
+label(code_persona_level,persona_ptr)
+registersymbol(code_persona_level,persona_ptr)
+
+newmem:
+  code_persona_level:
+    readmem(call_persona_level,7)
+    mov [persona_ptr],rcx
+    jmp return
+    align 10 CC
+
+  persona_ptr:
+    dq 0
+
+call_persona_level:
+  jmp code_persona_level
+  nop 2
+return:
+
+[DISABLE]
+
+call_persona_level:
+  readmem(code_persona_level,7)
+
+unregistersymbol(code_persona_level,persona_ptr)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "st"
+name = "St+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "en"
+name = "En+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x1a"]
+
+[[cheat]]
+id = "ma"
+name = "Ma+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "ag"
+name = "Ag+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x1e"]
+
+[[cheat]]
+id = "lu"
+name = "Lu+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "total-exp-2"
+name = "Total EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "level-2"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "skill-id-1"
+name = "Skill ID: 1"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x32"]
+
+[[cheat]]
+id = "skill-id-2"
+name = "Skill ID: 2"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "skill-id-3"
+name = "Skill ID: 3"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x36"]
+
+[[cheat]]
+id = "skill-id-4"
+name = "Skill ID: 4"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "skill-id-5"
+name = "Skill ID: 5"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x3a"]
+
+[[cheat]]
+id = "skill-id-6"
+name = "Skill ID: 6"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "skill-id-7"
+name = "Skill ID: 7"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x3e"]
+
+[[cheat]]
+id = "skill-id-8"
+name = "Skill ID: 8"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "persona_ptr"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "forced-registration-for-persona-in-compendium"
+name = "Forced Registration For Persona In Compendium"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_register_flag)
+label(code_register_flag,undo_register_flag)
+registersymbol(code_register_flag,undo_register_flag)
+
+newmem:
+  code_register_flag:
+    mov al,01
+    db 88
+    readmem(read_register_flag+01,2)
+    jmp return
+    align 10 CC
+
+  undo_register_flag:
+    readmem(read_register_flag,5)
+
+read_register_flag:
+  jmp code_register_flag
+return:
+
+[DISABLE]
+
+read_register_flag:
+  readmem(undo_register_flag,5)
+
+unregistersymbol(code_register_flag,undo_register_flag)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-pp"
+name = "Infinite PP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+read_pp:
+  mov esi,eax
+  nop 3
+
+[DISABLE]
+
+read_pp:
+  db 3B F0 0F 4F F0"""
+
+[[cheat]]
+id = "get-weapon-all-99"
+name = "Get Weapon All 99"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_weapon_quantity)
+label(code_weapon_quantity)
+registersymbol(code_weapon_quantity)
+
+newmem:
+  code_weapon_quantity:
+    readmem(read_weapon_quantity,5)
+    mov ax,#99
+    db 66 89 44 5D
+    readmem(read_weapon_quantity+04,1)
+    jmp return
+
+read_weapon_quantity:
+  jmp code_weapon_quantity
+return:
+
+[DISABLE]
+
+read_weapon_quantity:
+  readmem(code_weapon_quantity,5)
+
+unregistersymbol(code_weapon_quantity)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "get-armor-all-99"
+name = "Get Armor All 99"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_armor_quantity)
+label(code_armor_quantity)
+registersymbol(code_armor_quantity)
+
+newmem:
+  code_armor_quantity:
+    readmem(read_armor_quantity,8)
+    mov ax,#99
+    db 66 89 84 5D
+    readmem(read_armor_quantity+04,4)
+    jmp return
+
+read_armor_quantity:
+  jmp code_armor_quantity
+  nop 3
+return:
+
+[DISABLE]
+
+read_armor_quantity:
+  readmem(code_armor_quantity,8)
+
+unregistersymbol(code_armor_quantity)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "get-accessory-all-99-warning-includes-debug-items"
+name = "Get Accessory All 99 (Warning: Includes Debug items)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_accessory_quantity)
+label(code_accessory_quantity)
+registersymbol(code_accessory_quantity)
+
+newmem:
+  code_accessory_quantity:
+    readmem(read_accessory_quantity,8)
+    mov ax,#99
+    db 66 89 84 5D
+    readmem(read_accessory_quantity+04,4)
+    jmp return
+
+read_accessory_quantity:
+  jmp code_accessory_quantity
+  nop 3
+return:
+
+[DISABLE]
+
+read_accessory_quantity:
+  readmem(code_accessory_quantity,8)
+
+unregistersymbol(code_accessory_quantity)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "get-consumable-item-all-99-warning-includes-key-items"
+name = "Get Consumable item all 99 (Warning: Includes Key items)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_item_quantity)
+label(code_item_quantity)
+registersymbol(code_item_quantity)
+
+newmem:
+
+code_item_quantity:
+  readmem(read_item_quantity,8)
+  mov di,#99
+  db 66 89 BC 5D
+  readmem(read_item_quantity+04,4)
+  jmp return
+
+read_item_quantity:
+  jmp code_item_quantity
+  nop 3
+return:
+
+[DISABLE]
+
+read_item_quantity:
+  readmem(code_item_quantity,8)
+
+unregistersymbol(code_item_quantity)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "repuired-battleplayer"
+name = "Repuired.battlePlayer"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,$1000,read_hp)
+label(code_hp,battle_ptr)
+registersymbol(code_hp,battle_ptr)
+
+newmem:
+  code_hp:
+    readmem(read_hp,8)
+    mov [battle_ptr],rax
+    jmp return
+    align 10 CC
+
+  battle_ptr:
+    dq 0
+
+read_hp:
+  jmp code_hp
+  nop 3
+return:
+
+[DISABLE]
+
+read_hp:
+  readmem(code_hp,8)
+
+unregistersymbol(code_hp,battle_ptr)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "injection-point"
+name = "INJECTION POINT"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+// MainScript: game.exe+21932F
+
+game.exe+21930F: CC                       - int 3
+game.exe+219310: 48 83 EC 28              - sub rsp,28
+game.exe+219314: 48 8B 01                 - mov rax,[rcx]
+game.exe+219317: 48 8B 48 08              - mov rcx,[rax+08]
+game.exe+21931B: 8B 41 20                 - mov eax,[rcx+20]
+game.exe+21931E: 83 F8 6E                 - cmp eax,6E
+game.exe+219321: 73 2C                    - jae game.exe+21934F
+game.exe+219323: 48 8B 0D 96 60 27 02     - mov rcx,[game.exe+248F3C0]
+game.exe+21932A: 48 85 C9                 - test rcx,rcx
+game.exe+21932D: 74 20                    - je game.exe+21934F
+// ---------- INJECTING HERE ----------
+game.exe+21932F: 48 8B 8C C1 E8 C7 00 00  - mov rcx,[rcx+rax*8+0000C7E8]
+// ---------- DONE INJECTING  ----------
+game.exe+219337: 48 85 C9                 - test rcx,rcx
+game.exe+21933A: 74 13                    - je game.exe+21934F
+game.exe+21933C: 48 8B 01                 - mov rax,[rcx]
+game.exe+21933F: FF 90 88 00 00 00        - call qword ptr [rax+00000088]
+game.exe+219345: 84 C0                    - test al,al
+game.exe+219347: 0F 94 C0                 - sete al
+game.exe+21934A: 48 83 C4 28              - add rsp,28
+game.exe+21934E: C3                       - ret
+game.exe+21934F: B0 01                    - mov al,01
+game.exe+219351: 48 83 C4 28              - add rsp,28
+}
+{
+// Stealth mode: game.exe+305B50
+
+game.exe+305B46: CC                    - int 3
+game.exe+305B47: CC                    - int 3
+game.exe+305B48: CC                    - int 3
+game.exe+305B49: CC                    - int 3
+game.exe+305B4A: CC                    - int 3
+game.exe+305B4B: CC                    - int 3
+game.exe+305B4C: CC                    - int 3
+game.exe+305B4D: CC                    - int 3
+game.exe+305B4E: CC                    - int 3
+game.exe+305B4F: CC                    - int 3
+// ---------- INJECTING HERE ----------
+game.exe+305B50: 40 57                 - push rdi
+// ---------- DONE INJECTING  ----------
+game.exe+305B52: 48 83 EC 60           - sub rsp,60
+game.exe+305B56: 4C 8B 41 08           - mov r8,[rcx+08]
+game.exe+305B5A: 48 8B F9              - mov rdi,rcx
+game.exe+305B5D: 4D 85 C0              - test r8,r8
+game.exe+305B60: 0F 84 AC 01 00 00     - je game.exe+305D12
+game.exe+305B66: 48 8B 15 53 98 18 02  - mov rdx,[game.exe+248F3C0]
+game.exe+305B6D: 41 8B 80 6C 03 00 00  - mov eax,[r8+0000036C]
+game.exe+305B74: 48 85 D2              - test rdx,rdx
+game.exe+305B77: 0F 84 95 01 00 00     - je game.exe+305D12
+game.exe+305B7D: 3D 9A 04 00 00        - cmp eax,0000049A
+}
+{
+// Stealth mode (Seachlight bypass): game.exe+57034D
+
+game.exe+570328: 85 C0                 - test eax,eax
+game.exe+57032A: 78 10                 - js game.exe+57033C
+game.exe+57032C: 3B 41 50              - cmp eax,[rcx+50]
+game.exe+57032F: 7D 0B                 - jnl game.exe+57033C
+game.exe+570331: 48 8D 34 80           - lea rsi,[rax+rax*4]
+game.exe+570335: 48 C1 E6 07           - shl rsi,07
+game.exe+570339: 48 03 F2              - add rsi,rdx
+game.exe+57033C: 48 8B 86 88 01 00 00  - mov rax,[rsi+00000188]
+game.exe+570343: 4C 8B B0 C0 00 00 00  - mov r14,[rax+000000C0]
+game.exe+57034A: 4D 85 F6              - test r14,r14
+// ---------- INJECTING HERE ----------
+game.exe+57034D: 74 2C                 - je game.exe+57037B
+// ---------- DONE INJECTING  ----------
+game.exe+57034F: 8B 43 18              - mov eax,[rbx+18]
+game.exe+570352: 85 C0                 - test eax,eax
+game.exe+570354: 74 0A                 - je game.exe+570360
+game.exe+570356: 83 F8 04              - cmp eax,04
+game.exe+570359: 74 05                 - je game.exe+570360
+game.exe+57035B: 83 F8 0A              - cmp eax,0A
+game.exe+57035E: 75 1B                 - jne game.exe+57037B
+game.exe+570360: 8B 4B 14              - mov ecx,[rbx+14]
+game.exe+570363: 49 8B 3E              - mov rdi,[r14]
+game.exe+570366: E8 E5 16 AE FF        - call game.exe+51A50
+}
+{
+// Stealth mode (Alert): game.exe+56D8F0
+
+game.exe+56D8E6: CC              - int 3
+game.exe+56D8E7: CC              - int 3
+game.exe+56D8E8: CC              - int 3
+game.exe+56D8E9: CC              - int 3
+game.exe+56D8EA: CC              - int 3
+game.exe+56D8EB: CC              - int 3
+game.exe+56D8EC: CC              - int 3
+game.exe+56D8ED: CC              - int 3
+game.exe+56D8EE: CC              - int 3
+game.exe+56D8EF: CC              - int 3
+// ---------- INJECTING HERE ----------
+game.exe+56D8F0: 48 89 5C 24 10  - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+game.exe+56D8F5: 48 89 74 24 18  - mov [rsp+18],rsi
+game.exe+56D8FA: 57              - push rdi
+game.exe+56D8FB: 48 83 EC 20     - sub rsp,20
+game.exe+56D8FF: 48 63 F2        - movsxd  rsi,edx
+game.exe+56D902: 40 32 FF        - xor dil,dil
+game.exe+56D905: 48 8B D9        - mov rbx,rcx
+game.exe+56D908: 39 71 34        - cmp [rcx+34],esi
+game.exe+56D90B: 75 12           - jne game.exe+56D91F
+game.exe+56D90D: B0 01           - mov al,01
+game.exe+56D90F: 48 8B 5C 24 38  - mov rbx,[rsp+38]
+}
+{
+// Ignore Skill cost: game.exe+1DACC0
+
+game.exe+1DACB6: CC              - int 3
+game.exe+1DACB7: CC              - int 3
+game.exe+1DACB8: CC              - int 3
+game.exe+1DACB9: CC              - int 3
+game.exe+1DACBA: CC              - int 3
+game.exe+1DACBB: CC              - int 3
+game.exe+1DACBC: CC              - int 3
+game.exe+1DACBD: CC              - int 3
+game.exe+1DACBE: CC              - int 3
+game.exe+1DACBF: CC              - int 3
+// ---------- INJECTING HERE ----------
+game.exe+1DACC0: 48 89 5C 24 18  - mov [rsp+18],rbx
+// ---------- DONE INJECTING  ----------
+game.exe+1DACC5: 48 89 74 24 20  - mov [rsp+20],rsi
+game.exe+1DACCA: 57              - push rdi
+game.exe+1DACCB: 48 83 EC 20     - sub rsp,20
+game.exe+1DACCF: 48 63 D9        - movsxd  rbx,ecx
+game.exe+1DACD2: 41 8B F8        - mov edi,r8d
+game.exe+1DACD5: 8B F2           - mov esi,edx
+game.exe+1DACD7: 85 D2           - test edx,edx
+game.exe+1DACD9: 75 12           - jne game.exe+1DACED
+game.exe+1DACDB: B0 01           - mov al,01
+game.exe+1DACDD: 48 8B 5C 24 40  - mov rbx,[rsp+40]
+}
+{
+// Ignore Skill cost (Auto recover): game.exe+1E4EDF
+
+game.exe+1E4EBF: 66 41 0F 6E C1           - movd xmm0,r9d
+game.exe+1E4EC4: 0F 5B C0                 - cvtdq2ps xmm0,xmm0
+game.exe+1E4EC7: F3 0F 5E 05 89 58 72 01  - divss xmm0,[game.exe+190A758]
+game.exe+1E4ECF: F3 0F 2C C0              - cvttss2si eax,xmm0
+game.exe+1E4ED3: 3B C2                    - cmp eax,edx
+game.exe+1E4ED5: 7F 6E                    - jg game.exe+1E4F45
+game.exe+1E4ED7: 2B D0                    - sub edx,eax
+game.exe+1E4ED9: EB 06                    - jmp game.exe+1E4EE1
+game.exe+1E4EDB: 3B FA                    - cmp edi,edx
+game.exe+1E4EDD: 7F 66                    - jg game.exe+1E4F45
+// ---------- INJECTING HERE ----------
+game.exe+1E4EDF: 2B D7                    - sub edx,edi
+// ---------- DONE INJECTING  ----------
+game.exe+1E4EE1: 66 0F 6E CA              - movd xmm1,edx
+game.exe+1E4EE5: 0F 5B C9                 - cvtdq2ps xmm1,xmm1
+game.exe+1E4EE8: 48 85 DB                 - test rbx,rbx
+game.exe+1E4EEB: 74 0A                    - je game.exe+1E4EF7
+game.exe+1E4EED: 48 8B CB                 - mov rcx,rbx
+game.exe+1E4EF0: E8 B0 B3 E5 FF           - call game.exe+402A5
+game.exe+1E4EF5: EB 4E                    - jmp game.exe+1E4F45
+game.exe+1E4EF7: 48 8B CD                 - mov rcx,rbp
+game.exe+1E4EFA: E8 79 9B E4 FF           - call game.exe+2EA78
+game.exe+1E4EFF: EB 44                    - jmp game.exe+1E4F45
+}
+{
+// SHOWTIME at any time: game.exe+41766C
+
+game.exe+417647: 4C 8B 40 10              - mov r8,[rax+10]
+game.exe+41764B: 41 8B 80 7C 01 00 00     - mov eax,[r8+0000017C]
+game.exe+417652: 84 D2                    - test dl,dl
+game.exe+417654: 74 16                    - je game.exe+41766C
+game.exe+417656: F3 0F 10 81 94 0C 00 00  - movss xmm0,[rcx+00000C94]
+game.exe+41765E: 8D 48 FF                 - lea ecx,[rax-01]
+game.exe+417661: F3 48 0F 2C C0           - cvttss2si rax,xmm0
+game.exe+417666: 3B C8                    - cmp ecx,eax
+game.exe+417668: 0F 92 C0                 - setb al
+game.exe+41766B: C3                       - ret
+// ---------- INJECTING HERE ----------
+game.exe+41766C: F3 0F 10 81 88 0C 00 00  - movss xmm0,[rcx+00000C88]
+// ---------- DONE INJECTING  ----------
+game.exe+417674: 8D 48 FF                 - lea ecx,[rax-01]
+game.exe+417677: F3 48 0F 2C C0           - cvttss2si rax,xmm0
+game.exe+41767C: 3B C8                    - cmp ecx,eax
+game.exe+41767E: 0F 92 C0                 - setb al
+game.exe+417681: C3                       - ret
+game.exe+417682: CC                       - int 3
+game.exe+417683: CC                       - int 3
+game.exe+417684: CC                       - int 3
+game.exe+417685: CC                       - int 3
+game.exe+417686: CC                       - int 3
+}
+{
+// Take no damage: game.exe+1C007C
+
+game.exe+1C004D: C7 47 78 FF FF FF FF     - mov [rdi+78],FFFFFFFF
+game.exe+1C0054: C7 47 64 11 00 00 00     - mov [rdi+64],00000011
+game.exe+1C005B: 0F B6 48 17              - movzx ecx,byte ptr [rax+17]
+game.exe+1C005F: 44 89 A7 80 00 00 00     - mov [rdi+00000080],r12d
+game.exe+1C0066: 66 0F 6E C1              - movd xmm0,ecx
+game.exe+1C006A: 0F 5B C0                 - cvtdq2ps xmm0,xmm0
+game.exe+1C006D: F3 0F 11 47 7C           - movss [rdi+7C],xmm0
+game.exe+1C0072: EB 1E                    - jmp game.exe+1C0092
+game.exe+1C0074: 48 8B CF                 - mov rcx,rdi
+game.exe+1C0077: E8 C0 B5 E8 FF           - call game.exe+4B63C
+// ---------- INJECTING HERE ----------
+game.exe+1C007C: 84 C0                    - test al,al
+// ---------- DONE INJECTING  ----------
+game.exe+1C007E: 74 6F                    - je game.exe+1C00EF
+game.exe+1C0080: C7 47 78 FF FF FF FF     - mov [rdi+78],FFFFFFFF
+game.exe+1C0087: C7 47 64 16 00 00 00     - mov [rdi+64],00000016
+game.exe+1C008E: 4C 89 67 7C              - mov [rdi+7C],r12
+game.exe+1C0092: F3 0F 10 4F 6C           - movss xmm1,[rdi+6C]
+game.exe+1C0097: F3 0F 58 0D 99 A6 74 01  - addss xmm1,[game.exe+190A738]
+game.exe+1C009F: 0F 2F 0D 92 A6 74 01     - comiss xmm1,[game.exe+190A738]
+game.exe+1C00A6: F3 0F 11 8F 84 00 00 00  - movss [rdi+00000084],xmm1
+game.exe+1C00AE: 76 19                    - jna game.exe+1C00C9
+game.exe+1C00B0: F3 0F 5C 0D 8C A6 74 01  - subss xmm1,[game.exe+190A744]
+}
+{
+// Damage multiplier: game.exe+3E63AF
+
+game.exe+3E6382: F3 41 0F 10 7D 2C        - movss xmm7,[r13+2C]
+game.exe+3E6388: F3 0F 5C EC              - subss xmm5,xmm4
+game.exe+3E638C: F3 0F 10 9B 40 0B 00 00  - movss xmm3,[rbx+00000B40]
+game.exe+3E6394: 0F 5B F6                 - cvtdq2ps xmm6,xmm6
+game.exe+3E6397: 0F 2F EF                 - comiss xmm5,xmm7
+game.exe+3E639A: F3 0F 59 F1              - mulss xmm6,xmm1
+game.exe+3E639E: F3 0F 10 4B 74           - movss xmm1,[rbx+74]
+game.exe+3E63A3: 0F 5B C0                 - cvtdq2ps xmm0,xmm0
+game.exe+3E63A6: F3 41 0F 5E F3           - divss xmm6,xmm11
+game.exe+3E63AB: F3 0F 59 F0              - mulss xmm6,xmm0
+// ---------- INJECTING HERE ----------
+game.exe+3E63AF: F3 41 0F 5E F3           - divss xmm6,xmm11
+// ---------- DONE INJECTING  ----------
+game.exe+3E63B4: 77 0C                    - ja game.exe+3E63C2
+game.exe+3E63B6: 0F 28 C2                 - movaps xmm0,xmm2
+game.exe+3E63B9: F3 0F 58 C4              - addss xmm0,xmm4
+game.exe+3E63BD: 0F 2F F8                 - comiss xmm7,xmm0
+game.exe+3E63C0: 76 69                    - jna game.exe+3E642B
+game.exe+3E63C2: 0F 2F EB                 - comiss xmm5,xmm3
+game.exe+3E63C5: 77 09                    - ja game.exe+3E63D0
+game.exe+3E63C7: F3 0F 58 D4              - addss xmm2,xmm4
+game.exe+3E63CB: 0F 2F DA                 - comiss xmm3,xmm2
+game.exe+3E63CE: 76 5B                    - jna game.exe+3E642B
+}
+{
+// EXP multiplier: game.exe+4B43BC
+
+game.exe+4B439F: 41 3B C0           - cmp eax,r8d
+game.exe+4B43A2: 7F 12              - jg game.exe+4B43B6
+game.exe+4B43A4: 41 B8 FF E0 F5 05  - mov r8d,05F5E0FF
+game.exe+4B43AA: 41 3B C0           - cmp eax,r8d
+game.exe+4B43AD: 7E 0D              - jle game.exe+4B43BC
+game.exe+4B43AF: 44 89 01           - mov [rcx],r8d
+game.exe+4B43B2: 48 8B C1           - mov rax,rcx
+game.exe+4B43B5: C3                 - ret
+game.exe+4B43B6: 45 33 C0           - xor r8d,r8d
+game.exe+4B43B9: 41 8B C0           - mov eax,r8d
+// ---------- INJECTING HERE ----------
+game.exe+4B43BC: 44 8B C0           - mov r8d,eax
+// ---------- DONE INJECTING  ----------
+game.exe+4B43BF: 44 89 01           - mov [rcx],r8d
+game.exe+4B43C2: 48 8B C1           - mov rax,rcx
+game.exe+4B43C5: C3                 - ret
+game.exe+4B43C6: CC                 - int 3
+game.exe+4B43C7: CC                 - int 3
+game.exe+4B43C8: CC                 - int 3
+game.exe+4B43C9: CC                 - int 3
+game.exe+4B43CA: CC                 - int 3
+game.exe+4B43CB: CC                 - int 3
+game.exe+4B43CC: CC                 - int 3
+}
+{
+// Money multiplier: game.exe+4B44BC
+
+game.exe+4B449F: 41 3B C0           - cmp eax,r8d
+game.exe+4B44A2: 7F 12              - jg game.exe+4B44B6
+game.exe+4B44A4: 41 B8 7F 96 98 00  - mov r8d,0098967F
+game.exe+4B44AA: 41 3B C0           - cmp eax,r8d
+game.exe+4B44AD: 7E 0D              - jle game.exe+4B44BC
+game.exe+4B44AF: 44 89 01           - mov [rcx],r8d
+game.exe+4B44B2: 48 8B C1           - mov rax,rcx
+game.exe+4B44B5: C3                 - ret
+game.exe+4B44B6: 45 33 C0           - xor r8d,r8d
+game.exe+4B44B9: 41 8B C0           - mov eax,r8d
+// ---------- INJECTING HERE ----------
+game.exe+4B44BC: 44 8B C0           - mov r8d,eax
+// ---------- DONE INJECTING  ----------
+game.exe+4B44BF: 44 89 01           - mov [rcx],r8d
+game.exe+4B44C2: 48 8B C1           - mov rax,rcx
+game.exe+4B44C5: C3                 - ret
+game.exe+4B44C6: CC                 - int 3
+game.exe+4B44C7: CC                 - int 3
+game.exe+4B44C8: CC                 - int 3
+game.exe+4B44C9: CC                 - int 3
+game.exe+4B44CA: CC                 - int 3
+game.exe+4B44CB: CC                 - int 3
+game.exe+4B44CC: CC                 - int 3
+}
+{
+// Band EXP multiplier: game.exe+330C30
+
+game.exe+330C26: CC                       - int 3
+game.exe+330C27: CC                       - int 3
+game.exe+330C28: CC                       - int 3
+game.exe+330C29: CC                       - int 3
+game.exe+330C2A: CC                       - int 3
+game.exe+330C2B: CC                       - int 3
+game.exe+330C2C: CC                       - int 3
+game.exe+330C2D: CC                       - int 3
+game.exe+330C2E: CC                       - int 3
+game.exe+330C2F: CC                       - int 3
+// ---------- INJECTING HERE ----------
+game.exe+330C30: 48 89 5C 24 10           - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+game.exe+330C35: 48 89 6C 24 18           - mov [rsp+18],rbp
+game.exe+330C3A: 48 89 74 24 20           - mov [rsp+20],rsi
+game.exe+330C3F: 57                       - push rdi
+game.exe+330C40: B8 10 13 00 00           - mov eax,00001310
+game.exe+330C45: E8 75 A3 D2 FF           - call game.exe+5AFBF
+game.exe+330C4A: 48 2B E0                 - sub rsp,rax
+game.exe+330C4D: 48 8B 05 CC 4C FC 01     - mov rax,[game.exe+22F5920]
+game.exe+330C54: 48 33 C4                 - xor rax,rsp
+game.exe+330C57: 48 89 84 24 00 13 00 00  - mov [rsp+00001300],rax
+game.exe+330C5F: 33 ED                    - xor ebp,ebp
+}
+{
+// Get MASTER ARTS quicker: game.exe+3296EA
+
+game.exe+3296C5: E8 3B 69 D3 FF  - call game.exe+60005
+game.exe+3296CA: 83 38 00        - cmp dword ptr [rax],00
+game.exe+3296CD: 7C 2E           - jl game.exe+3296FD
+game.exe+3296CF: 48 8B 43 08     - mov rax,[rbx+08]
+game.exe+3296D3: 0F BE 48 10     - movsx ecx,byte ptr [rax+10]
+game.exe+3296D7: 66 3B 4F 1E     - cmp cx,[rdi+1E]
+game.exe+3296DB: 75 20           - jne game.exe+3296FD
+game.exe+3296DD: 48 8D 54 24 38  - lea rdx,[rsp+38]
+game.exe+3296E2: 48 8B CB        - mov rcx,rbx
+game.exe+3296E5: E8 1B 69 D3 FF  - call game.exe+60005
+// ---------- INJECTING HERE ----------
+game.exe+3296EA: 48 8B 5C 24 30  - mov rbx,[rsp+30]
+// ---------- DONE INJECTING  ----------
+game.exe+3296EF: 8B 08           - mov ecx,[rax]
+game.exe+3296F1: 39 4F 18        - cmp [rdi+18],ecx
+game.exe+3296F4: 0F 9D C0        - setge al
+game.exe+3296F7: 48 83 C4 20     - add rsp,20
+game.exe+3296FB: 5F              - pop rdi
+game.exe+3296FC: C3              - ret
+game.exe+3296FD: 32 C0           - xor al,al
+game.exe+3296FF: 48 8B 5C 24 30  - mov rbx,[rsp+30]
+game.exe+329704: 48 83 C4 20     - add rsp,20
+game.exe+329708: 5F              - pop rdi
+}
+{
+// Request already completed: game.exe+399F76
+
+game.exe+399F59: 0F BF 4F 02     - movsx ecx,word ptr [rdi+02]
+game.exe+399F5D: 83 C2 F6        - add edx,-0A
+game.exe+399F60: 83 FA 01        - cmp edx,01
+game.exe+399F63: 77 11           - ja game.exe+399F76
+game.exe+399F65: 48 8B 5C 24 30  - mov rbx,[rsp+30]
+game.exe+399F6A: 41 3B C8        - cmp ecx,r8d
+game.exe+399F6D: 0F 9C C0        - setl al
+game.exe+399F70: 48 83 C4 20     - add rsp,20
+game.exe+399F74: 5F              - pop rdi
+game.exe+399F75: C3              - ret
+// ---------- INJECTING HERE ----------
+game.exe+399F76: 48 8B 5C 24 30  - mov rbx,[rsp+30]
+// ---------- DONE INJECTING  ----------
+game.exe+399F7B: 44 3B C1        - cmp r8d,ecx
+game.exe+399F7E: 0F 9E C0        - setle al
+game.exe+399F81: 48 83 C4 20     - add rsp,20
+game.exe+399F85: 5F              - pop rdi
+game.exe+399F86: C3              - ret
+game.exe+399F87: B0 01           - mov al,01
+game.exe+399F89: 48 8B 5C 24 30  - mov rbx,[rsp+30]
+game.exe+399F8E: 48 83 C4 20     - add rsp,20
+game.exe+399F92: 5F              - pop rdi
+game.exe+399F93: C3              - ret
+}
+{
+Character stats editor: game.exe+397B30
+
+game.exe+397B1F: CC                    - int 3
+call_persona_level: 0F B7 41 30           - movzx eax,word ptr [rcx+30]
+game.exe+397B24: 66 89 02              - mov [rdx],ax
+game.exe+397B27: 48 8B C2              - mov rax,rdx
+game.exe+397B2A: C3                    - ret
+game.exe+397B2B: CC                    - int 3
+game.exe+397B2C: CC                    - int 3
+game.exe+397B2D: CC                    - int 3
+game.exe+397B2E: CC                    - int 3
+game.exe+397B2F: CC                    - int 3
+// ---------- INJECTING HERE ----------
+game.exe+397B30: 0F B7 41 1C           - movzx eax,word ptr [rcx+1C]
+// ---------- DONE INJECTING  ----------
+game.exe+397B34: 66 89 02              - mov [rdx],ax
+game.exe+397B37: 48 8B C2              - mov rax,rdx
+game.exe+397B3A: C3                    - ret
+game.exe+397B3B: CC                    - int 3
+game.exe+397B3C: CC                    - int 3
+game.exe+397B3D: CC                    - int 3
+game.exe+397B3E: CC                    - int 3
+game.exe+397B3F: CC                    - int 3
+game.exe+397B40: 48 83 EC 28           - sub rsp,28
+game.exe+397B44: 48 8B 05 D5 DD F5 01  - mov rax,[game.exe+22F5920]
+}
+{
+// Persona stats editor: game.exe+397B20
+
+game.exe+397B16: CC           - int 3
+game.exe+397B17: CC           - int 3
+game.exe+397B18: CC           - int 3
+game.exe+397B19: CC           - int 3
+game.exe+397B1A: CC           - int 3
+game.exe+397B1B: CC           - int 3
+game.exe+397B1C: CC           - int 3
+game.exe+397B1D: CC           - int 3
+game.exe+397B1E: CC           - int 3
+game.exe+397B1F: CC           - int 3
+// ---------- INJECTING HERE ----------
+game.exe+397B20: 0F B7 41 30  - movzx eax,word ptr [rcx+30]
+// ---------- DONE INJECTING  ----------
+game.exe+397B24: 66 89 02     - mov [rdx],ax
+game.exe+397B27: 48 8B C2     - mov rax,rdx
+game.exe+397B2A: C3           - ret
+game.exe+397B2B: CC           - int 3
+game.exe+397B2C: CC           - int 3
+game.exe+397B2D: CC           - int 3
+game.exe+397B2E: CC           - int 3
+game.exe+397B2F: CC           - int 3
+game.exe+397B30: 0F B7 41 1C  - movzx eax,word ptr [rcx+1C]
+game.exe+397B34: 66 89 02     - mov [rdx],ax
+}
+{
+// Forced registration for Persona in Compendium: game.exe+7EA8F2
+
+game.exe+7EA8D9: 66 39 18              - cmp [rax],bx
+game.exe+7EA8DC: 7E 04                 - jle game.exe+7EA8E2
+game.exe+7EA8DE: B0 01                 - mov al,01
+game.exe+7EA8E0: EB 02                 - jmp game.exe+7EA8E4
+game.exe+7EA8E2: 32 C0                 - xor al,al
+game.exe+7EA8E4: 41 F6 C7 01           - test r15l,01
+game.exe+7EA8E8: 74 04                 - je game.exe+7EA8EE
+game.exe+7EA8EA: 41 83 E7 FE           - and r15d,-02
+game.exe+7EA8EE: 84 C0                 - test al,al
+game.exe+7EA8F0: 75 20                 - jne game.exe+7EA912
+// ---------- INJECTING HERE ----------
+game.exe+7EA8F2: 38 47 45              - cmp [rdi+45],al
+// ---------- DONE INJECTING  ----------
+game.exe+7EA8F5: 75 0E                 - jne game.exe+7EA905
+game.exe+7EA8F7: 48 8B 44 24 60        - mov rax,[rsp+60]
+game.exe+7EA8FC: 80 B8 24 02 00 00 00  - cmp byte ptr [rax+00000224],00
+game.exe+7EA903: 75 12                 - jne game.exe+7EA917
+game.exe+7EA905: 0F BF 47 42           - movsx eax,word ptr [rdi+42]
+game.exe+7EA909: FF C5                 - inc ebp
+game.exe+7EA90B: 41 89 06              - mov [r14],eax
+game.exe+7EA90E: 49 83 C6 04           - add r14,04
+game.exe+7EA912: 48 8B 44 24 60        - mov rax,[rsp+60]
+game.exe+7EA917: FF C6                 - inc esi
+}
+{
+// Infinite PP: game.exe+7E2D05
+
+game.exe+7E2CD8: 8B 93 A8 00 00 00  - mov edx,[rbx+000000A8]
+game.exe+7E2CDE: 48 8B CF           - mov rcx,rdi
+game.exe+7E2CE1: E8 E3 F0 87 FF     - call game.exe+61DC9
+game.exe+7E2CE6: 8B 93 A8 00 00 00  - mov edx,[rbx+000000A8]
+game.exe+7E2CEC: 48 8B CF           - mov rcx,rdi
+game.exe+7E2CEF: E8 95 3A 88 FF     - call game.exe+66789
+game.exe+7E2CF4: 8B 45 50           - mov eax,[rbp+50]
+game.exe+7E2CF7: 2B 83 B0 00 00 00  - sub eax,[rbx+000000B0]
+game.exe+7E2CFD: 0F 49 F0           - cmovns esi,eax
+game.exe+7E2D00: B8 FF E0 F5 05     - mov eax,05F5E0FF
+// ---------- INJECTING HERE ----------
+game.exe+7E2D05: 3B F0              - cmp esi,eax
+// ---------- DONE INJECTING  ----------
+game.exe+7E2D07: 0F 4F F0           - cmovg esi,eax
+game.exe+7E2D0A: 89 75 50           - mov [rbp+50],esi
+game.exe+7E2D0D: 8B 8B 8C 00 00 00  - mov ecx,[rbx+0000008C]
+game.exe+7E2D13: E8 51 80 85 FF     - call game.exe+3AD69
+game.exe+7E2D18: 48 85 C0           - test rax,rax
+game.exe+7E2D1B: 74 1D              - je game.exe+7E2D3A
+game.exe+7E2D1D: 48 8B D7           - mov rdx,rdi
+game.exe+7E2D20: 48 8B C8           - mov rcx,rax
+game.exe+7E2D23: E8 58 34 88 FF     - call game.exe+66180
+game.exe+7E2D28: 8B 83 94 00 00 00  - mov eax,[rbx+00000094]
+}
+{
+// Get Weapon all 99: game.exe+2E20486
+
+game.exe+2E20460: 77 30                    - ja game.exe+2E20492
+game.exe+2E20462: 8B 35 A4 5F A9 0F        - mov esi,[game.exe+128B640C]
+game.exe+2E20468: 81 F6 64 EF 02 0F        - xor esi,0F02EF64
+game.exe+2E2046E: 39 F3                    - cmp ebx,esi
+game.exe+2E20470: 77 34                    - ja game.exe+2E204A6
+game.exe+2E20472: 0F B7 BC 5D E8 03 00 00  - movzx edi,word ptr [rbp+rbx*2+000003E8]
+game.exe+2E2047A: EB 2A                    - jmp game.exe+2E204A6
+game.exe+2E2047C: 89 F8                    - mov eax,edi
+game.exe+2E2047E: 81 FB F4 01 00 00        - cmp ebx,000001F4
+game.exe+2E20484: 77 05                    - ja game.exe+2E2048B
+// ---------- INJECTING HERE ----------
+game.exe+2E20486: 0F B7 44 5D 00           - movzx eax,word ptr [rbp+rbx*2+00]
+// ---------- DONE INJECTING  ----------
+game.exe+2E2048B: 01 C8                    - add eax,ecx
+game.exe+2E2048D: 83 F8 63                 - cmp eax,63
+game.exe+2E20490: 76 07                    - jna game.exe+2E20499
+game.exe+2E20492: B8 63 00 00 00           - mov eax,00000063
+game.exe+2E20497: EB 10                    - jmp game.exe+2E204A9
+game.exe+2E20499: 81 FB F4 01 00 00        - cmp ebx,000001F4
+game.exe+2E2049F: 77 05                    - ja game.exe+2E204A6
+game.exe+2E204A1: 0F B7 7C 5D 00           - movzx edi,word ptr [rbp+rbx*2+00]
+game.exe+2E204A6: 8D 04 0F                 - lea eax,[rdi+rcx]
+game.exe+2E204A9: 48 8B 5C 24 30           - mov rbx,[rsp+30]
+}
+{
+// Get Armor all 99: game.exe+2DD5563
+
+game.exe+2DD5540: 01 C8                    - add eax,ecx
+game.exe+2DD5542: 83 F8 63                 - cmp eax,63
+game.exe+2DD5545: 77 5B                    - ja game.exe+2DD55A2
+game.exe+2DD5547: 81 FB B4 00 00 00        - cmp ebx,000000B4
+game.exe+2DD554D: 77 70                    - ja game.exe+2DD55BF
+game.exe+2DD554F: 0F B7 BC 5D 78 05 00 00  - movzx edi,word ptr [rbp+rbx*2+00000578]
+game.exe+2DD5557: EB 66                    - jmp game.exe+2DD55BF
+game.exe+2DD5559: 89 F8                    - mov eax,edi
+game.exe+2DD555B: 81 FB C8 00 00 00        - cmp ebx,000000C8
+game.exe+2DD5561: 77 08                    - ja game.exe+2DD556B
+// ---------- INJECTING HERE ----------
+game.exe+2DD5563: 0F B7 84 5D E8 03 00 00  - movzx eax,word ptr [rbp+rbx*2+000003E8]
+// ---------- DONE INJECTING  ----------
+game.exe+2DD556B: 01 C8                    - add eax,ecx
+game.exe+2DD556D: 83 F8 63                 - cmp eax,63
+game.exe+2DD5570: 77 30                    - ja game.exe+2DD55A2
+game.exe+2DD5572: 81 FB C8 00 00 00        - cmp ebx,000000C8
+game.exe+2DD5578: 77 45                    - ja game.exe+2DD55BF
+game.exe+2DD557A: 0F B7 BC 5D E8 03 00 00  - movzx edi,word ptr [rbp+rbx*2+000003E8]
+game.exe+2DD5582: EB 3B                    - jmp game.exe+2DD55BF
+game.exe+2DD5584: 89 F8                    - mov eax,edi
+game.exe+2DD5586: 8B 35 B6 18 09 06        - mov esi,[game.exe+8E66E42]
+game.exe+2DD558C: 81 F6 BC 8C 64 24        - xor esi,24648CBC
+}
+{
+// Get Accessory all 99 (Warning: Includes Debug items): game.exe+2DD5538
+
+game.exe+2DD550B: E9 B2 00 00 00           - jmp game.exe+2DD55C2
+game.exe+2DD5510: 81 FB 72 06 00 00        - cmp ebx,00000672
+game.exe+2DD5516: 66 89 35 7D 30 36 00     - mov [game.exe+313859A],si
+game.exe+2DD551D: 77 08                    - ja game.exe+2DD5527
+game.exe+2DD551F: 0F B7 BC 5D E0 06 00 00  - movzx edi,word ptr [rbp+rbx*2+000006E0]
+game.exe+2DD5527: 89 F8                    - mov eax,edi
+game.exe+2DD5529: E9 94 00 00 00           - jmp game.exe+2DD55C2
+game.exe+2DD552E: 89 F8                    - mov eax,edi
+game.exe+2DD5530: 81 FB B4 00 00 00        - cmp ebx,000000B4
+game.exe+2DD5536: 77 08                    - ja game.exe+2DD5540
+// ---------- INJECTING HERE ----------
+game.exe+2DD5538: 0F B7 84 5D 78 05 00 00  - movzx eax,word ptr [rbp+rbx*2+00000578]
+// ---------- DONE INJECTING  ----------
+game.exe+2DD5540: 01 C8                    - add eax,ecx
+game.exe+2DD5542: 83 F8 63                 - cmp eax,63
+game.exe+2DD5545: 77 5B                    - ja game.exe+2DD55A2
+game.exe+2DD5547: 81 FB B4 00 00 00        - cmp ebx,000000B4
+game.exe+2DD554D: 77 70                    - ja game.exe+2DD55BF
+game.exe+2DD554F: 0F B7 BC 5D 78 05 00 00  - movzx edi,word ptr [rbp+rbx*2+00000578]
+game.exe+2DD5557: EB 66                    - jmp game.exe+2DD55BF
+game.exe+2DD5559: 89 F8                    - mov eax,edi
+game.exe+2DD555B: 81 FB C8 00 00 00        - cmp ebx,000000C8
+game.exe+2DD5561: 77 08                    - ja game.exe+2DD556B
+}
+{
+// Get Consumable item all 99 (Warning: Includes Key items): game.exe+2E203FF
+
+game.exe+2E203DD: 74 62                    - je game.exe+2E20441
+game.exe+2E203DF: 83 EE 01                 - sub esi,01
+game.exe+2E203E2: 74 2A                    - je game.exe+2E2040E
+game.exe+2E203E4: 83 FE 01                 - cmp esi,01
+game.exe+2E203E7: 74 07                    - je game.exe+2E203F0
+game.exe+2E203E9: 31 C0                    - xor eax,eax
+game.exe+2E203EB: E9 B9 00 00 00           - jmp game.exe+2E204A9
+game.exe+2E203F0: 81 FB 72 06 00 00        - cmp ebx,00000672
+game.exe+2E203F6: 40 86 35 2C C5 0F 01     - xchg [game.exe+3F1C929],sil
+game.exe+2E203FD: 77 08                    - ja game.exe+2E20407
+// ---------- INJECTING HERE ----------
+game.exe+2E203FF: 0F B7 BC 5D E0 06 00 00  - movzx edi,word ptr [rbp+rbx*2+000006E0]
+// ---------- DONE INJECTING  ----------
+game.exe+2E20407: 89 F8                    - mov eax,edi
+game.exe+2E20409: E9 9B 00 00 00           - jmp game.exe+2E204A9
+game.exe+2E2040E: 89 F8                    - mov eax,edi
+game.exe+2E20410: 81 FB B4 00 00 00        - cmp ebx,000000B4
+game.exe+2E20416: 77 08                    - ja game.exe+2E20420
+game.exe+2E20418: 0F B7 84 5D 78 05 00 00  - movzx eax,word ptr [rbp+rbx*2+00000578]
+game.exe+2E20420: 01 C8                    - add eax,ecx
+game.exe+2E20422: 83 F8 63                 - cmp eax,63
+game.exe+2E20425: 77 6B                    - ja game.exe+2E20492
+game.exe+2E20427: 8B 35 D7 5F A9 0F        - mov esi,[game.exe+128B6404]
+}
+[DISABLE]"""
+
+[[cheat]]
+id = "god-mode-enemy-as-well"
+name = "God Mode: Enemy as well"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:OFF",
+    "1:ON",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battle_ptr"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battle_ptr"
+hops = ["+0xaa4"]
+
+[[cheat]]
+id = "sp-2"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battle_ptr"
+hops = ["+0xc58"]
+
+[[cheat]]
+id = "showtime"
+name = "SHOWTIME"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battle_ptr"
+hops = ["+0xc88"]
+
+[[cheat]]
+id = "showtime-cap"
+name = "SHOWTIME CAP"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battle_ptr"
+hops = ["+0xc90"]

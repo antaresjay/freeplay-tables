@@ -1,0 +1,700 @@
+[game]
+name = "Just Cause 4 [Epic Games]"
+exe = "justcause4.exe"
+notes = "Converted from a Cheat Engine table by GreenHouse. Source: https://fearlessrevolution.com/viewtopic.php?t=12311"
+verified = []
+author = "GreenHouse"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable"
+name = "[[ ENABLE ]]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_playerVehicle,JustCause4.exe,4D 89 A7 F8 00 00 00 49)
+aobscanmodule(get_playerAddr,JustCause4.exe,48 8B 06 48 89 F1 0F B7) //UNUSED
+alloc(newmem,$1000,"JustCause4.exe"+568E6F)
+label(code)
+label(code2)
+label(return)
+label(return2)
+alloc(playerVehicle,8)
+registersymbol(playerVehicle)
+alloc(playerAddr,8)
+registersymbol(playerAddr)
+
+newmem:
+push rax
+mov rax,[r15+000000F8]
+mov [playerVehicle],rax
+pop rax
+
+code:
+mov [r15+000000F8],r12
+jmp return
+
+newmem2:
+code2:
+mov [playerAddr],rsi
+mov rax,[rsi]
+mov rcx,rsi
+jmp return2
+
+get_playerVehicle:
+  jmp newmem
+  nop 2
+return:
+registersymbol(get_playerVehicle)
+
+get_playerAddr:
+  jmp newmem2
+  nop
+return2:
+registersymbol(get_playerAddr)
+
+[DISABLE]
+get_playerVehicle:
+  db 4D 89 A7 F8 00 00 00
+
+get_playerAddr:
+  db 48 8B 06 48 89 F1
+
+unregistersymbol(get_playerAddr)
+unregistersymbol(get_playerVehicle)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "current-vehicle"
+name = "CURRENT VEHICLE"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerVehicle"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "current-health"
+name = "Current Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerVehicle"
+hops = ["+0x3ac"]
+
+[[cheat]]
+id = "max-health"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerVehicle"
+hops = ["+0x3ae"]
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_Health,JustCause4.exe,66 89 91 AC 03 00 00)
+alloc(newmem,$1000,"JustCause4.exe"+6532D40)
+label(code)
+label(return)
+label(isvalid)
+label(isplayervehicle)
+alloc(infVehicleHealth,1)
+registersymbol(infVehicleHealth)
+
+newmem:
+{$try}
+  push rax
+  push rdi
+  cmp rcx,[playerVehicle]
+  je isplayervehicle
+  mov rax,[rcx+A40]
+  mov rdi,[rax+510]
+  jmp isvalid
+{$except}
+  pop rdi
+  pop rax
+  jmp code
+
+isplayervehicle:
+  pop rdi
+  pop rax
+  cmp byte ptr [infVehicleHealth],00
+  je code
+  mov dx, word ptr [rcx+000003AA]
+  jmp code
+
+isvalid:
+  cmp [rax+510],rcx
+  pop rdi
+  pop rax
+  jne code
+  mov dx, word ptr [rcx+000003AE]
+
+code:
+  mov [rcx+000003AC],dx
+  jmp return
+
+get_Health:
+  jmp newmem
+  nop 2
+return:
+registersymbol(get_Health)
+
+[DISABLE]
+get_Health:
+  db 66 89 91 AC 03 00 00
+
+unregistersymbol(get_Health)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-vehicle-health"
+name = "Infinite Vehicle Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1
+choices = [
+    "1:Enabled",
+    "0:Disabled",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "infVehicleHealth"
+hops = []
+
+[[cheat]]
+id = "infinite-ammo"
+name = "Infinite Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_ammoReserve,JustCause4.exe,8B 84 81 38 02 00 00)
+alloc(newmem,$1000,"JustCause4.exe"+65B3F33)
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rcx+rax*4+00000238],#999
+  mov eax,[rcx+rax*4+00000238]
+  jmp return
+
+get_ammoReserve:
+  jmp newmem
+  nop 2
+return:
+registersymbol(get_ammoReserve)
+
+[DISABLE]
+get_ammoReserve:
+  db 8B 84 81 38 02 00 00
+
+unregistersymbol(get_ammoReserve)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-reload"
+name = "No Reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_Ammo,JustCause4.exe,41 FF 90 10 02 00 00)
+registersymbol(get_Ammo)
+
+get_Ammo:
+db 90 90 90 90 90 90 90
+ 
+[DISABLE]
+get_Ammo:
+db 41 FF 90 10 02 00 00"""
+
+[[cheat]]
+id = "infinite-nitrous"
+name = "Infinite Nitrous"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_Nitrous,JustCause4.exe,F3 0F 11 8B 00 3D 01 00)
+alloc(newmem,$1000,JustCause4.exe)
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rbx+00013D00],(float)1
+  jmp return
+
+get_Nitrous:
+  jmp newmem
+  nop 3
+return:
+registersymbol(get_Nitrous)
+
+[DISABLE]
+get_Nitrous:
+  db F3 0F 11 8B 00 3D 01 00
+
+unregistersymbol(get_Nitrous)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "unbreakable-hook"
+name = "Unbreakable Hook"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_breakHook,JustCause4.exe,55 57 48 8D 68 E8 48 81 EC 08 01 00 00 0F 29 78 B8)
+registersymbol(get_breakHook)
+ 
+get_breakHook:
+db C3
+
+[DISABLE]
+get_breakHook:
+db 55
+
+unregistersymbol(get_breakHook)"""
+
+[[cheat]]
+id = "no-supply-cooldown"
+name = "No Supply Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_supplyTimer,JustCause4.exe,F3 0F 11 77 24 EB 22)
+registersymbol(get_supplyTimer)
+
+get_supplyTimer:
+db 90 90 90 90 90
+
+[DISABLE]
+get_supplyTimer:
+db F3 0F 11 77 24
+
+unregistersymbol(get_supplyTimer)"""
+
+[[cheat]]
+id = "infinite-jetpack"
+name = "Infinite Jetpack"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_Jet,JustCause4.exe,F3 0F 5C C8 F3 0F 5F CC)
+registersymbol(get_Jet)
+
+get_Jet:
+db 90 90 90 90
+
+[DISABLE]
+get_Jet:
+db F3 0F 5C C8
+
+unregistersymbol(get_Jet)"""
+
+[[cheat]]
+id = "infinite-mission-timer"
+name = "Infinite Mission Timer"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_Timer,JustCause4.exe,F3 0F 5C C7 44 0F B6 F8)
+aobscanmodule(get_WingsuitTimer,JustCause4.exe,F3 41 0F 5C 4C 24 20)
+registersymbol(get_Timer)
+registersymbol(get_WingsuitTimer)
+
+get_Timer:
+db 90 90 90 90
+
+get_WingsuitTimer:
+db 90 90 90 90 90 90 90
+
+
+[DISABLE]
+get_Timer:
+db F3 0F 5C C7
+
+get_WingsuitTimer:
+db F3 41 0F 5C 4C 24 20
+
+unregistersymbol(get_Timer)
+unregistersymbol(get_WingsuitTimer)"""
+
+[[cheat]]
+id = "fast-fire"
+name = "Fast Fire"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048,"JustCause4.exe"+75A179) 
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+
+originalcode:
+comiss xmm0,[rax+00000090]
+
+exit:
+jmp returnhere
+
+"JustCause4.exe"+75A179:
+jmp newmem
+nop 2
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"JustCause4.exe"+75A179:
+comiss xmm0,[rax+00000088]
+//Alt: db 0F 2F 80 88 00 00 00"""
+
+[[cheat]]
+id = "auto-assemble-script"
+name = "Auto Assemble script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_currentWeapon,JustCause4.exe,80 BE D1 03 00 00 00) // should be unique
+alloc(newmem,$1000,"JustCause4.exe"+759A7E)
+label(code)
+label(return)
+alloc(cWeapon,8)
+registersymbol(cWeapon)
+
+newmem:
+mov [cWeapon],rsi
+
+code:
+  cmp byte ptr [rsi+000003D1],00
+  jmp return
+
+get_currentWeapon:
+  jmp newmem
+  nop 2
+return:
+registersymbol(get_currentWeapon)
+
+[DISABLE]
+get_currentWeapon:
+  db 80 BE D1 03 00 00 00
+
+unregistersymbol(get_currentWeapon)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-description"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cWeapon"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "579-fire-rockets"
+name = "579 [FIRE ROCKETS]?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cWeapon"
+hops = ["+0x579"]
+
+[[cheat]]
+id = "auto-assemble-script-2"
+name = "Auto Assemble script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_cWeapon,JustCause4.exe,48 8B 83 58 05 00 00 48 85 C0 74 5E) // should be unique
+alloc(newmem,$1000,"JustCause4.exe"+DD9AE03)
+label(code)
+label(return)
+alloc(cWeapon,8)
+registersymbol(cWeapon)
+
+newmem:
+cmp byte ptr [rax+3D1],1
+jne code
+mov [cWeapon],rbx
+
+code:
+  mov rax,[rbx+00000558]
+  jmp return
+
+get_cWeapon:
+  jmp newmem
+  nop 2
+return:
+registersymbol(get_cWeapon)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+get_cWeapon:
+  db 48 8B 83 58 05 00 00
+
+unregistersymbol(get_cWeapon)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "JustCause4.exe"+DD9AE03
+
+"JustCause4.exe"+DD9ADE0: 74 21                    -  je JustCause4.exe+DD9AE03
+"JustCause4.exe"+DD9ADE2: 80 B8 D1 03 00 00 00     -  cmp byte ptr [rax+000003D1],00
+"JustCause4.exe"+DD9ADE9: 74 18                    -  je JustCause4.exe+DD9AE03
+"JustCause4.exe"+DD9ADEB: 48 8B 80 38 06 00 00     -  mov rax,[rax+00000638]
+"JustCause4.exe"+DD9ADF2: 48 8B 08                 -  mov rcx,[rax]
+"JustCause4.exe"+DD9ADF5: 48 85 C9                 -  test rcx,rcx
+"JustCause4.exe"+DD9ADF8: 74 73                    -  je JustCause4.exe+DD9AE6D
+"JustCause4.exe"+DD9ADFA: E8 A1 F5 9A F2           -  call JustCause4.exe+74A3A0
+"JustCause4.exe"+DD9ADFF: 89 C6                    -  mov esi,eax
+"JustCause4.exe"+DD9AE01: EB 0F                    -  jmp JustCause4.exe+DD9AE12
+// ---------- INJECTING HERE ----------
+"JustCause4.exe"+DD9AE03: 48 8B 83 58 05 00 00     -  mov rax,[rbx+00000558]
+// ---------- DONE INJECTING  ----------
+"JustCause4.exe"+DD9AE0A: 48 85 C0                 -  test rax,rax
+"JustCause4.exe"+DD9AE0D: 74 5E                    -  je JustCause4.exe+DD9AE6D
+"JustCause4.exe"+DD9AE0F: 8B 70 70                 -  mov esi,[rax+70]
+"JustCause4.exe"+DD9AE12: 85 F6                    -  test esi,esi
+"JustCause4.exe"+DD9AE14: 74 57                    -  je JustCause4.exe+DD9AE6D
+"JustCause4.exe"+DD9AE16: 83 BB 64 02 00 00 00     -  cmp dword ptr [rbx+00000264],00
+"JustCause4.exe"+DD9AE1D: 74 2B                    -  je JustCause4.exe+DD9AE4A
+"JustCause4.exe"+DD9AE1F: 48 8B 83 10 03 00 00     -  mov rax,[rbx+00000310]
+"JustCause4.exe"+DD9AE26: 48 85 C0                 -  test rax,rax
+"JustCause4.exe"+DD9AE29: 74 1F                    -  je JustCause4.exe+DD9AE4A
+}"""
+
+[[cheat]]
+id = "auto-assemble-script-3"
+name = "Auto Assemble script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048,"JustCause4.exe"+75A0E5) 
+label(returnhere)
+label(originalcode)
+label(exit)
+alloc(RFisplayer,1)
+registersymbol(RFisplayer)
+
+newmem:
+push rax
+mov rax,[rdi+160]
+mov rax,[rax+5C0]
+cmp rax,[playerAddr]
+pop rax
+jne originalcode
+mov byte ptr [RFisplayer],01
+
+originalcode:
+cmp byte ptr [rdi+00000321],00
+
+exit:
+jmp returnhere
+
+"JustCause4.exe"+75A0E5:
+jmp newmem
+nop 2
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"JustCause4.exe"+75A0E5:
+cmp byte ptr [rdi+00000321],00
+//Alt: db 80 BF 21 03 00 00 00"""
+
+[[cheat]]
+id = "auto-assemble-script-4"
+name = "Auto Assemble script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_rapidFire,JustCause4.exe,0F 2F 80 88 00 00 00 72 3E)
+alloc(newmem,$1000,"JustCause4.exe"+75A179)
+label(code)
+label(return)
+
+newmem:
+  cmp byte ptr [RFisplayer],01
+  jne code
+  mov byte ptr [RFisplayer],00
+  jmp return
+
+code:
+  comiss xmm0,[rax+00000088]
+  jmp return
+
+get_rapidFire:
+  jmp newmem
+  nop 2
+return:
+registersymbol(get_rapidFire)
+
+[DISABLE]
+get_rapidFire:
+  db 0F 2F 80 88 00 00 00
+
+unregistersymbol(get_rapidFire)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "auto-assemble-script-5"
+name = "Auto Assemble script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_Rockets,JustCause4.exe,83 BA 74 03 00 00 00) // should be unique
+alloc(newmem,$1000,"JustCause4.exe"+729A02)
+label(code)
+label(return)
+
+newmem:
+cmp [rcx+358],00000000
+je code
+mov dword ptr [rdx+00000374],01
+mov dword ptr [rdx+00000374],00
+
+code:
+  cmp dword ptr [rdx+00000374],00
+  jmp return
+
+get_Rockets:
+  jmp newmem
+  nop 2
+return:
+registersymbol(get_Rockets)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+get_Rockets:
+  db 83 BA 74 03 00 00 00
+
+unregistersymbol(get_Rockets)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "JustCause4.exe"+729A02
+
+"JustCause4.exe"+7299DC: 41 56                    -  push r14
+"JustCause4.exe"+7299DE: 41 57                    -  push r15
+"JustCause4.exe"+7299E0: 48 83 EC 70              -  sub rsp,70
+"JustCause4.exe"+7299E4: 48 C7 40 A8 FE FF FF FF  -  mov qword ptr [rax-58],FFFFFFFFFFFFFFFE
+"JustCause4.exe"+7299EC: 48 89 58 08              -  mov [rax+08],rbx
+"JustCause4.exe"+7299F0: 48 89 68 18              -  mov [rax+18],rbp
+"JustCause4.exe"+7299F4: 48 89 70 20              -  mov [rax+20],rsi
+"JustCause4.exe"+7299F8: 0F 29 70 C8              -  movaps [rax-38],xmm6
+"JustCause4.exe"+7299FC: 4D 8B F9                 -  mov r15,r9
+"JustCause4.exe"+7299FF: 48 8B D9                 -  mov rbx,rcx
+// ---------- INJECTING HERE ----------
+"JustCause4.exe"+729A02: 83 BA 74 03 00 00 00     -  cmp dword ptr [rdx+00000374],00
+// ---------- DONE INJECTING  ----------
+"JustCause4.exe"+729A09: 76 0D                    -  jna JustCause4.exe+729A18
+"JustCause4.exe"+729A0B: 80 B9 60 05 00 00 00     -  cmp byte ptr [rcx+00000560],00
+"JustCause4.exe"+729A12: 0F 84 AE 06 00 00        -  je JustCause4.exe+72A0C6
+"JustCause4.exe"+729A18: 48 8B 81 58 05 00 00     -  mov rax,[rcx+00000558]
+"JustCause4.exe"+729A1F: 48 89 44 24 38           -  mov [rsp+38],rax
+"JustCause4.exe"+729A24: 48 8B 81 10 03 00 00     -  mov rax,[rcx+00000310]
+"JustCause4.exe"+729A2B: 4C 8B 88 D0 05 00 00     -  mov r9,[rax+000005D0]
+"JustCause4.exe"+729A32: 48 8B 90 D8 05 00 00     -  mov rdx,[rax+000005D8]
+"JustCause4.exe"+729A39: 48 85 D2                 -  test rdx,rdx
+"JustCause4.exe"+729A3C: 74 0A                    -  je JustCause4.exe+729A48
+}"""

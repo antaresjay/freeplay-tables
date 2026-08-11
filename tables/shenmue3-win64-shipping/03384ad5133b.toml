@@ -1,0 +1,400 @@
+[game]
+name = "Shenmue III [GOG/STEAM/EPIC]"
+exe = "shenmue3-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by Pro-Tweaker. Source: https://fearlessrevolution.com/viewtopic.php?t=14505"
+verified = []
+author = "Pro-Tweaker"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "f1-enable"
+name = "[F1] Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(INJECT_Stamina,Shenmue3-Win64-Shipping.exe,8B 81 B0 00 00 00 41 89) // should be unique
+aobscanmodule(INJECT_Money,Shenmue3-Win64-Shipping.exe,8B 40 28 C3 CC CC CC CC CC 48) // should be unique
+aobscanmodule(INJECT_Tokens,Shenmue3-Win64-Shipping.exe,8B 40 2C C3 CC ?? ?? ?? ?? ??) // should be unique
+aobscanmodule(INJECT_Items,Shenmue3-Win64-Shipping.exe,48 8B 43 28 8B 1C 88 EB) // should be unique
+aobscanmodule(INJECT_Player,Shenmue3-Win64-Shipping.exe,48 8B D8 48 85 C0 0F 84 3A) // should be unique
+aobscanmodule(INJECT_Combat,Shenmue3-Win64-Shipping.exe,0F B6 86 F0 00 00 00 48 8B) // should be unique
+aobscanmodule(INJECT_Training,Shenmue3-Win64-Shipping.exe,48 89 42 20 F3 41 0F 11 00) // should be unique
+
+alloc(newmem_Stamina,$256,INJECT_Stamina)
+alloc(newmem_Money,$256,INJECT_Money)
+alloc(newmem_Tokens,$256,INJECT_Tokens)
+alloc(newmem_Items,$1000,INJECT_Items)
+alloc(newmem_Player,$256,INJECT_Player)
+alloc(newmem_Combat,$1000,INJECT_Combat)
+alloc(newmem_Training,$1000,INJECT_Training)
+
+label(return_Stamina)
+label(original_Stamina)
+label(enable_Stamina)
+
+label(return_Money)
+label(original_Money)
+label(enable_Money)
+
+label(return_Tokens)
+label(original_Tokens)
+label(enable_Tokens)
+
+label(return_Items)
+label(original_Items)
+label(code_Snake)
+label(code_Current)
+label(enable_Snake)
+label(enable_Unlock)
+label(enable_Current)
+
+label(player)
+label(return_Player)
+label(return_Combat)
+label(code_Combat)
+label(enable_Health)
+
+label(return_Training)
+label(original_Training)
+label(current_Training)
+
+registersymbol(enable_Stamina)
+registersymbol(enable_Money)
+registersymbol(enable_Tokens)
+registersymbol(enable_Snake)
+registersymbol(enable_Unlock)
+registersymbol(enable_Current)
+registersymbol(enable_Health)
+registersymbol(current_Training)
+
+newmem_Stamina:
+  cmp byte ptr [enable_Stamina],01
+  jne original_Stamina
+  fld dword ptr [rcx+000000BC] // load max stamina
+  fstp dword ptr [rcx+000000B0] // store max stamina in current hunger
+original_Stamina:
+  mov eax,[rcx+000000B0]
+  jmp return_Stamina
+
+newmem_Money:
+  cmp byte ptr [enable_Money],01
+  jne original_Money
+  mov [rax+28],(int)9999
+original_Money:
+  mov eax,[rax+28]
+  ret
+  int 3
+  jmp return_Money
+
+newmem_Tokens:
+  cmp byte ptr [enable_Tokens],01
+  jne original_Tokens
+  mov [rax+2C],(int)9999
+original_Tokens:
+  mov eax,[rax+2C]
+  ret
+  int 3
+  jmp return_Tokens
+
+newmem_Items:
+  mov rax,[rbx+28] // part of original code
+  cmp byte ptr [enable_Unlock],01
+  jne code_Current
+  mov [rax+rcx*4],(int)99
+  jmp code_Snake
+code_Current:
+  cmp byte ptr [enable_Current],01
+  jne code_Snake
+  cmp dword ptr [rax+rcx*4],00 // only items with count >= 1
+  jle code_Snake
+  mov [rax+rcx*4],(int)99
+code_Snake:
+  cmp byte ptr [enable_Snake],01
+  jne original_Items
+  cmp rcx,2CC // snake power only
+  jne original_Items
+  mov [rax+rcx*4],(int)99
+original_Items:
+  mov ebx,[rax+rcx*4]
+  jmp return_Items
+
+newmem_Player:
+  mov rbx,rax
+  mov [player],rbx
+  test rax,rax
+  jmp return_Player
+
+newmem_Combat:
+  push rax
+  push rbx
+  mov rax,[player]
+  lea rbx,[rsi+000000F0]
+  cmp [rbx-10],rax
+  jne code_Combat
+  cmp byte ptr [enable_Health],01
+  jne code_Combat
+  mov [rbx+10],(float)9999 // player health
+code_Combat:
+  movzx eax,byte ptr [rbx]
+  pop rbx
+  pop rax
+  jmp return_Combat
+
+newmem_Training:
+  mov [rdx+20],rax // part of original code
+  cmp [r8-4],(float)60 // only training timer
+  jne original_Training
+  mov [current_Training],r8
+original_Training:
+  movss [r8],xmm0
+  jmp return_Training
+
+enable_Stamina:
+  db 0
+enable_Money:
+  db 0
+enable_Tokens:
+  db 0
+enable_Snake:
+  db 0
+enable_Unlock:
+  db 0
+enable_Current:
+  db 0
+enable_Health:
+  db 0
+player:
+  dq 0
+current_Training:
+  dw (float)0
+
+INJECT_Stamina:
+  jmp newmem_Stamina
+  nop
+return_Stamina:
+
+INJECT_Money:
+  jmp newmem_Money
+return_Money:
+
+INJECT_Tokens:
+  jmp newmem_Tokens
+return_Tokens:
+
+INJECT_Items:
+  jmp newmem_Items
+  nop 2
+return_Items:
+
+INJECT_Player:
+  jmp newmem_Player
+  nop
+return_Player:
+
+INJECT_Combat:
+  jmp newmem_Combat
+  nop 2
+return_Combat:
+
+INJECT_Training:
+  jmp newmem_Training
+  nop 4
+return_Training:
+
+registersymbol(INJECT_Stamina)
+registersymbol(INJECT_Money)
+registersymbol(INJECT_Tokens)
+registersymbol(INJECT_Items)
+registersymbol(INJECT_Player)
+registersymbol(INJECT_Combat)
+registersymbol(INJECT_Training)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+INJECT_Stamina:
+  db 8B 81 B0 00 00 00
+
+INJECT_Money:
+  db 8B 40 28 C3 CC
+
+INJECT_Tokens:
+  db 8B 40 2C C3 CC
+
+INJECT_Items:
+  db 48 8B 43 28 8B 1C 88
+
+INJECT_Player:
+  db 48 8B D8 48 85 C0
+
+INJECT_Combat:
+  db 0F B6 86 F0 00 00 00
+
+INJECT_Training:
+  db 48 89 42 20 F3 41 0F 11 00
+
+unregistersymbol(INJECT_Stamina)
+unregistersymbol(INJECT_Money)
+unregistersymbol(INJECT_Tokens)
+unregistersymbol(INJECT_Items)
+unregistersymbol(INJECT_Player)
+unregistersymbol(INJECT_Combat)
+unregistersymbol(INJECT_Training)
+
+unregistersymbol(enable_Stamina)
+unregistersymbol(enable_Money)
+unregistersymbol(enable_Tokens)
+unregistersymbol(enable_Snake)
+unregistersymbol(enable_Unlock)
+unregistersymbol(enable_Current)
+unregistersymbol(enable_Health)
+unregistersymbol(current_Training)
+
+dealloc(newmem_Stamina)
+dealloc(newmem_Money)
+dealloc(newmem_Tokens)
+dealloc(newmem_Items)
+dealloc(newmem_Player)
+dealloc(newmem_Combat)
+dealloc(newmem_Training)"""
+
+[[cheat]]
+id = "infinite-stamina"
+name = "Infinite Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enable_Stamina"
+hops = []
+
+[[cheat]]
+id = "infinite-money"
+name = "Infinite Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enable_Money"
+hops = []
+
+[[cheat]]
+id = "infinite-tokens"
+name = "Infinite Tokens"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enable_Tokens"
+hops = []
+
+[[cheat]]
+id = "infinite-snake-power"
+name = "Infinite Snake Power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enable_Snake"
+hops = []
+
+[[cheat]]
+id = "infinite-all-items"
+name = "Infinite All Items"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enable_Unlock"
+hops = []
+
+[[cheat]]
+id = "infinite-current-items"
+name = "Infinite Current Items"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enable_Current"
+hops = []
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enable_Health"
+hops = []

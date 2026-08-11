@@ -1,0 +1,443 @@
+[game]
+name = "Original War[steam;OGL; ]"
+exe = "owarogl.exe"
+notes = "Converted from a Cheat Engine table by _Gonzo_. Source: https://fearlessrevolution.com/viewtopic.php?t=10878"
+verified = []
+author = "_Gonzo_"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-me-first"
+name = "Enable me first"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(getPlayerUnitsStruct,OwarOGL.exe,80 BF 8C 01 00 00 00 76 1B) // should be unique
+alloc(newmem,$1000)
+label(code)
+label(return)
+label(playerUnitBaseAdress)
+registersymbol(playerUnitBaseAdress)
+newmem:
+code:
+  mov [playerUnitBaseAdress],edi
+  cmp byte ptr [edi+0000018C],00
+  jmp return
+
+playerUnitBaseAdress:
+dd 0
+getPlayerUnitsStruct:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(getPlayerUnitsStruct)
+
+[DISABLE]
+
+getPlayerUnitsStruct:
+  db 80 BF 8C 01 00 00 00
+unregistersymbol(playerUnitBaseAdress)
+unregistersymbol(getPlayerUnitsStruct)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "zero-damage"
+name = "zero damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(zero_damage,OwarOGL.exe,80 38 00 75 09 80) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+  pushf
+  push eax
+  push ebx
+  mov ebx,[playerUnitBaseAdress]
+  mov ebx,[ebx+10]//player unit side
+  mov eax,[esi+10]//current unit side in proc
+  cmp al,bl
+  //je code //for self damage
+  jne code
+  mov edi,0//if player unit - set taken damage to zero
+code:
+  pop ebx
+  pop eax
+  popf
+  cmp byte ptr [eax],00
+  jne OwarOGL.exe+1DFD29
+  jmp return
+
+
+
+zero_damage:
+  jmp newmem
+return:
+registersymbol(zero_damage)
+
+[DISABLE]
+
+zero_damage:
+  db 80 38 00 75 09
+
+unregistersymbol(zero_damage)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "faster-build"
+name = "faster build"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(fast_build,OwarOGL.exe,01 83 C8 00 00 00 8B C6 E8 E3) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+  pushf
+  push eax
+  mov eax,[ebx+10]//current unit side in proc
+  push ebx
+  mov ebx,[playerUnitBaseAdress]
+  mov ebx,[ebx+10]
+  cmp al,bl
+  jne code
+  pop ebx
+  mov eax,#300
+  add [ebx+000000C8],eax
+  pop eax
+  popf
+  jmp return
+code:
+  pop ebx
+  pop eax
+  popf
+  add [ebx+000000C8],eax
+  jmp return
+
+fast_build:
+  jmp newmem
+  nop
+return:
+registersymbol(fast_build)
+
+[DISABLE]
+
+fast_build:
+  db 01 83 C8 00 00 00
+
+unregistersymbol(fast_build)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "faster-vehicle-build"
+name = "faster vehicle build"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(fast_vehicle_build,OwarOGL.exe,01 83 C8 00 00 00 8B 83) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(cheat_veh_build)
+newmem:
+ push eax
+ mov eax,[ebx+10]//current unit side in proc
+ push ebx
+ mov ebx,[playerUnitBaseAdress]
+ mov ebx,[ebx+10]
+ cmp al,bl
+ pop ebx
+ pop eax
+  je cheat_veh_build
+code:
+  add [ebx+000000C8],eax
+  jmp return
+cheat_veh_build:
+  mov eax,#300
+  jmp code
+fast_vehicle_build:
+  jmp newmem
+  nop
+return:
+registersymbol(fast_vehicle_build)
+
+[DISABLE]
+
+fast_vehicle_build:
+  db 01 83 C8 00 00 00
+
+unregistersymbol(fast_vehicle_build)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "faster-research"
+name = "faster research"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(fast_research,OwarOGL.exe,8B F8 A1 94 BD 6B 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(cheat_research)
+newmem:
+ push eax
+ mov eax,[ebx+10]//current unit side in proc
+ push ebx
+ mov ebx,[playerUnitBaseAdress]
+ mov ebx,[ebx+10]
+ cmp al,bl
+ pop ebx
+ pop eax
+ je cheat_research
+code:
+  mov edi,eax
+  mov eax,[OwarOGL.exe+2BBD94]
+  jmp return
+cheat_research:
+  mov edi,#300
+  mov eax,[OwarOGL.exe+2BBD94]
+  jmp return
+
+fast_research:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(fast_research)
+
+[DISABLE]
+
+fast_research:
+  db 8B F8 A1 94 BD 6B 00
+
+unregistersymbol(fast_research)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "set-all-resource-amount"
+name = "set all resource amount"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(crates_adress,OwarOGL.exe,8B 40 04 8B 15 80 C4 6B 00 2B 02 8D 55 E0 E8 E5) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(cratesAmount)
+label(oilAmount)
+label(syberitAmount)
+newmem:
+  push ebx
+  mov ebx,[cratesAmount]
+  mov [eax+4],ebx //crates
+  mov ebx,[oilAmount]
+  mov [eax+8],ebx //oil
+  mov ebx,[syberitAmount]
+  mov [eax+C],ebx //syberit
+  pop ebx
+code:
+  mov eax,[eax+04]
+  mov edx,[OwarOGL.exe+2BC480]
+  jmp return
+syberitAmount:
+dd 0
+oilAmount:
+dd 0
+cratesAmount:
+dd 0
+crates_adress:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(crates_adress)
+registersymbol(cratesAmount)
+registersymbol(oilAmount)
+registersymbol(syberitAmount)
+
+[DISABLE]
+
+crates_adress:
+  db 8B 40 04 8B 15 80 C4 6B 00
+
+unregistersymbol(crates_adress)
+unregistersymbol(cratesAmount)
+unregistersymbol(oilAmount)
+unregistersymbol(syberitAmount)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "crates"
+name = "crates"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cratesAmount"
+hops = []
+
+[[cheat]]
+id = "oil"
+name = "oil"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "oilAmount"
+hops = []
+
+[[cheat]]
+id = "syberit"
+name = "syberit"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "syberitAmount"
+hops = []
+
+[[cheat]]
+id = "vehicle-inf-fuel"
+name = "vehicle inf fuel"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(oilPowerVehicle,OwarOGL.exe,8B 55 F0 29 82 34 02 00 00 8B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+aobscanmodule(solarPowerVehicle,OwarOGL.exe,8B 55 F0 29 82 34 02 00 00 EB) // should be unique
+alloc(newmem1,$1000)
+
+label(code1)
+label(return1)
+
+newmem:
+  push eax
+  mov edx,[playerUnitBaseAdress]
+  mov edx,[edx+10]
+  mov eax,[ebp-10]
+  mov eax,[eax+10]
+  cmp al,dl
+  pop eax
+  jne code
+  push eax
+  mov edx,[ebp-10] //base adress
+  mov eax,[edx+238] //max fuel
+  mov [edx+234],eax
+  pop eax
+code:
+  mov edx,[ebp-10]
+  sub [edx+00000234],eax
+  jmp return
+
+oilPowerVehicle:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(oilPowerVehicle)
+
+newmem1:
+  push eax
+  mov edx,[playerUnitBaseAdress]
+  mov edx,[edx+10]
+  mov eax,[ebp-10]
+  mov eax,[eax+10]
+  cmp al,dl
+  pop eax
+  jne code1
+  push eax
+  mov edx,[ebp-10] //base adress
+  mov eax,[edx+238] //max fuel
+  mov [edx+234],eax
+  pop eax
+code1:
+  mov edx,[ebp-10]
+  sub [edx+00000234],eax
+  jmp return1
+
+solarPowerVehicle:
+  jmp newmem1
+  nop
+  nop
+  nop
+  nop
+return1:
+registersymbol(solarPowerVehicle)
+
+[DISABLE]
+
+oilPowerVehicle:
+  db 8B 55 F0 29 82 34 02 00 00
+
+unregistersymbol(oilPowerVehicle)
+dealloc(newmem)
+
+solarPowerVehicle:
+  db 8B 55 F0 29 82 34 02 00 00
+
+unregistersymbol(solarPowerVehicle)
+dealloc(newmem1)"""

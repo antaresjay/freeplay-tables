@@ -1,0 +1,473 @@
+[game]
+name = "Wayblazer Dämmerung"
+exe = "age.exe"
+notes = "Converted from a Cheat Engine table by wajrak. Source: https://fearlessrevolution.com/viewtopic.php?t=38378"
+verified = []
+author = "wajrak"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "coin"
+name = "Coin"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : AGE.EXE
+  Version:
+  Date   : 2026-02-25
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// The Holy Grail: Pointer Stealer + Dynamic VM Encryption Hijack
+aobscanmodule(UltimateGoldHook,AGE.EXE,8B 10 8B 45 0C 89 04 91 8B E5 5D)
+alloc(newmem,$1000)
+alloc(pAgeBase,8)
+label(code)
+label(cleanup)
+label(return)
+
+newmem:
+  cmp edx, 001101B4       // Is the engine writing to the Gold ID?
+  jne code                // If no, skip to normal code
+
+  // WE FOUND GOLD.
+  mov [pAgeBase], ecx     // 1. Steal the base pointer for the community table!
+
+  // 2. The Dynamic Forgery
+  push eax                // Save the original EAX so we don't break anything
+  mov eax, #9999999       // The raw decimal value the community gets (9.9 million)
+
+  // Replicating AliceSoft's exact encryption natively:
+  ror eax, 07             // Step 1: Rotate right
+  xor eax, [ebp+08]       // Step 2: XOR against the live dynamic key
+  rol eax, 15             // Step 3: Rotate left
+
+  mov [ecx+edx*4], eax    // Write our beautifully forged, encrypted gold to memory!
+  pop eax                 // Restore the original EAX
+  jmp cleanup             // Skip the original write instruction
+
+code:
+  mov [ecx+edx*4],eax     // Original game code (for non-gold variables)
+
+cleanup:
+  mov esp,ebp             // Original game code
+  jmp return
+
+UltimateGoldHook+05:      // Hook exactly at the 89 04 91 write instruction
+  jmp newmem
+return:
+registersymbol(UltimateGoldHook)
+registersymbol(pAgeBase)
+
+[DISABLE]
+UltimateGoldHook+05:
+  db 89 04 91 8B E5
+unregistersymbol(UltimateGoldHook)
+unregistersymbol(pAgeBase)
+dealloc(newmem)
+dealloc(pAgeBase)"""
+
+[[cheat]]
+id = "pagebase"
+name = "pAgeBase"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAgeBase"
+hops = ["+0x4406d0"]
+
+[[cheat]]
+id = "info-grabber-trigger-first"
+name = "INFO GRABBER (TRIGGER FIRST)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : AGE.EXE
+  Version:
+  Date   : 2026-02-25
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+alloc(newmem,$1000)
+alloc(pCharacterBase, 4)
+alloc(SnatchFlag, 4)
+
+label(code)
+label(return)
+
+pCharacterBase:
+  dd 0
+SnatchFlag:
+  dd 0
+
+newmem:
+  // Is the hotkey pressed?
+  cmp dword ptr [SnatchFlag], 1
+  jne code
+
+  // The UI is reading the Base Address! Catch it!
+  mov [pCharacterBase], eax
+
+  // Instantly turn off the trap so we only catch the Base!
+  mov dword ptr [SnatchFlag], 0
+
+code:
+  mov eax,[eax]       // Original code at 67A1D
+  mov [ebp+08],eax    // Original code
+  jmp return
+
+AGE.EXE+67A1D:
+  jmp newmem
+return:
+
+registersymbol(pCharacterBase)
+registersymbol(SnatchFlag)
+
+[DISABLE]
+AGE.EXE+67A1D:
+  db 8B 00 89 45 08
+unregistersymbol(pCharacterBase)
+unregistersymbol(SnatchFlag)
+dealloc(newmem)
+dealloc(pCharacterBase)
+dealloc(SnatchFlag)"""
+
+[[cheat]]
+id = "snatchflag"
+name = "SnatchFlag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SnatchFlag"
+hops = []
+
+[[cheat]]
+id = "pcharacterbase"
+name = "pCharacterBase"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = []
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x3750"]
+
+[[cheat]]
+id = "sp"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x37f0"]
+
+[[cheat]]
+id = "pcharacterbase-2"
+name = "pCharacterBase"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x3754"]
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x3754"]
+
+[[cheat]]
+id = "sp-2"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x37f4"]
+
+[[cheat]]
+id = "pcharacterbase-3"
+name = "pCharacterBase"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x3758"]
+
+[[cheat]]
+id = "hp-3"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x3758"]
+
+[[cheat]]
+id = "sp-3"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacterBase"
+hops = ["+0x37f8"]
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : AGE.EXE
+  Version:
+  Date   : 2026-02-25
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+alloc(newmem,$1000)
+
+label(code)
+label(check_sp)
+label(block_write)
+label(original_code)
+label(return)
+
+// Declare our labels so CE knows they exist
+label(Party_Size)
+label(Enable_GodMode)
+label(Enable_InfSP)
+
+registersymbol(Party_Size)
+registersymbol(Enable_GodMode)
+registersymbol(Enable_InfSP)
+
+newmem:
+  // Jump over the variables so the engine doesn't run them as code!
+  jmp code
+
+// --- INITIALIZED VARIABLES ---
+Party_Size:
+  dd 3
+Enable_GodMode:
+  dd 1
+Enable_InfSP:
+  dd 1
+// -----------------------------
+
+code:
+  push edx
+  push ebx
+  push edi
+
+  // 1. Did we catch the Leader's Base Address?
+  mov edx, [pCharacterBase]
+  cmp edx, 0
+  je original_code
+
+  // Calculate Umbrella Width in EBX = (Party_Size - 1) * 4 bytes
+  mov ebx, [Party_Size]
+  dec ebx
+  shl ebx, 2
+
+  // --- HP CHECK ---
+  cmp dword ptr [Enable_GodMode], 1
+  jne check_sp // If God Mode is off, skip to checking SP
+
+  mov edi, edx
+  add edi, 3750 // Start of HP Array
+  cmp eax, edi
+  jl check_sp
+
+  add edi, ebx // End of HP Array
+  cmp eax, edi
+  jg check_sp
+
+  // BINGO! IN HP ARRAY!
+  jmp block_write
+
+check_sp:
+  // --- SP CHECK ---
+  cmp dword ptr [Enable_InfSP], 1
+  jne original_code // If Inf SP is off, write normally
+
+  mov edi, edx
+  add edi, 37F0 // Start of SP Array
+  cmp eax, edi
+  jl original_code
+
+  add edi, ebx // End of SP Array
+  cmp eax, edi
+  jg original_code
+
+  // BINGO! IN SP ARRAY!
+  jmp block_write
+
+block_write:
+  pop edi
+  pop ebx
+  pop edx
+  mov esp,ebp // Simply skip the write!
+  pop ebp
+  jmp return
+
+original_code:
+  pop edi
+  pop ebx
+  pop edx
+  mov [eax],ecx   // Original code: Write the stat to memory
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+// Direct hook
+AGE.EXE+65A19:
+  jmp newmem
+return:
+
+[DISABLE]
+AGE.EXE+65A19:
+  db 89 08 8B E5 5D
+unregistersymbol(Party_Size)
+unregistersymbol(Enable_GodMode)
+unregistersymbol(Enable_InfSP)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "party-size"
+name = "Party_Size"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Party_Size"
+hops = []
+
+[[cheat]]
+id = "enable-godmode"
+name = "Enable_GodMode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Enable_GodMode"
+hops = []
+
+[[cheat]]
+id = "enable-infsp"
+name = "Enable_InfSP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Enable_InfSP"
+hops = []

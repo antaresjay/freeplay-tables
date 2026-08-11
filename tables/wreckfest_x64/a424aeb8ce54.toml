@@ -1,0 +1,292 @@
+[game]
+name = "Wreckfest"
+exe = "wreckfest_x64.exe"
+notes = "Converted from a Cheat Engine table by Csimbi. Source: https://fearlessrevolution.com/viewtopic.php?t=7225"
+verified = []
+author = "Csimbi"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "wreckfest-aob-script"
+name = "Wreckfest AOB script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Game   : Wreckfest_x64.exe
+// Version:
+// Date   :
+// Author : Cs
+[ENABLE]
+// Here's the define for the Torque Mod hotkey.
+// It is CTRL by default. Check this page for other scan codes:
+// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+define(TorqueModKey,11)
+
+aobscanmodule(aobDamageTracker,Wreckfest_x64.exe,66 0F 6E 42 ?? F3 0F 10 4A ?? 0F 5B C0 F3 0F 5E C8 F3 0F)
+aobscanmodule(aobPlayerGrabber,Wreckfest_x64.exe,48 8B 0C C1 48 81 C1 00 ?? ?? 00 E9)
+aobscanmodule(aobPlayerDataOffset1,Wreckfest_x64.exe,48 8B 89 ?? ?? ?? ?? E8 ?? ?? ?? ?? 3B 83 ?? ?? ?? ?? 7E)
+aobscanmodule(aobPlayerDataOffset2,Wreckfest_x64.exe,4C 8B 81 ?? ?? 00 00 0F 2F)
+aobscanmodule(aobTorqueCalc,Wreckfest_x64.exe,F3 0F 10 87 ?? ?? 00 00 F3 0F 59 ?? ?? 76)
+
+alloc(newmemDamageTracker,4096,aobDamageTracker)
+
+label(aobDamageTracker_r)
+label(aobDamageTracker_i)
+registersymbol(aobDamageTracker_r)
+registersymbol(aobDamageTracker_i)
+
+label(lblDamageTracker)
+label(lblDamageTrackerSkip)
+label(lblDamageTrackerRet)
+label(lblDamageTrackerNonPlayer)
+
+label(bEnableGodMode)
+label(bEnableLowEnemyHealth)
+label(fLowEnemyHealth)
+registersymbol(bEnableGodMode)
+registersymbol(bEnableLowEnemyHealth)
+registersymbol(fLowEnemyHealth)
+
+label(aobPlayerGrabber_r)
+label(aobPlayerGrabber_i)
+registersymbol(aobPlayerGrabber_r)
+registersymbol(aobPlayerGrabber_i)
+
+label(lblPlayerGrabber)
+label(lblPlayerGrabberRet)
+
+label(pPlayer)
+label(iPlayerID)
+label(pPlayerEngine)
+label(pPlayerFloatArray)
+registersymbol(pPlayer)
+registersymbol(iPlayerID)
+registersymbol(pPlayerEngine)
+registersymbol(pPlayerFloatArray)
+
+label(iPlayerDataOffset1)
+label(iPlayerDataOffset2)
+registersymbol(iPlayerDataOffset1)
+registersymbol(iPlayerDataOffset2)
+
+label(aobTorqueCalc_r)
+label(aobTorqueCalc_i)
+registersymbol(aobTorqueCalc_r)
+registersymbol(aobTorqueCalc_i)
+
+label(lblTorqueCalc)
+label(lblTorqueCalcSkip)
+label(lblTorqueCalcRet)
+
+label(bEnableTorqueMod)
+label(fTorqueMod)
+registersymbol(bEnableTorqueMod)
+registersymbol(fTorqueMod)
+
+newmemDamageTracker:
+bEnableGodMode:
+dd 1
+bEnableLowEnemyHealth:
+dd 1
+fLowEnemyHealth:
+dd (float)1.0
+bEnableTorqueMod:
+dd 1
+fTorqueMod:
+dd (float)2.0
+
+lblDamageTracker:
+push rax
+cmp dword ptr [rdx],0
+jne short lblDamageTrackerNonPlayer
+cmp dword ptr [bEnableGodMode],1
+jne short lblDamageTrackerSkip
+movsx rax,[aobDamageTracker_i+04]
+cvtsi2ss xmm0,[rax+rdx]
+movsx rax,[aobDamageTracker_i+09]
+movss [rax+rdx],xmm0
+lblDamageTrackerSkip:
+pop rax
+readmem(aobDamageTracker,5)
+jmp lblDamageTrackerRet
+lblDamageTrackerNonPlayer:
+cmp dword ptr [bEnableLowEnemyHealth],1
+jne short lblDamageTrackerSkip
+movss xmm0,[fLowEnemyHealth]
+movsx rax,[aobDamageTracker_i+09]
+comiss xmm0,[rax+rdx]
+jle short lblDamageTrackerSkip
+movss dword ptr [rax+rdx],xmm0
+jmp short lblDamageTrackerSkip
+aobDamageTracker_i:
+readmem(aobDamageTracker,10)
+
+lblPlayerGrabber:
+readmem(aobPlayerGrabber,4)
+mov qword ptr [pPlayer],rcx
+mov dword ptr [iPlayerID],eax
+push rcx
+push rax
+movsxd rax,[iPlayerDataOffset1]
+mov rax,[rax+rcx]
+movsxd rcx,[iPlayerDataOffset2]
+mov rcx,[rax+rcx]
+mov qword ptr [pPlayerFloatArray],rcx
+pop rax
+pop rcx
+readmem(aobPlayerGrabber+04,7)
+mov qword ptr [pPlayerEngine],rcx
+jmp lblPlayerGrabberRet
+iPlayerDataOffset1:
+readmem(aobPlayerDataOffset1+03,4)
+iPlayerDataOffset2:
+readmem(aobPlayerDataOffset2+03,4)
+pPlayer:
+dq 0
+iPlayerID:
+dd -1
+pPlayerEngine:
+dq 0
+pPlayerFloatArray:
+dq 0
+aobPlayerGrabber_i:
+readmem(aobPlayerGrabber,11)
+
+lblTorqueCalc:
+pushfq
+readmem(aobTorqueCalc,8)
+cmp qword ptr [pPlayerFloatArray],r8
+jne short lblTorqueCalcSkip
+cmp dword ptr [bEnableTorqueMod],1
+jne short lblTorqueCalcSkip
+push rax
+push rcx
+mov rcx,TorqueModKey
+push rcx
+call GetAsyncKeyState
+add rsp,08
+shr ax,#15
+cmp ax,1
+pop rcx
+pop rax
+jne lblTorqueCalcSkip
+mulss xmm0,[fTorqueMod]
+lblTorqueCalcSkip:
+popfq
+jmp lblTorqueCalcRet
+aobTorqueCalc_i:
+readmem(aobTorqueCalc,8)
+
+aobTorqueCalc:
+aobTorqueCalc_r:
+jmp lblTorqueCalc
+nop
+nop
+nop
+lblTorqueCalcRet:
+
+aobPlayerGrabber:
+aobPlayerGrabber_r:
+jmp lblPlayerGrabber
+nop
+nop
+nop
+nop
+nop
+nop
+lblPlayerGrabberRet:
+
+aobDamageTracker:
+aobDamageTracker_r:
+jmp lblDamageTracker
+lblDamageTrackerRet:
+
+[DISABLE]
+aobDamageTracker_r:
+readmem(aobDamageTracker_i,5)
+
+unregistersymbol(aobDamageTracker_r)
+unregistersymbol(aobDamageTracker_i)
+
+unregistersymbol(bEnableGodMode)
+unregistersymbol(bEnableLowEnemyHealth)
+unregistersymbol(fLowEnemyHealth)
+
+aobPlayerGrabber_r:
+readmem(aobPlayerGrabber_i,11)
+
+unregistersymbol(aobPlayerGrabber_r)
+unregistersymbol(aobPlayerGrabber_i)
+
+unregistersymbol(pPlayer)
+unregistersymbol(iPlayerID)
+unregistersymbol(pPlayerEngine)
+unregistersymbol(pPlayerFloatArray)
+
+unregistersymbol(iPlayerDataOffset1)
+unregistersymbol(iPlayerDataOffset2)
+
+aobTorqueCalc_r:
+readmem(aobTorqueCalc_i,8)
+
+unregistersymbol(aobTorqueCalc_r)
+unregistersymbol(aobTorqueCalc_i)
+
+unregistersymbol(bEnableTorqueMod)
+unregistersymbol(fTorqueMod)
+
+dealloc(newmemDamageTracker)"""
+
+[[cheat]]
+id = "benablegodmode"
+name = "bEnableGodMode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Disabled",
+    "1:Enabled",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bEnableGodMode"
+hops = []
+
+[[cheat]]
+id = "flowenemyhealth"
+name = "fLowEnemyHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fLowEnemyHealth"
+hops = []
+
+[[cheat]]
+id = "ftorquemod"
+name = "fTorqueMod"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fTorqueMod"
+hops = []

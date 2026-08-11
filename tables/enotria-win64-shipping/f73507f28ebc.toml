@@ -1,0 +1,598 @@
+[game]
+name = "Enotria: The Last Song"
+exe = "enotria-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by sanitka. Source: https://fearlessrevolution.com/viewtopic.php?t=31347"
+verified = []
+author = "sanitka"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "inf-health-stamina-attack-sb-to-fill-pointer"
+name = "Inf. Health / Stamina (Attack sb to fill pointer)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Enotria-Win64-Shipping.exe
+  Version:
+  Date   : 2024-09-19
+  Author : SanitKa
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJHP,Enotria-Win64-Shipping.exe,CC F3 0F 11 49 08 C3)
+alloc(newmem,$100,INJHP)
+
+label(code)
+label(return)
+label(CurHpPtr)
+label(CurStPtr)
+label(isEnemyHPCheatEnabled)
+
+newmem:
+  // trick ~ player dta
+  // - ptr
+  // - 500.00 (float)
+  // - maxHP (float)
+  // - ptr ~ rcx points here
+  // - curHP (float)
+  // - curHP (float)
+  // - ptr
+  movss xmm15,[rcx+08-10]
+  ucomiss xmm15,dword ptr[DefaultMaxHP] // ? [-08] ~ 500.0
+  jne @f
+  jc @f
+
+  movss xmm1,[rcx+08-c]                 // [-04] ~ currentMaxHP
+  movss [rcx+0c],xmm1                   // try update also second value
+  mov [CurHpPtr],rcx
+  jmp code
+
+statChk:
+//  movss xmm15,[rcx+08-10]
+  ucomiss xmm15,dword ptr[DefaultMaxStam] // ? [-08] ~ 90.0
+  jne @f
+  jc @f
+
+  mov [CurStPtr],rcx
+  movss xmm1,[rcx+08-c]                 // [-04] ~ currentMaxStamina
+  movss [rcx+0c],xmm1                   // try update also second value
+  jmp code
+
+enemyChk:
+  push rdx
+
+  xor edx,edx
+  cmp edx,dword ptr[rcx-18]             // should be zero
+  jne @f
+
+  mov edx,dword ptr[rcx-08]
+  test edx,edx
+  je @f
+
+//  cmp edx,dword ptr[rcx-04]             // currentMaxHP vs originalMaxHP does not work in 1.003+
+//  jne @f
+
+  mov edx,dword ptr[rcx+48]
+  test edx,edx                          // pathPoints (monster ~ 0)
+  jne @f
+
+  movss xmm15,dword ptr[MinEnemyHP]
+  ucomiss xmm1,xmm15
+  jle @f
+  jc @f
+
+  mov dl,1
+  cmp dl,[isEnemyHPCheatEnabled]
+  jne @f
+
+  movss xmm1,xmm15                      // minEnemyHP
+  movss [rcx+0c],xmm1                   // try update also second value
+//  movss [rcx-04],xmm1                   // try update also max value
+//  movss [rcx-08],xmm1                   // try update also max value
+
+rest:
+  pop rdx
+
+code:
+  movss [rcx+08],xmm1
+  jmp return
+
+  nop                                   // manual alignment ;)
+
+align 2
+CurHpPtr:
+  dq 0
+
+CurStPtr:
+  dq 0
+
+DefaultMaxHP:
+  dd (float)500.0
+
+DefaultMaxStam:
+  dd (float)90.0
+
+MinEnemyHP:
+  dd (float)0.1
+
+isEnemyHPCheatEnabled:
+  db 1
+
+INJHP+01:
+  jmp newmem
+
+return:
+registersymbol(INJHP)
+registersymbol(CurHpPtr)
+registersymbol(CurStPtr)
+registersymbol(isEnemyHPCheatEnabled)
+
+[DISABLE]
+
+INJHP+01:
+  db F3 0F 11 49 08
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "curhpptr"
+name = "CurHpPtr"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = []
+
+[[cheat]]
+id = "curstptr"
+name = "CurStPtr"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurStPtr"
+hops = []
+
+[[cheat]]
+id = "enemy-hp-cheat-enabled"
+name = "Enemy HP Cheat Enabled"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Yes",
+    "0:No",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "isEnemyHPCheatEnabled"
+hops = []
+
+[[cheat]]
+id = "orig-maxhp"
+name = "Orig MaxHP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["-0x8"]
+
+[[cheat]]
+id = "current-maxhp"
+name = "Current MaxHP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["-0x4"]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "current-hp"
+name = "Current HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "orig-maxstat"
+name = "Orig MaxStat"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurStPtr"
+hops = ["-0x8"]
+
+[[cheat]]
+id = "current-maxstat"
+name = "Current MaxStat"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurStPtr"
+hops = ["-0x4"]
+
+[[cheat]]
+id = "stamina"
+name = "Stamina"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurStPtr"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "current-stamina"
+name = "Current Stamina"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurStPtr"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "xp-memoria"
+name = "XP / Memoria"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "current-xp-memoria"
+name = "Current XP / Memoria"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "path-points"
+name = "Path Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "current-path-points"
+name = "Current Path Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "elemental-power"
+name = "Elemental Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "current-elemental-power"
+name = "Current Elemental Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "status-power"
+name = "Status Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "current-status-power"
+name = "Current Status Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "ardore-power"
+name = "Ardore Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "current-ardore-power"
+name = "Current Ardore Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurHpPtr"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "get-pointers"
+name = "Get Pointers"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Enotria-Win64-Shipping.exe
+  Version: 
+  Date   : 2024-09-20
+  Author : SanitKa
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJGAME,Enotria-Win64-Shipping.exe,48 8B F9 44 0F 29 84 24 80 00 00 00) // should be unique
+alloc(newmem,$100,INJGAME)
+
+label(code)
+label(return)
+label(GamePtr)
+label(PlayerPtr)
+
+newmem:
+  test rcx,rcx
+  je code
+
+  mov [GamePtr],rcx
+  mov rdi,[rcx+000002D0]
+  mov [PlayerPtr],rdi
+
+code:
+  mov rdi,rcx
+  movaps [rsp+00000080],xmm8
+  jmp return
+
+GamePtr:
+  dq 0
+
+PlayerPtr:
+  dq 0
+
+INJGAME:
+  jmp newmem
+  nop 7
+
+return:
+registersymbol(INJGAME)
+registersymbol(GamePtr)
+registersymbol(PlayerPtr)
+
+[DISABLE]
+
+INJGAME:
+  db 48 8B F9 44 0F 29 84 24 80 00 00 00
+
+unregistersymbol(*)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Enotria-Win64-Shipping.exe+39B9C30
+
+Enotria-Win64-Shipping.exe+39B9C1A: CC                          - int 3 
+Enotria-Win64-Shipping.exe+39B9C1B: CC                          - int 3 
+Enotria-Win64-Shipping.exe+39B9C1C: CC                          - int 3 
+Enotria-Win64-Shipping.exe+39B9C1D: CC                          - int 3 
+Enotria-Win64-Shipping.exe+39B9C1E: CC                          - int 3 
+Enotria-Win64-Shipping.exe+39B9C1F: CC                          - int 3 
+Enotria-Win64-Shipping.exe+39B9C20: 40 53                       - push rbx
+Enotria-Win64-Shipping.exe+39B9C22: 57                          - push rdi
+Enotria-Win64-Shipping.exe+39B9C23: 48 81 EC B8 00 00 00        - sub rsp,000000B8
+Enotria-Win64-Shipping.exe+39B9C2A: 8B 81 B0 04 00 00           - mov eax,[rcx+000004B0]
+// ---------- INJECTING HERE ----------
+Enotria-Win64-Shipping.exe+39B9C30: 48 8B F9                    - mov rdi,rcx
+// ---------- DONE INJECTING  ----------
+Enotria-Win64-Shipping.exe+39B9C33: 44 0F 29 84 24 80 00 00 00  - movaps [rsp+00000080],xmm8
+Enotria-Win64-Shipping.exe+39B9C3C: 44 0F 28 C1                 - movaps xmm8,xmm1
+Enotria-Win64-Shipping.exe+39B9C40: A8 01                       - test al,01
+Enotria-Win64-Shipping.exe+39B9C42: 75 2A                       - jne Enotria-Win64-Shipping.exe+39B9C6E
+Enotria-Win64-Shipping.exe+39B9C44: 83 C8 01                    - or eax,01
+Enotria-Win64-Shipping.exe+39B9C47: 89 81 B0 04 00 00           - mov [rcx+000004B0],eax
+Enotria-Win64-Shipping.exe+39B9C4D: 48 8B 01                    - mov rax,[rcx]
+Enotria-Win64-Shipping.exe+39B9C50: 48 8B 15 A9 6B C4 04        - mov rdx,[Enotria-Win64-Shipping.exe+8600800]
+Enotria-Win64-Shipping.exe+39B9C57: 48 8B 98 68 02 00 00        - mov rbx,[rax+00000268]
+Enotria-Win64-Shipping.exe+39B9C5E: E8 0D 24 8B FD              - call Enotria-Win64-Shipping.exe+126C070
+}"""
+
+[[cheat]]
+id = "gameptr"
+name = "GamePtr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "GamePtr"
+hops = []
+
+[[cheat]]
+id = "playerptr"
+name = "PlayerPtr"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerPtr"
+hops = []
+
+[[cheat]]
+id = "walk-speed-multiplier"
+name = "Walk Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerPtr"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "jump-height"
+name = "Jump Height"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerPtr"
+hops = [
+    "+0x320",
+    "+0x178",
+]

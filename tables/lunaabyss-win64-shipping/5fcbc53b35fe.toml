@@ -1,0 +1,179 @@
+[game]
+name = "Luna Abyss Demo"
+exe = "lunaabyss-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=34151"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(health,LunaAbyss-Win64-Shipping.exe,F3 0F 10 81 F8 05 00 00 C3)
+alloc(newmem,$1000,health)
+label(code return)
+
+newmem:
+mov [rcx+5F8],(float)500
+
+code:
+  movss xmm0,[rcx+000005F8]
+  jmp return
+
+health:
+  jmp newmem
+  nop 3
+return:
+registersymbol(health)
+
+[DISABLE]
+
+health:
+  db F3 0F 10 81 F8 05 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-weapon-overheat"
+name = "No Weapon Overheat"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(overheat,LunaAbyss-Win64-Shipping.exe,F3 0F 11 83 C0 02 00 00 E8)
+alloc(newmem,$1000,overheat)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  xorps xmm0,xmm0
+  movss [rbx+000002C0],xmm0
+  jmp return
+
+overheat:
+  jmp newmem
+  nop 3
+return:
+registersymbol(overheat)
+
+[DISABLE]
+
+overheat:
+  db F3 0F 11 83 C0 02 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "enable-weapon-damage-modifier"
+name = "Enable Weapon Damage Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(wepdmg,LunaAbyss-Win64-Shipping.exe,6C 00 48 8B 03 48 8B CB)
+alloc(newmem,$1000,wepdmg)
+registersymbol(setdmg)
+label(code return setdmg)
+
+newmem:
+mov [setdmg],rbx
+
+code:
+  mov rax,[rbx]
+  mov rcx,rbx
+  jmp return
+
+setdmg:
+dq 0
+
+wepdmg+02:
+  jmp newmem
+  nop
+return:
+registersymbol(wepdmg)
+
+[DISABLE]
+
+wepdmg+02:
+  db 48 8B 03 48 8B CB
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "enable-movement-modifier"
+name = "Enable Movement Modifier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,"LunaAbyss-Win64-Shipping.exe"+D59B45)
+define(bytes,F3 0F 11 82 8C 01 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,"LunaAbyss-Win64-Shipping.exe"+D59B45)
+registersymbol(setspeed)
+label(code return setspeed)
+
+newmem:
+
+code:
+  movss xmm0,[setspeed]
+  movss [rdx+0000018C],xmm0
+  jmp return
+
+setspeed:
+dd (float)575
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-movement-speed"
+name = "Set Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "setspeed"
+hops = []

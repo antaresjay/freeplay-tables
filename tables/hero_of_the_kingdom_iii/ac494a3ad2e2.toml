@@ -1,0 +1,267 @@
+[game]
+name = "Hero Of The Kingdom III"
+exe = "hero_of_the_kingdom_iii.exe"
+notes = "Converted from a Cheat Engine table by fenuzulage. Source: https://fearlessrevolution.com/viewtopic.php?t=28751"
+verified = []
+author = "fenuzulage"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Hero_of_the_Kingdom_III.exe
+  Version: 1.2.12
+  Date   : 2024-04-21
+  Author : fenuzulage
+  This script enables God Mode by nopping the health decrease during fights
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,Hero_of_the_Kingdom_III.exe,44 29 52 58 49 8B D0) // should be unique
+registersymbol(INJECT)
+
+INJECT:
+  db 90 90 90 90            // sub [rdx+58],r10d
+
+[DISABLE]
+
+INJECT:
+  db 44 29 52 58 49 8B D0
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Hero_of_the_Kingdom_III.exe+187590
+
+Hero_of_the_Kingdom_III.exe+187563: 48 03 D2                 - add rdx,rdx
+Hero_of_the_Kingdom_III.exe+187566: 48 8B 94 D0 A0 00 00 00  - mov rdx,[rax+rdx*8+000000A0]
+Hero_of_the_Kingdom_III.exe+18756E: 83 7A 2C 06              - cmp dword ptr [rdx+2C],06
+Hero_of_the_Kingdom_III.exe+187572: 74 51                    - je Hero_of_the_Kingdom_III.exe+1875C5
+Hero_of_the_Kingdom_III.exe+187574: 49 8B D0                 - mov rdx,r8
+Hero_of_the_Kingdom_III.exe+187577: 48 03 D2                 - add rdx,rdx
+Hero_of_the_Kingdom_III.exe+18757A: 48 8B 94 D0 A0 00 00 00  - mov rdx,[rax+rdx*8+000000A0]
+Hero_of_the_Kingdom_III.exe+187582: 4D 8B D0                 - mov r10,r8
+Hero_of_the_Kingdom_III.exe+187585: 4D 03 D2                 - add r10,r10
+Hero_of_the_Kingdom_III.exe+187588: 46 8B 94 D0 A8 00 00 00  - mov r10d,[rax+r10*8+000000A8]
+// ---------- INJECTING HERE ----------
+Hero_of_the_Kingdom_III.exe+187590: 44 29 52 58              - sub [rdx+58],r10d
+// ---------- DONE INJECTING  ----------
+Hero_of_the_Kingdom_III.exe+187594: 49 8B D0                 - mov rdx,r8
+Hero_of_the_Kingdom_III.exe+187597: 48 03 D2                 - add rdx,rdx
+Hero_of_the_Kingdom_III.exe+18759A: 48 8B 94 D0 A0 00 00 00  - mov rdx,[rax+rdx*8+000000A0]
+Hero_of_the_Kingdom_III.exe+1875A2: 48 8D 52 58              - lea rdx,[rdx+58]
+Hero_of_the_Kingdom_III.exe+1875A6: 48 89 55 08              - mov [rbp+08],rdx
+Hero_of_the_Kingdom_III.exe+1875AA: 48 8B 55 08              - mov rdx,[rbp+08]
+Hero_of_the_Kingdom_III.exe+1875AE: 8B 12                    - mov edx,[rdx]
+Hero_of_the_Kingdom_III.exe+1875B0: 85 D2                    - test edx,edx
+Hero_of_the_Kingdom_III.exe+1875B2: 7D 02                    - jnl Hero_of_the_Kingdom_III.exe+1875B6
+Hero_of_the_Kingdom_III.exe+1875B4: 33 D2                    - xor edx,edx
+}"""
+
+[[cheat]]
+id = "stats-reopen-inventory"
+name = "Stats [reopen inventory]"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Hero_of_the_Kingdom_III.exe
+  Version: 1.2.12
+  Date   : 2024-04-21
+  Author : fenuzulage
+
+  This script captures pointer to fame, health and gold so that these can be changed
+  and sets the item stack size to 99 if flag is set
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,Hero_of_the_Kingdom_III.exe,8B 40 58 83 F8 01)
+alloc(newmem,$100,INJECT)
+
+alloc(fame,$8)
+registersymbol(fame)
+alloc(health,$8)
+registersymbol(health)
+alloc(gold,$8)
+registersymbol(gold)
+alloc(give_items_flag,$4)
+registersymbol(give_items_flag)
+
+label(code)
+label(return)
+label(originalcode)
+
+give_items_flag:
+  dd 0
+
+newmem:
+
+code:
+  // rax: Inventory Item
+  // rax+58: amount
+  // rax+40: Index
+  //         0 = Fame
+  //         1 = Health
+  //         2 = Gold
+
+  // if item is fame, capture adress
+  cmp [rax+40], 0
+  jne @f              // to @@: which is the next case
+  mov dword ptr [fame], rax
+  jmp originalcode
+
+@@:
+  // if item is health, capture adress
+  cmp [rax+40], 1
+  jne @f              // to @@: which is the next case
+  mov dword ptr [health], rax
+  jmp originalcode
+
+@@:
+  // if item is gold, capture adress
+  cmp [rax+40], 2
+  jne @f              // to @@: which is the next case
+  mov dword ptr [gold], rax
+  jmp originalcode
+
+@@:
+  // default: if Flag is set, set item count to 99
+  cmp [give_items_flag],1
+  jne originalcode
+  //rax+58 is amount. set it to 99
+  mov [rax+58], (int)99
+
+originalcode:
+  mov eax,[rax+58]
+  cmp eax,01
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 8B 40 58 83 F8 01
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Hero_of_the_Kingdom_III.exe+18FD9A
+
+Hero_of_the_Kingdom_III.exe+18FD71: 48 83 EC 50              - sub rsp,50
+Hero_of_the_Kingdom_III.exe+18FD75: 48 8B EC                 - mov rbp,rsp
+Hero_of_the_Kingdom_III.exe+18FD78: 48 89 4D 38              - mov [rbp+38],rcx
+Hero_of_the_Kingdom_III.exe+18FD7C: 48 89 55 40              - mov [rbp+40],rdx
+Hero_of_the_Kingdom_III.exe+18FD80: 48 C7 45 48 00 00 00 00  - mov qword ptr [rbp+48],00000000
+Hero_of_the_Kingdom_III.exe+18FD88: 90                       - nop 
+Hero_of_the_Kingdom_III.exe+18FD89: 48 8B 4D 38              - mov rcx,[rbp+38]
+Hero_of_the_Kingdom_III.exe+18FD8D: 48 8B 55 40              - mov rdx,[rbp+40]
+Hero_of_the_Kingdom_III.exe+18FD91: E8 EA 0D 00 00           - call Hero_of_the_Kingdom_III.exe+190B80
+Hero_of_the_Kingdom_III.exe+18FD96: 48 8B 45 38              - mov rax,[rbp+38]
+// ---------- INJECTING HERE ----------
+Hero_of_the_Kingdom_III.exe+18FD9A: 8B 40 58                 - mov eax,[rax+58]
+// ---------- DONE INJECTING  ----------
+Hero_of_the_Kingdom_III.exe+18FD9D: 83 F8 01                 - cmp eax,01
+Hero_of_the_Kingdom_III.exe+18FDA0: 7F 0A                    - jg Hero_of_the_Kingdom_III.exe+18FDAC
+Hero_of_the_Kingdom_III.exe+18FDA2: 48 8B 4D 38              - mov rcx,[rbp+38]
+Hero_of_the_Kingdom_III.exe+18FDA6: 80 79 30 00              - cmp byte ptr [rcx+30],00
+Hero_of_the_Kingdom_III.exe+18FDAA: 75 48                    - jne Hero_of_the_Kingdom_III.exe+18FDF4
+Hero_of_the_Kingdom_III.exe+18FDAC: 48 8D 4D 48              - lea rcx,[rbp+48]
+Hero_of_the_Kingdom_III.exe+18FDB0: 89 C2                    - mov edx,eax
+Hero_of_the_Kingdom_III.exe+18FDB2: 41 B8 02 00 00 00        - mov r8d,00000002
+Hero_of_the_Kingdom_III.exe+18FDB8: E8 13 3F FB FF           - call Hero_of_the_Kingdom_III.exe+143CD0
+Hero_of_the_Kingdom_III.exe+18FDBD: 48 8B 4D 40              - mov rcx,[rbp+40]
+}"""
+
+[[cheat]]
+id = "fame"
+name = "Fame"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fame"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "health"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gold"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "give-99-items-reopen-inventory"
+name = "Give 99 items [reopen inventory]"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+give_items_flag:
+  dd 1
+ 
+ 
+[DISABLE]
+give_items_flag:
+  dd 0"""
+
+[[cheat]]
+id = "give-items-flag"
+name = "give_items_flag"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "give_items_flag"
+hops = []

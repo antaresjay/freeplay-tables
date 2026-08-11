@@ -1,0 +1,2226 @@
+[game]
+name = "Europa Universalis 5 - Achievement Table"
+exe = "eu5.exe"
+notes = "Converted from a Cheat Engine table by Namelessy. Source: https://fearlessrevolution.com/viewtopic.php?t=37207"
+verified = []
+author = "Namelessy"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "allow-nac-mods-enable-before-load-or-create-game"
+name = "Allow NAC mods (enable before load or create game)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-09
+  Author : Nameless
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(nac_mods_on_create,eu5.exe,80 B8 31 01 00 00 00 74) // should be unique
+//                                        ??                ??
+
+aobscanmodule(aob_nac_mod_on_load,eu5.exe,20 83 31 01 00 00) // should be unique
+
+alloc(newmem,$1000,nac_mods_on_create)
+
+label(code)
+label(return)
+label(return_nacmodonload)
+label(nacmodonload)
+label(pAchievementBaseNAC)
+registersymbol(nac_mods_on_create pAchievementBaseNAC aob_nac_mod_on_load)
+
+newmem:
+  mov [pAchievementBaseNAC],rax
+  mov byte ptr [rax+00000130],01 // Unknown, is set during save game load
+  mov byte ptr [rax+00000131],01 // NAC mods not used
+code:
+  cmp byte ptr [rax+00000131],00
+  jmp return
+
+nacmodonload:
+  mov [pAchievementBaseNAC],rbx
+  mov byte ptr [rbx+00000130],01 // Unknown, is set during save game load
+  mov byte ptr [rbx+00000131],01 // NAC mods not used
+  and [rbx+00000131],al
+  jmp return_nacmodonload
+
+pAchievementBaseNAC:
+  dq 0
+
+//
+// Entry points
+//
+aob_nac_mod_on_load:
+  jmp nacmodonload
+  nop
+return_nacmodonload:
+
+nac_mods_on_create:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+nac_mods_on_create:
+  db 80 B8 31 01 00 00 00
+
+aob_nac_mod_on_load:
+  db 20 83 31 01 00 00
+
+unregistersymbol(nac_mods_on_create pAchievementBaseNAC aob_nac_mod_on_load)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+1A18A26
+
+eu5.exe+1A18A18: CC                    - int 3 
+eu5.exe+1A18A19: CC                    - int 3 
+eu5.exe+1A18A1A: CC                    - int 3 
+eu5.exe+1A18A1B: CC                    - int 3 
+eu5.exe+1A18A1C: CC                    - int 3 
+eu5.exe+1A18A1D: CC                    - int 3 
+eu5.exe+1A18A1E: CC                    - int 3 
+eu5.exe+1A18A1F: CC                    - int 3 
+eu5.exe+1A18A20: 40 53                 - push rbx
+eu5.exe+1A18A22: 48 83 EC 20           - sub rsp,20
+// ---------- INJECTING HERE ----------
+eu5.exe+1A18A26: 80 B9 31 01 00 00 00  - cmp byte ptr [rcx+00000131],00
+// ---------- DONE INJECTING  ----------
+eu5.exe+1A18A2D: 48 8B DA              - mov rbx,rdx
+eu5.exe+1A18A30: 75 38                 - jne eu5.exe+1A18A6A
+eu5.exe+1A18A32: 33 C0                 - xor eax,eax
+eu5.exe+1A18A34: 49 C7 C0 FF FF FF FF  - mov r8,FFFFFFFFFFFFFFFF
+eu5.exe+1A18A3B: 48 89 02              - mov [rdx],rax
+eu5.exe+1A18A3E: 48 89 42 08           - mov [rdx+08],rax
+eu5.exe+1A18A42: 48 8D 15 F7 B0 B0 03  - lea rdx,[eu5.exe+5523B40]
+eu5.exe+1A18A49: 0F 1F 80 00 00 00 00  - nop dword ptr [rax+00000000]
+eu5.exe+1A18A50: 49 FF C0              - inc r8
+eu5.exe+1A18A53: 42 38 04 02           - cmp [rdx+r8],al
+}"""
+
+[[cheat]]
+id = "x-player-country"
+name = "[X] <== Player Country"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-04
+  Author : Nameless
+
+  This script gets the player country.
+  Find stability -> what accesses.
+  For government offset, scroll down and look for CGovernment
+}
+
+[ENABLE]
+
+aobscanmodule(PlayerCountry,eu5.exe,C4 C1 FA 2A 45 38) // should be unique
+alloc(newmem,$1000,PlayerCountry)
+
+label(code)
+label(return)
+label(pPlayerCountry)
+label(nPlayerId)
+registersymbol(PlayerCountry pPlayerCountry nPlayerId)
+
+newmem:
+  mov [pPlayerCountry],r13
+  push rax
+  xor rax,rax
+  mov eax,[r13+10]
+  mov [nPlayerId],eax
+  pop rax
+code:
+  vcvtsi2ss xmm0,xmm0,[r13+38] // Player stability
+  jmp return
+
+// CCountry struct, hopefully only for player
+pPlayerCountry:
+  dq 0
+nPlayerId:
+  dw 0
+
+PlayerCountry:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+PlayerCountry:
+  db C4 C1 FA 2A 45 38
+
+unregistersymbol(PlayerCountry pPlayerCountry nPlayerId)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+35CB232
+
+eu5.exe+35CB209: 48 8D 54 24 30        - lea rdx,[rsp+30]
+eu5.exe+35CB20E: 48 8B D9              - mov rbx,rcx
+eu5.exe+35CB211: 48 8B 09              - mov rcx,[rcx]
+eu5.exe+35CB214: 45 8D 41 02           - lea r8d,[r9+02]
+eu5.exe+35CB218: E8 B3 EE D5 FF        - call eu5.exe+332A0D0
+eu5.exe+35CB21D: 4C 8B 44 24 30        - mov r8,[rsp+30]
+eu5.exe+35CB222: 4D 85 C0              - test r8,r8
+eu5.exe+35CB225: 0F 89 30 01 00 00     - jns eu5.exe+35CB35B
+eu5.exe+35CB22B: 4C 8B 0B              - mov r9,[rbx]
+eu5.exe+35CB22E: 4D 8B 49 30           - mov r9,[r9+30]
+// ---------- INJECTING HERE ----------
+eu5.exe+35CB232: 4C 03 8B 40 01 00 00  - add r9,[rbx+00000140]
+// ---------- DONE INJECTING  ----------
+eu5.exe+35CB239: 49 F7 D8              - neg r8
+eu5.exe+35CB23C: 75 1E                 - jne eu5.exe+35CB25C
+eu5.exe+35CB23E: 33 C0                 - xor eax,eax
+eu5.exe+35CB240: 41 B9 FF FF FF FF     - mov r9d,FFFFFFFF
+eu5.exe+35CB246: 4D 85 C9              - test r9,r9
+eu5.exe+35CB249: BA C5 A7 00 00        - mov edx,0000A7C5
+eu5.exe+35CB24E: 0F 9F C0              - setg al
+eu5.exe+35CB251: 48 03 D0              - add rdx,rax
+eu5.exe+35CB254: 8B C2                 - mov eax,edx
+eu5.exe+35CB256: 48 83 C4 20           - add rsp,20
+}"""
+
+[[cheat]]
+id = "country-id"
+name = "Country ID"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "ducats-x100-000"
+name = "Ducats (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "stability-x100-000"
+name = "Stability (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "legitimacy-x100-000"
+name = "Legitimacy (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "prestige-x100-000"
+name = "Prestige (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "diplomats-x100-000"
+name = "Diplomats (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x2d30"]
+
+[[cheat]]
+id = "war-exhaustion-x100-000"
+name = "War Exhaustion (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "manpower-x100"
+name = "Manpower (x100)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "sailors-x100"
+name = "Sailors (x100)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "research-progress-x100-000"
+name = "Research Progress (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x31c0"]
+
+[[cheat]]
+id = "subject-loyalty-x100-000-calculated-on-tick"
+name = "Subject Loyalty (x100.000) (calculated on tick)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x3120"]
+
+[[cheat]]
+id = "army-tradition-x100-000"
+name = "Army Tradition (x100.000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "centralization-decentralization"
+name = "Centralization/Decentralization"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23a8"]
+
+[[cheat]]
+id = "traditionalist-innovative"
+name = "Traditionalist/Innovative"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23b0"]
+
+[[cheat]]
+id = "spiritualist-humanist"
+name = "Spiritualist/Humanist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23b8"]
+
+[[cheat]]
+id = "aristocracy-plutocracy"
+name = "Aristocracy/Plutocracy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23c0"]
+
+[[cheat]]
+id = "serfdom-free-subjects"
+name = "Serfdom/Free subjects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23c8"]
+
+[[cheat]]
+id = "mercantilism-free-trade"
+name = "Mercantilism/Free Trade"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23d0"]
+
+[[cheat]]
+id = "beligerent-concilatory"
+name = "Beligerent/Concilatory"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23d8"]
+
+[[cheat]]
+id = "quality-quantity"
+name = "Quality/Quantity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23e0"]
+
+[[cheat]]
+id = "offensive-defensive"
+name = "Offensive/Defensive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23e8"]
+
+[[cheat]]
+id = "land-naval"
+name = "Land/Naval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23f0"]
+
+[[cheat]]
+id = "capiral-traditional-economy"
+name = "Capiral/Traditional Economy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x23f8"]
+
+[[cheat]]
+id = "individualism-communalism"
+name = "Individualism/Communalism"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x2400"]
+
+[[cheat]]
+id = "outward-inward"
+name = "Outward/Inward"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x2408"]
+
+[[cheat]]
+id = "sinicized-unsinicized"
+name = "Sinicized/Unsinicized"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x2410"]
+
+[[cheat]]
+id = "absolutism-liberalism"
+name = "Absolutism/Liberalism"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x2418"]
+
+[[cheat]]
+id = "mysticism-jurisprudence"
+name = "Mysticism/Jurisprudence"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x2420"]
+
+[[cheat]]
+id = "karma"
+name = "Karma"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "religious-influence"
+name = "Religious Influence"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "purity"
+name = "Purity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "doom"
+name = "Doom"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "parliament-vote-support-x1000"
+name = "Parliament vote support (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerCountry"
+hops = [
+    "+0x1f80",
+    "+0xb8",
+]
+
+[[cheat]]
+id = "x-annexation"
+name = "[X] <== Annexation"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-12-13
+  Author : Nameless
+
+  This script gets the CAnnexation struct from the tooltip popup
+  To find:
+    Find the annexation progress (x100.000)
+    Put on a "What accesses..." and hover over the line under
+      "Diplomacy", check which one counts up when the toolip is up
+
+}
+
+[ENABLE]
+
+aobscanmodule(aob_annexation,eu5.exe,48 2B 59 38 48 89 5C 24 78) // should be unique
+alloc(newmem,$1000,aob_annexation)
+
+label(code)
+label(return)
+label(pAnnexation)
+registersymbol(aob_annexation pAnnexation)
+
+newmem:
+  mov [pAnnexation],rcx
+code:
+  sub rbx,[rcx+38]
+  mov [rsp+78],rbx
+  jmp return
+
+pAnnexation:
+  dq 0
+
+aob_annexation:
+  jmp newmem
+  nop 4
+return:
+
+[DISABLE]
+
+aob_annexation:
+  db 48 2B 59 38 48 89 5C 24 78
+
+unregistersymbol(aob_annexation pAnnexation)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+34A1FDB
+
+eu5.exe+34A1FB0: 74 63                 - je eu5.exe+34A2015
+eu5.exe+34A1FB2: 8B 55 10              - mov edx,[rbp+10]
+eu5.exe+34A1FB5: 49 8D 8F 00 25 00 00  - lea rcx,[r15+00002500]
+eu5.exe+34A1FBC: E8 2F 26 F8 FF        - call eu5.exe+34245F0
+eu5.exe+34A1FC1: 48 8D 54 24 30        - lea rdx,[rsp+30]
+eu5.exe+34A1FC6: 48 8B C8              - mov rcx,rax
+eu5.exe+34A1FC9: E8 C2 42 F9 FF        - call eu5.exe+3436290
+eu5.exe+34A1FCE: 48 8B 5C 24 78        - mov rbx,[rsp+78]
+eu5.exe+34A1FD3: 48 8B 7C 24 38        - mov rdi,[rsp+38]
+eu5.exe+34A1FD8: 48 8B 08              - mov rcx,[rax]
+// ---------- INJECTING HERE ----------
+eu5.exe+34A1FDB: 48 2B 59 38           - sub rbx,[rcx+38]
+// ---------- DONE INJECTING  ----------
+eu5.exe+34A1FDF: 48 89 5C 24 78        - mov [rsp+78],rbx
+eu5.exe+34A1FE4: 48 85 FF              - test rdi,rdi
+eu5.exe+34A1FE7: 74 31                 - je eu5.exe+34A201A
+eu5.exe+34A1FE9: BB FF FF FF FF        - mov ebx,FFFFFFFF
+eu5.exe+34A1FEE: 8B C3                 - mov eax,ebx
+eu5.exe+34A1FF0: F0 0F C1 47 08        - lock xadd [rdi+08],eax
+eu5.exe+34A1FF5: 83 F8 01              - cmp eax,01
+eu5.exe+34A1FF8: 75 1B                 - jne eu5.exe+34A2015
+eu5.exe+34A1FFA: 48 8B 07              - mov rax,[rdi]
+eu5.exe+34A1FFD: 48 8B CF              - mov rcx,rdi
+}"""
+
+[[cheat]]
+id = "annexation-progress-x100-000"
+name = "Annexation Progress (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAnnexation"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "no-army-loss-of-men-in-battle"
+name = "No Army loss of men in battle"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-18
+  Author : Nameless
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(no_unit_loss_men,eu5.exe,48 89 4D 30 48 8D 4C 24 70) // should be unique
+alloc(newmem,$1000,no_unit_loss_men)
+
+label(code)
+label(return)
+
+newmem:
+  push rax
+  mov eax,[rbp+18]
+  cmp eax,[nPlayerId]
+  je skipplayer
+  mov [rbp+30],rcx // original code
+skipplayer:
+  pop rax // cleanup
+code:
+  lea rcx,[rsp+70]
+  jmp return
+
+no_unit_loss_men:
+  jmp newmem
+  nop 4
+return:
+registersymbol(no_unit_loss_men)
+
+[DISABLE]
+
+no_unit_loss_men:
+  db 48 89 4D 30 48 8D 4C 24 70
+
+unregistersymbol(no_unit_loss_men)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+38ADCC3
+
+eu5.exe+38ADCA4: 4C 0F 4F C0           - cmovg r8,rax
+eu5.exe+38ADCA8: 48 2B CA              - sub rcx,rdx
+eu5.exe+38ADCAB: 4C 89 45 50           - mov [rbp+50],r8
+eu5.exe+38ADCAF: 48 8B 45 38           - mov rax,[rbp+38]
+eu5.exe+38ADCB3: 79 04                 - jns eu5.exe+38ADCB9
+eu5.exe+38ADCB5: 33 C9                 - xor ecx,ecx
+eu5.exe+38ADCB7: EB 07                 - jmp eu5.exe+38ADCC0
+eu5.exe+38ADCB9: 48 3B C8              - cmp rcx,rax
+eu5.exe+38ADCBC: 48 0F 4F C8           - cmovg rcx,rax
+eu5.exe+38ADCC0: 8B 45 20              - mov eax,[rbp+20]
+// ---------- INJECTING HERE ----------
+eu5.exe+38ADCC3: 48 89 4D 30           - mov [rbp+30],rcx
+// ---------- DONE INJECTING  ----------
+eu5.exe+38ADCC7: 48 8D 4C 24 70        - lea rcx,[rsp+70]
+eu5.exe+38ADCCC: 89 44 24 70           - mov [rsp+70],eax
+eu5.exe+38ADCD0: E8 3B 41 14 FD        - call eu5.exe+9F1E10
+eu5.exe+38ADCD5: 48 8B C8              - mov rcx,rax
+eu5.exe+38ADCD8: 4C 8B F8              - mov r15,rax
+eu5.exe+38ADCDB: 48 8B 10              - mov rdx,[rax]
+eu5.exe+38ADCDE: FF 52 08              - call qword ptr [rdx+08]
+eu5.exe+38ADCE1: 84 C0                 - test al,al
+eu5.exe+38ADCE3: 74 13                 - je eu5.exe+38ADCF8
+eu5.exe+38ADCE5: 49 8D 8F E0 03 00 00  - lea rcx,[r15+000003E0]
+}"""
+
+[[cheat]]
+id = "no-army-loss-of-morale-in-battle"
+name = "No Army loss of morale in battle"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-18
+  Author : Nameless
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(no_morale_loss_in_battle,eu5.exe,48 29 45 40 33 C0) // should be unique
+alloc(newmem,$1000,no_morale_loss_in_battle)
+
+label(code)
+label(return)
+registersymbol(no_morale_loss_in_battle)
+
+newmem:
+
+code:
+  push rbx
+  mov ebx,[rbp+18]
+  cmp ebx,[nPlayerId]
+  je skipplayer
+  sub [rbp+40],rax // original cose
+skipplayer:
+  pop rbx
+  xor eax,eax
+  jmp return
+
+no_morale_loss_in_battle:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+no_morale_loss_in_battle:
+  db 48 29 45 40 33 C0
+
+unregistersymbol(no_morale_loss_in_battle)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+38ADD01
+
+eu5.exe+38ADCDE: FF 52 08              - call qword ptr [rdx+08]
+eu5.exe+38ADCE1: 84 C0                 - test al,al
+eu5.exe+38ADCE3: 74 13                 - je eu5.exe+38ADCF8
+eu5.exe+38ADCE5: 49 8D 8F E0 03 00 00  - lea rcx,[r15+000003E0]
+eu5.exe+38ADCEC: 33 D2                 - xor edx,edx
+eu5.exe+38ADCEE: 48 8B 01              - mov rax,[rcx]
+eu5.exe+38ADCF1: 44 8D 42 01           - lea r8d,[rdx+01]
+eu5.exe+38ADCF5: FF 50 50              - call qword ptr [rax+50]
+eu5.exe+38ADCF8: 48 8B 45 50           - mov rax,[rbp+50]
+eu5.exe+38ADCFC: 48 8D 4C 24 70        - lea rcx,[rsp+70]
+// ---------- INJECTING HERE ----------
+eu5.exe+38ADD01: 48 29 45 40           - sub [rbp+40],rax
+// ---------- DONE INJECTING  ----------
+eu5.exe+38ADD05: 33 C0                 - xor eax,eax
+eu5.exe+38ADD07: 4C 8B 65 48           - mov r12,[rbp+48]
+eu5.exe+38ADD0B: 48 89 45 48           - mov [rbp+48],rax
+eu5.exe+38ADD0F: 48 89 45 50           - mov [rbp+50],rax
+eu5.exe+38ADD13: 8B 45 20              - mov eax,[rbp+20]
+eu5.exe+38ADD16: 89 44 24 70           - mov [rsp+70],eax
+eu5.exe+38ADD1A: E8 F1 40 14 FD        - call eu5.exe+9F1E10
+eu5.exe+38ADD1F: 48 8B C8              - mov rcx,rax
+eu5.exe+38ADD22: 4C 8B F8              - mov r15,rax
+eu5.exe+38ADD25: 48 8B 10              - mov rdx,[rax]
+}"""
+
+[[cheat]]
+id = "x-selected-character-might-be-a-bit-iffy"
+name = "[X] <== Selected Character (Might be a bit iffy)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-07
+  Author : Nameless
+
+  This script gets the character pointer from the father id.
+
+  To find itm, use console and use "set_adm" (or similar) and search for the
+  value (x100.000). When you find it, use "what accesses", put a breakpoint,
+  find the pointer to the CCharacter struct, look for father's id,
+  again use "what accesses", and you should find it.
+
+  To verify, put on "what adresses does this..." on the injection point,
+  and it should only be the CCharacter struct you are looking at.
+}
+
+[ENABLE]
+
+aobscanmodule(selected_character,eu5.exe,8B 81 9C 05 00 00 89) // should be unique, will not survive struct change
+alloc(newmem,$1000,selected_character)
+
+label(code)
+label(return)
+label(pSelectedChar)
+
+registersymbol(selected_character pSelectedChar)
+
+newmem:
+  mov [pSelectedChar],rcx
+code:
+  mov eax,[rcx+0000059C] // CCharacter+59C (2 bytes) is father id (v1.0.3)
+  jmp return
+
+pSelectedChar:
+  dq 0
+
+selected_character:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+selected_character:
+  db 8B 81 9C 05 00 00
+
+unregistersymbol(selected_character pSelectedChar)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+353A7C1
+
+eu5.exe+353A798: E8 B3 F9 4B FD           - call eu5.exe+9FA150
+eu5.exe+353A79D: 48 85 C0                 - test rax,rax
+eu5.exe+353A7A0: 0F 84 10 02 00 00        - je eu5.exe+353A9B6
+eu5.exe+353A7A6: 48 8D 48 08              - lea rcx,[rax+08]
+eu5.exe+353A7AA: 48 8B 01                 - mov rax,[rcx]
+eu5.exe+353A7AD: FF 50 08                 - call qword ptr [rax+08]
+eu5.exe+353A7B0: 84 C0                    - test al,al
+eu5.exe+353A7B2: 0F 84 FE 01 00 00        - je eu5.exe+353A9B6
+eu5.exe+353A7B8: 48 85 DB                 - test rbx,rbx
+eu5.exe+353A7BB: 0F 84 F5 01 00 00        - je eu5.exe+353A9B6
+// ---------- INJECTING HERE ----------
+eu5.exe+353A7C1: 48 8B 03                 - mov rax,[rbx]
+// ---------- DONE INJECTING  ----------
+eu5.exe+353A7C4: 48 8B CB                 - mov rcx,rbx
+eu5.exe+353A7C7: FF 50 08                 - call qword ptr [rax+08]
+eu5.exe+353A7CA: 84 C0                    - test al,al
+eu5.exe+353A7CC: 0F 84 E4 01 00 00        - je eu5.exe+353A9B6
+eu5.exe+353A7D2: 48 8D 05 C7 94 27 02     - lea rax,[eu5.exe+57B3CA0]
+eu5.exe+353A7D9: 48 89 44 24 40           - mov [rsp+40],rax
+eu5.exe+353A7DE: C7 44 24 48 18 00 00 00  - mov [rsp+48],00000018
+eu5.exe+353A7E6: C6 44 24 4C 00           - mov byte ptr [rsp+4C],00
+eu5.exe+353A7EB: 48 8D 4C 24 40           - lea rcx,[rsp+40]
+eu5.exe+353A7F0: E8 8B 2D E9 00           - call eu5.exe+43CD580
+}"""
+
+[[cheat]]
+id = "character-id"
+name = "Character ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedChar"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "administrative-ability-x100-000"
+name = "Administrative Ability (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedChar"
+hops = ["+0x578"]
+
+[[cheat]]
+id = "diplomatic-ability-x100-000"
+name = "Diplomatic Ability (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedChar"
+hops = ["+0x580"]
+
+[[cheat]]
+id = "military-ability-x100-000"
+name = "Military Ability (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedChar"
+hops = ["+0x588"]
+
+[[cheat]]
+id = "x-selected-location"
+name = "[X] <== Selected Location"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-12-06
+  Author : Nameless
+
+  This script gets the location pointer. To find:
+  Find the development (x100.000)
+  pause game, "what accesses" find the one that only changes when you
+  select another location. Unpause and let a month tick, and
+  make sure no other addresses pops up.
+  
+  Offsets courtesy of uloncl
+}
+
+[ENABLE]
+
+aobscanmodule(aob_location,eu5.exe,48 8B 81 C0 0B 00 00) // should be unique
+alloc(newmem,$1000,aob_location)
+
+label(code)
+label(return)
+label(pLocation)
+registersymbol(aob_location pLocation)
+
+newmem:
+  mov [pLocation],rcx
+code:
+  mov rax,[rcx+00000BC0]
+  jmp return
+
+pLocation:
+  dq 0
+
+aob_location:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+aob_location:
+  db 48 8B 81 C0 0B 00 00
+
+unregistersymbol(aob_location)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+5D6B80
+
+eu5.exe+5D6B6A: 48 8B C2              - mov rax,rdx
+eu5.exe+5D6B6D: C3                    - ret 
+eu5.exe+5D6B6E: CC                    - int 3 
+eu5.exe+5D6B6F: CC                    - int 3 
+eu5.exe+5D6B70: 48 8B 81 B8 0B 00 00  - mov rax,[rcx+00000BB8]
+eu5.exe+5D6B77: 48 89 02              - mov [rdx],rax
+eu5.exe+5D6B7A: 48 8B C2              - mov rax,rdx
+eu5.exe+5D6B7D: C3                    - ret 
+eu5.exe+5D6B7E: CC                    - int 3 
+eu5.exe+5D6B7F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+eu5.exe+5D6B80: 48 8B 81 C0 0B 00 00  - mov rax,[rcx+00000BC0]
+// ---------- DONE INJECTING  ----------
+eu5.exe+5D6B87: 48 89 02              - mov [rdx],rax
+eu5.exe+5D6B8A: 48 8B C2              - mov rax,rdx
+eu5.exe+5D6B8D: C3                    - ret 
+eu5.exe+5D6B8E: CC                    - int 3 
+eu5.exe+5D6B8F: CC                    - int 3 
+eu5.exe+5D6B90: 48 8B 81 C8 0B 00 00  - mov rax,[rcx+00000BC8]
+eu5.exe+5D6B97: 48 89 02              - mov [rdx],rax
+eu5.exe+5D6B9A: 48 8B C2              - mov rax,rdx
+eu5.exe+5D6B9D: C3                    - ret 
+eu5.exe+5D6B9E: CC                    - int 3 
+}"""
+
+[[cheat]]
+id = "location-id"
+name = "Location ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "owner-country-id"
+name = "Owner Country ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "development-x100-000"
+name = "Development (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xbc0"]
+
+[[cheat]]
+id = "control-x1000"
+name = "Control (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xbc8"]
+
+[[cheat]]
+id = "prosperity-x1000"
+name = "Prosperity (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xbb8"]
+
+[[cheat]]
+id = "feudalism"
+name = "Feudalism"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xc88"]
+
+[[cheat]]
+id = "legalism"
+name = "Legalism"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xc90"]
+
+[[cheat]]
+id = "meritocracy"
+name = "Meritocracy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xc98"]
+
+[[cheat]]
+id = "renaissance"
+name = "Renaissance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "banking"
+name = "Banking"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xca8"]
+
+[[cheat]]
+id = "professional-armies"
+name = "Professional Armies"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcb0"]
+
+[[cheat]]
+id = "new-world"
+name = "New World"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcb8"]
+
+[[cheat]]
+id = "printing-press"
+name = "Printing Press"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcc0"]
+
+[[cheat]]
+id = "pike-shot"
+name = "Pike & Shot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcc8"]
+
+[[cheat]]
+id = "confessionalism"
+name = "Confessionalism"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcd0"]
+
+[[cheat]]
+id = "global-trade"
+name = "Global Trade"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcd8"]
+
+[[cheat]]
+id = "artillery"
+name = "Artillery"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xce0"]
+
+[[cheat]]
+id = "manufactories"
+name = "Manufactories"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xce8"]
+
+[[cheat]]
+id = "scientific-revolution"
+name = "Scientific Revolution"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcf0"]
+
+[[cheat]]
+id = "military-revolution"
+name = "Military Revolution"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xcf8"]
+
+[[cheat]]
+id = "enlightenment"
+name = "Enlightenment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xd00"]
+
+[[cheat]]
+id = "industrialization"
+name = "Industrialization"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xd08"]
+
+[[cheat]]
+id = "lev-e-en-masse"
+name = "Levée en masse"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLocation"
+hops = ["+0xd10"]
+
+[[cheat]]
+id = "x-selected-country-not-quite-stable"
+name = "[X] <== Selected Country (not quite stable)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-11
+  Author : Nameless
+
+  This script gets the CCountry pointer for selected country in doplomacy view
+}
+
+[ENABLE]
+
+aobscanmodule(selected_country,eu5.exe,48 8B 5B 38 4C 8B C3 BA) // should be unique
+alloc(newmem,$1000,selected_country)
+
+label(code)
+label(return)
+label(pSelectedCountry)
+registersymbol(selected_country pSelectedCountry)
+
+newmem:
+  mov [pSelectedCountry],rbx
+code:
+  mov rbx,[rbx+38]
+  mov r8,rbx
+  jmp return
+
+pSelectedCountry:
+  dq 0
+
+selected_country:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+selected_country:
+  db 48 8B 5B 38 4C 8B C3
+
+unregistersymbol(selected_country pSelectedCountry)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+347C007
+
+eu5.exe+347BFE0: 49 F7 FA              - idiv r10
+eu5.exe+347BFE3: 48 03 C8              - add rcx,rax
+eu5.exe+347BFE6: 49 69 C1 A0 86 01 00  - imul rax,r9,000186A0
+eu5.exe+347BFED: 48 03 C8              - add rcx,rax
+eu5.exe+347BFF0: 4C 8B C1              - mov r8,rcx
+eu5.exe+347BFF3: BA 26 00 00 00        - mov edx,00000026
+eu5.exe+347BFF8: 49 8B CB              - mov rcx,r11
+eu5.exe+347BFFB: E8 30 F7 B1 00        - call eu5.exe+3F9B730
+eu5.exe+347C000: 4C 8B 1E              - mov r11,[rsi]
+eu5.exe+347C003: 48 8B 5E 18           - mov rbx,[rsi+18]
+// ---------- INJECTING HERE ----------
+eu5.exe+347C007: 48 8B 5B 38           - mov rbx,[rbx+38]
+// ---------- DONE INJECTING  ----------
+eu5.exe+347C00B: 4C 8B C3              - mov r8,rbx
+eu5.exe+347C00E: BA 32 00 00 00        - mov edx,00000032
+eu5.exe+347C013: 49 8B CB              - mov rcx,r11
+eu5.exe+347C016: E8 15 F7 B1 00        - call eu5.exe+3F9B730
+eu5.exe+347C01B: 48 85 DB              - test rbx,rbx
+eu5.exe+347C01E: 7E 07                 - jle eu5.exe+347C027
+eu5.exe+347C020: BA 33 00 00 00        - mov edx,00000033
+eu5.exe+347C025: EB 0A                 - jmp eu5.exe+347C031
+eu5.exe+347C027: 79 13                 - jns eu5.exe+347C03C
+eu5.exe+347C029: 48 F7 DB              - neg rbx
+}"""
+
+[[cheat]]
+id = "country-id-2"
+name = "Country ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "ducats-x100-000-2"
+name = "Ducats (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "stability-x100-000-2"
+name = "Stability (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "legitimacy-x100-000-2"
+name = "Legitimacy (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "prestige-x100-000-2"
+name = "Prestige (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "diplomats-x100-000-2"
+name = "Diplomats (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x2d30"]
+
+[[cheat]]
+id = "war-exhaustion-x100-000-2"
+name = "War Exhaustion (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "manpower-x100-2"
+name = "Manpower (x100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "sailors-x100-2"
+name = "Sailors (x100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "research-progress-x100-000-2"
+name = "Research Progress (x100.000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x31c0"]
+
+[[cheat]]
+id = "subject-loyalty-x100-000-calculated-on-tick-2"
+name = "Subject Loyalty (x100.000) (calculated on tick)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x3120"]
+
+[[cheat]]
+id = "centralization-decentralization-2"
+name = "Centralization/Decentralization"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23a8"]
+
+[[cheat]]
+id = "traditionalist-innovative-2"
+name = "Traditionalist/Innovative"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23b0"]
+
+[[cheat]]
+id = "spiritualist-humanist-2"
+name = "Spiritualist/Humanist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23b8"]
+
+[[cheat]]
+id = "aristocracy-plutocracy-2"
+name = "Aristocracy/Plutocracy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23c0"]
+
+[[cheat]]
+id = "serfdom-free-subjects-2"
+name = "Serfdom/Free subjects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23c8"]
+
+[[cheat]]
+id = "mercantilism-free-trade-2"
+name = "Mercantilism/Free Trade"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23d0"]
+
+[[cheat]]
+id = "beligerent-concilatory-2"
+name = "Beligerent/Concilatory"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23d8"]
+
+[[cheat]]
+id = "quality-quantity-2"
+name = "Quality/Quantity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23e0"]
+
+[[cheat]]
+id = "offensive-defensive-2"
+name = "Offensive/Defensive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23e8"]
+
+[[cheat]]
+id = "land-naval-2"
+name = "Land/Naval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23f0"]
+
+[[cheat]]
+id = "capiral-traditional-economy-2"
+name = "Capiral/Traditional Economy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x23f8"]
+
+[[cheat]]
+id = "individualism-communalism-2"
+name = "Individualism/Communalism"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x2400"]
+
+[[cheat]]
+id = "outward-inward-2"
+name = "Outward/Inward"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x2408"]
+
+[[cheat]]
+id = "sinicized-unsinicized-2"
+name = "Sinicized/Unsinicized"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x2410"]
+
+[[cheat]]
+id = "absolutism-liberalism-2"
+name = "Absolutism/Liberalism"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x2418"]
+
+[[cheat]]
+id = "mysticism-jurisprudence-2"
+name = "Mysticism/Jurisprudence"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x2420"]
+
+[[cheat]]
+id = "karma-2"
+name = "Karma"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "purity-2"
+name = "Purity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "doom-2"
+name = "Doom"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "religious-influence-2"
+name = "Religious Influence"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSelectedCountry"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "ironman-does-nothing-at-the-moment-just-a-reminder-jominigamerulegui"
+name = "Ironman (Does nothing at the moment, just a reminder. JominiGameRuleGUI)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-05
+  Author : Nameless
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aob_manual_rules_ironman,eu5.exe,44 0F B6 47 70 48) // should be unique
+alloc(newmem,$1000,aob_manual_rules_ironman)
+
+label(code)
+label(return)
+label(pJominiGamesRulesGui)
+registersymbol(aob_manual_rules_ironman pJominiGamesRulesGui)
+
+newmem:
+  mov [pJominiGamesRulesGui],rdi
+code:
+  movzx r8d,byte ptr [rdi+70]
+  jmp return
+
+pJominiGamesRulesGui:
+  dq 0
+
+aob_manual_rules_ironman:
+  jmp newmem
+return:
+
+
+[DISABLE]
+
+aob_manual_rules_ironman:
+  db 44 0F B6 47 70
+
+unregistersymbol(aob_manual_rules_ironman pJominiGamesRulesGui)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+18ED3D2
+
+eu5.exe+18ED3B3: BA 01 00 00 00        - mov edx,00000001
+eu5.exe+18ED3B8: FF 10                 - call qword ptr [rax]
+eu5.exe+18ED3BA: 90                    - nop 
+eu5.exe+18ED3BB: 48 8B 55 D0           - mov rdx,[rbp-30]
+eu5.exe+18ED3BF: 48 85 D2              - test rdx,rdx
+eu5.exe+18ED3C2: 74 0E                 - je eu5.exe+18ED3D2
+eu5.exe+18ED3C4: 44 89 6D DC           - mov [rbp-24],r13d
+eu5.exe+18ED3C8: 48 8B 4D E0           - mov rcx,[rbp-20]
+eu5.exe+18ED3CC: 48 8B 01              - mov rax,[rcx]
+eu5.exe+18ED3CF: FF 50 10              - call qword ptr [rax+10]
+// ---------- INJECTING HERE ----------
+eu5.exe+18ED3D2: 44 0F B6 47 70        - movzx r8d,byte ptr [rdi+70]
+// ---------- DONE INJECTING  ----------
+eu5.exe+18ED3D7: 48 8D 55 A0           - lea rdx,[rbp-60]
+eu5.exe+18ED3DB: 48 8B CF              - mov rcx,rdi
+eu5.exe+18ED3DE: E8 ED 0E 00 00        - call eu5.exe+18EE2D0
+eu5.exe+18ED3E3: 90                    - nop 
+eu5.exe+18ED3E4: 4D 85 FF              - test r15,r15
+eu5.exe+18ED3E7: 74 14                 - je eu5.exe+18ED3FD
+eu5.exe+18ED3E9: 49 8B D7              - mov rdx,r15
+eu5.exe+18ED3EC: 48 8D 0D AD B1 D9 04  - lea rcx,[eu5.exe+66885A0]
+eu5.exe+18ED3F3: 48 8B 05 A6 B1 D9 04  - mov rax,[eu5.exe+66885A0]
+eu5.exe+18ED3FA: FF 50 10              - call qword ptr [rax+10]
+}"""
+
+[[cheat]]
+id = "ironman"
+name = "Ironman"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pJominiGamesRulesGui"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "achievement-pause-and-rule-just-to-see-the-flags"
+name = "Achievement pause and rule (just to see the flags)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : eu5.exe
+  Version: 
+  Date   : 2025-11-05
+  Author : Nameless
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aob_achievement_pause_and_rules,eu5.exe,0F B6 80 32 01 00 00 48 83 C4 28 C3 CC CC CC CC CC CC CC CC CC 48) // should be unique
+alloc(newmem,$1000,aob_achievement_pause_and_rules)
+
+label(code)
+label(return)
+label(pAchievementBase)
+registersymbol(aob_achievement_pause_and_rules pAchievementBase)
+
+newmem:
+  mov [pAchievementBase],rax
+code:
+  movzx eax,byte ptr [rax+00000132]
+  jmp return
+
+pAchievementBase:
+  dq 0
+
+
+aob_achievement_pause_and_rules:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+aob_achievement_pause_and_rules:
+  db 0F B6 80 32 01 00 00
+
+unregistersymbol(aob_achievement_pause_and_rules pAchievementBase)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: eu5.exe+36B2DDB
+
+eu5.exe+36B2DBB: 48 85 C9              - test rcx,rcx
+eu5.exe+36B2DBE: 74 14                 - je eu5.exe+36B2DD4
+eu5.exe+36B2DC0: 48 8B 01              - mov rax,[rcx]
+eu5.exe+36B2DC3: FF 50 50              - call qword ptr [rax+50]
+eu5.exe+36B2DC6: E8 15 61 35 FE        - call eu5.exe+1A08EE0
+eu5.exe+36B2DCB: 80 3D 00 BF BC 03 00  - cmp byte ptr [eu5.exe+727ECD2],00
+eu5.exe+36B2DD2: 74 07                 - je eu5.exe+36B2DDB
+eu5.exe+36B2DD4: 32 C0                 - xor al,al
+eu5.exe+36B2DD6: 48 83 C4 28           - add rsp,28
+eu5.exe+36B2DDA: C3                    - ret 
+// ---------- INJECTING HERE ----------
+eu5.exe+36B2DDB: 0F B6 80 32 01 00 00  - movzx eax,byte ptr [rax+00000132]
+// ---------- DONE INJECTING  ----------
+eu5.exe+36B2DE2: 48 83 C4 28           - add rsp,28
+eu5.exe+36B2DE6: C3                    - ret 
+eu5.exe+36B2DE7: CC                    - int 3 
+eu5.exe+36B2DE8: CC                    - int 3 
+eu5.exe+36B2DE9: CC                    - int 3 
+eu5.exe+36B2DEA: CC                    - int 3 
+eu5.exe+36B2DEB: CC                    - int 3 
+eu5.exe+36B2DEC: CC                    - int 3 
+eu5.exe+36B2DED: CC                    - int 3 
+eu5.exe+36B2DEE: CC                    - int 3 
+}"""
+
+[[cheat]]
+id = "unknown"
+name = "Unknown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAchievementBase"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "no-nac-mods-in-use"
+name = "No NAC mods in use"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAchievementBase"
+hops = ["+0x131"]
+
+[[cheat]]
+id = "ironman-enabled"
+name = "Ironman enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAchievementBase"
+hops = ["+0x132"]
+
+[[cheat]]
+id = "debug-console-not-enabled"
+name = "Debug/console not enabled ?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAchievementBase"
+hops = ["+0x133"]
+
+[[cheat]]
+id = "unknown-2"
+name = "Unknown 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAchievementBase"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "unknown-3"
+name = "Unknown 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAchievementBase"
+hops = ["+0x139"]

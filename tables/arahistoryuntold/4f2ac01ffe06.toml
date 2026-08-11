@@ -1,0 +1,174 @@
+[game]
+name = "Ara: History Untold"
+exe = "arahistoryuntold.exe"
+notes = "Converted from a Cheat Engine table by ctl3d32. Source: https://fearlessrevolution.com/viewtopic.php?t=31560"
+verified = []
+author = "ctl3d32"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-army-unit-inf-health-high-stregth-speed-and-maxhealth"
+name = "Player Army Unit -> Inf Health & High Stregth, Speed and MaxHealth"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : AraHistoryUntold.exe
+  Version: 
+  Date   : 2024-09-27
+  Author : ctl3d32
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(UnitHealth,$process,0F B7 4A 20 03 F1) // should be unique
+alloc(newmem,$1000,UnitHealth)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [rdx+10],0
+  jne code
+  cmp [rdx+1C],(int)-1
+  jne code
+  mov byte ptr [rdx+26],(int)120    //Speed
+  mov byte ptr [rdx+27],(int)120    //Strength
+  mov word ptr [rdx+22],(int)15000  //MaxHealth
+  mov cx,word ptr [rdx+22]
+  mov word ptr [rdx+20],cx          //Health
+code:
+  movzx ecx,word ptr [rdx+20]
+  add esi,ecx
+  jmp return
+
+UnitHealth:
+  jmp newmem
+  nop
+return:
+registersymbol(UnitHealth)
+
+[DISABLE]
+
+UnitHealth:
+  db 0F B7 4A 20 03 F1
+
+unregistersymbol(UnitHealth)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: AraHistoryUntold.exe+B62E23
+
+AraHistoryUntold.exe+B62DFE: 41 8B C1              - mov eax,r9d
+AraHistoryUntold.exe+B62E01: 83 F8 FF              - cmp eax,-01
+AraHistoryUntold.exe+B62E04: 74 23                 - je AraHistoryUntold.exe+B62E29
+AraHistoryUntold.exe+B62E06: 8B C8                 - mov ecx,eax
+AraHistoryUntold.exe+B62E08: 49 8B 87 D8 7D 2C 01  - mov rax,[r15+012C7DD8]
+AraHistoryUntold.exe+B62E0F: 8B 4C C8 04           - mov ecx,[rax+rcx*8+04]
+AraHistoryUntold.exe+B62E13: 48 6B D1 38           - imul rdx,rcx,38
+AraHistoryUntold.exe+B62E17: 49 03 97 E8 7D 2C 01  - add rdx,[r15+012C7DE8]
+AraHistoryUntold.exe+B62E1E: F6 02 01              - test byte ptr [rdx],01
+AraHistoryUntold.exe+B62E21: 75 06                 - jne AraHistoryUntold.exe+B62E29
+// ---------- INJECTING HERE ----------
+AraHistoryUntold.exe+B62E23: 0F B7 4A 20           - movzx ecx,word ptr [rdx+20]
+// ---------- DONE INJECTING  ----------
+AraHistoryUntold.exe+B62E27: 03 F1                 - add esi,ecx
+AraHistoryUntold.exe+B62E29: 48 83 C7 04           - add rdi,04
+AraHistoryUntold.exe+B62E2D: 48 83 ED 01           - sub rbp,01
+AraHistoryUntold.exe+B62E31: 75 81                 - jne AraHistoryUntold.exe+B62DB4
+AraHistoryUntold.exe+B62E33: 48 8B 5C 24 40        - mov rbx,[rsp+40]
+AraHistoryUntold.exe+B62E38: 8B C6                 - mov eax,esi
+AraHistoryUntold.exe+B62E3A: 48 8B 74 24 50        - mov rsi,[rsp+50]
+AraHistoryUntold.exe+B62E3F: 48 8B 6C 24 48        - mov rbp,[rsp+48]
+AraHistoryUntold.exe+B62E44: 48 83 C4 20           - add rsp,20
+AraHistoryUntold.exe+B62E48: 41 5F                 - pop r15
+}"""
+
+[[cheat]]
+id = "patch-player-inventory-amount-edit-function-add-instead-of-remove"
+name = "Patch player inventory amount edit function (add instead of remove)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : AraHistoryUntold.exe
+  Version: 
+  Date   : 2024-09-29
+  Author : ctl3d32
+
+  This script changes item cost before calling function that changes nation
+  inventory amount. If cost is negative, change it to positive. Hopefully,
+  player nation == 1.
+}
+
+[ENABLE]
+
+aobscanmodule(BuildingCost,$process,8B 43 10 89 44 24 28 48) // should be unique
+alloc(newmem,$1000,BuildingCost)
+
+label(code)
+label(return)
+
+newmem:
+  mov eax,[rbx+10] //Building Cost
+  cmp dword ptr[rsp+38],1  //Nation: 1 == player ???
+  jne code
+  mov eax,[rbx+10]
+  test eax,eax
+  jns code
+  neg eax
+code:
+  //mov eax,[rbx+10]
+  mov [rsp+28],eax
+  jmp return
+
+BuildingCost:
+  jmp newmem
+  nop 2
+return:
+registersymbol(BuildingCost)
+
+[DISABLE]
+
+BuildingCost:
+  db 8B 43 10 89 44 24 28
+
+unregistersymbol(BuildingCost)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: AraHistoryUntold.exe+BFF20B
+
+AraHistoryUntold.exe+BFF1DB: 49 81 C0 A0 41 00 00     - add r8,000041A0
+AraHistoryUntold.exe+BFF1E2: 49 8B CE                 - mov rcx,r14
+AraHistoryUntold.exe+BFF1E5: 0F 10 00                 - movups xmm0,[rax]
+AraHistoryUntold.exe+BFF1E8: 8B 84 24 F0 00 00 00     - mov eax,[rsp+000000F0]
+AraHistoryUntold.exe+BFF1EF: 4C 03 C5                 - add r8,rbp
+AraHistoryUntold.exe+BFF1F2: 89 44 24 40              - mov [rsp+40],eax
+AraHistoryUntold.exe+BFF1F6: 8B 84 24 E8 00 00 00     - mov eax,[rsp+000000E8]
+AraHistoryUntold.exe+BFF1FD: 89 44 24 38              - mov [rsp+38],eax     //Nation no. (player == 1 ?)
+AraHistoryUntold.exe+BFF201: 48 8D 44 24 60           - lea rax,[rsp+60]
+AraHistoryUntold.exe+BFF206: 48 89 44 24 30           - mov [rsp+30],rax
+// ---------- INJECTING HERE ----------
+AraHistoryUntold.exe+BFF20B: 8B 43 10                 - mov eax,[rbx+10]     //Building Cost
+// ---------- DONE INJECTING  ----------
+AraHistoryUntold.exe+BFF20E: 89 44 24 28              - mov [rsp+28],eax
+AraHistoryUntold.exe+BFF212: 48 8D 44 24 70           - lea rax,[rsp+70]
+AraHistoryUntold.exe+BFF217: 48 89 44 24 20           - mov [rsp+20],rax
+AraHistoryUntold.exe+BFF21C: 0F 29 44 24 60           - movaps [rsp+60],xmm0
+AraHistoryUntold.exe+BFF221: 0F 29 4C 24 70           - movaps [rsp+70],xmm1
+AraHistoryUntold.exe+BFF226: E8 D5 F3 FF FF           - call AraHistoryUntold.exe+BFE600
+AraHistoryUntold.exe+BFF22B: 48 83 C3 18              - add rbx,18
+AraHistoryUntold.exe+BFF22F: 49 3B DC                 - cmp rbx,r12
+AraHistoryUntold.exe+BFF232: 0F 85 18 FE FF FF        - jne AraHistoryUntold.exe+BFF050
+AraHistoryUntold.exe+BFF238: 0F 28 B4 24 80 00 00 00  - movaps xmm6,[rsp+00000080]
+}"""

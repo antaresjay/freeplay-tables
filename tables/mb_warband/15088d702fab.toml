@@ -1,0 +1,422 @@
+[game]
+name = "Mount and Blade - Steam Pack"
+exe = "mb_warband.exe"
+notes = "Converted from a Cheat Engine table by Recifense. Source: https://fearlessrevolution.com/viewtopic.php?t=620"
+verified = []
+author = "Recifense"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-mb-wb-v1-173-steam-script-3-0-aob"
+name = "[X] <== MB wb V1.173 (Steam) Script 3.0 AOB"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Game Title    : Mount&Blade Warband
+ Game Version  : 1.170 (Steam)
+ Game Sponsor  : A CE User (via gift: a retail serial)
+ Process Name  : mb_warband.exe
+ Script Version: 2.0
+ CE Version    : 6.2
+ Release date  : 23-Dec-2016
+ Author        : Recifense
+ History:
+ 18-Jun-12: Release for version 1.153 (cracked)
+ 04-Nov-12: Release for version 1.154 (Steam)
+ 23-Dec-16: Release for version 1.170 (Steam)
+ Features:
+ - God Mode
+ - Thaler (Money)
+ - Unlimited Ammo
+ - Inventory Items (full)
+ - Some pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"mb_warband.exe")
+
+//=========================================
+[ENABLE]
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+
+AOBScan(aobMonHero,d9 85 00 60 00 00 d9 86 18 02 00 00 da e9 df e0 f6 c4 44)  //1170
+AOBScan(aobMonHero1,8b 80 f0 40 01 00 8b 94 10 74 02 00 00 89 91 fc 05 00 00) //1170
+AOBScan(aobGodMode,83 ec 08 d9 96 00 60 00 00 d9 5c 24 10 d9 44 24 10 dd 1c)  //+03 1170
+AOBScan(aobMonAmmo,81 e1 ff 00 00 00 2b c1 ?? ?? 8b 16 8b 46 04 8b 4c 24 30)  //1170
+AOBScan(aobMonItem,8b 4f 04 81 e1 ff 00 00 00 2b c1 50 68 ?? ?? ?? ?? 8d 94)  //+03 1170
+AOBScan(aobMonHorse,d9 87 00 60 00 00 d9 86 1c 02 00 00 da e9 df e0 f6 c4 44) //1170
+
+//=========================================
+// Declaration section
+label(pMonHero)
+label(pMonHero1)
+label(pGodMode)
+label(pMonAmmo)
+label(pMonItem)
+label(pMonHorse)
+label(_MonHero)
+label(_BackMH)
+label(_ExitMH)
+label(_MonHero1)
+label(_BackMH1)
+label(_ExitMH1)
+label(_GodMode)
+label(_GodM0)
+label(_BackGM)
+label(_ExitGM)
+label(_MonAmmo)
+label(_MonA0)
+label(_BackMA)
+label(_ExitMA)
+label(_MonItem)
+label(_BackMI)
+label(_ExitMI)
+label(_MonHorse)
+label(_BackMHe)
+label(_ExitMHe)
+label(pSel)
+label(pUnitHP)
+label(pUnitInfo)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMA)
+label(iEnableMI)
+label(iPlayerID)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pSel)
+registersymbol(pUnitHP)
+registersymbol(pUnitInfo)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMI)
+registersymbol(iPlayerID)
+registersymbol(pMonHero)
+registersymbol(pMonHero1)
+registersymbol(pGodMode)
+registersymbol(pMonAmmo)
+registersymbol(pMonItem)
+registersymbol(pMonHorse)
+
+//=========================================
+MyCode:
+//========================================= 1170
+// While HP BAR is visible
+_MonHero:
+ mov [pUnitHP],ebp
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMH                        // Jump if feature is disabled
+
+ mov eax,[ebp+00005ffc]            // Get max HP
+ mov [ebp+00006000],eax            // Upd Cur HP
+ mov [ebp+00005ff8],eax            // Upd HP
+
+_ExitMH:
+ fld dword ptr [ebp+00006000]      // Original code (rds cHP)
+ jmp _BackMH                       // Back to main code
+
+
+//========================================= 1170
+// On the status screen
+_MonHero1:
+ mov eax,[eax+000140F0]            // Original code
+ mov [pUnitInfo],eax
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMH1                       // Jump if feature is disabled
+
+ cmp dword ptr [eax+000005d0],#150000 // Thaler
+ jge _ExitMH1
+
+ mov dword ptr [eax+000005d0],#150000
+
+_ExitMH1:
+ jmp _BackMH1                      // Back to main code
+
+//========================================= 1170
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp esi,[pUnitHP]
+ je _GodM0
+
+ cmp dword ptr [esi+000007ac],0
+ jne _ExitGM
+
+_GodM0:
+ fstp st(0)
+
+ fld dword ptr [esi+00005ffc]
+
+_ExitGM:
+ fst dword ptr [esi+00006000]      // Original code (upd HP)
+ jmp _BackGM                       // Back to main code
+
+//========================================= 1154
+_MonAmmo:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                        // Jump if feature is disabled
+
+ mov ecx,[esp+10]
+ cmp ecx,[pUnitHP]
+ je _MonA0
+
+ cmp dword ptr [ecx+000007ac],0
+ jne _ExitMA
+
+_MonA0:
+ xor ecx,ecx
+ mov [esi+04],cl                   // Make spent_ammo = 0
+ mov [esi-04],cl                   // Reload ammo
+
+_ExitMA:
+ mov ecx,[esi+04]                  // Restore ECX
+ and ecx,000000FF                  // Original code
+ jmp _BackMA                       // Back to main code
+
+//========================================= 1154
+// On inventory
+_MonItem:
+ cmp dword ptr [iEnableMI],0
+ je _ExitMI                        // Jump if feature is disabled
+
+ xor ecx,ecx
+ mov [edi+04],cl                   // Make consumed_qtty = 0
+
+_ExitMI:
+ mov ecx,[edi+04]                  // Restore ECX
+ and ecx,000000FF                  // Original code
+ jmp _BackMI                       // Back to main code
+
+//========================================= 1170
+// While HP BAR is visible
+_MonHorse:
+ mov [pSel],edi
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMHe                       // Jump if feature is disabled
+
+ mov eax,[edi+00005ffc]            // Get max HP
+ mov [edi+00006000],eax            // Upd Cur HP
+ mov [edi+00005ff8],eax            // Upd HP
+
+_ExitMHe:
+ fld dword ptr [edi+00006000]      // Original code (rds cHP)
+ jmp _BackMHe                      // Back to main code
+
+//=========================================
+ db '===============================>'
+ db 'CE6.1 Script by Recifense 122316'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMA:
+ dd 0
+iEnableMI:
+ dd 0
+pSel:
+ dd 0
+pUnitHP:
+ dd 0
+pUnitInfo:
+ dd 0
+iPlayerID:
+ dd 0
+
+//=========================================
+// Hacking Points
+aobMonHero:
+pMonHero:
+ jmp _MonHero
+ nop
+_BackMH:
+
+aobMonHero1:
+pMonHero1:
+ jmp _MonHero1
+ nop
+_BackMH1:
+
+aobGodMode+03:
+pGodMode:
+ jmp _GodMode
+ nop
+_BackGM:
+
+aobMonAmmo:
+pMonAmmo:
+ jmp _MonAmmo
+ nop
+_BackMA:
+
+aobMonItem+03:
+pMonItem:
+ jmp _MonItem
+ nop
+_BackMI:
+
+aobMonHorse:
+pMonHorse:
+ jmp _MonHorse
+ nop
+_BackMHe:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+pMonHero: //1170
+//ffld dword ptr [ebp+00006000]
+ db d9 85 00 60 00 00
+
+pMonHero1: //1170
+//mov eax,[eax+000140F0]
+ db 8b 80 f0 40 01 00
+
+pGodMode: //1170
+//fst dword ptr [esi+00006000]
+ db d9 96 00 60 00 00
+
+pMonAmmo: //1170
+//and ecx,000000FF
+ db 81 e1 ff 00 00 00
+
+pMonItem: //ok
+//and ecx,000000FF
+ db 81 e1 ff 00 00 00
+
+pMonHorse: //1170
+//fld dword ptr [edi+00006000]
+ db d9 87 00 60 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pSel)
+unregistersymbol(pUnitHP)
+unregistersymbol(pUnitInfo)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMI)
+unregistersymbol(iPlayerID)
+unregistersymbol(pMonHero)
+unregistersymbol(pMonHero1)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonAmmo)
+unregistersymbol(pMonItem)
+unregistersymbol(pMonHorse)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}"""
+
+[[cheat]]
+id = "hero-s-attribute-points"
+name = "Hero's Attribute Points ==>"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitInfo"
+hops = ["+0x2c0"]
+
+[[cheat]]
+id = "hero-s-skill-points"
+name = "Hero's Skill Points ==>"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitInfo"
+hops = ["+0x2bc"]
+
+[[cheat]]
+id = "hero-s-weapons-points"
+name = "Hero's Weapons Points ==>"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitInfo"
+hops = ["+0x2c4"]
+
+[[cheat]]
+id = "hero-s-xp"
+name = "Hero's XP ==>"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitInfo"
+hops = ["+0x2b4"]
+
+[[cheat]]
+id = "hero-s-money-thaler"
+name = "Hero's Money (Thaler) ==>"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitInfo"
+hops = ["+0x5d0"]
+
+[[cheat]]
+id = "inventory-1st-item-id"
+name = "Inventory 1st Item ID ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitInfo"
+hops = ["+0x2d0"]

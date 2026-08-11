@@ -1,0 +1,379 @@
+[game]
+name = "Spelunky 2 [Gamepass/MS Store]"
+exe = "spel2.exe"
+notes = "Converted from a Cheat Engine table by kajih. Source: https://fearlessrevolution.com/viewtopic.php?t=18899"
+verified = []
+author = "kajih"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(playerHook,Spel2.exe,49 8B 06 49 8B 7E 10) // should be unique
+alloc(newmem1,$1000,playerHook)
+registersymbol(playerHook)
+
+aobscanmodule(infHealth,Spel2.exe,41 88 86 17 01 00 00 4D) // should be unique
+alloc(newmem2,$1000,infHealth)
+registersymbol(infHealth)
+
+label(code1)
+label(return1)
+label(code2)
+label(return2)
+
+label(OneHitKillCheck)
+
+label(playerPTR)
+registersymbol(playerPTR)
+label(bOhK)
+registersymbol(bOhK)
+label(bUnlimHealth)
+registersymbol(bUnlimHealth)
+
+////////////////////////// Player Hook ///////////////////
+newmem1:
+  mov [playerPTR],r14
+code1:
+  mov rax,[r14]
+  mov rdi,[r14+10]
+  jmp return1
+
+playerPTR:
+  dd 0
+
+///////////////// Damage Checks ////////////////////////
+newmem2:
+  push rax
+  mov rax,[playerPTR]
+  cmp r14,rax
+  pop rax
+  jne OneHitKillCheck
+  cmp byte ptr [bUnlimHealth],1
+  jne code2
+  jmp return2
+
+OneHitKillCheck:
+  cmp byte ptr [bOhK],1
+  jne code2
+  cmp [r14+EC],0xFA0 // Turkey?
+  je code2
+  mov [r14+00000117],0
+  jmp return2
+
+code2:
+  mov [r14+00000117],al
+  jmp return2
+
+// dec
+bUnlimHealth:
+  dd 0
+bOhK:
+  dd 0
+
+playerHook:
+  jmp newmem1
+  nop 2
+
+return1:
+infHealth:
+  jmp newmem2
+  nop 2
+
+return2:
+
+[DISABLE]
+playerHook:
+  db 49 8B 06 49 8B 7E 10
+
+infHealth:
+  db 41 88 86 17 01 00 00
+
+unregistersymbol(playerHook)
+unregistersymbol(playerPTR)
+unregistersymbol(moneyPTR)
+unregistersymbol(bOhK)
+unregistersymbol(bUnlimHealth)
+dealloc(newmem1)
+dealloc(newmem2)
+dealloc(newmem3)"""
+
+[[cheat]]
+id = "no-damage"
+name = "No Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+bUnlimHealth:
+db 1
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+bUnlimHealth:
+db 0"""
+
+[[cheat]]
+id = "no-curse-damage"
+name = "No Curse Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(skullDamage,Spel2.exe,C6 86 17 01 00 00 01) // should be unique
+alloc(newmem,$1000,skullDamage)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //mov byte ptr [rsi+00000117],01
+  jmp return
+
+skullDamage:
+  jmp newmem
+  nop 2
+return:
+registersymbol(skullDamage)
+
+[DISABLE]
+
+skullDamage:
+  db C6 86 17 01 00 00 01
+
+unregistersymbol(skullDamage)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-stun"
+name = "No Stun"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(noStun,Spel2.exe,66 89 B7 18 01 00 00) // should be unique
+alloc(newmem,$1000,noStun)
+
+label(code)
+label(return)
+//label(playerPTR)
+
+newmem:
+  push rax
+  mov rax,[playerPTR]
+  cmp rdi,rax
+  pop rax
+  //cmp [rdi+EC],0x1770 //if player
+  jne code
+  jmp return
+code:
+  mov [rdi+00000118],si
+  jmp return
+
+noStun:
+  jmp newmem
+  nop 2
+return:
+
+registersymbol(noStun)
+//registersymbol(playerPTR)
+
+[DISABLE]
+
+noStun:
+  db 66 89 B7 18 01 00 00
+
+unregistersymbol(noStun)
+//unregistersymbol(playerPTR)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+bOhK:
+db 1
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+bOhK:
+db 0"""
+
+[[cheat]]
+id = "inf-rope"
+name = "Inf. Rope"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(infRope,Spel2.exe,88 50 05 41 8A 87 14 01 00 00) // should be unique
+alloc(newmem,$1000,infRope)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //mov [rax+05],dl
+  mov al,[r15+00000114]
+  jmp return
+
+infRope:
+  jmp newmem
+  nop 5
+return:
+registersymbol(infRope)
+
+[DISABLE]
+
+infRope:
+  db 88 50 05 41 8A 87 14 01 00 00
+
+unregistersymbol(infRope)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "inf-bomb"
+name = "Inf. Bomb"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(infBomb,Spel2.exe,88 50 04 80 BE 14 01 00 00 05) // should be unique
+alloc(newmem,$1000,infBomb)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //mov [rax+04],dl
+  cmp byte ptr [rsi+00000114],05
+  jmp return
+
+infBomb:
+  jmp newmem
+  nop 5
+return:
+registersymbol(infBomb)
+
+[DISABLE]
+
+infBomb:
+  db 88 50 04 80 BE 14 01 00 00 05
+
+unregistersymbol(infBomb)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "freeze-level-timer"
+name = "Freeze Level Timer"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(StopTimer,Spel2.exe,41 83 87 44 0A 00 00 01) // should be unique
+alloc(newmem,$1000,StopTimer)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //add dword ptr [r15+00000A44],01
+  jmp return
+
+StopTimer:
+  jmp newmem
+  nop 3
+return:
+registersymbol(StopTimer)
+
+[DISABLE]
+
+StopTimer:
+  db 41 83 87 44 0A 00 00 01
+
+unregistersymbol(StopTimer)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "current-level-money"
+name = "Current Level Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerPTR"
+hops = [
+    "+0x140",
+    "+0x0",
+]
+
+[[cheat]]
+id = "previous-levels"
+name = "Previous Levels"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerPTR"
+hops = [
+    "+0x140",
+    "+0x1520",
+]

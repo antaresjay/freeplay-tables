@@ -1,0 +1,712 @@
+[game]
+name = "Visions of Mana"
+exe = "visionsofmana-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=31028"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-damage-modifier-options-god-mode-one-hit-kill-etc"
+name = "Enable Damage Modifier Options (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(DamageModAOB,$process,F3 0F 10 4B 48 F3 0F 2C 7B 6C F3 0F 5C CE F3 0F 58 C9) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,1024)
+
+///
+label(return)
+label(DamageModAOBSave)
+registersymbol(DamageModAOBSave)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fEnemyHealingMult)
+registersymbol(fEnemyHealingMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(fHeroHealingMult)
+registersymbol(fHeroHealingMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+///
+newmem:
+  readmem(DamageModAOB,5)
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,[rbx+20]
+  cmp dword ptr [r15+328],0
+  jne EnemyHit
+HeroHit:
+  // Search If Already In Ally ID List
+  xor r12,r12
+  xor r13,r13
+  mov r13d,[rbx+0C]
+  mov r14,AllyIDList
+  mov r15,AllyPtrList
+StartSearchAllyIDList:
+  cmp r12,#64
+  jg AllyNotFound
+  cmp [r14+r12*8],r13
+  je AllyFound
+  inc r12d
+  jmp StartSearchAllyIDList
+AllyNotFound:
+  // Search For Blank Spot In List
+  xor r12,r12
+StartSearchAllyIDList2:
+  cmp r12,#64
+  jg AllyListFull
+  cmp [r14+r12*8],0
+  je AllyNotFound2
+  inc r12d
+  jmp StartSearchAllyIDList2
+AllyNotFound2:
+  // Add To Ally ID List
+  mov [r14+r12*8],r13
+  mov r15,AllyPtrList
+  mov [r15+r12*8],rbx
+  mov r15,AllyPtrListMP1
+  mov [r15+r12*8],rbx
+  add [r15+r12*8],80
+  jmp DoHeroHit
+AllyListFull:
+AllyFound:
+DoHeroHit:
+  comiss xmm6,[fZeroFloat]
+  jb HeroHealingHit
+  ja HeroDamageHit
+  jmp MyCleanUp1
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  mulss xmm6,[fHeroDamageMult]
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xorps xmm6,xmm6
+  jmp MyCleanUp1
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne MyCleanUp1
+  comiss xmm6,xmm1
+  jb @F
+  xorps xmm6,xmm6
+@@:
+  jmp MyCleanUp1  
+HeroHealingHit:
+  cmp [fHeroHealingMult],(float)0.0
+  je MyCleanUp1
+  mulss xmm6,[fHeroHealingMult]
+  jmp MyCleanUp1
+EnemyHit:
+  comiss xmm6,[fZeroFloat]
+  jb EnemyHealingHit
+  ja EnemyDamageHit
+  jmp CheckOneHitKill
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  mulss xmm6,[fEnemyDamageMult]
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne MyCleanUp1
+  movss xmm6,xmm1 
+  jmp MyCleanUp1
+EnemyHealingHit:
+  cmp [fEnemyHealingMult],(float)0.0
+  je MyCleanUp1
+  mulss xmm6,[fEnemyHealingMult]
+
+MyCleanUp1:  
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+DamageModAOBSave:
+  readmem(DamageModAOB,18)
+  jmp DamageModAOB+12
+
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+fZeroFloat:
+dq (float)0
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)2.0
+fEnemyHealingMult:
+dq (float)0.25
+fHeroDamageMult:
+dq (float)0.25
+fHeroHealingMult:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+
+///
+DamageModAOB:
+  jmp newmem
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  readmem(DamageModAOBSave,18)
+
+///
+unregistersymbol(DamageModAOB)
+unregistersymbol(DamageModAOBSave)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fEnemyHealingMult)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(fHeroHealingMult)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-hp"
+name = "Hero Damage Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-hp"
+name = "Hero Healing Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die"
+name = "Hero Cannot Die"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-hp"
+name = "Enemy Damage Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-hp"
+name = "Enemy Healing Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteMP"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-hp-2"
+name = "Hero Damage Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-hp-2"
+name = "Hero Healing Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "infinite-lucre-money"
+name = "Infinite Lucre(Money)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteLucre"
+hops = []
+
+[[cheat]]
+id = "lucre-money-gain-multiplier"
+name = "Lucre(Money) Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fLucreGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "lucre-money-loss-multiplier"
+name = "Lucre(Money) Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fLucreLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "infinite-gold-clover"
+name = "Infinite Gold Clover"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteGoldClover"
+hops = []
+
+[[cheat]]
+id = "gold-clover-gain-multiplier"
+name = "Gold Clover Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fGoldCloverGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "gold-clover-loss-multiplier"
+name = "Gold Clover Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fGoldCloverLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "infinite-niccolo-coin"
+name = "Infinite Niccolo Coin"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteNiccoloCoin"
+hops = []
+
+[[cheat]]
+id = "niccolo-coin-gain-multiplier"
+name = "Niccolo Coin Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fNiccoloCoinGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "niccolo-coin-loss-multiplier"
+name = "Niccolo Coin Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fNiccoloCoinLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "infinite-grizzly-syrup"
+name = "Infinite Grizzly Syrup"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteGrizzlySyrup"
+hops = []
+
+[[cheat]]
+id = "grizzly-syrup-gain-multiplier"
+name = "Grizzly Syrup Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fGrizzlySyrupGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "grizzly-syrup-loss-multiplier"
+name = "Grizzly Syrup Loss Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fGrizzlySyrupLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "party-exp-multiplier"
+name = "Party EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fPartyEXPGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "infinite-items"
+name = "Infinite Items"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInfiniteItem"
+hops = []
+
+[[cheat]]
+id = "set-items-to-minimum-value"
+name = "Set Items To Minimum Value"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetItemsToMinimumValue"
+hops = []
+
+[[cheat]]
+id = "item-gain-multiplier"
+name = "Item Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fItemGainMult"
+hops = []
+
+[[cheat]]
+id = "item-loss-multiplier"
+name = "Item Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fItemLossMult"
+hops = []
+
+[[cheat]]
+id = "infinite-jumps"
+name = "Infinite Jumps"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// 
+aobscanmodule(InfJumpsAOB1,$process,BE 01 00 00 00 85 C0 75 16 49 8B 06 49 8B CE)
+registersymbol(InfJumpsAOB1)
+
+///
+InfJumpsAOB1+1:
+  db 00
+  
+[DISABLE]
+
+///
+InfJumpsAOB1+1:
+  db 01
+
+unregistersymbol(InfJumpsAOB1)"""
+
+[[cheat]]
+id = "lucre-money-view-main-status-screen"
+name = "Lucre (Money) (View Main Status Screen)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "LucrePtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "gold-clover-view-main-status-screen"
+name = "Gold Clover (View Main Status Screen)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldCloverPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "niccolo-coin-view-main-status-screen"
+name = "Niccolo Coin (View Main Status Screen)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NiccoloCoinPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "grizzly-syrup-view-main-status-screen"
+name = "Grizzly Syrup (View Main Status Screen)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GrizzlySyrupPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "party-exp"
+name = "Party EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PartyEXPPtr"
+hops = ["+0x0"]

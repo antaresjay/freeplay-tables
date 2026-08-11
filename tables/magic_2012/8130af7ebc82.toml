@@ -1,0 +1,385 @@
+[game]
+name = "Magic The Gathering DOTP 2012"
+exe = "magic_2012.exe"
+notes = "Converted from a Cheat Engine table by Recifense. Source: https://fearlessrevolution.com/viewtopic.php?t=624"
+verified = []
+author = "Recifense"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-magic-the-gathering-2012-script"
+name = "[X] <== Magic The Gathering 2012  Script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Game Title    : Magic The Gathering DOTP 2012
+ Game Version  : Unknown
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 01-Jul-2011
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Minimum Attack value
+ - Minimum Defence Value,
+ - pointers to Zoomed Card and player
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("Magic_2012.exe"+0030e913,89 9e 30 02 00 00)
+assert("Magic_2012.exe"+00390d7c,89 46 74 89 5e 64)
+assert("Magic_2012.exe"+00367cf0,a1 30 02 ab 00)
+assert("Magic_2012.exe"+00303130,89 77 34 5f 5e)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonCard)
+label(_MonC0)
+label(_BackMC)
+label(_ExitMC)
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode2x2)
+label(_BackGM2)
+label(_ExitGM2)
+label(pPlayer)
+label(pCommon)
+label(pCard)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMD)
+label(iMinAttVal)
+label(iMinDefVal)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPlayer)
+registersymbol(pCard)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMD)
+registersymbol(iMinAttVal)
+registersymbol(iMinDefVal)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ push eax
+
+ mov eax,[esi+38]
+ cmp eax,[pCommon]
+ jne _ExitGM                       // Jump if it is not a player's hero
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov ebx,[esi+0000022c]            // Get max HP
+
+_ExitGM:
+ pop eax
+
+ mov [esi+00000230],ebx            // Original code (update HP)
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+// Updated when the cursor is over card zoom out button
+_MonCard:
+ push ebx
+ push ecx
+
+ mov [pCard],eax                   // Save ptr for debugging
+ test eax,eax
+ jz _ExitMC
+
+ mov ebx,[eax+000000e0]            // Get Owner
+ mov ebx,[ebx+38]
+ cmp ebx,[pCommon]
+ jne _ExitMC                       // Jump if it is not a player's card
+
+ mov ebx,[eax+0000028c]            // Get card type info
+ test ebx,ebx
+ jz _ExitMC
+
+ cmp dword ptr [iEnableMD],0
+ je _MonC0                         // Jump if feature is disabled
+// Minimum Defence Value
+ cmp dword ptr [ebx+0000025c],0
+ je _MonC0                         // Jump if current defence is zero
+
+ mov ecx,[iMinDefVal]
+ cmp ecx,[ebx+0000025c]
+ jle _MonC0
+
+ mov [ebx+0000025c],ecx            // Make defence value = minimum
+
+_MonC0:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMC                        // Jump if feature is disabled
+// Minimum Attack Value
+ cmp dword ptr [ebx+00000258],0
+ je _ExitMC                        // Jump if current defence is zero
+
+ mov ecx,[iMinAttVal]
+ cmp ecx,[ebx+00000258]
+ jle _ExitMC
+
+ mov [ebx+00000258],ecx            // Make attack value = minimum
+
+_ExitMC:
+ pop ecx
+ pop ebx
+
+ mov [esi+74],eax                  // Original code
+ mov [esi+64],ebx                  // Original code
+ jmp _BackMC                       // Back to main code
+
+//=========================================
+_MonPlayer:
+ mov eax,[Magic_2012.exe+6B0230]   // Original code
+ test eax,eax
+ jz _ExitMP
+
+ mov [pPlayer],eax                 // Save ptr for debugging
+
+ mov eax,[eax+38]                  // Get Common pointer
+ mov [pCommon],eax                 // Save ptr for debugging
+
+_ExitMP:
+ mov eax,[Magic_2012.exe+6B0230]   // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// When playing 2 x 2 (Two-Headed Giants)
+_GodMode2x2:
+ cmp dword ptr [edi+58],1
+ jne _ExitGM2                      // Jump if it is not the player
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM2                       // Jump if feature is disabled
+
+ mov esi,[edi+10]                  // Get max HP
+
+_ExitGM2:
+ mov [edi+34],esi                  // Original code (update HP)
+ pop edi                           // Original code
+ pop esi                           // Original code
+ jmp _BackGM2                      // Back to main code
+
+//=========================================
+ db '==========>'
+ db 'CE6.1 Script by Recifense 070111'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 0
+iEnableMD:
+ dd 0
+pPlayer:
+ dd 0
+pCommon:
+ dd 0
+pCard:
+ dd 0
+iMinAttVal:
+ dd #4
+iMinDefVal:
+ dd #10
+
+//=========================================
+// Hacking Points
+"Magic_2012.exe"+0030e913:
+ jmp _GodMode
+ nop
+_BackGM:
+
+"Magic_2012.exe"+00390d7c:
+ jmp _MonCard
+ nop
+_BackMC:
+
+"Magic_2012.exe"+00367cf0:
+ jmp _MonPlayer
+_BackMP:
+
+"Magic_2012.exe"+00303130:
+ jmp _GodMode2x2
+_BackGM2:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+"Magic_2012.exe"+0030e913:
+// mov [esi+00000230],ebx
+ db 89 9e 30 02 00 00
+
+"Magic_2012.exe"+00390d7c:
+// mov [esi+74],eax
+// mov [esi+64],ebx
+ db 89 46 74 89 5e 64
+
+"Magic_2012.exe"+00367cf0:
+// mov eax,[00AB0230]
+ db a1 30 02 ab 00
+
+"Magic_2012.exe"+00303130:
+// mov [edi+34],esi
+// pop edi
+// pop esi
+ db 89 77 34 5f 5e
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPlayer)
+unregistersymbol(pCard)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMD)
+unregistersymbol(iMinAttVal)
+unregistersymbol(iMinDefVal)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct HERO:
+0000 = 00933f14
+0008 = pNextHero
+000c = pAlly (hero)
+0014 = iID (usually 1 for the player's hero)
+0030 = iHeroIndex (usually 0 for the player's hero during campaign)
+0038 = pCommon (among allies)
+0048 = puName (Hero's name in unicode format)
+00a0 = pCardList
+022c = imHP\t (maximum hero's HP)
+0230 = icHP\t (current hero's HP)
+
+struct COMMON:
+0000 = 00932f34
+0010 = imHP\t (maximum hero's or party's HP)
+0030 = pHero (or first party's hero)
+0034 = icHP\t (current hero's or party's HP)
+
+struct CARD:
+0000 = 00933f04
+00b0 = iPower
+00b4 = iToughness
+00dc = pOwner (hero)
+00e0 = pOwner (hero)
+0160 = iPower
+0164 = iToughness
+0286 = pCardTypeInfo
+
+struct CARDTYPEINFO:
+0000 = 00933e14
+0048 = puName (Card's name in unicode format)
+0258 = iPower
+025c = iToughness
+
+[TIP] During a match, any change on the CARDTYPEINFO will affect all cards of this type;
+}"""
+
+[[cheat]]
+id = "enable-disable-god-mode-1-0"
+name = "Enable/Disable God Mode ==> (1/0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "minimum-defence-value-changeable"
+name = "Minimum Defence Value ==>  (changeable)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinDefVal"
+hops = []
+
+[[cheat]]
+id = "minimum-attack-value-changeable"
+name = "Minimum Attack Value ==>  (changeable)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinAttVal"
+hops = []
+
+[[cheat]]
+id = "selected-card-type-toughness-value-changeable"
+name = "Selected Card Type Toughness value ==> (changeable)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCard"
+hops = [
+    "+0x28c",
+    "+0x25c",
+]
+
+[[cheat]]
+id = "selected-card-type-power-value-changeable"
+name = "Selected Card Type Power value ==> (changeable)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCard"
+hops = [
+    "+0x28c",
+    "+0x258",
+]

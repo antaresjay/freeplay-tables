@@ -1,0 +1,2741 @@
+[game]
+name = "We Are The Dwarves"
+exe = "shinkansen_we_are_the_dwarves.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1920"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "characterstats-base-address-scan-initialization-activate-this-first"
+name = "CharacterStats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(CharacterStats_basepointer)
+registersymbol(CharacterStats_update_enable)
+registersymbol(CharacterStats_set_enable)
+registersymbol(CharacterStats_hpset_enable)
+registersymbol(CharacterStats_armorset_enable)
+registersymbol(CharacterStats_damagebonusset_enable)
+registersymbol(CharacterStats_speedsset_enable)
+
+alloc(CharacterStats_basepointer, 8)
+alloc(CharacterStats_update_enable, 4)
+alloc(CharacterStats_set_enable, 4)
+alloc(CharacterStats_hpset_enable, 4)
+alloc(CharacterStats_armorset_enable, 4)
+alloc(CharacterStats_damagebonusset_enable, 4)
+alloc(CharacterStats_speedsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(CharacterStats_basepointer)
+unregistersymbol(CharacterStats_update_enable)
+unregistersymbol(CharacterStats_set_enable)
+unregistersymbol(CharacterStats_hpset_enable)
+unregistersymbol(CharacterStats_armorset_enable)
+unregistersymbol(CharacterStats_damagebonusset_enable)
+unregistersymbol(CharacterStats_speedsset_enable)
+
+dealloc(CharacterStats_basepointer)
+dealloc(CharacterStats_update_enable)
+dealloc(CharacterStats_set_enable)
+dealloc(CharacterStats_hpset_enable)
+dealloc(CharacterStats_armorset_enable)
+dealloc(CharacterStats_damagebonusset_enable)
+dealloc(CharacterStats_speedsset_enable)"""
+
+[[cheat]]
+id = "characterstats-base-address-scan-to-activate-load-level-to-update-play-level"
+name = "CharacterStats Base Address Scan (To Activate: Load Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(CharacterStats_savedAOB)
+label(CharacterStats_returnhere)
+label(CharacterStats_originalcode)
+label(CharacterStats_exit)
+
+label(CharacterStats_update_exit)
+label(CharacterStats_set_exit)
+label(CharacterStats_hpset_exit)
+label(CharacterStats_armorset_exit)
+label(CharacterStats_damagebonusset_exit)
+label(CharacterStats_speedsset_exit)
+
+registersymbol(CharacterStats_savedAOB)
+
+//2EF5DE08 - 48 8B F1              - mov rsi,rcx
+//2EF5DE0B - 83 3E 00              - cmp dword ptr [rsi],00
+// Assets.Code.Actors.Stats:CharacterStats:Uget_MaxHP+e
+//2EF5DE0E - 48 8B 46 38           - mov rax,[rsi+38]
+//2EF5DE12 - 33 C9                 - xor ecx,ecx
+//2EF5DE14 - 48 63 C9              - movsxd  rcx,ecx
+//2EF5DE17 - 39 48 18              - cmp [rax+18],ecx
+//2EF5DE1A - 0F86 38000000         - jbe 2EF5DE58
+//2EF5DE20 - 48 8D 44 C8 20        - lea rax,[rax+rcx*8+20]
+//2EF5DE25 - 48 8B 00              - mov rax,[rax]
+//2EF5DE28 - 48 8B C8              - mov rcx,rax
+//2EF5DE2B - 83 39 00              - cmp dword ptr [rcx],00
+//2EF5DE2E - F3 0F10 40 38         - movss xmm0,[rax+38]
+//2EF5DE33 - F3 0F5A C0            - cvtss2sd xmm0,xmm0
+aobscan(CharacterStats_searchedAOB, 48 8B 46 38 33 C9 48 63 C9 39 48 18 * * * * * * 48 8D 44 C8 20 48 8B 00 48 8B C8 83 39 00)
+
+alloc(CharacterStats_newmem, 2048, CharacterStats_searchedAOB)
+alloc(CharacterStats_temp1, 8, CharacterStats_searchedAOB)
+alloc(CharacterStats_temp2, 8, CharacterStats_searchedAOB)
+
+
+CharacterStats_newmem:
+mov [CharacterStats_temp1], rbx
+mov [CharacterStats_temp2], rdx
+
+cmp dword ptr [CharacterStats_update_enable], #0
+je CharacterStats_update_exit
+mov [CharacterStats_basepointer], rsi
+CharacterStats_update_exit:
+
+cmp dword ptr [CharacterStats_set_enable], #0
+je CharacterStats_set_exit
+CharacterStats_set_exit:
+
+cmp qword ptr [rsi+38], #0
+je CharacterStats_speedsset_exit
+cmp dword ptr [rsi+38], #0
+je CharacterStats_speedsset_exit
+mov rbx, [rsi+38]
+
+cmp dword ptr [CharacterStats_hpset_enable], #0
+je CharacterStats_hpset_exit
+cmp qword ptr [rbx+20], #0
+je CharacterStats_hpset_exit
+cmp dword ptr [rbx+20], #0
+je CharacterStats_hpset_exit
+mov rdx, [rbx+20]
+fld [rdx+38]
+fst [rdx+28]
+fst [rdx+2c]
+fstp [rdx+34]
+CharacterStats_hpset_exit:
+
+cmp dword ptr [CharacterStats_armorset_enable], #0
+je CharacterStats_armorset_exit
+cmp qword ptr [rbx+38], #0
+je CharacterStats_armorset_exit
+cmp dword ptr [rbx+38], #0
+je CharacterStats_armorset_exit
+mov rdx, [rbx+38]
+fld [rdx+38]
+fst [rdx+28]
+fst [rdx+2c]
+fstp [rdx+34]
+CharacterStats_armorset_exit:
+
+cmp dword ptr [CharacterStats_damagebonusset_enable], #0
+je CharacterStats_damagebonusset_exit
+cmp qword ptr [rbx+40], #0
+je CharacterStats_damagebonusset_exit
+cmp dword ptr [rbx+40], #0
+je CharacterStats_damagebonusset_exit
+mov rdx, [rbx+40]
+fld [rdx+38]
+fst [rdx+28]
+fst [rdx+2c]
+fstp [rdx+34]
+CharacterStats_damagebonusset_exit:
+
+cmp dword ptr [CharacterStats_speedsset_enable], #0
+je CharacterStats_speedsset_exit
+cmp qword ptr [rbx+28], #0
+je CharacterStats_speedsset_exit
+cmp dword ptr [rbx+28], #0
+je CharacterStats_speedsset_exit
+mov rdx, [rbx+28]
+fld [rdx+38]
+fst [rdx+28]
+fst [rdx+2c]
+fstp [rdx+34]
+cmp qword ptr [rbx+48], #0
+je CharacterStats_speedsset_exit
+cmp dword ptr [rbx+48], #0
+je CharacterStats_speedsset_exit
+mov rdx, [rbx+48]
+fld [rdx+38]
+fst [rdx+28]
+fst [rdx+2c]
+fstp [rdx+34]
+CharacterStats_speedsset_exit:
+
+mov rbx, [CharacterStats_temp1]
+mov rdx, [CharacterStats_temp2]
+
+
+CharacterStats_originalcode:
+db 48 8B 46 38 33 C9
+//mov rax,[rsi+38]
+//xor ecx,ecx
+
+
+CharacterStats_exit:
+jmp CharacterStats_returnhere
+
+
+CharacterStats_searchedAOB:
+CharacterStats_savedAOB:
+jmp CharacterStats_newmem
+nop
+CharacterStats_returnhere:
+
+
+[DISABLE]
+CharacterStats_savedAOB:
+db 48 8B 46 38 33 C9
+//mov rax,[rsi+38]
+//xor ecx,ecx
+
+unregistersymbol(CharacterStats_savedAOB)
+
+dealloc(CharacterStats_newmem)
+dealloc(CharacterStats_temp1)
+dealloc(CharacterStats_temp2)"""
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "armor-set-to-max"
+name = "Armor Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_armorset_enable"
+hops = []
+
+[[cheat]]
+id = "damage-bonus-set-to-max"
+name = "Damage Bonus Set to Max?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_damagebonusset_enable"
+hops = []
+
+[[cheat]]
+id = "speed-and-attack-speed-set-to-max"
+name = "Speed and Attack Speed Set to Max?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_speedsset_enable"
+hops = []
+
+[[cheat]]
+id = "characterstats-update-base-address"
+name = "CharacterStats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-2"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-2"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-2"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-2"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-2"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-2"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-2"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-3"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-3"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-3"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-3"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-3"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-3"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-3"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-4"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-4"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-4"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-4"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-4"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-4"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-4"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-5"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-5"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-5"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-5"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-5"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-5"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-5"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-6"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-6"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-6"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-6"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-6"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-6"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-6"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x48",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-9"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-7"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-7"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-7"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-7"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-7"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-7"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-7"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-10"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-8"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-8"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-8"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-8"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-8"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-8"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-8"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-11"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-9"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-9"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-9"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-9"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-9"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-9"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-9"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-12"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-10"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-10"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-10"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-10"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-10"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-10"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-10"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-13"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-11"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-11"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-11"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-11"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-11"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-11"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-11"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x70",
+    "+0x40",
+]
+
+[[cheat]]
+id = "base-address-14"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x0",
+]
+
+[[cheat]]
+id = "oldvalue-12"
+name = "_oldValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x28",
+]
+
+[[cheat]]
+id = "basevalue-12"
+name = "_baseValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "iscachevalid-12"
+name = "_isCacheValid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x30",
+]
+
+[[cheat]]
+id = "cachedvalue-12"
+name = "_cachedValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxvalue-12"
+name = "_maxValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x38",
+]
+
+[[cheat]]
+id = "id-k-backingfield-12"
+name = "<Id>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:HP",
+    "1:Speed",
+    "2:Rotation",
+    "3:Armor",
+    "4:DamageBonus",
+    "5:AttackSpeed",
+    "6:VisionRange",
+    "7:VisionAngle",
+    "8:TouchRange",
+    "9:HearRange",
+    "10:VoiceLoudness",
+    "11:WalkNoise",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "minvalue-k-backingfield-12"
+name = "<MinValue>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterStats_basepointer"
+hops = [
+    "+0x38",
+    "+0x78",
+    "+0x40",
+]
+
+[[cheat]]
+id = "suitcell-base-address-scan-initialization-activate-this-first"
+name = "SuitCell Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(SuitCell_basepointer)
+registersymbol(SuitCell_update_enable)
+registersymbol(SuitCell_set_enable)
+registersymbol(SuitCell_hpset_enable)
+registersymbol(SuitCell_armorset_enable)
+registersymbol(SuitCell_cooldownset_enable)
+registersymbol(SuitCell_accessoriesset_enable)
+
+alloc(SuitCell_basepointer, 8)
+alloc(SuitCell_update_enable, 4)
+alloc(SuitCell_set_enable, 4)
+alloc(SuitCell_hpset_enable, 4)
+alloc(SuitCell_armorset_enable, 4)
+alloc(SuitCell_cooldownset_enable, 4)
+alloc(SuitCell_accessoriesset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(SuitCell_basepointer)
+unregistersymbol(SuitCell_update_enable)
+unregistersymbol(SuitCell_set_enable)
+unregistersymbol(SuitCell_hpset_enable)
+unregistersymbol(SuitCell_armorset_enable)
+unregistersymbol(SuitCell_cooldownset_enable)
+unregistersymbol(SuitCell_accessoriesset_enable)
+
+dealloc(SuitCell_basepointer)
+dealloc(SuitCell_update_enable)
+dealloc(SuitCell_set_enable)
+dealloc(SuitCell_hpset_enable)
+dealloc(SuitCell_armorset_enable)
+dealloc(SuitCell_cooldownset_enable)
+dealloc(SuitCell_accessoriesset_enable)"""
+
+[[cheat]]
+id = "suitcell-base-address-scan-to-activate-load-level-to-update-play-level"
+name = "SuitCell Base Address Scan (To Activate: Load Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(SuitCell_savedAOB)
+label(SuitCell_returnhere)
+label(SuitCell_originalcode)
+label(SuitCell_exit)
+
+label(SuitCell_update_exit)
+label(SuitCell_set_exit)
+label(SuitCell_hpset_exit)
+label(SuitCell_armorset_exit)
+label(SuitCell_cooldownset_exit)
+label(SuitCell_accessoriesset_exit)
+
+registersymbol(SuitCell_savedAOB)
+
+//0C46E9B4 - 48 89 34 24           - mov [rsp],rsi
+//0C46E9B8 - 48 8B F1              - mov rsi,rcx
+// Assets.Code.Players:SuitCell:get_HP+b
+//0C46E9BB - 0FB6 46 10            - movzx eax,byte ptr [rsi+10]
+//0C46E9BF - 85 C0                 - test eax,eax
+//0C46E9C1 - 74 0C                 - je 0C46E9CF
+//0C46E9C3 - 66 0F57 C0            - xorpd xmm0,xmm0
+//0C46E9C7 - F2 0F11 44 24 08      - movsd [rsp+08],xmm0
+aobscan(SuitCell_searchedAOB, 0F B6 46 10 85 C0 74 0C)
+
+alloc(SuitCell_newmem, 2048, SuitCell_searchedAOB)
+
+
+SuitCell_newmem:
+cmp dword ptr [SuitCell_update_enable], #0
+je SuitCell_update_exit
+mov [SuitCell_basepointer], rsi
+SuitCell_update_exit:
+
+cmp dword ptr [SuitCell_set_enable], #0
+je SuitCell_set_exit
+SuitCell_set_exit:
+
+cmp dword ptr [SuitCell_hpset_enable], #0
+je SuitCell_hpset_exit
+fld [rsi+18]
+fstp [rsi+14]
+SuitCell_hpset_exit:
+
+cmp dword ptr [SuitCell_armorset_enable], #0
+je SuitCell_armorset_exit
+mov [rsi+20], (float)9999999
+SuitCell_armorset_exit:
+
+cmp dword ptr [SuitCell_cooldownset_enable], #0
+je SuitCell_cooldownset_exit
+mov [rsi+28], (float)0.01
+SuitCell_cooldownset_exit:
+
+cmp dword ptr [SuitCell_accessoriesset_enable], #0
+je SuitCell_accessoriesset_exit
+mov byte ptr [rsi+1c], #1
+mov byte ptr [rsi+2c], #1
+mov byte ptr [rsi+2d], #1
+mov byte ptr [rsi+2e], #1
+SuitCell_accessoriesset_exit:
+
+
+SuitCell_originalcode:
+db 0F B6 46 10 85 C0
+//movzx eax,byte ptr [rsi+10]
+//test eax,eax
+
+
+SuitCell_exit:
+jmp SuitCell_returnhere
+
+
+SuitCell_searchedAOB:
+SuitCell_savedAOB:
+jmp SuitCell_newmem
+nop
+SuitCell_returnhere:
+
+
+[DISABLE]
+SuitCell_savedAOB:
+db 0F B6 46 10 85 C0
+//movzx eax,byte ptr [rsi+10]
+//test eax,eax
+
+unregistersymbol(SuitCell_savedAOB)
+
+dealloc(SuitCell_newmem)"""
+
+[[cheat]]
+id = "hp-set-to-max-2"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "armor-set-to-massive"
+name = "Armor Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_armorset_enable"
+hops = []
+
+[[cheat]]
+id = "abilities-cooldown-set-to-massive"
+name = "Abilities Cooldown Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_cooldownset_enable"
+hops = []
+
+[[cheat]]
+id = "accessories-set-to-enabled"
+name = "Accessories Set to Enabled?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_accessoriesset_enable"
+hops = []
+
+[[cheat]]
+id = "suitcell-update-base-address"
+name = "SuitCell Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-15"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "isdefault"
+name = "_isDefault"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "enabled"
+name = "_enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x11"]
+
+[[cheat]]
+id = "hp"
+name = "_hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "maxhpk-backingfield"
+name = "MaxHPk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "autohealk-backingfield"
+name = "AutoHealk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "armork-backingfield"
+name = "Armork__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "halfdeadtimek-backingfield"
+name = "HalfDeadTimek__BackingField"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "abilitiescooldownmultiplierk-backingfield"
+name = "AbilitiesCooldownMultiplierk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "lanternk-backingfield"
+name = "Lanternk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "jetpackk-backingfield"
+name = "Jetpackk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x2d"]
+
+[[cheat]]
+id = "defibrillatork-backingfield"
+name = "Defibrillatork__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SuitCell_basepointer"
+hops = ["+0x2e"]

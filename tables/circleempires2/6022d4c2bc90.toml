@@ -1,0 +1,493 @@
+[game]
+name = "Circle Empires 2"
+exe = "circleempires2.exe"
+notes = "Converted from a Cheat Engine table by CannonFodder. Source: https://fearlessrevolution.com/viewtopic.php?t=40089"
+verified = []
+author = "CannonFodder"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "numpad-0"
+name = "Numpad 0: 开关无敌"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Circle Empires 2
+  Version: 2.1.2
+  Date   : 2026-07-02
+  Author : CannonFodder
+
+  前提: 需先在 CE 菜单中执行 Mono -> Activate mono features
+  双Hook策略:
+    Hook1: Combat.TakeDamage 入口
+           检测 this.thing.player.isHumanPlayer
+           若为人类玩家则置 protect_flag=1
+    Hook2: CombatState.TakeDamage 入口
+           检查 protect_flag
+           若置位则 ret(跳过 HP 扣除), 保留粒子/反击等
+   快捷键: Numpad 0 开关, Numpad . 状态查询
+  
+  x64 Mono JIT 验证的字段偏移:
+    Combat.thing         offset 0x80   -> Thing*
+    Thing.player         offset 0x38   -> Player*
+    Player.isHumanPlayer offset 0x10A  -> bool (1 byte)
+    CombatState.hp       offset 0x20   -> int32
+}
+
+[ENABLE]
+
+aobscanregion(COMBAT_TD,AreaNS.ThingNS.Combat:TakeDamage+00,AreaNS.ThingNS.Combat:TakeDamage+2000,55 48 8B EC 48 81 EC 80 01 00 00 48 89 5D C8 48 89 75 D0 48 89 7D D8 4C 89 65 E0 4C 89 6D E8 4C 89 75 F0 4C 89 7D F8 4C 8B F9) // should be unique
+aobscanregion(COMBATSTATE_TD,CombatState:TakeDamage+00,CombatState:TakeDamage+1000,55 48 8B EC 48 81 EC B0 00 00 00 48 89 75 F8 48 8B F1 48 89 55 B8) // should be unique
+
+alloc(newmem_ctd,$1000,COMBAT_TD)
+alloc(newmem_cstd,$1000,COMBATSTATE_TD)
+alloc(protect_flag,4)
+alloc(godmode_on,4)
+
+registersymbol(COMBAT_TD)
+registersymbol(COMBATSTATE_TD)
+registersymbol(protect_flag)
+registersymbol(godmode_on)
+
+label(original_ctd)
+label(exit_ctd)
+label(player_unit)
+label(not_player)
+label(exit_cstd)
+label(skip_hp_loss)
+label(normal_hp_loss)
+
+// ==========================================
+// 全局变量
+// ==========================================
+godmode_on:
+  dd 1
+
+protect_flag:
+  dd 0
+
+// ==========================================
+// Hook #1: Combat.TakeDamage 入口
+// x64 calling: rcx=this(Combat*), rdx=baseAmount
+// 注入点: 函数序言 (11 bytes)
+// ==========================================
+newmem_ctd:
+  cmp [godmode_on],0
+  je original_ctd
+
+  push rax
+
+  mov rax,[rcx+80]
+  test rax,rax
+  jz not_player
+
+  mov rax,[rax+38]
+  test rax,rax
+  jz not_player
+
+  cmp byte ptr [rax+10A],1
+  jne not_player
+
+player_unit:
+  pop rax
+  mov [protect_flag],1
+  jmp original_ctd
+
+not_player:
+  pop rax
+  mov [protect_flag],0
+
+original_ctd:
+  push rbp
+  mov rbp,rsp
+  sub rsp,180
+  jmp exit_ctd
+
+exit_ctd:
+  jmp COMBAT_TD+0B
+
+// ==========================================
+// Hook #2: CombatState.TakeDamage 入口
+// x64 calling: rcx=this(CombatState*), rdx=amount
+// 注入点: 函数序言 (22 bytes)
+// ==========================================
+newmem_cstd:
+  cmp [godmode_on],0
+  je normal_hp_loss
+
+  cmp [protect_flag],0
+  je normal_hp_loss
+
+skip_hp_loss:
+  mov [protect_flag],0
+  ret
+
+normal_hp_loss:
+  push rbp
+  mov rbp,rsp
+  sub rsp,B0
+  mov [rbp-08],rsi
+  mov rsi,rcx
+  mov [rbp-48],rdx
+  jmp exit_cstd
+
+exit_cstd:
+  jmp COMBATSTATE_TD+16
+
+// ==========================================
+// 跳转补丁
+// ==========================================
+COMBAT_TD:
+  jmp newmem_ctd
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+
+COMBATSTATE_TD:
+  jmp newmem_cstd
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+
+[DISABLE]
+
+COMBAT_TD:
+  db 55 48 8B EC 48 81 EC 80 01 00 00
+
+COMBATSTATE_TD:
+  db 55 48 8B EC 48 81 EC B0 00 00 00 48 89 75 F8 48 8B F1 48 89 55 B8
+
+unregistersymbol(COMBAT_TD)
+unregistersymbol(COMBATSTATE_TD)
+unregistersymbol(protect_flag)
+unregistersymbol(godmode_on)
+
+dealloc(newmem_ctd)
+dealloc(newmem_cstd)
+dealloc(protect_flag)
+dealloc(godmode_on)
+
+// ============================================================
+// ORIGINAL CODE - 反编译 C# 源码
+// ============================================================
+
+// --- Hook #1 注入点: AreaNS.ThingNS.Combat.TakeDamage (RVA 0x000C1F84) ---
+// 13个参数, x64 JIT 编译地址动态分配
+//
+// Combat.TakeDamage 完整 C# 反编译:
+//
+//  public bool TakeDamage(...)  // 13个参数, 详见dnSpy
+//  (
+//    if (this.thing.markedDestroyed > 0) return false;
+//    this.rawDamageTakenTotalSinceAmla += (long)baseAmount;
+//    // ... [护甲/穿甲/暴击/吸血/溅射等修正计算] ...
+//    long num4 = (long)baseAmount * (long)damageTakeFactor / 1000L;
+//    num4 = Math.Clamp(num4, 1L, 1000000L);  // 强制最低1点伤害!
+//    // ... [吸血/粒子效果等] ...
+//    this.combatState.TakeDamage((int)num4);  // ★ HP扣除调用点
+//    // ... [死亡判定/反击触发/击退/生命保险等] ...
+//  )
+
+// --- Hook #2 注入点: CombatState.TakeDamage (RVA 0x000703BC) ---
+//
+// CombatState.TakeDamage 完整 C# 反编译:
+//
+//  public void TakeDamage(int amount)
+//  (
+//    this.hp -= amount;  // ★ 核心HP扣除
+//  )
+
+// ============================================================
+// ORIGINAL CODE - 注入点附近反汇编 (x64 Mono JIT)
+// ============================================================
+
+{
+// --- 注入点 #1: Combat:TakeDamage+00 ---
+Combat:TakeDamage+00: 55                       - push rbp
+Combat:TakeDamage+01: 48 8B EC                 - mov rbp,rsp
+Combat:TakeDamage+04: 48 81 EC 80 01 00 00     - sub rsp,00000180
+// ---------- INJECTING HERE ----------
+Combat:TakeDamage+0B: 48 89 5D C8              - mov [rbp-38],rbx
+// ---------- DONE INJECTING  ----------
+Combat:TakeDamage+0F: 48 89 75 D0              - mov [rbp-30],rsi
+Combat:TakeDamage+13: 48 89 7D D8              - mov [rbp-28],rdi
+Combat:TakeDamage+17: 4C 89 65 E0              - mov [rbp-20],r12
+Combat:TakeDamage+1B: 4C 89 6D E8              - mov [rbp-18],r13
+Combat:TakeDamage+1F: 4C 89 75 F0              - mov [rbp-10],r14
+Combat:TakeDamage+23: 4C 89 7D F8              - mov [rbp-08],r15
+Combat:TakeDamage+27: 4C 8B F9                 - mov r15,rcx
+
+// --- 注入点 #2: CombatState:TakeDamage+00 ---
+CombatState:TakeDamage+00: 55                    - push rbp
+CombatState:TakeDamage+01: 48 8B EC              - mov rbp,rsp
+CombatState:TakeDamage+04: 48 81 EC B0 00 00 00  - sub rsp,000000B0
+CombatState:TakeDamage+0B: 48 89 75 F8           - mov [rbp-08],rsi
+CombatState:TakeDamage+0F: 48 8B F1              - mov rsi,rcx
+// ---------- INJECTING HERE ----------
+CombatState:TakeDamage+12: 48 89 55 B8           - mov [rbp-48],rdx
+// ---------- DONE INJECTING  ----------
+CombatState:TakeDamage+16: C7 45 C0 00 00 00 00  - mov [rbp-40],00000000
+CombatState:TakeDamage+1D: 48 63 46 20           - movsxd rax,dword ptr [rsi+20]
+CombatState:TakeDamage+21: 48 63 4D B8           - movsxd rcx,dword ptr [rbp-48]
+CombatState:TakeDamage+25: 2B C1                  - sub eax,ecx
+CombatState:TakeDamage+27: 89 46 20               - mov [rsi+20],eax
+}"""
+
+[[cheat]]
+id = "xp-multiplier-x20-for-player-units"
+name = "XP Multiplier x20 For Player Units"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Circle Empires 2
+  Version: 1.0
+  Date   : 2026-07-15
+  Author : CannonFodder
+
+  功能: 人类玩家单位获得经验值乘以倍数 (默认5倍)
+  原理: Hook GainXpIndividually 函数入口 (所有 XP 来源汇聚点)
+        检查 this.thing.player.isAIPlayer (Player+0x10C)
+        人类 (isAIPlayer==0) -> 将 amount1000 乘以 XP_MULTIPLIER 倍
+        AI/中立保持原样
+
+  调用链:
+    Combat.TakeDamage / FightAndCastAtTarget -> GainAndSpreadXPInTransportStack -> GainXpIndividually
+    Work.WorkAtTarget / DropOffCarringResources -> GainAndSpreadXPInTransportStack -> GainXpIndividually
+    Training.CustomUpdate (periodic XP) -> GainAndSpreadXPInTransportStack -> GainXpIndividually
+    共 10 处调用全部汇聚于此 -> 一网打尽
+
+  修改倍数: 改 define(XP_MULTIPLIER, 5) 中的数字即可
+  前置条件: 需先在 CE 菜单中执行 Mono -> Activate mono features
+}
+
+define(XP_MULTIPLIER, 20)
+
+[ENABLE]
+
+aobscanregion(INJECT, AreaNS.ThingNS.Training:GainXpIndividually+00, AreaNS.ThingNS.Training:GainXpIndividually+2000, 48 81 EC 00 01 00 00)
+
+alloc(newmem,$1000,INJECT)
+registersymbol(INJECT)
+label(returnhere)
+
+newmem:
+  sub rsp,100
+  push r10
+  push r11
+
+  // 检查 this.thing.player.isAIPlayer
+  // Training+40 = thing, Thing+38 = player, Player+10C = isAIPlayer (0=人类)
+  mov r10, [rcx+40]
+  test r10, r10
+  jz @done
+
+  mov r10, [r10+38]
+  test r10, r10
+  jz @done
+
+  cmp dword ptr [r10+10C], 0
+  jne @done
+
+  // 人类玩家: amount1000 *= XP_MULTIPLIER
+  imul edx, edx, XP_MULTIPLIER
+
+@done:
+  pop r11
+  pop r10
+  jmp returnhere
+
+INJECT:
+  jmp newmem
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+
+INJECT:
+  db 48 81 EC 00 01 00 00
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// C# source:
+// private void GainXpIndividually(int amount1000, bool levelUpVisual)
+// (
+//   if (this.thing.markedDestroyed > 0) return;
+//   if (this.thing.isBoss) return;
+//   if (!canGainAmlasOrLevels && nextLevelThingPreset == null) return;
+//   this.xp += amount1000;  // <- amount1000 已被放大
+//   if (this.xp >= requiredXP) ( LevelUp or AMLA ... )
+// )
+
+// ORIGINAL CODE - INJECTION POINT: GainXpIndividually+04
+GainXp+00: 55                    - push rbp
+GainXp+01: 48 8B EC              - mov rbp,rsp
+// ---------- INJECTING HERE ----------
+GainXp+04: 48 81 EC 00010000     - sub rsp,100
+// ---------- DONE INJECTING  ----------
+GainXp+0B: 48 89 75 D8           - mov [rbp-28],rsi
+GainXp+0F: 48 89 7D E0           - mov [rbp-20],rdi
+GainXp+13: 4C 89 65 E8           - mov [rbp-18],r12
+GainXp+17: 4C 89 75 F0           - mov [rbp-10],r14
+GainXp+1B: 4C 89 7D F8           - mov [rbp-08],r15
+GainXp+1F: 48 8B F9              - mov rdi,rcx
+GainXp+22: 48 89 95 50FFFFFF     - mov [rbp-B0],rdx  // <- edx 已放大
+GainXp+29: 49 8B F0              - mov rsi,r8
+// ... 后续使用 [rbp-B0] 作为 amount1000 ...
+}"""
+
+[[cheat]]
+id = "free-tech-research-for-player"
+name = "Free Tech Research For Player"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Circle Empires 2
+  Version: 1.0
+  Date   : 2026-07-15
+  Author : CannonFodder
+
+  功能: 人类玩家研究科技时不消耗资源
+  原理: 直接注入 GetTechPriceWithTechsAndPlayerStats 方法本身
+        该方法被 UI 层 TryAddBuyTechOrder 和执行层 ApplyTechOrder 共同调用
+        在方法返回 List<int> 前，检查 this.player.isAIPlayer
+        人类 → 清零 _items[]，所有调用者看到全零价格
+        AI   → 保持原值不变
+
+  前置条件: 需先在 CE 菜单中执行 Mono -> Activate mono features
+}
+
+[ENABLE]
+
+// AOB: call [rax-48] (GetDiscountedPriceList)); mov rsi,[rbp-10]; mov rdi,[rbp-08]; lea rsp,[rbp+00]; pop rbp; ret
+aobscanregion(INJECT, AreaNS.PlayerTech:GetTechPriceWithTechsAndPlayerStats+00, AreaNS.PlayerTech:GetTechPriceWithTechsAndPlayerStats+400, FF 50 B8 48 8B 75 F0 48 8B 7D F8 48 8D 65 00 5D C3)
+
+// 注入点: mov rsi,[rbp-10] (AOB+3), 覆盖 8 字节
+// 原始: mov rsi,[rbp-10] (4) + mov rdi,[rbp-08] (4)
+define(INJECT_PT, INJECT+3)
+// returnhere: lea rsp,[rbp+00] (AOB+11)
+define(RET_HERE, INJECT+11)
+
+alloc(newmem,$1000,INJECT_PT)
+
+registersymbol(INJECT)
+
+label(returnhere)
+
+newmem:
+  push r10
+  push r11
+
+  // rdi = this (PlayerTech), +18 = player, +10C = isAIPlayer
+  mov r10, [rdi+18]
+  cmp dword ptr [r10+10C], 0
+  pop r11
+  pop r10
+  je @human
+
+@ai:
+  mov rsi, [rbp-10]
+  mov rdi, [rbp-08]
+  jmp returnhere
+
+@human:
+  push r10
+  push r11
+  push r12
+
+  // rax = List<int>*, +10 = _items (int[]*)
+  mov r10, [rax+10]
+  test r10, r10
+  jz @human_done
+
+  // r11d = array.Length (+0x18)
+  mov r11d, [r10+18]
+  test r11d, r11d
+  jz @human_done
+
+  // 循环: element[i] (array+0x20 + i*4) = 0
+  xor r12d, r12d
+@zero_loop:
+  mov dword ptr [r10+r12*4+20], 0
+  inc r12d
+  cmp r12d, r11d
+  jl @zero_loop
+
+@human_done:
+  pop r12
+  pop r11
+  pop r10
+
+  mov rsi, [rbp-10]
+  mov rdi, [rbp-08]
+  jmp returnhere
+
+INJECT_PT:
+  jmp newmem
+  nop
+  nop
+  nop
+
+returnhere:
+
+[DISABLE]
+
+INJECT_PT:
+  db 48 8B 75 F0 48 8B 7D F8
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// C# decompile:
+// public List<int> GetTechPriceWithTechsAndPlayerStats(TechType t)
+// (
+//   int factor = this.ps.statsRead.techPriceFactor;
+//   return this.general.thingsManagerRead.GetDiscountedPriceList(t.prices, factor);
+//   // ^^^ 返回后 → 对人类玩家清零 _items[] → 所有调用者看到全零
+// )
+
+// 调用链:
+// 1. TryAddBuyTechOrder (UI层): 检查 HasResourcesFor(0) → 通过 → 创建订单
+// 2. ApplyTechOrder (执行层): 检查 HasResourcesFor(0) → 通过 → SpendResourceList(0) → GainTech
+
+// ORIGINAL CODE - INJECTION POINT: GetTechPriceWithTechsAndPlayerStats+59
+GetTechPrice+59: FF 50 B8              - call qword ptr [rax-48]  (GetDiscountedPriceList)
+// ---------- INJECTING HERE ----------
+GetTechPrice+5C: 48 8B 75 F0           - mov rsi,[rbp-10]
+GetTechPrice+60: 48 8B 7D F8           - mov rdi,[rbp-08]
+// ---------- DONE INJECTING  ----------
+GetTechPrice+64: 48 8D 65 00           - lea rsp,[rbp+00]
+GetTechPrice+68: 5D                    - pop rbp
+GetTechPrice+69: C3                    - ret
+}"""

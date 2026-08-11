@@ -1,0 +1,92 @@
+[game]
+name = "Ratchet & Clank - Rift Apart [GodMode]"
+exe = "riftapart.exe"
+notes = "Converted from a Cheat Engine table by The_Podstanar. Source: https://fearlessrevolution.com/viewtopic.php?t=25342"
+verified = []
+author = "The_Podstanar"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "godmode"
+name = "GodMode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(fetch_pBase_hook, RiftApart.exe, 0F 2F ? ? ? ? ? 0F 83 ? ? ? ? 48 8D ? ? E8 ? ? ? ? 48 8B ? 48 85)
+aobscanmodule(god_hook, RiftApart.exe, 48 8B ? 48 8B ? 48 8B ? FF ? ? 84 ? 0F 84 ? ? ? ? 0F B7)
+aobscanmodule(skip_hook, RiftApart.exe, 0F B7 ? ? 8B ? ? 81 ? ? ? ? ? F3 ? ? ? ? ? ? ? 25 ? ? ? ? C1)
+
+alloc(vars, 64, fetch_pBase_hook)
+alloc(orig_bytes_fetch_pBase_cave, 64, fetch_pBase_hook)
+alloc(orig_bytes_god_cave, 64, god_hook)
+alloc(fetch_pBase_cave, 256, fetch_pBase_hook)
+alloc(god_cave, 256, god_hook)
+
+registersymbol(pBase)
+registersymbol(orig_bytes_fetch_pBase_cave)
+registersymbol(orig_bytes_god_cave)
+registersymbol(fetch_pBase_hook)
+registersymbol(god_hook)
+registersymbol(skip_hook)
+
+label(ret_fetch_pBase_hook)
+label(ret_god_hook)
+
+// variables
+
+vars:
+pBase:
+  dq 0
+
+// save original bytes
+
+orig_bytes_fetch_pBase_cave:
+  readmem(fetch_pBase_hook, 7)
+
+orig_bytes_god_cave:
+  readmem(god_hook, 6)
+
+// injection
+
+fetch_pBase_cave:
+  mov [pBase],rcx // save player base
+  readmem(fetch_pBase_hook, 7)
+  jmp ret_fetch_pBase_hook
+
+god_cave:
+  cmp [pBase],rsi // if true, it's player
+  je skip_hook    // skip damage collision
+  readmem(god_hook, 6)
+  jmp ret_god_hook
+
+// hooks
+
+fetch_pBase_hook:
+  jmp fetch_pBase_cave
+  nop 2
+ret_fetch_pBase_hook:
+
+god_hook:
+  jmp god_cave
+  nop
+ret_god_hook:
+
+[DISABLE]
+
+fetch_pBase_hook:
+  readmem(orig_bytes_fetch_pBase_cave, 7)
+
+god_hook:
+  readmem(orig_bytes_god_cave, 6)
+
+unregistersymbol(*)
+dealloc(*)"""

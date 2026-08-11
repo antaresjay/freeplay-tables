@@ -1,0 +1,721 @@
+[game]
+name = "Magic 2014 Duels of the Planeswalkers"
+exe = "shinkansen_magic_2014_duels_of_the_planeswalkers.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3614"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "planeswalkers-base-address-scan-initialization-activate-this-first"
+name = "Planeswalkers Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+registersymbol(planeswalker0_basepointer)
+registersymbol(planeswalker1_basepointer)
+registersymbol(planeswalker2_basepointer)
+registersymbol(planeswalker3_basepointer)
+registersymbol(playerteamhp_enable)
+registersymbol(playerteamland_enable)
+registersymbol(opponentteamhp_enable)
+registersymbol(opponentteamland_enable)
+
+alloc(planeswalker0_basepointer,4)
+alloc(planeswalker1_basepointer,4)
+alloc(planeswalker2_basepointer,4)
+alloc(planeswalker3_basepointer,4)
+alloc(playerteamhp_enable,4)
+alloc(playerteamland_enable,4)
+alloc(opponentteamhp_enable,4)
+alloc(opponentteamland_enable,4)
+
+
+[DISABLE]
+
+unregistersymbol(planeswalker0_basepointer)
+unregistersymbol(planeswalker1_basepointer)
+unregistersymbol(planeswalker2_basepointer)
+unregistersymbol(planeswalker3_basepointer)
+unregistersymbol(playerteamhp_enable)
+unregistersymbol(playerteamland_enable)
+unregistersymbol(opponentteamhp_enable)
+unregistersymbol(opponentteamland_enable)
+
+dealloc(planeswalker0_basepointer)
+dealloc(planeswalker1_basepointer)
+dealloc(planeswalker2_basepointer)
+dealloc(planeswalker3_basepointer)
+dealloc(playerteamhp_enable)
+dealloc(playerteamland_enable)
+dealloc(opponentteamhp_enable)
+dealloc(opponentteamland_enable)"""
+
+[[cheat]]
+id = "planeswalkers-base-address-scan-to-activate-play-to-update-play"
+name = "Planeswalkers Base Address Scan (To Activate: Play, To Update: Play)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(planeswalkers_savedAOB)
+label(planeswalkers_returnhere)
+label(planeswalkers_originalcode)
+label(planeswalkers_exit)
+
+label(playerteam_exit)
+label(playerteamhp_exit)
+
+label(opponentteam_exit)
+label(opponentteamhp_exit)
+
+label(planeswalkercheck_entry)
+
+label(planeswalker0_exit)
+label(planeswalker1_exit)
+label(planeswalker2_exit)
+label(planeswalker3_exit)
+
+registersymbol(planeswalkers_savedAOB)
+
+aobscan(searchedAOB,8B 48 10 8B 55 08 38 1C 0A)
+
+alloc(planeswalkers_newmem,2048) //2kb should be enough
+
+
+searchedAOB:
+planeswalkers_savedAOB:
+jmp planeswalkers_newmem
+nop
+planeswalkers_returnhere:
+
+
+planeswalkers_newmem:
+
+// Team check
+mov ecx,[eax+18]
+cmp dword ptr [ecx+58], #1
+je playerteam_exit
+cmp dword ptr [ecx+58], #2
+jge opponentteam_exit
+
+
+playerteam_exit:
+// Set Player Team HP to 9999?
+cmp dword ptr [playerteamhp_enable], #0
+je playerteamhp_exit
+mov [eax+34c], #9999
+mov [ecx+30], #9999
+// Set Player Team Land Played to 0?
+playerteamhp_exit:
+cmp dword ptr [playerteamland_enable], #0
+je planeswalkercheck_entry
+mov [eax+fc], #0
+jmp planeswalkercheck_entry
+
+opponentteam_exit:
+// Set Opponent Team HP to -1?
+cmp dword ptr [opponentteamhp_enable], #0
+je opponentteamhp_exit
+mov [eax+34c], #-1
+mov [ecx+30], #-1
+// Set Opponent Team Land Played to 1?
+opponentteamhp_exit:
+cmp dword ptr [opponentteamland_enable], #0
+je planeswalkercheck_entry
+mov [eax+fc], #1
+jmp planeswalkercheck_entry
+
+
+planeswalkercheck_entry:
+// Planeswalker check
+cmp [eax+10], #0
+je planeswalker0_exit
+cmp [eax+10], #1
+je planeswalker1_exit
+cmp [eax+10], #2
+je planeswalker2_exit
+cmp [eax+10], #3
+je planeswalker3_exit
+
+planeswalker0_exit:
+mov [planeswalker0_basepointer],eax
+jmp planeswalkers_originalcode
+
+planeswalker1_exit:
+mov [planeswalker1_basepointer],eax
+jmp planeswalkers_originalcode
+
+planeswalker2_exit:
+mov [planeswalker2_basepointer],eax
+jmp planeswalkers_originalcode
+
+planeswalker3_exit:
+mov [planeswalker3_basepointer],eax
+jmp planeswalkers_originalcode
+
+
+planeswalkers_originalcode:
+db 8B 48 10 8B 55 08
+//mov ecx,[eax+10]
+//8B 48 10 8B 55 08
+
+
+planeswalkers_exit:
+jmp planeswalkers_returnhere
+
+
+[DISABLE]
+planeswalkers_savedAOB:
+db 8B 48 10 8B 55 08
+//mov ecx,[eax+10]
+//8B 48 10 8B 55 08
+
+unregistersymbol(planeswalkers_savedAOB)
+
+dealloc(planeswalkers_newmem)"""
+
+[[cheat]]
+id = "set-player-team-hp-to-9999-0-no-1-yes"
+name = "Set Player Team HP to 9999? (0 = No, 1 = Yes)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerteamhp_enable"
+hops = []
+
+[[cheat]]
+id = "set-player-team-land-played-to-0-0-no-1-yes"
+name = "Set Player Team Land Played to 0? (0 = No, 1 = Yes)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerteamland_enable"
+hops = []
+
+[[cheat]]
+id = "set-opponent-team-hp-to-1-0-no-1-yes"
+name = "Set Opponent Team HP to -1? (0 = No, 1 = Yes)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "opponentteamhp_enable"
+hops = []
+
+[[cheat]]
+id = "set-opponent-team-land-played-to-1-0-no-1-yes"
+name = "Set Opponent Team Land Played to 1? (0 = No, 1 = Yes)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "opponentteamland_enable"
+hops = []
+
+[[cheat]]
+id = "planeswalker-number"
+name = "Planeswalker Number"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "land-played-0-land-not-yet-played-1-land-played"
+name = "Land Played (0 = Land Not Yet Played, 1 = Land Played)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "combat-round"
+name = "Combat Round"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = ["+0x330"]
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = ["+0x348"]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = ["+0x34c"]
+
+[[cheat]]
+id = "main-round"
+name = "Main Round"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = ["+0x460"]
+
+[[cheat]]
+id = "team-1-player-2-opponent"
+name = "Team (1 = Player, 2 <= Opponent)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = [
+    "+0x18",
+    "+0x58",
+]
+
+[[cheat]]
+id = "two-headed-giant-hp"
+name = "Two-Headed Giant HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker0_basepointer"
+hops = [
+    "+0x18",
+    "+0x30",
+]
+
+[[cheat]]
+id = "planeswalker-number-2"
+name = "Planeswalker Number"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "land-played-0-land-not-yet-played-1-land-played-2"
+name = "Land Played (0 = Land Not Yet Played, 1 = Land Played)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "combat-round-2"
+name = "Combat Round"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = ["+0x330"]
+
+[[cheat]]
+id = "max-hp-2"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = ["+0x348"]
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = ["+0x34c"]
+
+[[cheat]]
+id = "main-round-2"
+name = "Main Round"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = ["+0x460"]
+
+[[cheat]]
+id = "team-1-player-2-opponent-2"
+name = "Team (1 = Player, 2 <= Opponent)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = [
+    "+0x18",
+    "+0x58",
+]
+
+[[cheat]]
+id = "two-headed-giant-hp-2"
+name = "Two-Headed Giant HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker1_basepointer"
+hops = [
+    "+0x18",
+    "+0x30",
+]
+
+[[cheat]]
+id = "planeswalker-number-3"
+name = "Planeswalker Number"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "land-played-0-land-not-yet-played-1-land-played-3"
+name = "Land Played (0 = Land Not Yet Played, 1 = Land Played)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "combat-round-3"
+name = "Combat Round"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = ["+0x330"]
+
+[[cheat]]
+id = "max-hp-3"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = ["+0x348"]
+
+[[cheat]]
+id = "hp-3"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = ["+0x34c"]
+
+[[cheat]]
+id = "main-round-3"
+name = "Main Round"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = ["+0x460"]
+
+[[cheat]]
+id = "team-1-player-2-opponent-3"
+name = "Team (1 = Player, 2 <= Opponent)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = [
+    "+0x18",
+    "+0x58",
+]
+
+[[cheat]]
+id = "two-headed-giant-hp-3"
+name = "Two-Headed Giant HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker2_basepointer"
+hops = [
+    "+0x18",
+    "+0x30",
+]
+
+[[cheat]]
+id = "planeswalker-number-4"
+name = "Planeswalker Number"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "land-played-0-land-not-yet-played-1-land-played-4"
+name = "Land Played (0 = Land Not Yet Played, 1 = Land Played)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "combat-round-4"
+name = "Combat Round"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = ["+0x330"]
+
+[[cheat]]
+id = "max-hp-4"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = ["+0x348"]
+
+[[cheat]]
+id = "hp-4"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = ["+0x34c"]
+
+[[cheat]]
+id = "main-round-4"
+name = "Main Round"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = ["+0x460"]
+
+[[cheat]]
+id = "team-1-player-2-opponent-4"
+name = "Team (1 = Player, 2 <= Opponent)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = [
+    "+0x18",
+    "+0x58",
+]
+
+[[cheat]]
+id = "two-headed-giant-hp-4"
+name = "Two-Headed Giant HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planeswalker3_basepointer"
+hops = [
+    "+0x18",
+    "+0x30",
+]

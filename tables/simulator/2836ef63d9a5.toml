@@ -1,0 +1,1343 @@
+[game]
+name = "Chef Life: A Restaurant Simulator Cheat Table (2026 Edition)"
+exe = "simulator.exe"
+notes = "Converted from a Cheat Engine table by HeathenGator. Source: https://fearlessrevolution.com/viewtopic.php?t=38435"
+verified = []
+author = "HeathenGator"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlock-catalog"
+name = "Unlock Catalog"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// --- Level Requirement Fix ---
+define(level_addr, Arrabbiata.CatalogItemData.get_requiredLevel+9)
+define(level_bytes, 8B 40 20 C3 C3)
+// --- Gold Coupon Fix ---
+define(gold_addr, Arrabbiata.CatalogItemData.get_goldCoupons+9)
+define(gold_bytes, 8B 40 38 C3 C3)
+
+[ENABLE]
+assert(level_addr, level_bytes)
+assert(gold_addr, gold_bytes)
+
+alloc(CatalogHacks, $1000, GameAssembly.dll)
+
+label(ForcedLevelReq)
+label(ForcedGoldCost)
+registersymbol(ForcedLevelReq)
+registersymbol(ForcedGoldCost)
+
+CatalogHacks:
+  ForcedLevelReq:
+    dd 0    // Default to 0 (Inactive)
+  ForcedGoldCost:
+    dd 0    // Default to 0 (Everything is free)
+
+// --- Level Injection with Logic Gate ---
+newmem_level:
+  mov ecx,[ForcedLevelReq]
+  cmp ecx,0
+  je short @f           // If 0, skip the modification
+
+  mov [rax+20],ecx      // If not 0, force the requirement
+
+@f:
+  mov eax,[rax+20]      // Original read
+  ret
+
+// --- Gold Injection ---
+newmem_gold:
+  mov ecx,[ForcedGoldCost]
+  mov [rax+38],ecx      // Force coupon cost
+  mov eax,[rax+38]
+  ret
+
+level_addr:
+  jmp newmem_level
+
+gold_addr:
+  jmp newmem_gold
+
+[DISABLE]
+level_addr:
+  db level_bytes
+
+gold_addr:
+  db gold_bytes
+
+unregistersymbol(ForcedLevelReq)
+unregistersymbol(ForcedGoldCost)
+dealloc(CatalogHacks)"""
+
+[[cheat]]
+id = "forcedgoldcost"
+name = "ForcedGoldCost"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ForcedGoldCost"
+hops = []
+
+[[cheat]]
+id = "za-warudo"
+name = "ZA WARUDO"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.DayTimeline.Update+11)
+define(bytes,E8 DA 83 D3 FF)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Arrabbiata.DayTimeline.Update+11)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  xorps xmm0,xmm0
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "set-player-level"
+name = "Set Player Level"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(LevelHack, 128, Backend.AddExperience+6C)
+label(return)
+label(DesiredLevel)
+registerSymbol(DesiredLevel)
+
+LevelHack:
+  // 1. Load and Clamp the value
+  mov eax, [DesiredLevel]
+
+  cmp eax,#1
+  jl low_clamp         // If < 1, set to 1
+
+  cmp eax,#30
+  jg high_clamp        // If > 30, set to 30
+  jmp do_logic
+
+low_clamp:
+  mov eax,#1
+  jmp do_logic
+
+high_clamp:
+  mov eax,#30
+
+do_logic:
+  // 2. Preserve the "weird" nuke
+  xor ecx,ecx
+
+  // 3. Commit to memory
+  mov [rdi+70], eax    // Force Level (+70)
+  mov [rdi+6C], 0      // Force XP (+6C) to 0
+
+  jmp return
+
+DesiredLevel:
+  dd #30
+
+Backend.AddExperience+6C: // Using +67 to ensure we capture the full logic block
+  jmp LevelHack
+  nop 2
+return:
+
+[DISABLE]
+Backend.AddExperience+6C:
+  db 03 C3 33 C9 89 47 6C // Restore original logic
+
+dealloc(LevelHack)
+unregisterSymbol(DesiredLevel)"""
+
+[[cheat]]
+id = "desiredlevel"
+name = "DesiredLevel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DesiredLevel"
+hops = []
+
+[[cheat]]
+id = "flawless-player"
+name = "Flawless Player"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Target: Backend.ComputeTechnicalGrade
+// Address: GameAssembly.dll+41BD0D
+// Logic: Hook the convergence point so all logic paths write an A+ to the dish.
+
+alloc(GodPalate, 64, Backend.ComputeTechnicalGrade+ED)
+label(return)
+
+GodPalate:
+  mov rbx,0x6666666666666666 // Override rbx with 3.4e185 because I can't even
+  mov [rdi+00000084],rbx     // Original instruction: commit the grade
+  jmp return
+
+Backend.ComputeTechnicalGrade+ED:
+  jmp GodPalate
+  nop 2                      // Fill the remaining 2 bytes
+return:
+
+[DISABLE]
+Backend.ComputeTechnicalGrade+ED:
+  // Restore: mov [rdi+00000084],rbx
+  db 48 89 9F 84 00 00 00
+
+dealloc(GodPalate)"""
+
+[[cheat]]
+id = "always-specialty"
+name = "Always Specialty"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Patching Arrabbiata.CookIdentity.IsSpeciality (Method A)
+assert(GameAssembly.dll+7DC710, 48 89 5C 24 08)
+GameAssembly.dll+7DC710:
+  mov al,01
+  ret
+  nop 2
+
+// Patching Arrabbiata.CookIdentity.IsSpeciality (Method B)
+assert(GameAssembly.dll+7DC7F0, 48 8B C4)
+GameAssembly.dll+7DC7F0:
+  mov al,01
+  ret
+
+[DISABLE]
+GameAssembly.dll+7DC710:
+  db 48 89 5C 24 08
+
+GameAssembly.dll+7DC7F0:
+  db 48 8B C4"""
+
+[[cheat]]
+id = "money"
+name = "∞ Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Backend.SetMoney+D6)
+define(bytes,48 89 47 48 48 C1 E9 20)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Backend.SetMoney+D6)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov dword ptr [rdi+48],#9999
+  shr rcx,20
+  jmp return
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "dish-exp"
+name = "∞ Dish EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,"GameAssembly.dll"+731B67)
+define(bytes,89 47 54 E8 B1 FE 53 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,"GameAssembly.dll"+731B67)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov dword ptr [rdi+54],#5000000
+  call Cyanide.Backends.Backend.MarkDirty
+  jmp return
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-stir"
+name = "No Stir"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.RecipeData.get_needStir)
+define(bytes,48 83 EC 28)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  mov al,0
+  ret
+  nop
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "no-baste"
+name = "No Baste"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Chef Life  A Restaurant Simulator.exe
+  Version: 
+  Date   : 2026-03-03
+  Author : Phil29.1.26
+
+  This script does blah blah blah
+}
+
+define(address,Backend.SetDryness+2)
+define(bytes,F3 0F 11 49 40)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Backend.SetDryness+2)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rcx+40],(float)0
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // movss [rcx+40],xmm1
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+77D642
+
+GameAssembly.dll+77D62E: CC              - int 3 
+GameAssembly.dll+77D62F: CC              - int 3 
+Backend.SetBaste: 33 D2           - xor edx,edx
+GameAssembly.dll+77D632: F3 0F 11 49 44  - movss [rcx+44],xmm1
+GameAssembly.dll+77D637: E9 E4 43 4F 00  - jmp Cyanide.Backends.Backend.MarkDirty
+GameAssembly.dll+77D63C: CC              - int 3 
+GameAssembly.dll+77D63D: CC              - int 3 
+GameAssembly.dll+77D63E: CC              - int 3 
+GameAssembly.dll+77D63F: CC              - int 3 
+Backend.SetDryness: 33 D2           - xor edx,edx
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+77D642: F3 0F 11 49 40  - movss [rcx+40],xmm1
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+77D647: E9 D4 43 4F 00  - jmp Cyanide.Backends.Backend.MarkDirty
+GameAssembly.dll+77D64C: CC              - int 3 
+GameAssembly.dll+77D64D: CC              - int 3 
+GameAssembly.dll+77D64E: CC              - int 3 
+GameAssembly.dll+77D64F: CC              - int 3 
+Backend.SetEvaporate: 88 51 41        - mov [rcx+41],dl
+GameAssembly.dll+77D653: 33 D2           - xor edx,edx
+GameAssembly.dll+77D655: E9 C6 43 4F 00  - jmp Cyanide.Backends.Backend.MarkDirty
+GameAssembly.dll+77D65A: CC              - int 3 
+GameAssembly.dll+77D65B: CC              - int 3 
+}"""
+
+[[cheat]]
+id = "oven-sweet-spot"
+name = "Oven Sweet Spot"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Target: Arrabbiata.OvenPerfectCookWidget.Update
+// Address: GameAssembly.dll+3A7657
+// Logic: Force Alpha to 1.0f and prevent the widget from disabling itself.
+
+alloc(OvenFix, 64, Arrabbiata.OvenPerfectCookWidget.Update+D7)
+label(return)
+label(const_one)
+
+OvenFix:
+  movss xmm1,[const_one]    // Load 1.0f
+  call UnityEngine.CanvasGroup.set_alpha
+  jmp Arrabbiata.OvenPerfectCookWidget.Update+FB // Skip the logic that checks if it should disable
+
+const_one:
+  dd (float)1.0
+
+Arrabbiata.OvenPerfectCookWidget.Update+D7:
+  jmp OvenFix
+  nop 3
+return:
+
+[DISABLE]
+Arrabbiata.OvenPerfectCookWidget.Update+D7:
+  db 0F 28 CF E8 E1 13 C7 01 // Restore: movaps xmm1,xmm7 | call set_alpha
+
+dealloc(OvenFix)"""
+
+[[cheat]]
+id = "never-dirty-dishes"
+name = "Never Dirty Dishes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Backend.SetDirty)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  ret
+  nop 4
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "knowledge-points"
+name = "∞ Knowledge Points"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(spend_addr, Arrabbiata.PlayerDatabase.SpendKnowledgePoints+204)
+define(spend_bytes, 44 29 7F 4C 48 8B 0D C9 67 55 02)
+
+define(add_addr, Arrabbiata.PlayerDatabase.AddKnowledgePoints+BD)
+define(add_bytes, 01 43 4C 33 D2)
+
+[ENABLE]
+
+assert(spend_addr, spend_bytes)
+assert(add_addr, add_bytes)
+
+alloc(newmem_spend, $1000, spend_addr)
+alloc(newmem_add, $1000, add_addr)
+
+label(return_spend)
+label(return_add)
+
+newmem_spend:
+  mov dword ptr [rdi+4C],#999
+  mov rcx,[GameAssembly.dll+2912768]
+  jmp return_spend
+
+spend_addr:
+  jmp newmem_spend
+  nop 6
+return_spend:
+
+newmem_add:
+  mov dword ptr [rbx+4C],#999
+  xor edx,edx
+  jmp return_add
+
+add_addr:
+  jmp newmem_add
+return_add:
+
+[DISABLE]
+
+spend_addr:
+  db spend_bytes
+
+add_addr:
+  db add_bytes
+
+dealloc(newmem_spend)
+dealloc(newmem_add)"""
+
+[[cheat]]
+id = "hygiene"
+name = "∞ Hygiene"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.RestaurantProfile.SetHygiene+17A)
+define(bytes,E8 81 F9 23 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Arrabbiata.RestaurantProfile.SetHygiene+17A)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov edx,#100
+  call Aspect.SetGauge
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "responsibility"
+name = "∞ Responsibility"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.RestaurantProfile.SetResponsability+22D)
+define(bytes,E8 6E F3 23 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Arrabbiata.RestaurantProfile.SetResponsability+22D)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov edx,#100
+  call Aspect.SetGauge
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "staff-zen"
+name = "Staff Zen"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Target: Arrabbiata.StaffMood.GetMood
+// Address: GameAssembly.dll+401FEC
+// Logic: Zero out m_annoyance (+28) and restore original instruction.
+
+alloc(StaffZen, 64, Arrabbiata.StaffMood.GetMood+8C)
+label(return)
+
+StaffZen:
+  mov dword ptr [rbx+28],00    // Wipe annoyance to 0
+  movzx edx,byte ptr [rbx+2C]  // Restore original instruction
+  xor r8d,r8d
+  jmp return
+
+Arrabbiata.StaffMood.GetMood+8C:
+  jmp StaffZen
+  nop 2
+return:
+
+[DISABLE]
+Arrabbiata.StaffMood.GetMood+8C:
+  db 0F B6 53 2C 45 33 C0      // Restore original movzx
+
+dealloc(StaffZen)"""
+
+[[cheat]]
+id = "sous-chef-1-exp-per-level"
+name = "Sous Chef 1 EXP Per Level"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.AILevelConfiguration.GetXpNeededForNextLevel)
+define(bytes,48 89 5C 24 10 48 89 6C 24 18)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  mov eax,01
+  ret
+  nop 4
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "level-20-sous-chef"
+name = "Level 20 Sous Chef"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.StaffMember.get_availableTaskIds+25)
+define(bytes,48 8B 53 58 48 8D 4C 24 30)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Arrabbiata.StaffMember.get_availableTaskIds+25)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov dword ptr [rbx+44],#20
+  mov rdx,[rbx+58]
+  lea rcx,[rsp+30]
+  jmp return
+
+address:
+  jmp newmem
+  nop 4
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "flawless-sous-chef"
+name = "Flawless Sous Chef"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.AILevelConfiguration.GetRandomizedScore)
+define(bytes,48 89 5C 24 10 48 89 74 24 18)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  mov eax,#6
+  ret
+  nop 4
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "sous-chef-speed-multiplier"
+name = "Sous Chef Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(ChefSpeedCave, 1024, GameAssembly.dll+8DB480)
+label(ChefSpeed)
+registersymbol(ChefSpeed)
+registersymbol(ChefSpeedCave)
+
+ChefSpeedCave:
+  ChefSpeed:
+    dd (float)2.0
+
+  newmem:
+    movss xmm0,[ChefSpeed]
+    ret
+
+GameAssembly.dll+8DB480:
+  jmp newmem
+  nop
+
+[DISABLE]
+GameAssembly.dll+8DB480:
+  db 40 53 48 83 EC 20
+
+unregistersymbol(ChefSpeed)
+unregistersymbol(ChefSpeedCave)
+dealloc(ChefSpeedCave)"""
+
+[[cheat]]
+id = "chefspeed"
+name = "ChefSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ChefSpeed"
+hops = []
+
+[[cheat]]
+id = "instant-deliveries"
+name = "Instant Deliveries"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.Stock.ProgressDeliveries+121)
+define(bytes,F3 0F 5C C6)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  xorps xmm0,xmm0
+  nop
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "no-heat-decay"
+name = "No Heat Decay"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Target: Backend.UpdateTemperature
+// Address: GameAssembly.dll+4742C2
+// Logic: Intercept the temperature write. Only allow it if temp is INCREASING.
+
+alloc(TempLock, 64, Backend.UpdateTemperature+172)
+label(return)
+
+TempLock:
+  comiss xmm0,[rbx+2C]    // Compare New Temp (xmm0) with Current Temp ([rbx+2C])
+  jb return               // If New < Current (Cooling), jump out and skip the write
+
+  movss [rbx+2C],xmm0     // If New >= Current (Heating/Steady), perform the write
+
+return:
+  jmp Backend.UpdateTemperature+177
+
+Backend.UpdateTemperature+172:
+  jmp TempLock
+
+[DISABLE]
+Backend.UpdateTemperature+172:
+  db F3 0F 11 43 2C // movss [rbx+2C],xmm0
+
+dealloc(TempLock)"""
+
+[[cheat]]
+id = "flour"
+name = "∞ Flour"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(flour_addr, <DoAddFlour>d__84.MoveNext+206)
+define(flat_addr, <DoFlat>d__87.MoveNext+2DA)
+define(shared_bytes, 89 47 2C 48 8B CF)
+
+[ENABLE]
+assert(flour_addr, shared_bytes)
+assert(flat_addr, shared_bytes)
+
+alloc(DoughHacks, $1000, GameAssembly.dll)
+
+label(flour_code)
+label(flat_code)
+label(flour_ret)
+label(flat_ret)
+
+DoughHacks:
+
+flour_code:
+  mov dword ptr [rdi+2C],#3
+  mov rcx,rdi
+  jmp flour_ret
+
+flat_code:
+  mov dword ptr [rdi+2C],#3
+  mov rcx,rdi
+  jmp flat_ret
+
+flour_addr:
+  jmp flour_code
+  nop
+flour_ret:
+
+flat_addr:
+  jmp flat_code
+  nop
+flat_ret:
+
+[DISABLE]
+flour_addr:
+  db shared_bytes
+
+flat_addr:
+  db shared_bytes
+
+dealloc(DoughHacks)"""
+
+[[cheat]]
+id = "pizza-oven-450"
+name = "Pizza Oven 450℃"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// --- Pizza Wood Oven: Permanent 450 Degree Heat ---
+// Targets Slot 1 (+30) and Slot 2 (+34) for both Fire On/Off states
+
+define(slot1_on_addr, "GameAssembly.dll"+83BE17)
+define(slot1_off_addr, "GameAssembly.dll"+83BDF5)
+define(slot2_on_addr, "GameAssembly.dll"+83BE1C)
+define(slot2_off_addr, "GameAssembly.dll"+83BDFA)
+
+[ENABLE]
+assert(slot1_on_addr, F3 0F 11 7B 30)
+assert(slot1_off_addr, F3 0F 11 7B 30)
+assert(slot2_on_addr, F3 0F 11 73 34)
+assert(slot2_off_addr, F3 0F 11 73 34)
+
+alloc(PizzaInferno, $1000, GameAssembly.dll)
+
+label(code_s1_on)
+label(code_s1_off)
+label(code_s2_on)
+label(code_s2_off)
+label(ret_s1_on)
+label(ret_s1_off)
+label(ret_s2_on)
+label(ret_s2_off)
+
+PizzaInferno:
+// Slot 1 Logic
+code_s1_on:
+  mov [rbx+30],(float)450
+  jmp ret_s1_on
+
+code_s1_off:
+  mov [rbx+30],(float)450
+  jmp ret_s1_off
+
+// Slot 2 Logic
+code_s2_on:
+  mov [rbx+34],(float)450
+  jmp ret_s2_on
+
+code_s2_off:
+  mov [rbx+34],(float)450
+  jmp ret_s2_off
+
+// Primary Injections
+slot1_on_addr:
+  jmp code_s1_on
+ret_s1_on:
+
+slot1_off_addr:
+  jmp code_s1_off
+ret_s1_off:
+
+slot2_on_addr:
+  jmp code_s2_on
+ret_s2_on:
+
+slot2_off_addr:
+  jmp code_s2_off
+ret_s2_off:
+
+[DISABLE]
+slot1_on_addr:
+  db F3 0F 11 7B 30
+slot1_off_addr:
+  db F3 0F 11 7B 30
+slot2_on_addr:
+  db F3 0F 11 73 34
+slot2_off_addr:
+  db F3 0F 11 73 34
+
+dealloc(PizzaInferno)"""
+
+[[cheat]]
+id = "timer-speed-multiplier"
+name = "Timer Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(SmartTurboCave, 256, GameAssembly.dll+909B25)
+registersymbol(UserTimeMultiplier)
+registersymbol(StepperThreshold)
+label(return)
+label(vanilla_path)
+label(UserTimeMultiplier)
+label(StepperThreshold)
+
+SmartTurboCave:
+  // 1. Calculate the base vanilla increment (Speed * DeltaTime)
+  mulss xmm9, xmm8
+
+  // 2. The Logic Sieve
+  // Compare the resulting increment (in xmm9) against our safe threshold
+  comiss xmm9, [StepperThreshold]
+  ja vanilla_path  // "Jump if Above": If the increment is LARGER than the threshold, it's a Stepper!
+
+  // 3. The Timer Path (Small continuous increments)
+  mulss xmm9, [UserTimeMultiplier]
+
+vanilla_path:
+  // 4. Return to the engine (xmm9 now holds either the boosted or vanilla increment)
+  jmp return
+
+align 10
+UserTimeMultiplier:
+  dd (float)5.0
+
+// The Threshold: Anything adding more than 0.2 progress per frame is ignored.
+// DO NOT alter this unless your Steppers softlock your game.
+// This should work fine unless you're playing on a potato with 5 or less FPS.
+StepperThreshold:
+  dd (float)0.2
+
+GameAssembly.dll+909B25:
+  jmp SmartTurboCave
+return:
+
+[DISABLE]
+// Restore original 5 bytes
+GameAssembly.dll+909B25:
+  db F3 45 0F 59 C8
+
+unregistersymbol(UserTimeMultiplier)
+unregistersymbol(StepperThreshold)
+dealloc(SmartTurboCave)"""
+
+[[cheat]]
+id = "usertimemultiplier"
+name = "UserTimeMultiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UserTimeMultiplier"
+hops = []
+
+[[cheat]]
+id = "sous-chef-speed-multiplier-fixed-5x-work-speed-pass-but-could-be-made-customizaeable"
+name = "Sous Chef Speed Multiplier (fixed 5x work speed. Pass, but could be made customizaeable.)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Arrabbiata.AIStaff.GetTaskSpeedMultiplier)
+define(bytes,40 53 48 83 EC 20 80 3D 8D 74 1E 02 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(ChefSpeed, 4) // Allocate 4 bytes for our Float
+registersymbol(ChefSpeed)
+
+address:
+  push #5
+  cvtsi2ss xmm0,[rsp]
+  add rsp,8
+  ret
+  nop
+  /*movss xmm0,[ChefSpeed]
+  ret
+  nop*/
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "instant-deliveries-so-complicated-doesn-t-work-with-za-wardo-causes-hud-bugs-without-fail"
+name = "Instant Deliveries (so complicated, doesn't work with ZA WARDO, causes HUD bugs without. Fail.)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Target: Arrabbiata.Stock.get_deliveriesProgress
+// Logic: Set time to 0.1, wait 100 frames, then set to 0.
+// This allows the HUD to catch up while ZA WARUDO is active.
+
+alloc(ImpulsiveDelivery, 1024, Arrabbiata.Stock.get_deliveriesProgress+2D)
+label(return)
+label(minTime)
+label(FrameCounter)
+
+ImpulsiveDelivery:
+  movss xmm6,[rbx+28]     // Load current timeRemaining
+  comiss xmm6,[minTime]   // Compare with 0.1
+  ja short @Teleport      // If > 0.1, it's a new order, go teleport it
+
+  // If we are here, time is already <= 0.1
+  // Now check if it's EXACTLY 0. If it is, reset counter and exit
+  push eax
+  mov eax,[rbx+28]
+  test eax,eax            // Is it 0.0?
+  pop eax
+  jz short @f             // If already 0, do nothing
+
+  // If time is between 0.0 and 0.1, increment frame counter
+  inc [FrameCounter]
+  cmp [FrameCounter],#100 // Wait for 100 frames
+  jl short @f             // Not enough frames yet, keep the HUD happy
+
+  // 100 frames passed! Finally kill the order
+  mov [rbx+28],(float)0
+  mov [FrameCounter],0
+  jmp short @f
+
+@Teleport:
+  mov [rbx+28],(float)0.1
+  mov [FrameCounter],0    // Reset counter for the new order
+
+@f:
+  movss xmm6,[rbx+28]
+  jmp return
+
+minTime:
+  dd (float)0.1
+FrameCounter:
+  dd 0
+
+Arrabbiata.Stock.get_deliveriesProgress+2D:
+  jmp ImpulsiveDelivery
+return:
+
+[DISABLE]
+Arrabbiata.Stock.get_deliveriesProgress+2D:
+  db F3 0F 10 73 28
+
+dealloc(ImpulsiveDelivery)"""
+
+[[cheat]]
+id = "instant-deliveries-less-complicated-doesn-t-cause-hud-bugs-doesn-t-work-with-za-wardo-either-fail"
+name = "Instant Deliveries (less complicated, doesn't cause HUD bugs, doesn't work with ZA WARDO either. Fail.)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Target: Arrabbiata.Market.get_deliveriesDuration
+// Jumps at +23 and +2E (the movss instructions)
+
+alloc(DurationCave, 1024, Arrabbiata.Market.get_deliveriesDuration)
+label(return_before)
+label(return_after)
+
+DurationCave:
+  // Before Opening Logic
+  BeforeOpening:
+    mov [rbx+58],(float)0.5
+    movss xmm0,[rbx+58]
+    jmp return_before
+
+  // After Opening Logic
+  AfterOpening:
+    mov [rbx+54],(float)0.5
+    movss xmm0,[rbx+54]
+    jmp return_after
+
+// Before Opening Jump
+Arrabbiata.Market.get_deliveriesDuration+23:
+  jmp BeforeOpening
+return_before:
+
+// After Opening Jump
+Arrabbiata.Market.get_deliveriesDuration+2E:
+  jmp AfterOpening
+return_after:
+
+[DISABLE]
+Arrabbiata.Market.get_deliveriesDuration+23:
+  db F3 0F 10 43 58 // movss xmm0,[rbx+58]
+
+Arrabbiata.Market.get_deliveriesDuration+2E:
+  db F3 0F 10 43 54 // movss xmm0,[rbx+54]
+
+dealloc(DurationCave)"""
+
+[[cheat]]
+id = "set-player-level-works-properly-but-no-safety-checks"
+name = "Set Player Level (Works properly, but no safety checks)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(LevelHack, 128, Backend.AddExperience+6C)
+label(return)
+label(DesiredLevel)
+registerSymbol(DesiredLevel)
+
+LevelHack:
+  // 1. Load our value into the "Workhorse" register
+  mov eax, [DesiredLevel]
+
+  // 2. Preserve the compiler's "weird" nuke order
+  xor ecx,ecx              // The "nuke" you spotted—now handled safely
+
+  // 3. Commit the forced values to memory
+  mov [rdi+70], eax        // Force Level (+70)
+  mov [rdi+6C], 0          // Force XP (+6C) to 0
+
+  jmp return
+
+DesiredLevel:
+  dd #30                   // Max Level 30
+
+Backend.AddExperience+6C:
+  jmp LevelHack
+  nop 2                     // Fill any leftover bytes from the 03 C3 33 C9 sequence
+return:
+
+[DISABLE]
+Backend.AddExperience+6C:
+  // Restore the original sequence: add eax,ebx; xor ecx,ecx; mov [rdi+6C],eax
+  db 03 C3 33 C9 89 47 6C
+
+dealloc(LevelHack)
+unregisterSymbol(DesiredLevel)"""
+
+[[cheat]]
+id = "cook-speed-multiplier"
+name = "Cook Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(CookSpeedCave, 1024, Arrabbiata.Cooker.GetPhaseDurationMultiplier)
+registersymbol(UserCookMultiplier)
+label(return)
+label(clamp_low)
+label(clamp_high)
+label(vanilla_speed)
+label(exit)
+label(UserCookMultiplier)
+
+CookSpeedCave:
+  // 1. Get the m_cookerMiniGame pointer (+170)
+  mov rax, [rbx+170]
+  test rax, rax
+  jz vanilla_speed
+
+  // 2. Get the sub-offset pointer (+10)
+  mov rax, [rax+10]
+  test rax, rax
+  jz vanilla_speed
+
+  // 3. THE LOGIC GATE: Compare the VTable VALUE
+  // We check if the first 8 bytes at the dynamic address match your signature.
+  mov rdi, [rax]             // Dereference: rdi now holds the VTable value
+  mov rsi, 000002C3300E46F0  // YOUR SIGNATURE (from your hex dump)
+  cmp rdi, rsi
+  jne vanilla_speed          // If it's a "Stepper," play it safe
+
+  // --- Turbo Path: For your confirmed "Timer" Group ---
+  mov rax, UserCookMultiplier
+  movss xmm0, [rax]
+
+  // --- Clamp Logic (0.1 to 10.0) ---
+  mov ecx, 3DCCCCCD             // 0.1
+  movd xmm1, ecx
+  comiss xmm0, xmm1
+  jb clamp_low
+
+  mov ecx, 41200000             // 10.0
+  movd xmm1, ecx
+  comiss xmm0, xmm1
+  ja clamp_high
+  jmp exit
+
+clamp_low:
+  movss xmm0, xmm1
+  jmp exit
+
+clamp_high:
+  movss xmm0, xmm1
+  jmp exit
+
+vanilla_speed:
+  mov ecx, 3F800000             // 1.0 (Vanilla)
+  movd xmm0, ecx
+
+exit:
+  ret
+
+align 10
+UserCookMultiplier:
+  dd (float)5.0
+
+Arrabbiata.Cooker.GetPhaseDurationMultiplier:
+  jmp CookSpeedCave
+return:
+
+[DISABLE]
+Arrabbiata.Cooker.GetPhaseDurationMultiplier:
+  db 48 89 5C 24 08
+
+unregistersymbol(UserCookMultiplier)
+dealloc(CookSpeedCave)"""
+
+[[cheat]]
+id = "usercookmultiplier"
+name = "UserCookMultiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UserCookMultiplier"
+hops = []

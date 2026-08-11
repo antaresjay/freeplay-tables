@@ -1,0 +1,442 @@
+[game]
+name = "Tale of Seikyu"
+exe = "seikyu.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=35306"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "disable-time"
+name = "Disable Time"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ACEGame.WorldTimeManager.CalculateTime)
+define(bytes,40 53 48 81 EC B0 00 00 00)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,ACEGame.WorldTimeManager.CalculateTime)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+30],(float)0
+
+code:
+  push rbx
+  sub rsp,000000B0
+  jmp return
+
+address:
+  jmp newmem
+  nop 4
+return:
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-stamina"
+name = "Infinite Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+ACEGame.StrengthSystem.OnExecute:
+db C3
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+ACEGame.StrengthSystem.OnExecute:
+db 48 88 C4"""
+
+[[cheat]]
+id = "player-movement-speed"
+name = "→ Player Movement Speed"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(PlayerTargetSpeed,GameAssembly.dll,89 42 20 48 8B 43 38 48 85 C0 74 36)
+alloc(newmem,$1000,PlayerTargetSpeed)
+registersymbol(SetSpeed)
+label(code return SetSpeed)
+//Send@Sintrix|FearlessRevolution
+newmem:
+
+code:
+  movss xmm15,[SetSpeed]
+  movss [rdx+20],xmm15
+  mov rax,[rbx+38]
+  jmp return
+
+SetSpeed:
+dd (float)10
+
+PlayerTargetSpeed:
+  jmp newmem
+  nop 2
+return:
+registersymbol(PlayerTargetSpeed)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+PlayerTargetSpeed:
+  db 89 42 20 48 8B 43 38
+//ACEGame.MoveData -- Target Speed
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-movement-speed"
+name = "Set Movement Speed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetSpeed"
+hops = []
+
+[[cheat]]
+id = "infinite-weapon-durability"
+name = "Infinite Weapon Durability"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(WeaponDurability,GameAssembly.dll,44 0F 2F 72 10)
+alloc(newmem,$1000,WeaponDurability)
+
+label(code)
+label(return)
+//Send@Sintrix|FearlessRevolution
+newmem:
+mov [rdx+10],(float)99999
+
+code:
+  comiss xmm14,[rdx+10]
+  jmp return
+
+WeaponDurability:
+  jmp newmem
+return:
+registersymbol(WeaponDurability)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+WeaponDurability:
+  db 44 0F 2F 72 10
+//ACEGame.WeaponUpdateSystem.OnExecute
+//GameAssembly.dll+A8E06A
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "item-gain-multiplier"
+name = "Item Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GainMultiplier,GameAssembly.dll,8B 48 14 01 4B 14)
+alloc(newmem,$1000,GainMultiplier)
+registersymbol(LGI)
+label(code return LGI)
+//Send@Sintrix|FearlessRevolution
+newmem:
+
+code:
+  mov ecx,[rax+14]
+  imul ecx,[LGI]
+  add [rbx+14],ecx
+  jmp return
+
+LGI:
+dd (int)2
+//Send@Sintrix|FearlessRevolution
+GainMultiplier:
+  jmp newmem
+  nop
+return:
+registersymbol(GainMultiplier)
+
+[DISABLE]
+
+GainMultiplier:
+  db 8B 48 14 01 4B 14
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-multiplier-requires-at-least-2-items"
+name = "Set Multiplier (Requires At Least 2 Items)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "LGI"
+hops = []
+
+[[cheat]]
+id = "items-don-t-decrease"
+name = "Items Don't Decrease"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//29 68 14 45 33 C9
+aobscanmodule(ItemRemovalAOB,GameAssembly.dll,29xxxx4533xxF7)
+//Send@Sintrix|FearlessRevolution
+ItemRemovalAOB:
+ db 90 90 90
+registersymbol(ItemRemovalAOB)
+
+[DISABLE]
+//Send@Sintrix|FearlessRevolution
+ItemRemovalAOB:
+  db 29 68 14 45 33 C9
+//ACEGame.ContainerItemGroupProxy.RemoveItemAt
+unregistersymbol(ItemRemovalAOB)"""
+
+[[cheat]]
+id = "items-don-t-decrease-on-split"
+name = "Items Don't Decrease On Split"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//29 73 14 48 8B 7C 24 30
+//ACEGame.GameItem.SplitItem
+aobscanmodule(NoItemDecrease,GameAssembly.dll,29xxxx488Bxxxxxx488Bxxxxxx4883xxxx5EC3488B)
+//Send@Sintrix|FearlessRevolution
+NoItemDecrease:
+ db 90 90 90
+registersymbol(NoItemDecrease)
+
+[DISABLE]
+
+NoItemDecrease:
+  db 29 73 14 48 8B 7C 24 30
+//Send@Sintrix|FearlessRevolution
+unregistersymbol(NoItemDecrease)"""
+
+[[cheat]]
+id = "no-daily-gift-limit"
+name = "No Daily Gift Limit"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(DayGiftLimit,GameAssembly.dll,8B 58 40 33 D2 8B)
+alloc(newmem,$1000,DayGiftLimit)
+
+label(code)
+label(return)
+//Send@Sintrix|FearlessRevolution
+newmem:
+mov [rax+40],#99999
+mov [rax+48],#99999
+
+code:
+  mov ebx,[rax+40]
+  xor edx,edx
+  jmp return
+
+DayGiftLimit:
+  jmp newmem
+return:
+registersymbol(DayGiftLimit)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+DayGiftLimit:
+  db 8B 58 40 33 D2
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-weekly-gift-limit"
+name = "No Weekly Gift Limit"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(WeeklyGiftLimit,GameAssembly.dll,3B 58 44 7D 17)
+alloc(newmem,$1000,WeeklyGiftLimit)
+
+label(code)
+label(return)
+//Send@Sintrix|FearlessRevolution
+newmem:
+mov [rax+44],#99999
+mov [rax+48],#99999
+code:
+  cmp ebx,[rax+44]
+  jnl GameAssembly.dll+89FDD0
+  jmp return
+
+WeeklyGiftLimit:
+  jmp newmem
+return:
+registersymbol(WeeklyGiftLimit)
+
+[DISABLE]
+//Send@Sintrix|FearlessRevolution
+WeeklyGiftLimit:
+  db 3B 58 44 7D 17
+//ACEConfig.game_Favor
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "easy-max-favor-affinity-gift-pet"
+name = "Easy Max Favor/Affinity [ Gift | Pet ]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//Send@Sintrix|FearlessRevolution
+aobscanmodule(TalkPoints,GameAssembly.dll,44 8B 40 24 41 B9 02 00 00 00)
+alloc(newmem,$1000,TalkPoints)
+
+label(code)
+label(return)
+
+newmem:
+mov [rax+24],#99999999
+mov [rax+48],#99999999
+code:
+  mov r8d,[rax+24]
+  mov r9d,00000002
+  jmp return
+
+TalkPoints:
+  jmp newmem
+  nop 5
+return:
+registersymbol(TalkPoints)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+//Send@Sintrix|FearlessRevolution
+
+TalkPoints:
+  db 44 8B 40 24 41 B9 02 00 00 00
+//ACEConfig.game_Favor
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "all-gifts-are-favorites"
+name = "All Gifts Are Favorites"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+ACEConfig.npc_gift.IsDislike:
+db B0 00 C3
+ACEConfig.npc_gift.IsHate:
+db B0 00 C3
+ACEConfig.npc_gift.IsFavourite:
+db B0 01 C3
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+//Send@Sintrix|FearlessRevolution
+ACEConfig.npc_gift.IsHate:
+db 48 89 5C 24 08
+ACEConfig.npc_gift.IsDislike:
+db 48 89 5C 24 08
+ACEConfig.npc_gift.IsFavourite:
+db 48 89 5C 24 08"""
+
+[[cheat]]
+id = "grab-npc-uuid-birthday-speak-interact"
+name = "→ Grab NPC UUID & Birthday [ Speak | Interact ]"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+aobscanmodule(NPCInfoSpeak,GameAssembly.dll,48 8B 78 20 48 8B 0D AC 12 9F 05)
+alloc(newmem,$1000,NPCInfoSpeak)
+registersymbol(SpokenNPCInfo)
+label(code return SpokenNPCInfo)
+//Send@FearlessRevolution|Sintrix
+newmem:
+mov [SpokenNPCInfo],rax
+
+code:
+  mov rdi,[rax+20]
+  mov rcx,[GameAssembly.dll+6318780]
+  jmp return
+
+SpokenNPCInfo:
+dw
+
+NPCInfoSpeak:
+  jmp newmem
+  nop 6
+return:
+registersymbol(NPCInfoSpeak)
+//Send@FearlessRevolution|Sintrix
+
+
+[DISABLE]
+
+NPCInfoSpeak:
+  db 48 8B 78 20 48 8B 0D AC 12 9F 05
+//ACEGame.TriggerNpcInteractionSystem.DoExecute
+unregistersymbol(*)
+dealloc(*)"""

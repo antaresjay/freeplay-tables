@@ -1,0 +1,520 @@
+[game]
+name = "Braid"
+exe = "braid.exe"
+notes = "Converted from a Cheat Engine table by all_my_sins. Source: https://fearlessrevolution.com/viewtopic.php?t=18154"
+verified = []
+author = "all_my_sins"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "kill-monsters-on-contact"
+name = "Kill Monsters on Contact"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(stomp,braid.exe,0F 2F C8 76 2E 0F) // should be unique
+
+stomp+3:
+db 90 90
+
+stomp+1b:
+db 90 90
+
+registersymbol(stomp)
+
+[DISABLE]
+stomp+3:
+db 76 2e
+
+stomp+1b:
+db 72 09
+
+unregistersymbol(stomp)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: braid.do_guy_stomp_test+ED
+
+braid.do_guy_stomp_test+B9: F3 0F 10 4E 20           - movss xmm1,[esi+20]
+braid.do_guy_stomp_test+BE: 83 C4 18                 - add esp,18
+braid.do_guy_stomp_test+C1: F3 0F 10 57 28           - movss xmm2,[edi+28]
+braid.do_guy_stomp_test+C6: F3 0F 5C 4F 20           - subss xmm1,[edi+20]
+braid.do_guy_stomp_test+CB: F3 0F 10 35 30 8A 57 00  - movss xmm6,[braid.exe+178A30]
+braid.do_guy_stomp_test+D3: 0F 28 C2                 - movaps xmm0,xmm2
+braid.do_guy_stomp_test+D6: F3 0F 59 05 9C 90 57 00  - mulss xmm0,[braid.exe+17909C]
+braid.do_guy_stomp_test+DE: F3 0F 10 64 24 0C        - movss xmm4,[esp+0C]
+braid.do_guy_stomp_test+E4: F3 0F 10 5C 24 14        - movss xmm3,[esp+14]
+braid.do_guy_stomp_test+EA: 0F 54 CE                 - andps xmm1,xmm6
+// ---------- INJECTING HERE ----------
+braid.do_guy_stomp_test+ED: 0F 2F C8                 - comiss xmm1,xmm0
+// ---------- DONE INJECTING  ----------
+braid.do_guy_stomp_test+F0: 76 2E                    - jna braid.do_guy_stomp_test+120
+braid.do_guy_stomp_test+F2: 0F 28 CA                 - movaps xmm1,xmm2
+braid.do_guy_stomp_test+F5: F3 0F 59 0D 34 90 57 00  - mulss xmm1,[braid.exe+179034]
+braid.do_guy_stomp_test+FD: 0F 28 C1                 - movaps xmm0,xmm1
+braid.do_guy_stomp_test+100: F3 0F 58 47 18           - addss xmm0,[edi+18]
+braid.do_guy_stomp_test+105: 0F 2F D8                 - comiss xmm3,xmm0
+braid.do_guy_stomp_test+108: 72 09                    - jb braid.do_guy_stomp_test+113
+braid.do_guy_stomp_test+10A: B9 01 00 00 00           - mov ecx,00000001
+braid.do_guy_stomp_test+10F: 89 4C 24 24              - mov [esp+24],ecx
+braid.do_guy_stomp_test+113: F3 0F 58 CC              - addss xmm1,xmm4
+}"""
+
+[[cheat]]
+id = "no-collision-on-claw"
+name = "No collision on Claw"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(claw,braid.exe,75 12 56 57 E8 A4 4B 00 00) // should be unique
+claw:
+  db eb 12
+registersymbol(claw)
+
+[DISABLE]
+claw:
+  db 75 12
+
+unregistersymbol(claw)
+
+{
+// ORIGINAL CODE - INJECTION POINT: braid.collide_guy_misc+33
+
+braid.collide_guy_misc+15: 83 EC 10              - sub esp,10
+braid.collide_guy_misc+18: 56                    - push esi
+braid.collide_guy_misc+19: 8B 74 24 24           - mov esi,[esp+24]
+braid.collide_guy_misc+1D: 57                    - push edi
+braid.collide_guy_misc+1E: 8B 7C 24 2C           - mov edi,[esp+2C]
+braid.collide_guy_misc+22: 57                    - push edi
+braid.collide_guy_misc+23: 56                    - push esi
+braid.collide_guy_misc+24: E8 C7 0A 00 00        - call braid.do_guy_stomp_test
+braid.collide_guy_misc+29: 83 C4 08              - add esp,08
+braid.collide_guy_misc+2C: 81 7F 08 F0 1F 5F 00  - cmp [edi+08],braid.ptype_Claw
+// ---------- INJECTING HERE ----------
+braid.collide_guy_misc+33: 75 12                 - jne braid.collide_guy_misc+47
+// ---------- DONE INJECTING  ----------
+braid.collide_guy_misc+35: 56                    - push esi
+braid.collide_guy_misc+36: 57                    - push edi
+braid.collide_guy_misc+37: E8 A4 4B 00 00        - call braid.test_for_claw_kill
+braid.collide_guy_misc+3C: 83 C4 08              - add esp,08
+braid.collide_guy_misc+3F: 84 C0                 - test al,al
+braid.collide_guy_misc+41: 0F 85 F6 01 00 00     - jne braid.collide_guy_misc+23D
+braid.collide_guy_misc+47: 81 7F 08 70 F5 63 00  - cmp [edi+08],braid.ptype_Puzzle_Piece
+braid.collide_guy_misc+4E: D9 EE                 - fldz 
+braid.collide_guy_misc+50: D9 E8                 - fld1 
+braid.collide_guy_misc+52: 0F 85 D2 00 00 00     - jne braid.collide_guy_misc+12A
+}"""
+
+[[cheat]]
+id = "disable-collision-on-bullets-and-spikes"
+name = "Disable collision on bullets and spikes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : braid.exe
+  Version: 
+  Date   : 2021-11-10
+  Author : d
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+ 
+ 
+aobscanmodule(bypass,braid.exe,84 C0 74 74 81 7E 08 B8 BC 5E 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+cmp al,01
+//test al,al
+je human
+jmp monster
+
+human:
+jmp return+51d
+
+monster:
+//  je braid.respond_to_contact+108C
+  cmp [esi+08],braid.ptype_Bullet
+  jmp return
+
+bypass:
+  jmp newmem
+  nop 6
+return:
+registersymbol(bypass)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+bypass:
+  db 84 C0 74 74 81 7E 08 B8 BC 5E 00
+
+unregistersymbol(bypass)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: braid.respond_to_contact+1014
+
+braid.respond_to_contact+FF2: 33 D2                    - xor edx,edx
+braid.respond_to_contact+FF4: 83 C4 04                 - add esp,04
+braid.respond_to_contact+FF7: 0F B6 C9                 - movzx ecx,cl
+braid.respond_to_contact+FFA: 84 C0                    - test al,al
+braid.respond_to_contact+FFC: 0F 45 CA                 - cmovne ecx,edx
+braid.respond_to_contact+FFF: 89 4C 24 64              - mov [esp+64],ecx
+braid.respond_to_contact+1003: 57                       - push edi
+braid.respond_to_contact+1004: E8 27 41 02 00           - call braid.is_a_human
+braid.respond_to_contact+1009: F3 0F 10 35 F4 89 57 00  - movss xmm6,[braid.exe+1789F4]
+braid.respond_to_contact+1011: 83 C4 04                 - add esp,04
+// ---------- INJECTING HERE ----------
+braid.respond_to_contact+1014: 84 C0                    - test al,al
+// ---------- DONE INJECTING  ----------
+braid.respond_to_contact+1016: 74 74                    - je braid.respond_to_contact+108C
+braid.respond_to_contact+1018: 81 7E 08 B8 BC 5E 00     - cmp [esi+08],braid.ptype_Bullet
+braid.respond_to_contact+101F: 75 6B                    - jne braid.respond_to_contact+108C
+braid.respond_to_contact+1021: F3 0F 10 56 28           - movss xmm2,[esi+28]
+braid.respond_to_contact+1026: 8D 44 24 38              - lea eax,[esp+38]
+braid.respond_to_contact+102A: F3 0F 10 4E 18           - movss xmm1,[esi+18]
+braid.respond_to_contact+102F: 83 EC 0C                 - sub esp,0C
+braid.respond_to_contact+1032: F3 0F 10 46 14           - movss xmm0,[esi+14]
+braid.respond_to_contact+1037: F3 0F 59 D6              - mulss xmm2,xmm6
+braid.respond_to_contact+103B: F3 0F 11 44 24 44        - movss [esp+44],xmm0
+}"""
+
+[[cheat]]
+id = "set-speedrun-timer-to-0"
+name = "Set Speedrun timer to 0"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : braid.exe
+  Version: 
+  Date   : 2021-11-10
+  Author : d
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+ 
+ 
+aobscanmodule(speed,braid.exe,A1 34 94 5F 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+mov [braid.globals+2AA4],#0
+code:
+  mov eax,[braid.globals+2AA4]
+  jmp return
+
+speed:
+  jmp newmem
+return:
+registersymbol(speed)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+speed:
+  db A1 34 94 5F 00
+
+unregistersymbol(speed)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: braid.update_speed_run+196
+
+braid.update_speed_run+178: 5E                 - pop esi
+braid.update_speed_run+179: 5B                 - pop ebx
+braid.update_speed_run+17A: 83 C4 08           - add esp,08
+braid.update_speed_run+17D: E9 FE A7 FF FF     - jmp braid.kill_speed_run_backing
+braid.update_speed_run+182: 8B 0D 38 94 5F 00  - mov ecx,[braid.globals+2AA8]
+braid.update_speed_run+188: D9 E8              - fld1 
+braid.update_speed_run+18A: 41                 - inc ecx
+braid.update_speed_run+18B: 89 0D 38 94 5F 00  - mov [braid.globals+2AA8],ecx
+braid.update_speed_run+191: F6 C3 04           - test bl,04
+braid.update_speed_run+194: 74 5A              - je braid.update_speed_run+1F0
+// ---------- INJECTING HERE ----------
+braid.update_speed_run+196: A1 34 94 5F 00     - mov eax,[braid.globals+2AA4]
+// ---------- DONE INJECTING  ----------
+braid.update_speed_run+19B: BA FF FF FF 7F     - mov edx,7FFFFFFF
+braid.update_speed_run+1A0: 8B 0D 3C 94 5F 00  - mov ecx,[braid.globals+2AAC]
+braid.update_speed_run+1A6: 40                 - inc eax
+braid.update_speed_run+1A7: 41                 - inc ecx
+braid.update_speed_run+1A8: 3B C2              - cmp eax,edx
+braid.update_speed_run+1AA: 0F 47 C2           - cmova eax,edx
+braid.update_speed_run+1AD: 3B CA              - cmp ecx,edx
+braid.update_speed_run+1AF: A3 34 94 5F 00     - mov [braid.globals+2AA4],eax
+braid.update_speed_run+1B4: A1 2C 94 5F 00     - mov eax,[braid.globals+2A9C]
+braid.update_speed_run+1B9: 0F 47 CA           - cmova ecx,edx
+}"""
+
+[[cheat]]
+id = "location-info"
+name = "Location Info"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : braid.exe
+  Version: 
+  Date   : 2021-11-10
+  Author : d
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+ 
+ 
+aobscanmodule(location,braid.exe,8B 4F 14 89 4C 24 14) // should be unique
+alloc(newmem,$1000)
+label(loc)
+label(code)
+label(return)
+
+newmem:
+mov [loc],edi
+code:
+  mov ecx,[edi+14]
+  mov [esp+14],ecx
+  jmp return
+
+loc:
+dd 0
+
+location:
+  jmp newmem
+  nop 2
+return:
+registersymbol(loc)
+registersymbol(location)
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+location:
+  db 8B 4F 14 89 4C 24 14
+unregistersymbol(loc)
+unregistersymbol(location)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: braid.simulate+32
+
+braid.simulate+D: 50                             - push eax
+braid.simulate+E: 64 89 25 00 00 00 00           - mov fs:[00000000],esp
+braid.simulate+15: 83 EC 24                       - sub esp,24
+braid.simulate+18: F3 0F 10 05 60 85 57 00        - movss xmm0,[braid.exe+178560]
+braid.simulate+20: 57                             - push edi
+braid.simulate+21: F3 0F 11 44 24 04              - movss [esp+04],xmm0
+braid.simulate+27: E8 64 40 FE FF                 - call braid.get_the_player
+braid.simulate+2C: 8B F8                          - mov edi,eax
+braid.simulate+2E: 85 FF                          - test edi,edi
+braid.simulate+30: 74 1A                          - je braid.simulate+4C
+// ---------- INJECTING HERE ----------
+braid.simulate+32: 8B 4F 14                       - mov ecx,[edi+14]
+// ---------- DONE INJECTING  ----------
+braid.simulate+35: 89 4C 24 14                    - mov [esp+14],ecx
+braid.simulate+39: F3 0F 10 44 24 14              - movss xmm0,[esp+14]
+braid.simulate+3F: 8B 4F 18                       - mov ecx,[edi+18]
+braid.simulate+42: 89 4C 24 18                    - mov [esp+18],ecx
+braid.simulate+46: F3 0F 11 44 24 04              - movss [esp+04],xmm0
+braid.simulate+4C: F7 05 94 71 5F 00 00 02 00 00  - test [braid.globals+804],00000200
+braid.simulate+56: 74 2C                          - je braid.simulate+84
+braid.simulate+58: 68 B8 F5 63 00                 - push braid.ptype_Ring
+braid.simulate+5D: FF 35 E8 6D 5F 00              - push [braid.globals+458]
+braid.simulate+63: E8 A8 1D FD FF                 - call braid.exe+8B970
+}"""
+
+[[cheat]]
+id = "x"
+name = "X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "loc"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "y"
+name = "Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "loc"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "jump-gravity"
+name = "Jump Gravity"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x570"
+hops = []
+
+[[cheat]]
+id = "fall-speed-8-869999886-almost-neutralizes-falling"
+name = "Fall Speed (-8.869999886 almost neutralizes falling)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x560"
+hops = []
+
+[[cheat]]
+id = "top-speed"
+name = "Top Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x578"
+hops = []
+
+[[cheat]]
+id = "movement-inertia"
+name = "Movement Inertia"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x580"
+hops = []
+
+[[cheat]]
+id = "direction-change-slipperiness"
+name = "Direction Change Slipperiness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x588"
+hops = []
+
+[[cheat]]
+id = "climbing-speed"
+name = "Climbing Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x590"
+hops = []
+
+[[cheat]]
+id = "jump-height"
+name = "Jump Height"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x598"
+hops = []
+
+[[cheat]]
+id = "jump-mid-air-movement-speed"
+name = "Jump Mid-air Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x5a0"
+hops = []
+
+[[cheat]]
+id = "jump-direction-change-speed"
+name = "Jump Direction Change Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "braid.globals"
+offset = "0x5a8"
+hops = []

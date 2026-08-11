@@ -1,0 +1,700 @@
+[game]
+name = "Dragon Quest XI S Definitive Edition DEMO"
+exe = "dragon_quest_xi_s_demo.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=14560"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script-god-mode-one-hit-kill-etc"
+name = "Damage Modifier Script (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(DamageModAOB,$process,8B 47 7C 48 8B CF 2B C5) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,1024,DamageModAOB)
+
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+newmem:
+  mov eax,[rdi+7C]
+  cmp word ptr [rdi+70],0
+  je EnemyHit
+HeroHit:
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push ebp
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [rsp]
+  pop ebp
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor ebp,ebp
+  jmp CleanUp
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne CleanUp
+  cmp ebp,eax
+  jl @F
+  xor ebp,ebp
+@@:
+  jmp CleanUp  
+EnemyHit:
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  push ebp
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [rsp]
+  pop ebp
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne CleanUp
+  mov ebp,#99999
+  jmp CleanUp
+
+CleanUp:    
+  mov rcx,rdi
+  jmp return
+
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)0.0
+fHeroDamageMult:
+dq (float)0.5
+HeroCannotDie:
+dq 1
+
+DamageModAOB:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  db 8B 47 7C 48 8B CF
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fHeroDamageMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-damage-to-hero-party"
+name = "Hero Damage Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half damage to hero party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-if-on-and-god-mode-off-then-you-take-damage-until-the-hit-will-kill-you"
+name = "Hero Cannot Die (If On and God Mode Off, Then You Take Damage Until The Hit Will Kill You)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier-to-damage-you-deal-to-enemies"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier to damage you deal to enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "infinite-battle-mp"
+name = "Infinite Battle MP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BattleMPModAOB,$process,8B 93 80 00 00 00 41 B0 01 F3 0F 2C C1) // should be unique
+registersymbol(BattleMPModAOB)
+alloc(newmem,1024,BattleMPModAOB)
+
+label(return)
+
+newmem:
+  mov edx,[rbx+00000080]
+  mov r8l,01
+  cvttss2si eax,xmm1
+  cmp word ptr [rbx+70],0
+  je EnemyMPHit
+HeroMPHit:
+  cmp eax,0
+  jle return
+  xor eax,eax
+  jmp return
+EnemyMPHit:
+  jmp return
+  
+BattleMPModAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+BattleMPModAOB:
+  db 8B 93 80 00 00 00 41 B0 01 F3 0F 2C C1  
+
+unregistersymbol(BattleMPModAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "gold-multiplier-after-battle"
+name = "Gold Multiplier (After Battle)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GoldMultAOB,$process,03 91 C0 00 00 00 48 8B D9 E8 ?? ?? ?? ?? 48 8B CB) // should be unique
+registersymbol(GoldMultAOB)
+alloc(newmem,1024,GoldMultAOB)
+
+///
+label(return)
+label(originalcode)
+label(GoldMult)
+registersymbol(GoldMult)
+
+newmem:
+  imul edx,[GoldMult]
+  
+originalcode:
+  add edx,[rcx+000000C0]
+  jmp return
+ 
+GoldMult:
+dd #100
+    
+GoldMultAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+GoldMultAOB:
+  db 03 91 C0 00 00 00
+  
+unregistersymbol(GoldMult)
+unregistersymbol(GoldMultAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "gold-multiplier"
+name = "Gold Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldMult"
+hops = []
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(EXPMultAOB,$process,01 91 B0 00 00 00 C3 CC) // should be unique
+registersymbol(EXPMultAOB)
+alloc(newmem,1024,EXPMultAOB)
+
+///
+label(return)
+label(originalcode)
+label(EXPMult)
+registersymbol(EXPMult)
+
+newmem:
+  imul edx,[EXPMult]
+  
+originalcode:
+  add [rcx+000000B0],edx
+  jmp return
+ 
+EXPMult:
+dd #5
+    
+EXPMultAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+EXPMultAOB:
+  db 01 91 B0 00 00 00
+  
+unregistersymbol(EXPMult)
+unregistersymbol(EXPMultAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier-2"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EXPMult"
+hops = []
+
+[[cheat]]
+id = "infinite-skill-points-on-use"
+name = "Infinite Skill Points On Use"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(SkillPointUseAOB,$process,03 46 38 48 8B CB 8B D0 E8 ?? ?? ?? ?? 48 8B 5C 24 40) // should be unique
+registersymbol(SkillPointUseAOB)
+  
+SkillPointUseAOB:
+  db 90 90 90
+  
+[DISABLE]
+
+SkillPointUseAOB:
+  db 03 46 38
+
+unregistersymbol(SkillPointUseAOB)"""
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldBasePtr"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "experience"
+name = "Experience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "total-skill-points-earned"
+name = "Total Skill Points Earned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "total-skill-points-spent"
+name = "Total Skill Points Spent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "max-mp"
+name = "Max MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "strength"
+name = "Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "resilience"
+name = "Resilience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "agility"
+name = "Agility"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "deftness"
+name = "Deftness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "charm"
+name = "Charm"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "magical-might"
+name = "Magical Might"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "magical-mending"
+name = "Magical Mending"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "max-hp-2"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "max-mp-2"
+name = "Max MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "strength-2"
+name = "Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "resilience-2"
+name = "Resilience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "agility-2"
+name = "Agility"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "deftness-2"
+name = "Deftness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "charm-2"
+name = "Charm"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "magical-might-2"
+name = "Magical Might"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "magical-mending-2"
+name = "Magical Mending"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharBasePtr"
+hops = ["+0x1b8"]

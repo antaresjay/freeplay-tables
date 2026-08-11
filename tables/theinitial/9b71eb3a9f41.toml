@@ -1,0 +1,330 @@
+[game]
+name = "The Initial (Table +6)"
+exe = "theinitial.exe"
+notes = "Converted from a Cheat Engine table by miraikolus. Source: https://fearlessrevolution.com/viewtopic.php?t=8492"
+verified = []
+author = "miraikolus"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+define(DoNoDamage,ACTGameObject:DoDamage+d4)
+//Assembly-CSharp.dll
+//aobscanmodule(DoNoDamage,TheInitial.exe,F2 0F 5C C1 F2 0F 5A E8 F3 0F 11 AE D4 00 00 00)
+//aobscanregion(DoNoDamage,ACTGameObject:DoDamage,ACTGameObject:DoDamage+fff,F2 0F 5C C1 F2 0F 5A E8 F3 0F 11 AE D4 00 00 00)
+//aobscan(DoNoDamage,F2 ???? ?? F2 ???? ?? F3 0F 11 ?? ???00000 F3 0F 10 ?? ???00000 F3 0F?? ?? 66 0F?? ?? F3 0F10 ?? ???00000 F3 0F)
+assert(DoNoDamage+08, F3 0F)
+alloc(newmem,$100,DoNoDamage)
+
+label(code)
+label(return)
+
+//d0=_maxHP,d4=_currentHP
+//c4=_camp, prob indicator for ComputerAsMasochistPlayer! (likes to be slashed)
+//other pos: D0=6000,250=100,025c=1,
+//so if it's not the player, just do original code, else set to max HP before
+newmem:
+  cmp [rsi+000000c4],0
+  jne code
+  movss xmm5,[rsi+000000D0]
+code:
+  movss [rsi+000000D4],xmm5
+  jmp return
+
+DoNoDamage+08:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(DoNoDamage)
+
+[DISABLE]
+
+DoNoDamage+08:
+  db F3 0F 11 AE D4 00 00 00
+
+unregistersymbol(DoNoDamage)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 2D0B229C
+
+2D0B226E: F2 0F 59 CA                    -  mulsd xmm1,xmm2
+2D0B2272: F2 0F 58 C1                    -  addsd xmm0,xmm1
+2D0B2276: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+2D0B227A: F3 0F 11 6D F4                 -  movss [rbp-0C],xmm5
+2D0B227F: F3 0F 10 86 D4 00 00 00        -  movss xmm0,[rsi+000000D4]
+2D0B2287: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+2D0B228B: F3 0F 10 4D F4                 -  movss xmm1,[rbp-0C]
+2D0B2290: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+2D0B2294: F2 0F 5C C1                    -  subsd xmm0,xmm1
+2D0B2298: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+// ---------- INJECTING HERE ----------
+2D0B229C: F3 0F 11 AE D4 00 00 00        -  movss [rsi+000000D4],xmm5
+// ---------- DONE INJECTING  ----------
+2D0B22A4: F3 0F 10 86 D4 00 00 00        -  movss xmm0,[rsi+000000D4]
+2D0B22AC: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+2D0B22B0: 66 0F 57 C9                    -  xorpd xmm1,xmm1
+2D0B22B4: F3 0F 10 96 D0 00 00 00        -  movss xmm2,[rsi+000000D0]
+2D0B22BC: F3 0F 5A D2                    -  cvtss2sd xmm2,xmm2
+2D0B22C0: F2 0F 5A D2                    -  cvtsd2ss xmm2,xmm2
+2D0B22C4: F2 0F 5A C9                    -  cvtsd2ss xmm1,xmm1
+2D0B22C8: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+2D0B22CC: 48 83 EC 20                    -  sub rsp,20
+2D0B22D0: 49 BB D0 AE 7F 05 00 00 00 00  -  mov r11,UnityEngine:Mathf:Clamp
+}"""
+
+[[cheat]]
+id = "max-sp"
+name = "Max SP"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+define(SetCurrentSP,ACTCharacter:get_currentSP_Percent+9)
+//aobscanregion(SetCurrentSP,ACTCharacter:get_currentSP_Percent,ACTCharacter:get_currentSP_Percent+FF,48 8B F1 F3 0F 10 86 54 02 00 00)
+//aobscan(SetCurrentSP,48 ?? ?? F3 0F 10 ?? ???20000 F3 0F?? ?? F3 0F 10 ?? ???20000 F3 0F?? ?? F2)
+//48 ?? ?? F3 0F 10 ?? ????0000 F3 0F?? ?? F3 0F 10 ?? ????0000 F3 0F?? ?? F2 -> will find 2, couldn't make a difference
+assert(SetCurrentSP+03, F3 0F)
+alloc(newmem,$100,SetCurrentSP)
+
+label(code)
+label(return)
+
+newmem:
+//rsi+00000250 maxsp(float), 254 currSP(float)
+  movss xmm0,[rsi+00000250]
+  movss [rsi+00000254],xmm0
+code:
+//  movss xmm0,[rsi+00000254]
+  jmp return
+
+SetCurrentSP+03:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(SetCurrentSP)
+
+[DISABLE]
+
+SetCurrentSP+03:
+  db F3 0F 10 86 54 02 00 00
+
+unregistersymbol(SetCurrentSP)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 04DC4E8C
+
+""+4DC4E75: 08 4E 0F                       -  or [rsi+0F],cl
+""+4DC4E78: 00 00                          -  add [rax],al
+""+4DC4E7A: 00 00                          -  add [rax],al
+""+4DC4E7C: 00 00                          -  add [rax],al
+""+4DC4E7E: 00 00                          -  add [rax],al
+""+4DC4E80: 55                             -  push rbp
+""+4DC4E81: 48 8B EC                       -  mov rbp,rsp
+""+4DC4E84: 56                             -  push rsi
+""+4DC4E85: 48 83 EC 08                    -  sub rsp,08
+""+4DC4E89: 48 8B F1                       -  mov rsi,rcx
+// ---------- INJECTING HERE ----------
+""+4DC4E8C: F3 0F 10 86 54 02 00 00        -  movss xmm0,[rsi+00000254]
+// ---------- DONE INJECTING  ----------
+""+4DC4E94: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+""+4DC4E98: F3 0F 10 8E 50 02 00 00        -  movss xmm1,[rsi+00000250]
+""+4DC4EA0: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+""+4DC4EA4: F2 0F 5E C1                    -  divsd xmm0,xmm1
+""+4DC4EA8: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+""+4DC4EAC: 48 83 EC 20                    -  sub rsp,20
+""+4DC4EB0: 49 BB B0 A2 D1 04 00 00 00 00  -  mov r11,UnityEngine:Mathf:Clamp01
+""+4DC4EBA: 41 FF D3                       -  call r11
+""+4DC4EBD: 48 83 C4 20                    -  add rsp,20
+""+4DC4EC1: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+}"""
+
+[[cheat]]
+id = "disable-getting-hit-hurtaction-damage-renders-max-hp-useless"
+name = "Disable Getting Hit (HurtAction+Damage!? - renders Max HP useless)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+define(DisableHitEffects,ACTCharacterHurtSystem:HandleHited+40)
+//aobscanregion(DisableHitEffects,ACTCharacterHurtSystem:HandleHited,ACTCharacterHurtSystem:HandleHited+FFF,0F B6 87 B9 00 00 00 85)
+//aobscan(DisableHitEffects,0F B6 ?? ????0000 85 C0 75 ?? 48 B8 FFFFFFFFFFFFFFFF E9 ????0000 0F)
+assert(DisableHitEffects, 0F B6)
+alloc(newmem,$100,DisableHitEffects)
+
+label(code)
+label(return)
+
+newmem:
+// _isCanBeHurt - likely 1, or 63 on bosses. If +10 for char +C4 is 0 -> hopefully player so set 0
+  push rbx
+  mov rbx,[rdi+00000010]
+  movzx eax,byte ptr [rdi+000000B9]
+  cmp [rbx+000000C4],0
+  cmove eax,[rbx+000000E0]
+  pop rbx
+code:
+//  movzx eax,byte ptr [rdi+000000B9]
+  test eax,eax
+  jmp return
+
+DisableHitEffects:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(DisableHitEffects)
+
+[DISABLE]
+
+DisableHitEffects:
+  db 0F B6 87 B9 00 00 00 85 C0
+
+unregistersymbol(DisableHitEffects)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 054BF790
+
+""+54BF758: 48 81 EC 88 02 00 00           -  sub rsp,00000288
+""+54BF75F: 48 8B F9                       -  mov rdi,rcx
+""+54BF762: 48 8B F2                       -  mov rsi,rdx
+""+54BF765: 33 C0                          -  xor eax,eax
+""+54BF767: 48 89 85 78 FD FF FF           -  mov [rbp-00000288],rax
+""+54BF76E: 89 85 80 FD FF FF              -  mov [rbp-00000280],eax
+""+54BF774: 48 89 85 88 FD FF FF           -  mov [rbp-00000278],rax
+""+54BF77B: 48 89 85 90 FD FF FF           -  mov [rbp-00000270],rax
+""+54BF782: 48 89 85 98 FD FF FF           -  mov [rbp-00000268],rax
+""+54BF789: 48 89 85 A0 FD FF FF           -  mov [rbp-00000260],rax
+// ---------- INJECTING HERE ----------
+""+54BF790: 0F B6 87 B9 00 00 00           -  movzx eax,byte ptr [rdi+000000B9]
+""+54BF797: 85 C0                          -  test eax,eax
+// ---------- DONE INJECTING  ----------
+""+54BF799: 75 0F                          -  jne ACTCharacterHurtSystem:HandleHited+5a
+""+54BF79B: 48 B8 FF FF FF FF FF FF FF FF  -  mov rax,FFFFFFFFFFFFFFFF
+""+54BF7A5: E9 5A 07 00 00                 -  jmp ACTCharacterHurtSystem:HandleHited+7b4
+""+54BF7AA: 0F B6 87 BA 00 00 00           -  movzx eax,byte ptr [rdi+000000BA]
+""+54BF7B1: 85 C0                          -  test eax,eax
+""+54BF7B3: 74 32                          -  je ACTCharacterHurtSystem:HandleHited+97
+""+54BF7B5: 48 8B 8F B0 00 00 00           -  mov rcx,[rdi+000000B0]
+""+54BF7BC: 48 8B D6                       -  mov rdx,rsi
+""+54BF7BF: 48 83 EC 20                    -  sub rsp,20
+}"""
+
+[[cheat]]
+id = "ohk-high-attack-easy-version-use-hp-or-hit-cheat-don-t-use-both-ohk"
+name = "OHK (high Attack - easy version! - use HP or Hit Cheat - don't use both OHK)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+define(IncAttackOHK,ACTCharacterHurtSystem:HandleHited+b9)
+//aobscanregion(IncAttackOHK,ACTCharacterHurtSystem:HandleHited,ACTCharacterHurtSystem:HandleHited+FFF,F3 0F 10 86 D8 00 00 00 F3 0F 5A C0 F2)
+//aobscan(IncAttackOHK,F3 0F?? ?? ????0000 F3 0F?? ?? F2 0F?? ?? F3 0F?? ?? ????FFFF F3 0F?? ?? ????FFFF F3 0F?? ?? F3 0F?? ?? ?? F3)
+//movss xmm0,[rsi+000000D8]
+
+IncAttackOHK+4:
+  db D0
+registersymbol(IncAttackOHK)
+
+[DISABLE]
+
+IncAttackOHK:
+  db F3 0F 10 86 D8 00 00 00
+unregistersymbol(IncAttackOHK)"""
+
+[[cheat]]
+id = "ohk-lower-enemy-hp-will-kill-first-enemy-then-make-all-invincable-lol"
+name = "OHK (lower enemy HP - will kill first enemy, then make all invincable - lol)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+define(IncAttackOHK,ACTCharacterHurtSystem:HandleHited+b9)
+//aobscanregion(IncAttackOHK,ACTCharacterHurtSystem:HandleHited,ACTCharacterHurtSystem:HandleHited+FFF,F3 0F 10 86 D8 00 00 00 F3 0F 5A C0 F2)
+//aobscan(IncAttackOHK+6,4C ?? ?? 83 ?? ?? F3 0F?? ?? ????0000 F3 0F?? ?? F2 0F?? ?? F3 0F?? ?? ????FFFF F3 0F?? ?? ????FFFF F3 0F?? ?? F3 0F?? ?? ?? F3)
+// Info: found a case where starting with F3 would not be enough for aobscan, a region before came into exist
+alloc(newmem,100,IncAttackOHK)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [rsi+318],0
+  je code
+  mov [rsi+D4],0
+
+code:
+  movss xmm0,[rsi+000000D8]
+  jmp return
+
+IncAttackOHK:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(IncAttackOHK)
+
+[DISABLE]
+
+IncAttackOHK:
+  db F3 0F 10 86 D8 00 00 00
+
+unregistersymbol(IncAttackOHK)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 06E646B9
+
+""+6E64688: 48 B8 FF FF FF FF FF FF FF FF  -  mov rax,FFFFFFFFFFFFFFFF
+""+6E64692: E9 1D 07 00 00                 -  jmp ACTCharacterHurtSystem:HandleHited+7b4
+""+6E64697: 48 63 55 30                    -  movsxd  rdx,dword ptr [rbp+30]
+""+6E6469B: 48 8B CF                       -  mov rcx,rdi
+""+6E6469E: 48 83 EC 20                    -  sub rsp,20
+""+6E646A2: 49 BB C0 48 E8 06 00 00 00 00  -  mov r11,ACTCharacterHurtSystem:GetHitReceiveSpecialDefine
+""+6E646AC: 41 FF D3                       -  call r11
+""+6E646AF: 48 83 C4 20                    -  add rsp,20
+""+6E646B3: 4C 8B F8                       -  mov r15,rax
+""+6E646B6: 83 3E 00                       -  cmp dword ptr [rsi],00
+// ---------- INJECTING HERE ----------
+""+6E646B9: F3 0F 10 86 D8 00 00 00        -  movss xmm0,[rsi+000000D8]
+// ---------- DONE INJECTING  ----------
+""+6E646C1: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+""+6E646C5: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+""+6E646C9: F3 0F 11 AD 6C FD FF FF        -  movss [rbp-00000294],xmm5
+""+6E646D1: F3 0F 10 85 6C FD FF FF        -  movss xmm0,[rbp-00000294]
+""+6E646D9: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+""+6E646DD: F3 0F 10 4D 40                 -  movss xmm1,[rbp+40]
+""+6E646E2: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+""+6E646E6: F2 0F 59 C1                    -  mulsd xmm0,xmm1
+""+6E646EA: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+""+6E646EE: F3 0F 11 AD 74 FD FF FF        -  movss [rbp-0000028C],xmm5
+}"""

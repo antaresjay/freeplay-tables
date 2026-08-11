@@ -1,0 +1,383 @@
+[game]
+name = "House of the Dying Sun"
+exe = "house.of.the.dying.sun.exe"
+notes = "Converted from a Cheat Engine table by fantomas. Source: https://fearlessrevolution.com/viewtopic.php?t=6080"
+verified = []
+author = "fantomas"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "inf-favor"
+name = "Inf Favor"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Faction:PurchaseModifier+46
+aobscanregion(infFavor,Faction:PurchaseModifier,Faction:PurchaseModifier+100,2B)
+
+infFavor:
+  db 01 C8
+//add eax,ecx
+registersymbol(infFavor)
+ 
+[DISABLE]
+infFavor:
+  db 2B C1
+//sub eax,ecx
+unregistersymbol(infFavor)"""
+
+[[cheat]]
+id = "no-reload"
+name = "No Reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//TurretGroup:AddHeat+28
+aobscanregion(noReload,TurretGroup:AddHeat,TurretGroup:AddHeat+90,DEC1)
+
+noReload+01:
+  db E9
+//DE E9
+//fsubp
+registersymbol(noReload)
+ 
+[DISABLE]
+noReload+01:
+  db C1
+//DE C1
+//faddp
+unregistersymbol(noReload)"""
+
+[[cheat]]
+id = "inf-torpedoes"
+name = "Inf Torpedoes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Turret:FireBarrel+18d5
+aobscanregion(infTorpedoes,Turret:FireBarrel,Turret:FireBarrel+2000,488983xxxx00008B)
+
+infTorpedoes:
+  db 40
+//inc eax
+registersymbol(infTorpedoes)
+ 
+[DISABLE]
+infTorpedoes:
+  db 48
+//dec eax
+unregistersymbol(infTorpedoes)"""
+
+[[cheat]]
+id = "inf-vitality"
+name = "Inf Vitality"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//CockpitInstrumentVitality:OnAnyUnitHullDamaged+d4
+aobscanregion(infVitality,CockpitInstrumentVitality:OnAnyUnitHullDamaged,CockpitInstrumentVitality:OnAnyUnitHullDamaged+1bf,D9404C)
+alloc(newmem,$1000,infVitality)
+registersymbol(infVitality)
+
+label(code)
+label(return)
+
+newmem:
+  fld dword ptr [rax+48]
+  fstp dword ptr [rax+4C]
+  jmp return
+
+code:
+  fld dword ptr [eax+4C]
+  fld dword ptr [eax+48]
+  jmp return
+
+infVitality:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+infVitality:
+  db D9 40 4C D9 40 48
+
+unregistersymbol(infVitality)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CockpitInstrumentVitality:OnAnyUnitHullDamaged+d4
+
+4CB08C75: 39 00              -  cmp [eax],eax
+4CB08C77: E8 44 E3 0B B9     -  call 05BC6FC0
+4CB08C7C: 83 C4 10           -  add esp,10
+4CB08C7F: 8B 43 1C           -  mov eax,[ebx+1C]
+4CB08C82: 89 45 B0           -  mov [ebp-50],eax
+4CB08C85: D9 EE              -  fldz
+4CB08C87: D9 43 34           -  fld dword ptr [ebx+34]
+4CB08C8A: 39 36              -  cmp [esi],esi
+4CB08C8C: 8B 86 90 00 00 00  -  mov eax,[esi+00000090]
+4CB08C92: 39 00              -  cmp [eax],eax
+// ---------- INJECTING HERE ----------
+4CB08C94: D9 40 4C           -  fld dword ptr [eax+4C]
+4CB08C97: D9 40 48           -  fld dword ptr [eax+48]
+// ---------- DONE INJECTING  ----------
+4CB08C9A: DE F9              -  fdivp st(1),st(0)
+4CB08C9C: D9 5D DC           -  fstp dword ptr [ebp-24]
+4CB08C9F: D9 45 DC           -  fld dword ptr [ebp-24]
+4CB08CA2: 83 EC 04           -  sub esp,04
+4CB08CA5: 83 EC 04           -  sub esp,04
+4CB08CA8: D9 1C 24           -  fstp dword ptr [esp]
+4CB08CAB: 83 EC 04           -  sub esp,04
+4CB08CAE: D9 1C 24           -  fstp dword ptr [esp]
+4CB08CB1: 83 EC 04           -  sub esp,04
+4CB08CB4: D9 1C 24           -  fstp dword ptr [esp]
+}"""
+
+[[cheat]]
+id = "fast-kill"
+name = "Fast Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//DamageNode:ModifyVitality+137
+aobscanregion(fastKill,DamageNode:ModifyVitality,DamageNode:ModifyVitality+200,D95F)
+alloc(newmem,$1000,fastKill)
+registersymbol(fastKill)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [edi+8C],(float)100
+  je code
+  fld dword ptr [edi+4C]
+  mov [edi+4C],(float)0
+  fld dword ptr [edi+54]
+  jmp return
+
+code:
+  fstp dword ptr [edi+4C]
+  fld dword ptr [edi+54]
+  jmp return
+
+fastKill:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+fastKill:
+  db D9 5F 4C D9 47 54
+
+unregistersymbol(fastKill)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: DamageNode:ModifyVitality+137
+
+50847F77: D9 47 48           -  fld dword ptr [edi+48]
+50847F7A: 83 EC 04           -  sub esp,04
+50847F7D: 83 EC 04           -  sub esp,04
+50847F80: D9 1C 24           -  fstp dword ptr [esp]
+50847F83: 83 EC 04           -  sub esp,04
+50847F86: D9 1C 24           -  fstp dword ptr [esp]
+50847F89: 83 EC 04           -  sub esp,04
+50847F8C: D9 1C 24           -  fstp dword ptr [esp]
+50847F8F: E8 5C E8 39 B5     -  call 05BE67F0
+50847F94: 83 C4 10           -  add esp,10
+// ---------- INJECTING HERE ----------
+50847F97: D9 5F 4C           -  fstp dword ptr [edi+4C]
+50847F9A: D9 47 54           -  fld dword ptr [edi+54]
+// ---------- DONE INJECTING  ----------
+50847F9D: D9 EE              -  fldz
+50847F9F: DF F1              -  fcomip st(0),st(1)
+50847FA1: DD D8              -  fstp st(0)
+50847FA3: 7A 26              -  jp 50847FCB
+50847FA5: 73 24              -  jae 50847FCB
+50847FA7: D9 47 58           -  fld dword ptr [edi+58]
+50847FAA: D9 45 0C           -  fld dword ptr [ebp+0C]
+50847FAD: DE E9              -  fsubp st(1),st(0)
+50847FAF: D9 EE              -  fldz
+50847FB1: 83 EC 08           -  sub esp,08
+}"""
+
+[[cheat]]
+id = "inf-energy"
+name = "Inf Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//ShieldSystem:Damage+93
+aobscanregion(infEnergy,ShieldSystem:Damage,ShieldSystem:Damage+120,D99ExxxxxxxxxxxxxxxxxxxxxxxxDF)
+
+infEnergy+02:
+  db 40
+//D9 9E 40 00 00 00
+//fstp dword ptr [esi+40]
+registersymbol(infEnergy)
+
+[DISABLE]
+infEnergy+02:
+  db 84
+//D9 9E 84 00 00 00
+//fstp dword ptr [esi+00000084]
+unregistersymbol(infEnergy)"""
+
+[[cheat]]
+id = "freeupgrade"
+name = "FreeUpgrade"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//CUIFleetConfigModifierPanel:OnModifierButtonClicked+1c6
+aobscanregion(freeUpgrade,CUIFleetConfigModifierPanel:OnModifierButtonClicked,CUIFleetConfigModifierPanel:OnModifierButtonClicked+270,8B494C3BC1)
+alloc(newmem,$1000,freeUpgrade)
+registersymbol(freeUpgrade)
+
+label(code)
+label(return)
+
+newmem:
+  mov [ecx+4C],0
+
+code:
+  mov ecx,[ecx+4C]
+  cmp eax,ecx
+  jmp return
+
+freeUpgrade:
+  jmp newmem
+return:
+
+[DISABLE]
+freeUpgrade:
+  db 8B 49 4C 3B C1
+
+unregistersymbol(freeUpgrade)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CUIFleetConfigModifierPanel:OnModifierButtonClicked+1c6
+
+10EA9845: 8B 4D E8           -  mov ecx,[ebp-18]
+10EA9848: 89 4C 24 0C        -  mov [esp+0C],ecx
+10EA984C: 50                 -  push eax
+10EA984D: 68 90 80 31 36     -  push 36318090
+10EA9852: E8 35 4D 7C F4     -  call 0566E58C
+10EA9857: 83 C4 20           -  add esp,20
+10EA985A: E9 A1 00 00 00     -  jmp 10EA9900
+10EA985F: 8B 05 00 8F F4 04  -  mov eax,[04F48F00]
+10EA9865: 8B 80 E4 00 00 00  -  mov eax,[eax+000000E4] //0xE4 - upgradeTokens (amount)
+10EA986B: 8B 4F 24           -  mov ecx,[edi+24]
+// ---------- INJECTING HERE ----------
+10EA986E: 8B 49 4C           -  mov ecx,[ecx+4C]
+10EA9871: 3B C1              -  cmp eax,ecx
+// ---------- DONE INJECTING  ----------
+10EA9873: 0F 8D 87 00 00 00  -  jnl 10EA9900
+10EA9879: E8 BA 98 79 F4     -  call 05643138
+10EA987E: B8 40 EC 77 31     -  mov eax,3177EC40
+10EA9883: D9 18              -  fstp dword ptr [eax]
+10EA9885: 8B 47 24           -  mov eax,[edi+24]
+10EA9888: 8B 40 4C           -  mov eax,[eax+4C]
+10EA988B: 89 45 D4           -  mov [ebp-2C],eax
+10EA988E: 83 EC 0C           -  sub esp,0C
+10EA9891: 68 AC 4C 17 05     -  push 05174CAC
+10EA9896: E8 95 77 6E F4     -  call 05591030
+}"""
+
+[[cheat]]
+id = "fastfire"
+name = "FastFire"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Turret:HandleFiring+69
+aobscanregion(fastFire,Turret:HandleFiring,Turret:HandleFiring+200,8B400885)
+alloc(newmem,$1000,fastFire)
+registersymbol(fastFire)
+alloc(fireMode,4)
+registersymbol(fireMode)
+
+label(code)
+label(return)
+
+newmem:
+  mov [fireMode],eax
+//cannon and torpedoes have default value on 0 and blunderbuss on 1
+//there's only 2 (two) modes (0 and 1)!!! - If you try to put a higher value than 1, the game will crash!!!
+//the result will only take effect on cannon and torpedoes but it is pretty fun, especially on torpedoes.
+code:
+  mov eax,[eax+08] //0x08 - fireMode
+  test eax,eax
+  jmp return
+
+fastFire:
+  jmp newmem
+return:
+
+[DISABLE]
+fastFire:
+  db 8B 40 08 85 C0
+
+unregistersymbol(fastFire)
+unregistersymbol(fireMode)
+dealloc(fireMode)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Turret:HandleFiring+69
+
+50831470: E8 BB 54 FB FF        -  call 507E6930
+50831475: 83 C4 0C              -  add esp,0C
+50831478: 8B 87 A8 01 00 00     -  mov eax,[edi+000001A8]
+5083147E: 8B C8                 -  mov ecx,eax
+50831480: 39 09                 -  cmp [ecx],ecx
+50831482: 8B 58 0C              -  mov ebx,[eax+0C]
+50831485: E9 91 04 00 00        -  jmp 5083191B
+5083148A: 8D AD 00 00 00 00     -  lea ebp,[ebp+00000000]
+50831490: 8B 87 B4 01 00 00     -  mov eax,[edi+000001B4]
+50831496: 8B 40 78              -  mov eax,[eax+78]
+// ---------- INJECTING HERE ----------
+50831499: 8B 40 08              -  mov eax,[eax+08]
+5083149C: 85 C0                 -  test eax,eax
+// ---------- DONE INJECTING  ----------
+5083149E: 0F 85 43 01 00 00     -  jne 508315E7
+508314A4: 8B 87 00 02 00 00     -  mov eax,[edi+00000200]
+508314AA: 3D 01 00 00 00        -  cmp eax,00000001
+508314AF: 0F 85 77 00 00 00     -  jne 5083152C
+508314B5: 46                    -  inc esi
+508314B6: 8B 87 D8 01 00 00     -  mov eax,[edi+000001D8]
+508314BC: 89 45 D8              -  mov [ebp-28],eax
+508314BF: 8B 87 C0 01 00 00     -  mov eax,[edi+000001C0]
+508314C5: 89 45 D0              -  mov [ebp-30],eax
+508314C8: 8B 87 BC 01 00 00     -  mov eax,[edi+000001BC]
+}"""

@@ -1,0 +1,284 @@
+[game]
+name = "Tribes: Vengeance"
+exe = "tv_cd_dvd.exe"
+notes = "Converted from a Cheat Engine table by vesperpallens. Source: https://fearlessrevolution.com/viewtopic.php?t=31998"
+verified = []
+author = "vesperpallens"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "inf-ammo"
+name = "Inf Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : TV_CD_DVD.exe
+  Version: 1.0.1 (63446) ReVengeance
+  Date   : 2024-11-09
+  Author : vesperpallens
+}
+
+[ENABLE]
+
+aobscanmodule(AmmoHook,Core.dll,8B 03 8B 54 24 10 2B)
+alloc(newmem,$512)
+label(code)
+label(return)
+registersymbol(AmmoHook)
+
+newmem:
+  cmp ecx,01
+  jne code
+  mov edx,[esp+8]
+  inc edx
+  mov [ebx],edx
+
+code:
+  mov eax,[ebx]
+  mov edx,[esp+10]
+  jmp return
+
+AmmoHook:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+AmmoHook:
+  db 8B 03 8B 54 24 10
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "inf-health-energy-onehitkill-teamgodmode"
+name = "Inf Health & Energy / OneHitKill / TeamGodMode"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : TV_CD_DVD.exe
+  Version: 1.0.1 (63446) ReVengeance
+  Date   : 2024-11-09
+  Author : vesperpallens
+}
+
+[ENABLE]
+aobscanmodule(EnergyHook,Gameplay.dll,8B 96 60 0B 00 00)
+aobscanmodule(VehicleHealthHook,Gameplay.dll,D8 A3 38 05 00 00)
+aobscanmodule(DeployHealthHook,Gameplay.dll,D9 81 38 05 00 00)
+aobscanmodule(HealthHook,Gameplay.dll,D9 83 38 05 00 00)
+alloc(newmem,512)
+alloc(newmemDpl,512)
+alloc(newmemVeh,512)
+alloc(newmemHealth,512)
+alloc(OHKFlag,$1)
+alloc(TeamGodModFlag,$1)
+alloc(OHKDeployableFlag,$1)
+alloc(PlayerTeam,$4)
+alloc(PlayerBase,$4)
+label(return returnVeh returnDpl returnHealth Generators ExitDpl ExitHealth code codeVeh EnemyVeh EnemyHealth codeHealth BotCode PlayerTeamCode EnemyCode codeDpl EnemyDpl)
+registersymbol(VehicleHealthHook EnergyHook DeployHealthHook HealthHook PlayerTeam OHKFlag TeamGodModFlag OHKDeployableFlag PlayerBase)
+PlayerBase:
+  dd 0
+PlayerTeam:
+  dd 9
+OHKFlag:
+  db 0
+OHKDeployableFlag:
+  db 0
+TeamGodModFlag:
+  db 0
+newmem:
+  test eax,ecx
+  jz code
+  cmp DWORD PTR [esi+168],00
+  je BotCode
+  push edi
+  mov edi, [esi+684]
+  mov edi,[edi+58]
+  mov [PlayerTeam], edi
+  pop edi
+PlayerTeamCode:
+  mov edx,[esi+B68]
+  mov [esi+b60],edx
+  mov edx,[esi+670]
+  mov [esi+538],edx
+  mov [PlayerBase],esi
+  jmp code
+BotCode:
+  push edi
+  mov edi, [esi+684]
+  mov edi,[edi+58]
+  cmp DWORD PTR [PlayerTeam], edi
+  pop edi
+  jne EnemyCode
+  cmp byte ptr [TeamGodModFlag],00
+  je code
+  jmp PlayerTeamCode
+EnemyCode:
+  cmp BYTE PTR [OHKFlag],00
+  je code
+  cmp DWORD PTR [esi+538],1
+  je code
+  mov [esi+538],01
+code:
+  mov edx,[esi+00000B60]
+  jmp return
+EnergyHook:
+  jmp newmem
+  nop
+return:
+
+newmemVeh:
+  cmp eax,01
+  je Vehicles
+  cmp eax,03
+  je Vehicles
+  jmp codeVeh
+Vehicles:
+  push edi
+  mov edi, dword ptr [ebx+684]
+  mov edi, dword ptr [edi+54]
+  cmp DWORD PTR [PlayerTeam], edi
+  pop edi
+  jne EnemyVeh
+  cmp byte ptr [TeamGodModFlag],00
+  je codeVeh
+  push edi
+  mov edi,[ebx+670]
+  mov [ebx+00000538],edi
+  pop edi
+  jmp codeVeh
+EnemyVeh:
+  cmp BYTE PTR [OHKFlag],00
+  je codeVeh
+  cmp DWORD PTR [ebx+00000538],1
+  je codeVeh
+  mov DWORD PTR [ebx+00000538],1
+codeVeh:
+  fsub dword ptr [ebx+00000538]
+  jmp returnVeh
+VehicleHealthHook:
+  jmp newmemVeh
+  nop
+returnVeh:
+
+newmemDpl:
+  cmp [esi+168],00
+  jne codeDpl
+  push edi
+  mov edi, [ecx+684]
+  test edi,edi
+  jz ExitDpl
+  mov edi,[edi+58]
+  cmp DWORD PTR [PlayerTeam], edi
+  pop edi
+  jne EnemyDpl
+  cmp byte ptr [TeamGodModFlag],00
+  je codeDpl
+  push edi
+  mov edi,[ecx+670]
+  mov [ecx+00000538],edi
+  pop edi
+  jmp codeDpl
+EnemyDpl:
+  cmp BYTE PTR [OHKDeployableFlag],00
+  je codeDpl
+  cmp DWORD PTR [ecx+670],43960000
+  je Generators
+  cmp DWORD PTR [ecx+538],41000000
+  jle codeDpl
+  mov [ecx+538],41000000
+codeDpl:
+  fld dword ptr [ecx+00000538]
+  jmp returnDpl
+ExitDpl:
+  pop edi
+  jmp codeDpl
+Generators:
+  cmp DWORD PTR [ecx+538],431b0000
+  jle codeDpl
+  mov [ecx+538],431b0000
+  jmp codeDpl
+DeployHealthHook:
+  jmp newmemDpl
+  nop
+returnDpl:
+
+newmemHealth:
+  test edi,edi
+  jz codeHealth
+  cmp DWORD PTR [ebx+168],00
+  jne codeHealth
+  push edi
+  mov edi, dword ptr [ebx+684]
+  test edi,edi
+  jz ExitHealth
+  mov edi, dword ptr [edi+54]
+  cmp DWORD PTR [PlayerTeam], edi
+  pop edi
+  jne EnemyHealth
+  cmp byte ptr [TeamGodModFlag],00
+  je codeHealth
+  mov edi,[ebx+670]
+  mov [ebx+538],edi
+  xor edi,edi
+  jmp codeHealth
+EnemyHealth:
+  cmp BYTE PTR [OHKFlag],00
+  je codeHealth
+  cmp DWORD PTR [ebx+538],1
+  je codeHealth
+  mov DWORD PTR [ebx+538],1
+codeHealth:
+  fld dword ptr [ebx+00000538]
+  jmp returnHealth
+ExitHealth:
+  pop edi
+  jmp codeHealth
+HealthHook:
+  jmp newmemHealth
+  nop
+returnHealth:
+[DISABLE]
+EnergyHook:
+  db 8B 96 60 0B 00 00
+VehicleHealthHook:
+  db D8 A3 38 05 00 00
+DeployHealthHook:
+  db D9 81 38 05 00 00
+HealthHook:
+  db D9 83 38 05 00 00
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "player-team"
+name = "Player Team"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 9
+choices = [
+    "9:Blue",
+    "8:Yellow",
+    "7:Red",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerTeam"
+hops = []

@@ -1,0 +1,303 @@
+[game]
+name = "Core Keeper (Playtest and Demo)"
+exe = "corekeeper.exe"
+notes = "Converted from a Cheat Engine table by GreenHouse. Source: https://fearlessrevolution.com/viewtopic.php?t=18391"
+verified = []
+author = "GreenHouse"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "movement-speed"
+name = "Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerController"
+hops = []
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,2048,PlayerController.DealDamageToPlayer)
+label(returnhere)
+
+newmem:
+mov [rsp+18],rbx
+mov eax,[rcx+OffsetsPlayerController.previousMaxHealth]
+mov [rcx+OffsetsPlayerController.localHealth],eax
+xor rdx,rdx
+db 48 89 5C 24 18
+jmp returnhere
+
+PlayerController.DealDamageToPlayer:
+jmp newmem
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+PlayerController.DealDamageToPlayer:
+db 48 89 5C 24 18"""
+
+[[cheat]]
+id = "no-hunger"
+name = "No Hunger"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(get_hungerUpdate,GameAssembly.dll,0F 10 08 F2 0F 10 40 10 66 0F 7E C8 F2 0F 11 44 24 * 83)
+alloc(newmem,$1000,get_hungerUpdate)
+label(return)
+
+newmem:
+push rax
+push rcx
+push rdx
+push r8
+push r9
+push r10
+push r11
+push rbp
+mov rbp,rsp
+sub rsp,50
+and spl,F0
+mov rcx,playerController
+mov rcx,[rcx]
+mov rdx,[rcx+OffsetsEntityMonoBehaviour.<entity>k__BackingField]
+mov rcx,[rcx+OffsetsPlayerController.playerCommandSystem]
+mov r8,64
+call "PlayerCommand.ClientSystem.SetHunger"
+mov rsp,rbp
+pop rbp
+pop r11
+pop r10
+pop r9
+pop r8
+pop rdx
+pop rcx
+pop rax
+movups xmm1,[rax]
+movsd xmm0,[rax+10]
+jmp return
+
+get_hungerUpdate:
+  jmp newmem
+  nop 3
+return:
+registersymbol(get_hungerUpdate)
+
+[DISABLE]
+get_hungerUpdate:
+db 0F 10 08 F2 0F 10 40 10
+
+unregistersymbol(get_hungerUpdate)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+B27FD8
+
+GameAssembly.dll+B27FAA: F6 81 33 01 00 00 02  - test byte ptr [rcx+00000133],02
+GameAssembly.dll+B27FB1: 74 0E                 - je GameAssembly.dll+B27FC1
+GameAssembly.dll+B27FB3: 83 B9 E0 00 00 00 00  - cmp dword ptr [rcx+000000E0],00
+GameAssembly.dll+B27FBA: 75 05                 - jne GameAssembly.dll+B27FC1
+GameAssembly.dll+B27FBC: E8 7F 0D 9C FF        - call GameAssembly.il2cpp_runtime_class_init
+GameAssembly.dll+B27FC1: 4C 8B 0D 58 BF 1A 03  - mov r9,[GameAssembly.dll+3CD3F20]
+GameAssembly.dll+B27FC8: 48 8D 4C 24 30        - lea rcx,[rsp+30]
+GameAssembly.dll+B27FCD: 4C 8B C6              - mov r8,rsi
+GameAssembly.dll+B27FD0: 48 8B D3              - mov rdx,rbx
+GameAssembly.dll+B27FD3: E8 78 F5 0C 00        - call GameAssembly.dll+BF7550
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+B27FD8: 0F 10 08              - movups xmm1,[rax]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+B27FDB: F2 0F 10 40 10        - movsd xmm0,[rax+10]
+GameAssembly.dll+B27FE0: 66 0F 7E C8           - movd eax,xmm1
+GameAssembly.dll+B27FE4: F2 0F 11 44 24 40     - movsd [rsp+40],xmm0
+GameAssembly.dll+B27FEA: 83 F8 0A              - cmp eax,0A
+GameAssembly.dll+B27FED: 0F 8D A9 00 00 00     - jnl GameAssembly.dll+B2809C
+GameAssembly.dll+B27FF3: 45 33 C0              - xor r8d,r8d
+GameAssembly.dll+B27FF6: 48 8D 4C 24 30        - lea rcx,[rsp+30]
+GameAssembly.dll+B27FFB: 48 8B D7              - mov rdx,rdi
+GameAssembly.dll+B27FFE: E8 5D 24 00 00        - call PlayerController.get_hungerComponent
+GameAssembly.dll+B28003: 0F 10 08              - movups xmm1,[rax]
+}"""
+
+[[cheat]]
+id = "freeze-item-durability"
+name = "Freeze Item Durability"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+PlayerController.ReduceDurabilityOfHeldEquipment:
+db C3
+
+[DISABLE]
+PlayerController.ReduceDurabilityOfHeldEquipment:
+db 48"""
+
+[[cheat]]
+id = "free-crafting"
+name = "Free Crafting"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(getCraftCost,CraftingHandler.GetCraftingMaterialInfosForRecipe,CraftingHandler.GetCraftingMaterialInfosForRecipe+500,8B 40 14 8?)
+registersymbol(getCraftCost)
+
+getCraftCost:
+db 48 31 C0
+ 
+[DISABLE]
+getCraftCost:
+db 8B 40 14
+
+unregistersymbol(getCraftCost)"""
+
+[[cheat]]
+id = "destroy-all-tiles-with-one-hit"
+name = "Destroy All Tiles with One Hit"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,2048,PlayerCommand.ClientSystem.CreateTileDamage)
+label(returnhere)
+
+newmem:
+mov r8,#900000
+mov [rsp+08],rbx
+jmp returnhere
+
+PlayerCommand.ClientSystem.CreateTileDamage:
+jmp newmem
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+PlayerCommand.ClientSystem.CreateTileDamage:
+db 48 89 5C 24 08"""
+
+[[cheat]]
+id = "one-hit-kill-enemies"
+name = "One Hit Kill Enemies"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,2048,PlayerCommand.ClientSystem.DealDamageToEntity)
+label(returnhere)
+
+newmem:
+mov r9,#900000
+db 48 8B C4 48 89 58 08
+jmp returnhere
+
+PlayerCommand.ClientSystem.DealDamageToEntity:
+jmp newmem
+nop 2
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+PlayerCommand.ClientSystem.DealDamageToEntity:
+db 48 8B C4 48 89 58 08"""
+
+[[cheat]]
+id = "skill-progress-multiplier"
+name = "Skill Progress Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,2048,PlayerController.AddSkill) 
+label(returnhere)
+alloc(skillMultiplier,4)
+registersymbol(skillMultiplier)
+
+skillMultiplier:
+dd 1
+
+newmem:
+cmp [skillMultiplier],1
+je @f
+push rdx
+mov rax,[skillMultiplier]
+mul r8
+mov r8,rax
+pop rdx
+@@:
+db 89 54 24 10 55
+jmp returnhere
+
+PlayerController.AddSkill:
+jmp newmem
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+PlayerController.AddSkill:
+db 89 54 24 10 55"""
+
+[[cheat]]
+id = "multiplier"
+name = "Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "skillMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-noclip-press-t-to-activate-in-game"
+name = "Enable Noclip ( Press 'T' to activate in-game )"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(getNoclipInput,InputManager.IsDebugButtonDown,InputManager.IsDebugButtonDown+200,80 38 00)
+registersymbol(getNoclipInput)
+
+getNoclipInput:
+db 3C FF 90
+
+[DISABLE]
+getNoclipInput:
+db 80 38 00
+
+unregistersymbol(getNoclipInput)"""

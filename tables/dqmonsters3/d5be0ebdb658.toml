@@ -1,0 +1,2445 @@
+[game]
+name = "Dragon Quest Monsters The Dark Prince"
+exe = "dqmonsters3.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=31226"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-trainer-2-controls-damage-mod-mp-damage-mod-always-critical-hit"
+name = "Activate Trainer 2 (Controls Damage Mod, MP Damage Mod, Always Critical Hit)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanregion(DamageModAOB2,Scene.Battle.Monsters.set,Scene.Battle.Monsters.set+100,48 89 5C 24 10 48 89 74 24 18 57 41 54 41 55 41 56 41 57 48 83 EC *)
+registersymbol(DamageModAOB2)
+alloc(newmem2,1024)
+
+///
+label(return2)
+label(DamageModAOB2Save)
+registersymbol(DamageModAOB2Save)
+
+///
+newmem2:
+  mov [R11Save2],r11
+  mov [R12Save2],r12
+  mov [R13Save2],r13
+  mov [R14Save2],r14
+  mov [R15Save2],r15
+  cmp dword ptr [rdx+20],0
+  je DoPlayerTeam
+  jmp DoEnemyTeam
+DoPlayerTeam:
+  mov r14,PlayerPartyBodyPtr
+  jmp DoSetPointers
+DoEnemyTeam:
+  mov r14,EnemyPartyBodyPtr
+  jmp DoSetPointers
+DoSetPointers:
+  mov r15,rdx
+  mov r15,[r15+10]
+  xor r13,r13
+StartPartyLoop:
+  cmp r13d,4
+  jge DonePartyLoop
+  mov r12,[r15+r13*8+20]
+  test r12,r12
+  je SkipNextStep
+  mov r12,[r12+50]
+SkipNextStep:
+  mov [r14+r13*8],r12
+  inc r13d
+  jmp StartPartyLoop
+DonePartyLoop:
+  mov r15,rdx
+  mov r15,[r15+18]
+  xor r13,r13
+StartStandbyLoop:
+  cmp r13d,4
+  jge DoneStandbyLoop
+  mov r11,4
+  add r11d,r13d
+  mov r12,[r15+r13*8+20]
+  test r12,r12
+  je SkipNextStep2
+  mov r12,[r12+50]
+SkipNextStep2:
+  mov [r14+r11*8],r12
+  inc r13d
+  jmp StartStandbyLoop
+DoneStandbyLoop:
+  mov r11,[R11Save2]
+  mov r12,[R12Save2]
+  mov r13,[R13Save2]
+  mov r14,[R14Save2]
+  mov r15,[R15Save2]
+  jmp originalcode2
+
+originalcode2:
+DamageModAOB2Save:
+  readmem(DamageModAOB2,15)
+  jmp DamageModAOB2+0F
+
+R11Save2:
+dq 0
+R12Save2:
+dq 0
+R13Save2:
+dq 0
+R14Save2:
+dq 0
+R15Save2:
+dq 0
+
+///
+DamageModAOB2:
+  jmp newmem2
+  return2:
+  
+[DISABLE]
+
+///
+DamageModAOB2:
+  readmem(DamageModAOB2Save,15)
+
+unregistersymbol(DamageModAOB2)
+unregistersymbol(DamageModAOB2Save)
+
+///
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "hotkeys-active"
+name = "Hotkeys Active"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bHotkeysActive"
+hops = []
+
+[[cheat]]
+id = "enable-damage-modifier-options-god-mode-one-hit-kill-etc"
+name = "Enable Damage Modifier Options (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(DamageModAOB1,Body.setHp,Body.setHp+100,48 89 5C 24 10 48 89 74 24 18 48 89 7C 24 20 48 89 4C 24 08 41 54 41 56 41 57 48 83 EC *)
+registersymbol(DamageModAOB1)
+alloc(newmem,1024)
+
+
+///
+label(return)
+label(DamageModAOB1Save)
+registersymbol(DamageModAOB1Save)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fEnemyHealingMult)
+registersymbol(fEnemyHealingMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(fHeroHealingMult)
+registersymbol(fHeroHealingMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+
+///
+newmem:
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  xor r13,r13
+  mov r14,EnemyPartyBodyPtr
+StartCheckIfEnemyLoop:
+  cmp r13d,8
+  jge NotEnemy
+  mov r11,[r14+r13*8]
+  cmp r11,rcx
+  je FoundEnemy
+  inc r13d
+  jmp StartCheckIfEnemyLoop
+FoundEnemy:
+  jmp EnemyHit
+NotEnemy:
+  jmp HeroHit  
+HeroHit:
+  // Get Current HP
+  mov r15,[rcx+38]
+  test r15,r15
+  je SkipEntireCode
+  xor r14,r14
+  mov r14d,[r15+14]
+  xor r14d,[r15+10]
+  mov r11,r14
+  sub r14d,edx
+  cmp r11,0
+  je SkipEntireCode
+  cmp r14d,0
+  jg HeroDamageHit
+  jl HeroHealingHit
+  jmp SkipEntireCode
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge CheckGodMode
+  mov r14d,1
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor r14d,r14d
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne MyCleanUp1
+  cmp r11d,r14d
+  jg @F
+  xor r14d,r14d
+@@:
+  jmp MyCleanUp1
+HeroHealingHit:
+  cmp [fHeroHealingMult],(float)0.0
+  je MyCleanUp1
+  neg r14d
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fHeroHealingMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge @F
+  mov r14d,1
+@@:
+  neg r14d
+  jmp MyCleanUp1
+EnemyHit:
+  // Get Current HP
+  mov r15,[rcx+38]
+  test r15,r15
+  je SkipEntireCode
+  xor r14,r14
+  mov r14d,[r15+14]
+  xor r14d,[r15+10]
+  mov r11,r14
+  sub r14d,edx
+  cmp r11,0
+  je SkipEntireCode
+  cmp r14d,0
+  jg EnemyDamageHit
+  jl EnemyHealingHit
+  jmp SkipEntireCode
+EnemyDamageHit:
+  cmp [OneHitKill],1
+  jne SkipOneHitKill
+  mov r14d,r11d
+  jmp MyCleanUp1
+SkipOneHitKill:
+  cmp [fEnemyDamageMult],(float)0.0
+  je MyCleanUp1
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge MyCleanUp1
+  mov r14d,1
+  jmp MyCleanUp1
+EnemyHealingHit:
+  cmp [fEnemyHealingMult],(float)0.0
+  je MyCleanUp1
+  neg r14d
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fEnemyHealingMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge @F
+  mov r14d,1
+@@:
+  neg r14d
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  mov edx,r11d
+  sub edx,r14d
+SkipEntireCode:
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+DamageModAOB1Save:
+  readmem(DamageModAOB1,15)
+  jmp DamageModAOB1+0F
+
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+GodMode:
+dq 0
+fHeroDamageMult:
+dq (float)0.25
+fHeroHealingMult:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+fEnemyDamageMult:
+dq (float)2.0
+fEnemyHealingMult:
+dq (float)0.25
+OneHitKill:
+dq 0
+
+///
+DamageModAOB1:
+  jmp newmem
+  return:
+   
+[DISABLE]
+
+///
+DamageModAOB1:
+  readmem(DamageModAOB1Save,14)
+  
+unregistersymbol(GodMode)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(fHeroHealingMult)
+unregistersymbol(HeroCannotDie)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fEnemyHealingMult)
+unregistersymbol(OneHitKill)
+unregistersymbol(DamageModAOB1)
+unregistersymbol(DamageModAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier"
+name = "Hero Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier"
+name = "Hero Healing Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-party-cannot-die"
+name = "Hero Party Cannot Die"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier"
+name = "Enemy Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier"
+name = "Enemy Healing Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []
+
+[[cheat]]
+id = "enable-mp-damage-modifier-options-infinite-mp-etc"
+name = "Enable MP Damage Modifier Options (Infinite MP, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(MPDamageModAOB1,Body.setMp,Body.setMp+100,48 89 5C 24 10 48 89 74 24 18 48 89 7C 24 20 48 89 4C 24 08 41 54 41 56 41 57 48 83 EC *)
+registersymbol(MPDamageModAOB1)
+alloc(newmem,1024)
+
+
+///
+label(return)
+label(MPDamageModAOB1Save)
+registersymbol(MPDamageModAOB1Save)
+label(InfiniteMP)
+registersymbol(InfiniteMP)
+label(fEnemyMPDamageMult)
+registersymbol(fEnemyMPDamageMult)
+label(fEnemyMPHealingMult)
+registersymbol(fEnemyMPHealingMult)
+label(fHeroMPDamageMult)
+registersymbol(fHeroMPDamageMult)
+label(fHeroMPHealingMult)
+registersymbol(fHeroMPHealingMult)
+
+///
+newmem:
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  xor r13,r13
+  mov r14,EnemyPartyBodyPtr
+StartCheckIfEnemyLoop:
+  cmp r13d,8
+  jge NotEnemy
+  mov r11,[r14+r13*8]
+  cmp r11,rcx
+  je FoundEnemy
+  inc r13d
+  jmp StartCheckIfEnemyLoop
+FoundEnemy:
+  jmp EnemyHit
+NotEnemy:
+  jmp HeroHit  
+HeroHit:
+  // Get Current MP
+  mov r15,[rcx+40]
+  test r15,r15
+  je SkipEntireCode
+  xor r14,r14
+  mov r14d,[r15+14]
+  xor r14d,[r15+10]
+  mov r11,r14
+  cmp r11,0
+  je SkipEntireCode
+  sub r14d,edx
+  cmp r14d,0
+  jg HeroDamageHit
+  jl HeroHealingHit
+  jmp SkipEntireCode
+HeroDamageHit:
+  cmp [fHeroMPDamageMult],(float)0.0
+  je CheckInfiniteMP
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fHeroMPDamageMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge CheckInfiniteMP
+  mov r14d,1
+CheckInfiniteMP:
+  cmp [InfiniteMP],1
+  jne MyCleanUp1
+  xor r14d,r14d
+  jmp MyCleanUp1
+HeroHealingHit:
+  cmp [fHeroMPHealingMult],(float)0.0
+  je MyCleanUp1
+  neg r14d
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fHeroMPHealingMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge @F
+  mov r14d,1
+@@:
+  neg r14d
+  jmp MyCleanUp1
+EnemyHit:
+  // Get Current HP
+  mov r15,[rcx+40]
+  test r15,r15
+  je SkipEntireCode
+  xor r14,r14
+  mov r14d,[r15+14]
+  xor r14d,[r15+10]
+  mov r11,r14
+  cmp r11,0
+  je SkipEntireCode
+  sub r14d,edx
+  cmp r14d,0
+  jg EnemyDamageHit
+  jl EnemyHealingHit
+  jmp SkipEntireCode
+EnemyDamageHit:
+  cmp [fEnemyMPDamageMult],(float)0.0
+  je MyCleanUp1
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fEnemyMPDamageMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge MyCleanUp1
+  mov r14d,1
+  jmp MyCleanUp1
+EnemyHealingHit:
+  cmp [fEnemyMPHealingMult],(float)0.0
+  je MyCleanUp1
+  neg r14d
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fEnemyMPHealingMult]
+  fistp dword ptr [esp]
+  pop r14d
+  // Minimum of 1
+  cmp r14d,1
+  jge @F
+  mov r14d,1
+@@:
+  neg r14d
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  mov edx,r11d
+  sub edx,r14d
+SkipEntireCode:
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+MPDamageModAOB1Save:
+  readmem(MPDamageModAOB1,15)
+  jmp MPDamageModAOB1+0F
+
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+InfiniteMP:
+dq 0
+fHeroMPDamageMult:
+dq (float)0.25
+fHeroMPHealingMult:
+dq (float)2.0
+fEnemyMPDamageMult:
+dq (float)2.0
+fEnemyMPHealingMult:
+dq (float)0.25
+
+///
+MPDamageModAOB1:
+  jmp newmem
+  return:
+   
+[DISABLE]
+
+///
+MPDamageModAOB1:
+  readmem(MPDamageModAOB1Save,14)
+  
+unregistersymbol(InfiniteMP)
+unregistersymbol(fHeroMPDamageMult)
+unregistersymbol(fHeroMPHealingMult)
+unregistersymbol(fEnemyMPDamageMult)
+unregistersymbol(fEnemyMPHealingMult)
+unregistersymbol(MPDamageModAOB1)
+unregistersymbol(MPDamageModAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteMP"
+hops = []
+
+[[cheat]]
+id = "hero-mp-damage-multiplier"
+name = "Hero MP Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-mp-healing-multiplier"
+name = "Hero MP Healing Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPHealingMult"
+hops = []
+
+[[cheat]]
+id = "enemy-mp-damage-multiplier"
+name = "Enemy MP Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-mp-healing-multiplier"
+name = "Enemy MP Healing Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyMPHealingMult"
+hops = []
+
+[[cheat]]
+id = "enable-gold-gain-loss-multiplier"
+name = "Enable Gold Gain/Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(AddGoldAOB1,SaveData.GamePlay.addGold,SaveData.GamePlay.addGold+50,48 89 5C 24 18 56 57 41 57)
+registersymbol(AddGoldAOB1)
+alloc(newmem,1024,AddGoldAOB1)
+
+
+///
+label(return)
+label(AddGoldAOB1Save)
+registersymbol(AddGoldAOB1Save)
+label(fGoldGainMultiplier)
+registersymbol(fGoldGainMultiplier)
+label(fGoldLossMultiplier)
+registersymbol(fGoldLossMultiplier)
+
+///
+newmem:
+  cmp edx,0
+  jl DoGoldLoss
+  jg DoGoldGain
+  jmp originalcode
+DoGoldGain:
+  push edx
+  fild dword ptr [esp]
+  fmul dword ptr [fGoldGainMultiplier]
+  fistp dword ptr [esp]
+  pop edx
+  jmp originalcode
+DoGoldLoss:
+  neg edx
+  push edx
+  fild dword ptr [esp]
+  fmul dword ptr [fGoldLossMultiplier]
+  fistp dword ptr [esp]
+  pop edx
+  neg edx
+  jmp originalcode
+  
+originalcode:
+AddGoldAOB1Save:
+  readmem(AddGoldAOB1,5)
+  jmp AddGoldAOB1+05
+  
+fGoldGainMultiplier:
+dq (float)2.0
+fGoldLossMultiplier:
+dq (float)0.5
+
+///
+AddGoldAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+AddGoldAOB1:
+  readmem(AddGoldAOB1Save,5)
+
+unregistersymbol(AddGoldAOB1)
+unregistersymbol(AddGoldAOB1Save)
+unregistersymbol(fGoldGainMultiplier)
+unregistersymbol(fGoldLossMultiplier)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "gold-gain-multiplier"
+name = "Gold Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fGoldGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "gold-loss-multiplier"
+name = "Gold Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fGoldLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "scout-chance-100"
+name = "Scout Chance 100%"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(ScoutChanceModAOB1,ScoutChanceValueCalculator.calcScoutChanceValue,ScoutChanceValueCalculator.calcScoutChanceValue+600,48 8B AC 24 88 00 00 00 48 8B 9C 24 80 00 00 00)
+registersymbol(ScoutChanceModAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(ScoutChanceModAOB1Save)
+registersymbol(ScoutChanceModAOB1Save)
+
+///
+newmem:
+  mov eax,#10000
+  jmp originalcode
+  
+originalcode:
+ScoutChanceModAOB1Save:
+  readmem(ScoutChanceModAOB1,16)
+  jmp ScoutChanceModAOB1+10
+  
+///
+ScoutChanceModAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+ScoutChanceModAOB1:
+  readmem(ScoutChanceModAOB1Save,16)
+
+unregistersymbol(ScoutChanceModAOB1)
+unregistersymbol(ScoutChanceModAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-exp-multiplier"
+name = "Enable EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(EXPDamageModAOB1,SaveData.Monsters.gainExp,SaveData.Monsters.gainExp+100,48 8B C4 48 89 58 18 89 50 10 48 89 48 08 56 57 41 56 48 81 EC * * * *)
+registersymbol(EXPDamageModAOB1)
+alloc(newmem,1024)
+
+
+///
+label(return)
+label(EXPDamageModAOB1Save)
+registersymbol(EXPDamageModAOB1Save)
+label(fEXPMult)
+registersymbol(fEXPMult)
+
+///
+newmem:
+  push edx
+  fild dword ptr [esp]
+  fmul dword ptr [fEXPMult]
+  fistp dword ptr [esp]
+  pop edx
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  jmp originalcode
+  
+originalcode:
+EXPDamageModAOB1Save:
+  readmem(EXPDamageModAOB1,15)
+  jmp EXPDamageModAOB1+0F
+
+fEXPMult:
+dq (float)2.0
+
+///
+EXPDamageModAOB1:
+  jmp newmem
+  return:
+   
+[DISABLE]
+
+///
+EXPDamageModAOB1:
+  readmem(EXPDamageModAOB1Save,15)
+  
+unregistersymbol(fEXPMult)
+unregistersymbol(EXPDamageModAOB1)
+unregistersymbol(EXPDamageModAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEXPMult"
+hops = []
+
+[[cheat]]
+id = "enable-skill-point-gain-loss-multiplier"
+name = "Enable Skill Point Gain/Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(SkillPointDamageModAOB1,Body.setUnassignedSkillPoint,Body.setUnassignedSkillPoint+100,48 89 5C 24 10 48 89 74 24 18 48 89 4C 24 08 57 48 83 EC *)
+registersymbol(SkillPointDamageModAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(SkillPointDamageModAOB1Save)
+registersymbol(SkillPointDamageModAOB1Save)
+label(fSkillPointGainMult)
+registersymbol(fSkillPointGainMult)
+label(fSkillPointLossMult)
+registersymbol(fSkillPointLossMult)
+
+///
+newmem:
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+HeroHit:
+  // Get Current SkillPoint
+  mov r15,[rcx+70]
+  test r15,r15
+  je SkipEntireCode
+  xor r14,r14
+  mov r14d,[r15+14]
+  xor r14d,[r15+10]
+  mov r11,r14
+  sub r14d,edx
+  cmp r14d,0
+  jg HeroDamageHit
+  jl HeroHealingHit
+  jmp SkipEntireCode
+HeroDamageHit:
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fSkillPointLossMult]
+  fistp dword ptr [esp]
+  pop r14d
+  jmp MyCleanUp1
+HeroHealingHit:
+  neg r14d
+  push r14d
+  fild dword ptr [esp]
+  fmul dword ptr [fSkillPointGainMult]
+  fistp dword ptr [esp]
+  pop r14d
+  neg r14d
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  mov edx,r11d
+  sub edx,r14d
+SkipEntireCode:
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+SkillPointDamageModAOB1Save:
+  readmem(SkillPointDamageModAOB1,15)
+  jmp SkillPointDamageModAOB1+0F
+
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+fSkillPointGainMult:
+dq (float)2.0
+fSkillPointLossMult:
+dq (float)0.5
+
+///
+SkillPointDamageModAOB1:
+  jmp newmem
+  return:
+   
+[DISABLE]
+
+///
+SkillPointDamageModAOB1:
+  readmem(SkillPointDamageModAOB1Save,15)
+  
+unregistersymbol(fSkillPointGainMult)
+unregistersymbol(fSkillPointLossMult)
+unregistersymbol(SkillPointDamageModAOB1)
+unregistersymbol(SkillPointDamageModAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "skill-point-gain-multiplier"
+name = "Skill Point Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fSkillPointGainMult"
+hops = []
+
+[[cheat]]
+id = "skill-point-loss-multiplier"
+name = "Skill Point Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fSkillPointLossMult"
+hops = []
+
+[[cheat]]
+id = "enable-item-gain-loss-multiplier"
+name = "Enable Item Gain/Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(AddItemAOB1,SaveData.Items.add,SaveData.Items.add+50,48 89 5C 24 18 48 89 74 24 20)
+registersymbol(AddItemAOB1)
+alloc(newmem,1024,AddItemAOB1)
+
+///
+label(return)
+label(AddItemAOB1Save)
+registersymbol(AddItemAOB1Save)
+label(bInfiniteItem)
+registersymbol(bInfiniteItem)
+label(bMinimumOfOne)
+registersymbol(bMinimumOfOne)
+label(fItemGainMultiplier)
+registersymbol(fItemGainMultiplier)
+label(fItemLossMultiplier)
+registersymbol(fItemLossMultiplier)
+
+///
+newmem:
+  // Get Current Amount of Item
+  mov [RAXSave],rax
+  mov [RBXSave],rbx
+  mov [RCXSave],rcx
+  mov [RDXSave],rdx
+  mov [RSISave],rsi
+  mov [RDISave],rdi
+  mov [R8Save],r8
+  mov [R9Save],r9
+  mov [R10Save],r10
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  sub rsp,28
+  call SaveData.Items.num
+  mov [iCurrentAmount],eax
+  add rsp,28
+  mov rax,[RAXSave]
+  mov rbx,[RBXSave]
+  mov rcx,[RCXSave]
+  mov rdx,[RDXSave]
+  mov rsi,[RSISave]
+  mov rdi,[RDISave]
+  mov r8,[R8Save]
+  mov r9,[R9Save]
+  mov r10,[R10Save]
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  cmp r8d,0
+  jl DoItemLoss
+  jg DoItemGain
+  jmp originalcode
+DoItemGain:
+  push r8d
+  fild dword ptr [esp]
+  fmul dword ptr [fItemGainMultiplier]
+  fistp dword ptr [esp]
+  pop r8d
+  jmp originalcode
+DoItemLoss:
+  cmp [bInfiniteItem],1
+  jne CheckForMinimum
+  xor r8d,r8d
+  jmp originalcode
+CheckForMinimum:
+  mov [R15Save],r15
+  mov r15,[iCurrentAmount]
+  add r15,r8d
+  cmp r15d,1
+  jge MyCleanUp1
+  add r8d,1
+  jmp MyCleanUp1
+DoItemLoss2:
+  neg r8d
+  push r8d
+  fild dword ptr [esp]
+  fmul dword ptr [fItemLossMultiplier]
+  fistp dword ptr [esp]
+  pop r8d
+  neg r8d
+  jmp originalcode
+
+MyCleanUp1:
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+AddItemAOB1Save:
+  readmem(AddItemAOB1,5)
+  jmp AddItemAOB1+05
+  
+RAXSave:
+dq 0
+RBXSave:
+dq 0
+RCXSave:
+dq 0
+RDXSave:
+dq 0
+RSISave:
+dq 0
+RDISave:
+dq 0
+R8Save:
+dq 0
+R9Save:
+dq 0
+R10Save:
+dq 0
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+iCurrentAmount:
+dq 0
+bMinimumOfOne:
+dq 0
+bInfiniteItem:
+dq 0
+fItemGainMultiplier:
+dq (float)2.0
+fItemLossMultiplier:
+dq (float)0.5
+
+///
+AddItemAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+AddItemAOB1:
+  readmem(AddItemAOB1Save,5)
+
+unregistersymbol(AddItemAOB1)
+unregistersymbol(AddItemAOB1Save)
+unregistersymbol(bInfiniteItem)
+unregistersymbol(fItemGainMultiplier)
+unregistersymbol(fItemLossMultiplier)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-item"
+name = "Infinite Item"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInfiniteItem"
+hops = []
+
+[[cheat]]
+id = "minimum-of-one-items-will-not-go-below-1"
+name = "Minimum Of One (Items Will Not Go Below 1)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bMinimumOfOne"
+hops = []
+
+[[cheat]]
+id = "item-gain-multiplier"
+name = "Item Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fItemGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "item-loss-multiplier"
+name = "Item Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fItemLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-100-item-drop-choose-normal-rare-or-common-drop-most-mobs-don-t-have-common-drop"
+name = "Enable 100% Item Drop (Choose Normal, Rare, or Common Drop (Most Mobs Don't Have Common Drop))"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(AddDropItemAOB1,DropItems.lot,DropItems.lot+50,48 89 6C 24 18 48 89 74 24 20)
+registersymbol(AddDropItemAOB1)
+alloc(newmem,1024,AddDropItemAOB1)
+
+///
+label(return)
+label(AddDropItemAOB1Save)
+registersymbol(AddDropItemAOB1Save)
+label(iDropItemToGet)
+registersymbol(iDropItemToGet)
+
+///
+newmem:
+  mov [R15Save],r15
+  mov r15,rcx
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+18]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+10]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+10]
+  test r15,r15
+  cmp dword ptr [iDropItemToGet],0
+  je DoNormalDrop
+  cmp dword ptr [iDropItemToGet],1
+  je DoRareDrop
+  cmp dword ptr [iDropItemToGet],2
+  je DoCommonDrop
+  jmp DoStandardRate
+DoNormalDrop:
+  mov dword ptr [r15+20],#10000
+  mov dword ptr [r15+24],0
+  mov dword ptr [r15+28],0
+  jmp MyCleanUp1
+DoRareDrop:
+  mov dword ptr [r15+20],0
+  mov dword ptr [r15+24],#10000
+  mov dword ptr [r15+28],0
+  jmp MyCleanUp1
+DoCommonDrop:
+  mov dword ptr [r15+20],#5000
+  mov dword ptr [r15+24],#10000
+  mov dword ptr [r15+28],0
+  jmp MyCleanUp1
+DoStandardRate:
+  mov dword ptr [r15+20],#600
+  mov dword ptr [r15+24],#150
+  mov dword ptr [r15+28],#9250
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+AddDropItemAOB1Save:
+  readmem(AddDropItemAOB1,5)
+  jmp AddDropItemAOB1+05
+
+R15Save:
+dq 0
+iDropItemToGet:
+dq 0
+  
+
+///
+AddDropItemAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+AddDropItemAOB1:
+  readmem(AddDropItemAOB1Save,5)
+
+unregistersymbol(AddDropItemAOB1)
+unregistersymbol(AddDropItemAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "drop-type"
+name = "Drop Type"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Normal",
+    "1:Rare",
+    "2:50/100 (50% Normal/100% Rare)",
+    "3:Game Default (6% Normal, 1.5% Rare)",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "iDropItemToGet"
+hops = []
+
+[[cheat]]
+id = "enable-run-speed-multiplier"
+name = "Enable Run Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(RunSpeedMultAOB1,Scene.Field.PlayerControllerBase.update,Scene.Field.PlayerControllerBase.update+500,F3 0F 10 45 2C EB 05 F3 0F 10 45 28 F3 0F 11 47 20 C6 47 2C 01)
+registersymbol(RunSpeedMultAOB1)
+alloc(newmem,1024,RunSpeedMultAOB1)
+
+///
+label(return)
+label(RunSpeedMultAOB1Save)
+registersymbol(RunSpeedMultAOB1Save)
+label(fRunSpeedMult)
+registersymbol(fRunSpeedMult)
+
+///
+newmem:
+RunSpeedMultAOB1Save:
+  readmem(RunSpeedMultAOB1,5)
+  mov [R15Save],r15
+  mov r15,FieldPlayerPtr
+  cmp [r15],rbp
+  jne MyCleanUp1
+  mulss xmm0,[fRunSpeedMult]
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  mov r15,[R15Save]
+  jmp originalcode
+
+originalcode:
+  jmp RunSpeedMultAOB1+05  
+  
+R15Save:
+dq 0
+fRunSpeedMult:
+dq (float)2.5
+
+///
+RunSpeedMultAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+RunSpeedMultAOB1:
+  readmem(RunSpeedMultAOB1Save,5)
+
+unregistersymbol(RunSpeedMultAOB1)
+unregistersymbol(RunSpeedMultAOB1Save)
+unregistersymbol(fRunSpeedMult)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "run-speed-multiplier"
+name = "Run Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fRunSpeedMult"
+hops = []
+
+[[cheat]]
+id = "enable-jump-height-multiplier-be-careful-to-not-fall-out-of-area"
+name = "Enable Jump Height Multiplier (Be Careful To Not Fall Out of Area)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(JumpMultAOB1,Scene.Field.PlayerControllerBase.update,Scene.Field.PlayerControllerBase.update+600,F3 0F 59 4D 38 0F 2E C1 77 09 0F 57 C0 F3 0F 51 C1)
+registersymbol(JumpMultAOB1)
+alloc(newmem,1024,JumpMultAOB1)
+
+///
+label(return)
+label(JumpMultAOB1Save)
+registersymbol(JumpMultAOB1Save)
+label(fJumpMult)
+registersymbol(fJumpMult)
+
+///
+newmem:
+  mov [R15Save],r15
+  movss [XMM15SSSave],xmm15
+  mov r15,FieldPlayerPtr
+  cmp [r15],rbp
+  jne LoadOriginalJump
+  movss xmm15,[fJumpMult]
+  jmp MyCleanUp1
+LoadOriginalJump:
+  movss xmm15,[rbp+38]
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  mov r15,[R15Save]
+  mulss xmm1,xmm15
+  movss xmm15,[XMM15SSSave]
+  jmp originalcode
+
+originalcode:
+  jmp JumpMultAOB1+05  
+  
+R15Save:
+dq 0
+XMM15SSSave:
+dq 0
+fJumpMult:
+dq (float)6.0
+JumpMultAOB1Save:
+  readmem(JumpMultAOB1,5)
+  
+///
+JumpMultAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+JumpMultAOB1:
+  readmem(JumpMultAOB1Save,5)
+
+unregistersymbol(JumpMultAOB1)
+unregistersymbol(JumpMultAOB1Save)
+unregistersymbol(fJumpMult)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "jump-height-multiplier"
+name = "Jump Height Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fJumpMult"
+hops = []
+
+[[cheat]]
+id = "fusion-does-not-remove-parents"
+name = "Fusion Does Not Remove Parents"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(FusionParentAOB1,Scene.FormulationDirecting.UI.Menu.deleteParentPlayerMonster,Scene.FormulationDirecting.UI.Menu.deleteParentPlayerMonster+100,48 89 5C 24 08 57 48 83 EC *)
+registersymbol(FusionParentAOB1)
+alloc(newmem,1024)
+
+
+///
+label(FusionParentAOB1Save)
+registersymbol(FusionParentAOB1Save)
+
+///
+newmem:
+FusionParentAOB1Save:
+  readmem(FusionParentAOB1,5)
+
+///
+FusionParentAOB1:
+  db C3 90 90 90 90
+   
+[DISABLE]
+
+///
+FusionParentAOB1:
+  readmem(FusionParentAOB1Save,5)
+  
+unregistersymbol(FusionParentAOB1)
+unregistersymbol(FusionParentAOB1Save)"""
+
+[[cheat]]
+id = "enable-season-changer"
+name = "Enable Season Changer"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(SeasonChangeAOB1,Scene.Field.Main.Update,Scene.Field.Main.Update+600,F3 0F 10 43 14 F3 0F 5C C7 F3 0F 11 43 14)
+registersymbol(SeasonChangeAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(SeasonChangeAOB1Save)
+registersymbol(SeasonChangeAOB1Save)
+label(bChangeSeason)
+registersymbol(bChangeSeason)
+
+///
+newmem:
+  cmp [bChangeSeason],1
+  jne originalcode
+  mov qword ptr [bChangeSeason],0
+  xorps xmm0,xmm0
+  movss [rbx+14],xmm0
+  jmp originalcode  
+  
+originalcode:
+SeasonChangeAOB1Save:
+  readmem(SeasonChangeAOB1,14)
+  jmp SeasonChangeAOB1+0E
+  
+bChangeSeason:
+dq 0
+
+///
+SeasonChangeAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+SeasonChangeAOB1:
+  readmem(SeasonChangeAOB1Save,14)
+
+unregistersymbol(SeasonChangeAOB1)
+unregistersymbol(SeasonChangeAOB1Save)
+unregistersymbol(bChangeSeason)
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-weather-changer-not-all-weathers-work-must-have-correct-season"
+name = "Enable Weather Changer (Not All Weathers Work, Must Have Correct Season)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(WeatherChangeAOB1,PurpleNS.Environment.EnvironmentController.update,PurpleNS.Environment.EnvironmentController.update+100,40 56 57 48 81 EC * * * *)
+registersymbol(WeatherChangeAOB1)
+alloc(newmem,1024,WeatherChangeAOB1)
+
+///
+label(return)
+label(WeatherChangeAOB1Save)
+registersymbol(WeatherChangeAOB1Save)
+label(bChangeWeather)
+registersymbol(bChangeWeather)
+label(iWeatherToChangeTo)
+registersymbol(iWeatherToChangeTo)
+
+///
+newmem:
+  cmp [bChangeWeather],1
+  jne originalcode
+  mov qword ptr [bChangeWeather],0
+  mov [RAXSave],rax
+  mov [RBXSave],rbx
+  mov [RCXSave],rcx
+  mov [RDXSave],rdx
+  mov [RSISave],rsi
+  mov [RDISave],rdi
+  mov [R8Save],r8
+  mov [R9Save],r9
+  mov [R10Save],r10
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov rdx,[iWeatherToChangeTo]
+  mov r8,1
+  jmp DoChangeWeather
+DoChangeWeather:
+  sub rsp,28
+  call PurpleNS.Environment.EnvironmentController.changeWeather
+  add rsp,28
+  mov rax,[RAXSave]
+  mov rbx,[RBXSave]
+  mov rcx,[RCXSave]
+  mov rdx,[RDXSave]
+  mov rsi,[RSISave]
+  mov rdi,[RDISave]
+  mov r8,[R8Save]
+  mov r9,[R9Save]
+  mov r10,[R10Save]
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+WeatherChangeAOB1Save:
+  readmem(WeatherChangeAOB1,10)
+  jmp WeatherChangeAOB1+0A
+  
+RAXSave:
+dq 0
+RBXSave:
+dq 0
+RCXSave:
+dq 0
+RDXSave:
+dq 0
+RSISave:
+dq 0
+RDISave:
+dq 0
+R8Save:
+dq 0
+R9Save:
+dq 0
+R10Save:
+dq 0
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+bChangeWeather:
+dq 0
+iWeatherToChangeTo:
+dq 0
+
+///
+WeatherChangeAOB1:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+///
+WeatherChangeAOB1:
+  readmem(WeatherChangeAOB1Save,10)
+
+unregistersymbol(WeatherChangeAOB1)
+unregistersymbol(WeatherChangeAOB1Save)
+unregistersymbol(bChangeWeather)
+unregistersymbol(iWeatherToChangeTo)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "weather-to-change-to"
+name = "Weather To Change To"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Fine",
+    "1:Rain",
+    "2:Snow",
+    "3:Heat Rain",
+    "4:Blizzard",
+    "5:Green Rain",
+    "6:Golden Ring Eclipse",
+    "7:Candy Rain",
+    "8:Ghost",
+    "9:Constellation",
+    "10:Meteor Swarm",
+    "11:Thunderbolt",
+    "12:Gas",
+    "13:Sandstorm",
+    "14:Twilight",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "iWeatherToChangeTo"
+hops = []
+
+[[cheat]]
+id = "enable-item-shop-options-unlock-all-available-items-etc"
+name = "Enable Item Shop Options (Unlock All Available Items, etc.)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(ItemShopOptionsAOB1,ItemShopPattern.makeItemListInCategory,ItemShopPattern.makeItemListInCategory+100,48 89 5C 24 10 48 89 74 24 18 57 48 83 EC *)
+registersymbol(ItemShopOptionsAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(ItemShopOptionsAOB1Save)
+registersymbol(ItemShopOptionsAOB1Save)
+label(bUnlockAllAvailableItems)
+registersymbol(bUnlockAllAvailableItems)
+label(iOverrideItemID)
+registersymbol(iOverrideItemID)
+
+///
+newmem:
+  mov [RAXSave],rax
+  mov [RBXSave],rbx
+  mov [RCXSave],rcx
+  mov [RDXSave],rdx
+  mov [RSISave],rsi
+  mov [RDISave],rdi
+  mov [R8Save],r8
+  mov [R9Save],r9
+  mov [R10Save],r10
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,rcx
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+20]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+10]
+  test r15,r15
+  je MyCleanUp1
+  xor r14,r14
+  mov r14d,[r15+18]
+  xor r13,r13
+  xor r11,r11
+  mov r10,iOverrideItemID
+  mov r10,[r10]
+StartItemLoop:
+  cmp r13d,r14d
+  jg DoneItemLoop
+  mov r12,[r15+r13*8+20]
+  test r12,r12
+  je SkipNextSection
+  cmp [bUnlockAllAvailableItems],1
+  jne CheckOverrideItemID
+  mov [r12+1C],r11d
+CheckOverrideItemID:
+  cmp r13,0
+  jne SkipNextSection
+  mov r9,iOverrideItemID
+  mov r9,[r9]
+  cmp r9d,FFFFFFFF
+  je SkipNextSection
+  mov [r12+10],r9d
+  jmp SkipNextSection
+SkipNextSection:
+  inc r13
+  jmp StartItemLoop
+DoneItemLoop:
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov rax,[RAXSave]
+  mov rbx,[RBXSave]
+  mov rcx,[RCXSave]
+  mov rdx,[RDXSave]
+  mov rsi,[RSISave]
+  mov rdi,[RDISave]
+  mov r8,[R8Save]
+  mov r9,[R9Save]
+  mov r10,[R10Save]
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+ItemShopOptionsAOB1Save:
+  readmem(ItemShopOptionsAOB1,15)
+  jmp ItemShopOptionsAOB1+0F
+  
+RAXSave:
+dq 0
+RBXSave:
+dq 0
+RCXSave:
+dq 0
+RDXSave:
+dq 0
+RSISave:
+dq 0
+RDISave:
+dq 0
+R8Save:
+dq 0
+R9Save:
+dq 0
+R10Save:
+dq 0
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+bUnlockAllAvailableItems:
+dq 1
+iOverrideItemID:
+dq FFFFFFFF
+
+///
+ItemShopOptionsAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+ItemShopOptionsAOB1:
+  readmem(ItemShopOptionsAOB1Save,15)
+
+unregistersymbol(ItemShopOptionsAOB1)
+unregistersymbol(ItemShopOptionsAOB1Save)
+unregistersymbol(bUnlockAllAvailableItems)
+unregistersymbol(iOverrideItemID)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "unlock-available-items-in-shop-item-shop-changes-as-story-progresses"
+name = "Unlock Available Items In Shop (Item Shop Changes As Story Progresses)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bUnlockAllAvailableItems"
+hops = []
+
+[[cheat]]
+id = "override-shop-item-id-may-not-be-sorted-first-but-should-be-in-shop-list"
+name = "Override Shop Item ID (May Not Be Sorted First, But Should Be In Shop List)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 4294967295
+choices = [
+    "4294967295:None",
+    "0:Medicinal Herb",
+    "1:Strong Medicine",
+    "2:Special Medicine",
+    "3:Mega Medicine",
+    "4:Amor Seco Essence",
+    "5:Yggdrasil Dew",
+    "6:Single Phial",
+    "7:Magic Water",
+    "8:Sage's Elixir",
+    "9:Elfin Elixir",
+    "10:Antidotal Herb",
+    "11:Moonwort Bulb",
+    "12:Smelling Salts",
+    "13:Bad Medicine",
+    "14:Panacea",
+    "15:Antimagic Powder",
+    "16:Oomph Powder",
+    "17:Insulade",
+    "18:Sag Powder",
+    "19:Sapperine",
+    "20:Deceleratonic",
+    "21:Dimium",
+    "22:Buffium",
+    "23:Acceleratonic",
+    "24:Pingium",
+    "25:Pretty Pebble",
+    "26:Monster Manure",
+    "27:Pinball",
+    "28:Rockbomb Shard",
+    "29:Monster Munchies",
+    "30:Smoked Sirloin",
+    "31:Meaty Treat",
+    "32:Manky Meat",
+    "33:Beastie Bites",
+    "34:Better Beastie Bites",
+    "35:Mystery Meat",
+    "36:Rarified Steak",
+    "37:Yggdrasil Leaf",
+    "38:Phoenix Philtre",
+    "39:Seed of Skill",
+    "40:Seed of Life",
+    "41:Seed of Magic",
+    "42:Seed of Strength",
+    "43:Seed of Resilience",
+    "44:Seed of Agility",
+    "45:Seed of Wisdom",
+    "46:Seed of Growth",
+    "47:Super Seed of Life",
+    "48:Super Seed of Magic",
+    "49:Super Seed of Strength",
+    "50:Super Seed of Resilience",
+    "51:Super Seed of Agility",
+    "52:Super Seed of Wisdom",
+    "53:Super Seed of Skill",
+    "54:Metal Slimecard",
+    "55:Liquid Metal Slimecard",
+    "56:Metal King Slimecard",
+    "57:Bonus Ball",
+    "58:Bumper Bonus Ball",
+    "59:Seasoning",
+    "60:Four Seasons Flute",
+    "61:Mini Medal",
+    "62:Loyalty Card",
+    "63:Red Travelite",
+    "64:Yellow Travelite",
+    "65:Green Travelite",
+    "66:Indigo Travelite",
+    "67:Pink Travelite",
+    "68:Purple Travelite",
+    "69:Silver Travelite",
+    "70:Gold Travelite",
+    "71:Black Travelite",
+    "72:White Travelite",
+    "73:Rainbow Travelite",
+    "74:Helipad",
+    "75:Penteractic Crystal",
+    "76:Armlet of Transmutation",
+    "77:Everyday Outfit",
+    "78:Cake-Maker's Clobber",
+    "79:Gothic Vestment",
+    "80:Monstrous Mail",
+    "81:Burgundy Gothic Vestment",
+    "82:Evan's Letter",
+    "83:Frizz Afficionado's Scroll",
+    "84:Frizz Virtuoso's Scroll",
+    "85:Splash Afficionado's Scroll",
+    "86:Splash Virtuoso's Scroll",
+    "87:Woosh Afficionado's Scroll",
+    "88:Woosh Virtuoso's Scroll",
+    "89:Crag Afficionado's Scroll",
+    "90:Crag Virtuoso's Scroll",
+    "91:Bang Afficionado's Scroll",
+    "92:Bang Virtuoso's Scroll",
+    "93:Crack Afficionado's Scroll",
+    "94:Crack Virtuoso's Scroll",
+    "95:Zap Afficionado's Scroll",
+    "96:Zap Virtuoso's Scroll",
+    "97:Sizz Afficionado's Scroll",
+    "98:Sizz Virtuoso's Scroll",
+    "99:Zam Afficionado's Scroll",
+    "100:Zam Virtuoso's Scroll",
+    "101:Blazer's Scroll",
+    "102:Smart Blazer's Scroll",
+    "103:Chilly Receptionist's Scroll",
+    "104:Frosty Receptionist's Scroll",
+    "105:Shallow Breather's Scroll",
+    "106:Deep Breather's Scroll",
+    "107:Dancer's Scroll",
+    "108:Choreographer's Scroll",
+    "109:Slimer's Scroll",
+    "110:Dragonheart's Scroll",
+    "111:Graveheart's Scroll",
+    "112:Hive Mind's Scroll",
+    "113:Materialist's Scroll",
+    "114:Naturalist's Scroll",
+    "115:Dark Artist's Scroll",
+    "116:Blusterer's Scroll",
+    "117:Nature Child's Scroll",
+    "118:Aquapothecary's Scroll",
+    "119:Spicy Slasher's Scroll",
+    "120:Soggy Slasher's Scroll",
+    "121:Blowy Slasher's Scroll",
+    "122:Stony Slasher's Scroll",
+    "123:Thrill-Seeker's Scroll",
+    "124:Hexcommunicator's Scroll",
+    "125:Speedster's Scroll",
+    "126:Cupid's Scroll",
+    "127:Power Player's Scroll",
+    "128:Wild Child's Scroll",
+    "129:Outlaw's Scroll",
+    "130:Fighter's Scroll",
+    "131:Martial Maven's Scroll",
+    "132:Magic Maven's Scroll",
+    "133:Blade Maven's Scroll",
+    "134:Good Knight's Scroll",
+    "135:Cutpurse's Scroll",
+    "136:Sweet-Talker's Scroll",
+    "137:Hottie's Scroll",
+    "138:Tongue Twister's Scroll",
+    "139:Assassin's Scroll",
+    "140:Hulk's Scroll",
+    "141:Martyr's Scroll",
+    "142:Mad Scientist's Scroll",
+    "143:Prankster's Scroll",
+    "144:Healer's Scroll",
+    "145:Paramedic's Scroll",
+    "146:Soothesayer's Scroll",
+    "147:Sleep Counsellor's Scroll",
+    "148:Toxicologist's Scroll",
+    "149:Anaesthetist's Scroll",
+    "150:Fortifier's Scroll",
+    "151:Enfeebler's Scroll",
+    "152:Willing Helper's Scroll",
+    "153:Breath Taker's Scroll",
+    "154:Antimagician's Scroll",
+    "155:Defender's Scroll",
+    "156:Barricade's Scroll",
+    "157:Irritant's Scroll",
+    "158:Vexologist's Scroll",
+    "159:Charmer's Scroll",
+    "160:Stinker's Scroll",
+    "161:Strong Speller's Scroll",
+    "162:Smarty-Pants' Scroll",
+    "163:Paragon's Scroll",
+    "164:Wrecker's Scroll",
+    "165:Musclehead's Scroll",
+    "166:Duelist's Scroll",
+    "167:Maniac's Scroll",
+    "168:Leading Light's Scroll",
+    "169:Slayer's Scroll",
+    "170:Destroyer's Scroll",
+    "171:Respirator's Scroll",
+    "172:Fire Chief's Scroll",
+    "173:Cold Snapper's Scroll",
+    "174:Party Monster's Scroll",
+    "175:Rockin' Roller's Scroll",
+    "176:Pop Idol's Scroll",
+    "177:Firebrand's Scroll",
+    "178:Pyrotechnician's Scroll",
+    "179:Refrigerator's Scroll",
+    "180:Demoniac's Scroll",
+    "181:Blighter's Scroll",
+    "182:Dark Horse's Scroll",
+    "183:Evil Genius's Scroll",
+    "184:Agent Provocateur's Scroll",
+    "185:Bobby-Dazzler's Scroll",
+    "186:Pop Diva's Scroll",
+    "187:Heavenly Herald's Scroll",
+    "188:Just Ruler's Scroll",
+    "189:Charge Leader's Scroll",
+    "190:Lightning Rod's Scroll",
+    "191:Vagabond's Scroll",
+    "192:Snow Drifter's Scroll",
+    "193:Bombshell's Scroll",
+    "194:Storm Chaser's Scroll",
+    "195:Mariner's Scroll",
+    "196:Water Baby;'s Scroll",
+    "197:Hardliner's Scroll",
+    "198:Enigma's Scroll",
+    "199:Vaudevillian's Scroll",
+    "200:Airhead's Scroll",
+    "201:Empath's Scroll",
+    "202:Cool Customer's Scroll",
+    "203:Hater's Scroll",
+    "204:Super Naturalist's Scroll",
+    "205:Cleric's Scroll",
+    "206:Cure-All's Scroll",
+    "207:Devil Advocate's Scroll",
+    "208:Nuisance's Scroll",
+    "209:Doomsayer's Scroll",
+    "210:Mouth Guard's Scroll",
+    "211:Protector's Scroll",
+    "212:Heretic's Scroll",
+    "213:Mystic's Scroll",
+    "214:Sage's Scroll",
+    "215:Grump's Scroll",
+    "216:Breath Worker's Scroll",
+    "217:Bad Breather's Scroll",
+    "218:Altruist's Scroll",
+    "219:Walking Disaster's Scroll",
+    "220:Warmonger's Scroll",
+    "221:Pest Controller's Scroll",
+    "222:Multidisciplinarian's Scroll",
+    "223:Rug Cutter's Scroll",
+    "224:Rainmaker's Scroll",
+    "225:Sovererign's Scroll",
+    "226:The Dragonlord's Scroll",
+    "227:Hargon's Scroll",
+    "228:Malroth's Scroll",
+    "229:Aamon's Scroll",
+    "230:Psaro the Manslayer's Scroll",
+    "231:Bishop Ladja's Scroll",
+    "232:Nimzo's Scroll",
+    "233:Murdaw's Scroll",
+    "234:Mortamor's Scroll",
+    "235:Orgodemir's Scroll",
+    "236:Dhoulmagus's Scroll",
+    "237:Rhapthorne's Scroll",
+    "238:Greynarl's Scroll",
+    "239:Barbarus's Scroll",
+    "240:Corvus's Scroll",
+    "241:Razerburn's Scroll",
+    "242:Netherfiend's Scroll",
+    "243:Jasper Unbound's Scroll",
+    "244:Mordegon's Scroll",
+    "245:Calasmos's Scroll",
+    "246:Uberkilling Machine's Scroll",
+    "247:Fluffy's Scroll",
+    "248:Scruffy's Scroll",
+    "249:Fuzzy Thinker's Scroll",
+    "250:Wyrmhole Dragon's Scroll",
+    "251:Baramos's Scroll",
+    "252:Zoma's Scroll",
+    "253:The Almighty's Scroll",
+    "254:Estark's Scroll",
+    "255:Ramia's Scroll",
+    "256:Dragovians Lord's Scroll",
+    "257:Xenlon's Scroll",
+    "258:Nokturnus's Scroll",
+    "259:Supreme Healer's Scroll",
+    "260:Air Fryer's Scroll",
+    "261:Storm Brewer's Scroll",
+    "262:Freeze Popper's Scroll",
+    "263:Freezer Burner's Scroll",
+    "264:Hair Splitter's Scroll",
+    "265:Impactor's Scroll",
+    "266:Polariser's Scroll",
+    "267:Perfect Speller's Scroll",
+    "268:Blowhard's Scroll",
+    "269:HP Booster's Scroll I",
+    "270:HP Booster's Scroll II",
+    "271:HP Booster's Scroll III",
+    "272:HP Booster's Scroll IV",
+    "273:MP Booster's Scroll I",
+    "274:MP Booster's Scroll II",
+    "275:MP Booster's Scroll III",
+    "276:MP Booster's Scroll IV",
+    "277:Attack Booster's Scroll I",
+    "278:Attack Booster's Scroll II",
+    "279:Attack Booster's Scroll III",
+    "280:Attack Booster's Scroll IV",
+    "281:Defense Booster's Scroll I",
+    "282:Defense Booster's Scroll II",
+    "283:Defense Booster's Scroll III",
+    "284:Defense Booster's Scroll IV",
+    "285:Agility Booster's Scroll I",
+    "286:Agility Booster's Scroll II",
+    "287:Agility Booster's Scroll III",
+    "288:Agility Booster's Scroll IV",
+    "289:Wisdom Booster's Scroll I",
+    "290:Wisdom Booster's Scroll II",
+    "291:Wisdom Booster's Scroll III",
+    "292:Wisdom Booster's Scroll IV",
+    "293:Frizz Ward's Scroll",
+    "294:Splish Ward's Scroll",
+    "295:Woosh Ward's Scroll",
+    "296:Crag Ward's Scroll",
+    "297:Bang Ward's Scroll",
+    "298:Crack Ward's Scroll",
+    "299:Zap Ward's Scroll",
+    "300:Sizz Ward's Scroll",
+    "301:Zam Ward's Scroll",
+    "302:Debilitation Ducker's Scroll",
+    "303:Bedazzlement Blocker's Scroll",
+    "304:Antimagic Avoider's Scroll",
+    "305:Drain Dodger's Scroll",
+    "306:Poison Preventer's Scroll",
+    "307:Stun Stopper's Scroll",
+    "308:Sleep Suppressor's Scroll",
+    "309:Confusion Controller's Scroll",
+    "310:Paralysis Protector's Scroll",
+    "311:Death Defier's Scroll",
+    "312:Sparkling Warder's Scroll",
+    "313:Hard Warder's Scroll",
+    "314:Holy Warder's Scroll",
+    "315:Magma Shield's Scroll",
+    "316:Glacier's Shield's Scroll",
+    "317:Cyclone Shield's Scroll",
+    "318:Chiaroscuro Shield's Scroll",
+    "319:Tremor Shield's Scroll",
+    "320:Fulgurite Shield's Scroll",
+    "321:Upsizing Seed",
+    "322:Downsizing Seed",
+    "323:Tincture of Life",
+    "324:Tincture of Magic",
+    "325:Tincture of Strength",
+    "326:Tincture of Resilience",
+    "327:Tincture of Agility",
+    "328:Tincture of Wisdom",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "iOverrideItemID"
+hops = []
+
+[[cheat]]
+id = "make-item-price-1"
+name = "Make Item Price 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bMakePriceOne"
+hops = []
+
+[[cheat]]
+id = "shop-price-multiplier"
+name = "Shop Price Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fShopPriceMultiplier"
+hops = []

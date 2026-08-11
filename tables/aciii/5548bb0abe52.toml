@@ -1,0 +1,879 @@
+[game]
+name = "Assassin Creed 3 (III) Remastered"
+exe = "aciii.exe"
+notes = "Converted from a Cheat Engine table by x-hex-x. Source: https://fearlessrevolution.com/viewtopic.php?t=19710"
+verified = []
+author = "x-hex-x"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-horse-movement-speed"
+name = "Player & horse movement speed"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+aobscanmodule(MovementSpeed,ACIII.exe,F6 ?? ?? ?? ?? ?? 08 0F ?? ?? ?? ?? 74 ?? 48)
+alloc(MovementSpeed_CodeCave,$1000,MovementSpeed)
+
+alloc(bFastPlayerMovementSpeed,8)
+alloc(pPlayerMovementSpeed,8)
+//
+alloc(bFastHorseMovementSpeed,8)
+alloc(pHorseMovementSpeed,8)
+
+label(horseMovementSpeedCode)
+label(originalCode)
+label(jmpCode)
+label(return)
+
+registersymbol(bFastPlayerMovementSpeed)
+registersymbol(pPlayerMovementSpeed)
+//
+registersymbol(bFastHorseMovementSpeed)
+registersymbol(pHorseMovementSpeed)
+
+bFastPlayerMovementSpeed:
+db 0
+pPlayerMovementSpeed:
+dd (float)2.25
+//
+bFastHorseMovementSpeed:
+db 0
+pHorseMovementSpeed:
+dd (float)2.75
+
+MovementSpeed_CodeCave:
+  test rcx,rcx
+  je originalCode
+  test rax,rax
+  je originalCode
+  cmp byte ptr [bFastPlayerMovementSpeed],01
+  jne horseMovementSpeedCode
+  cmp byte ptr [rax+10C],01 //Player ID (thx to Paul44)
+  jne horseMovementSpeedCode
+  cmp byte ptr [rax+C0],01 //Connor ID
+  je @F
+  cmp byte ptr [rax+C0],19 //Haytham ID
+  jne horseMovementSpeedCode
+
+@@:
+  mulss xmm6,[pPlayerMovementSpeed]
+  jmp jmpCode
+
+horseMovementSpeedCode:
+  cmp byte ptr [bFastHorseMovementSpeed],01
+  jne originalCode
+  cmp byte ptr [rax+10C],01
+  jne originalCode
+  cmp byte ptr [rax+C0],5A //Horse ID
+  jne originalCode
+  mulss xmm6,[pHorseMovementSpeed]
+  jmp jmpCode
+
+originalCode:
+  mulss xmm6,[rcx+160]
+
+jmpCode:
+  jmp return
+
+MovementSpeed+1D:
+  jmp MovementSpeed_CodeCave
+  nop 3
+
+return:
+registersymbol(MovementSpeed)
+
+[DISABLE]
+
+MovementSpeed+1D:
+  db F3 0F 59 B1 60 01 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+1C014C
+
+ACIII.exe+1C0119: 0F B7 81 E8 00 00 00     - movzx eax,word ptr [rcx+000000E8]
+ACIII.exe+1C0120: 48 8B F9                 - mov rdi,rcx
+ACIII.exe+1C0123: 66 C1 E8 09              - shr ax,09
+ACIII.exe+1C0127: A8 01                    - test al,01
+ACIII.exe+1C0129: 0F 84 CB 00 00 00        - je ACIII.exe+1C01FA
+ACIII.exe+1C012F: F6 81 B2 0B 00 00 08     - test byte ptr [rcx+00000BB2],08
+ACIII.exe+1C0136: 0F 29 74 24 70           - movaps [rsp+70],xmm6
+ACIII.exe+1C013B: 74 19                    - je ACIII.exe+1C0156
+ACIII.exe+1C013D: 48 8B 81 A0 01 00 00     - mov rax,[rcx+000001A0]
+ACIII.exe+1C0144: F3 0F 10 B0 88 00 00 00  - movss xmm6,[rax+00000088]
+// ---------- INJECTING HERE ----------
+ACIII.exe+1C014C: F3 0F 59 B1 60 01 00 00  - mulss xmm6,[rcx+00000160]
+// ---------- DONE INJECTING  ----------
+ACIII.exe+1C0154: EB 08                    - jmp ACIII.exe+1C015E
+ACIII.exe+1C0156: F3 0F 10 35 66 B8 87 02  - movss xmm6,[ACIII.exe+2A3B9C4]
+ACIII.exe+1C015E: 48 8B 89 C0 01 00 00     - mov rcx,[rcx+000001C0]
+ACIII.exe+1C0165: 48 8D 54 24 40           - lea rdx,[rsp+40]
+ACIII.exe+1C016A: E8 21 0A 07 00           - call ACIII.exe+230B90
+ACIII.exe+1C016F: 48 8B 8F C0 01 00 00     - mov rcx,[rdi+000001C0]
+ACIII.exe+1C0176: 48 8D 54 24 30           - lea rdx,[rsp+30]
+ACIII.exe+1C017B: E8 D0 09 07 00           - call ACIII.exe+230B50
+ACIII.exe+1C0180: F6 87 B1 0B 00 00 01     - test byte ptr [rdi+00000BB1],01
+ACIII.exe+1C0187: 4C 8D 4C 24 40           - lea r9,[rsp+40]
+}"""
+
+[[cheat]]
+id = "fast-player-movement-speed"
+name = "Fast player movement speed"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+bFastPlayerMovementSpeed:
+db 1
+
+[DISABLE]
+
+bFastPlayerMovementSpeed:
+db 0"""
+
+[[cheat]]
+id = "player-movement-speed-default-1-00"
+name = "Player movement speed (default = 1.00)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerMovementSpeed"
+hops = []
+
+[[cheat]]
+id = "fast-horse-movement-speed"
+name = "Fast horse movement speed"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+bFastHorseMovementSpeed:
+db 1
+
+[DISABLE]
+
+bFastHorseMovementSpeed:
+db 0"""
+
+[[cheat]]
+id = "horse-movement-speed-default-1-00"
+name = "Horse movement speed (default = 1.00)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHorseMovementSpeed"
+hops = []
+
+[[cheat]]
+id = "high-far-jump"
+name = "High & far jump"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+aobscanmodule(Jump,ACIII.exe,41 ?? ?? ?? 48 ?? ?? E8 ?? ?? ?? ?? 48 ?? ?? 48 ?? ?? F3)
+alloc(Jump_CodeCave,$1000,Jump)
+
+label(originalCode)
+label(return)
+
+alloc(pJumpHeight,8)
+alloc(pJumpDistance,8)
+
+registersymbol(pJumpHeight)
+registersymbol(pJumpDistance)
+
+pJumpHeight:
+dd (float)3.00
+pJumpDistance:
+dd (float)25.00
+
+Jump_CodeCave:
+  movss xmm6,[pJumpDistance]
+  movss xmm9,[pJumpHeight]
+  jmp return
+
+  nop 1
+  nop 1
+  nop 1
+  nop 1
+
+originalCode:
+  readmem(Jump+12,17)
+
+Jump+12:
+  jmp Jump_CodeCave
+  nop 5
+  nop 5
+  nop 2
+
+return:
+registersymbol(Jump)
+
+registersymbol(originalCode)
+
+[DISABLE]
+
+Jump+12:
+  readmem(originalCode,17)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+1237179
+
+ACIII.exe+123714C: 83 8F D8 00 00 00 01        - or dword ptr [rdi+000000D8],01
+ACIII.exe+1237153: F3 0F 10 B3 48 0A 00 00     - movss xmm6,[rbx+00000A48]
+ACIII.exe+123715B: E8 E0 01 BB FF              - call ACIII.exe+DE7340
+ACIII.exe+1237160: 45 0F 57 C0                 - xorps xmm8,xmm8
+ACIII.exe+1237164: 0F 28 CE                    - movaps xmm1,xmm6
+ACIII.exe+1237167: 41 0F 28 D0                 - movaps xmm2,xmm8
+ACIII.exe+123716B: 48 8B C8                    - mov rcx,rax
+ACIII.exe+123716E: E8 FD 01 BB FF              - call ACIII.exe+DE7370
+ACIII.exe+1237173: 48 8B 03                    - mov rax,[rbx]
+ACIII.exe+1237176: 48 8B CB                    - mov rcx,rbx
+// ---------- INJECTING HERE ----------
+ACIII.exe+1237179: F3 0F 10 35 63 CF 08 01     - movss xmm6,[ACIII.exe+22C40E4]
+// ---------- DONE INJECTING  ----------
+ACIII.exe+1237181: F3 44 0F 10 0D 7E 8E 07 01  - movss xmm9,[ACIII.exe+22B0008]
+ACIII.exe+123718A: FF 90 F0 01 00 00           - call qword ptr [rax+000001F0]
+ACIII.exe+1237190: 48 8B 03                    - mov rax,[rbx]
+ACIII.exe+1237193: 48 8B CB                    - mov rcx,rbx
+ACIII.exe+1237196: 0F 28 F8                    - movaps xmm7,xmm0
+ACIII.exe+1237199: FF 90 08 05 00 00           - call qword ptr [rax+00000508]
+ACIII.exe+123719F: 84 C0                       - test al,al
+ACIII.exe+12371A1: 74 5D                       - je ACIII.exe+1237200
+ACIII.exe+12371A3: F3 0F 10 83 30 01 00 00     - movss xmm0,[rbx+00000130]
+ACIII.exe+12371AB: F3 0F 10 0D 3D 9E 07 01     - movss xmm1,[ACIII.exe+22B0FF0]
+}"""
+
+[[cheat]]
+id = "jump-height-default-3-00"
+name = "Jump height (default = -3.00)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pJumpHeight"
+hops = []
+
+[[cheat]]
+id = "jump-distance-default-8-00"
+name = "Jump distance (default = 8.00)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pJumpDistance"
+hops = []
+
+[[cheat]]
+id = "npcs-health"
+name = "NPCs health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+aobscanmodule(NPCsHealth_01,ACIII.exe,83 ?? ?? 7D ?? 8B ?? 83 ?? ?? ?? 02)
+aobscanmodule(NPCsHealth_02,ACIII.exe,E8 ?? ?? ?? ?? 85 ?? 79 ?? 85 ?? 78)
+
+alloc(NPCsHealth_CodeCave_01,$1000,NPCsHealth_01)
+
+label(popCode_01)
+label(originalCode_01)
+//
+label(popCode_02)
+label(originalCode_02)
+
+label(NPCsHealth_CodeCave_02)
+label(return_01)
+label(return_02)
+
+alloc(bInfAlliesHealth,8)
+alloc(bLowEnemiesHealth,8)
+
+registersymbol(bInfAlliesHealth)
+registersymbol(bLowEnemiesHealth)
+
+bInfAlliesHealth:
+db 0
+bLowEnemiesHealth:
+db 0
+
+NPCsHealth_CodeCave_01:
+  push rbx
+  test rcx,rcx
+  je popCode_01
+  cmp byte ptr [bLowEnemiesHealth],01
+  jne @F
+  mov [rcx+2C],2
+  jmp popCode_01
+
+@@:
+  mov ebx,[rcx+1C]
+  mov [rcx+2C],ebx
+
+popCode_01:
+  pop rbx
+
+originalCode_01:
+  cmp dword ptr [rcx+rax*4+18],02
+  jmp return_01
+
+  nop 1
+  nop 1
+  nop 1
+  nop 1
+
+NPCsHealth_CodeCave_02:
+  push rax
+  cmp byte ptr [bInfAlliesHealth],01
+  jne popCode_02
+  test rdi,rdi
+  je popCode_02
+  cmp dword ptr [rdi+38],90009 //check if NPCs is human
+  jne popCode_02
+  mov rax,[rdi+40]
+  test rax,rax
+  je popCode_02
+  cmp dword ptr [rax+154],-01 //check if NPCs is not enemy
+  je popCode_02
+  mov bx,[rdi+B2] //Get maximum health
+
+popCode_02:
+  pop rax
+
+originalCode_02:
+  mov [rdi+B0],bx
+  jmp return_02
+
+NPCsHealth_01+7:
+  jmp NPCsHealth_CodeCave_01
+return_01:
+registersymbol(NPCsHealth_01)
+
+NPCsHealth_02+D:
+  jmp NPCsHealth_CodeCave_02
+  nop 2
+return_02:
+registersymbol(NPCsHealth_02)
+
+[DISABLE]
+
+NPCsHealth_01+7:
+  db 83 7C 81 18 02
+
+NPCsHealth_02+D:
+  db 66 89 9F B0 00 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+//NPCHealth_01
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+101FD67
+
+ACIII.exe+101FD59: CC              - int 3 
+ACIII.exe+101FD5A: CC              - int 3 
+ACIII.exe+101FD5B: CC              - int 3 
+ACIII.exe+101FD5C: CC              - int 3 
+ACIII.exe+101FD5D: CC              - int 3 
+ACIII.exe+101FD5E: CC              - int 3 
+ACIII.exe+101FD5F: CC              - int 3 
+ACIII.exe+101FD60: 83 FA 14        - cmp edx,14
+ACIII.exe+101FD63: 7D 0B           - jnl ACIII.exe+101FD70
+ACIII.exe+101FD65: 8B C2           - mov eax,edx
+// ---------- INJECTING HERE ----------
+ACIII.exe+101FD67: 83 7C 81 18 02  - cmp dword ptr [rcx+rax*4+18],02
+// ---------- DONE INJECTING  ----------
+ACIII.exe+101FD6C: 0F 94 C0        - sete al
+ACIII.exe+101FD6F: C3              - ret 
+ACIII.exe+101FD70: 32 C0           - xor al,al
+ACIII.exe+101FD72: C3              - ret 
+ACIII.exe+101FD73: CC              - int 3 
+ACIII.exe+101FD74: CC              - int 3 
+ACIII.exe+101FD75: CC              - int 3 
+ACIII.exe+101FD76: CC              - int 3 
+ACIII.exe+101FD77: CC              - int 3 
+ACIII.exe+101FD78: CC              - int 3 
+}
+
+//NPCHealth_02
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+18C799C
+
+ACIII.exe+18C7980: 48 89 5C 24 08        - mov [rsp+08],rbx
+ACIII.exe+18C7985: 57                    - push rdi
+ACIII.exe+18C7986: 48 83 EC 20           - sub rsp,20
+ACIII.exe+18C798A: 8B DA                 - mov ebx,edx
+ACIII.exe+18C798C: 48 8B F9              - mov rdi,rcx
+ACIII.exe+18C798F: E8 8C A4 83 FF        - call ACIII.exe+1101E20
+ACIII.exe+18C7994: 85 C0                 - test eax,eax
+ACIII.exe+18C7996: 79 04                 - jns ACIII.exe+18C799C
+ACIII.exe+18C7998: 85 DB                 - test ebx,ebx
+ACIII.exe+18C799A: 78 1C                 - js ACIII.exe+18C79B8
+// ---------- INJECTING HERE ----------
+ACIII.exe+18C799C: 66 89 9F B0 00 00 00  - mov [rdi+000000B0],bx
+// ---------- DONE INJECTING  ----------
+ACIII.exe+18C79A3: 85 DB                 - test ebx,ebx
+ACIII.exe+18C79A5: 79 11                 - jns ACIII.exe+18C79B8
+ACIII.exe+18C79A7: 8B 15 9B D9 9F 01     - mov edx,[ACIII.exe+32C5348]
+ACIII.exe+18C79AD: 45 33 C0              - xor r8d,r8d
+ACIII.exe+18C79B0: 48 8B CF              - mov rcx,rdi
+ACIII.exe+18C79B3: E8 28 23 21 FF        - call ACIII.exe+AD9CE0
+ACIII.exe+18C79B8: 48 8B 5C 24 30        - mov rbx,[rsp+30]
+ACIII.exe+18C79BD: 48 83 C4 20           - add rsp,20
+ACIII.exe+18C79C1: 5F                    - pop rdi
+ACIII.exe+18C79C2: C3                    - ret
+}"""
+
+[[cheat]]
+id = "infinite-allies-health"
+name = "Infinite allies health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+bInfAlliesHealth:
+db 1
+
+[DISABLE]
+
+bInfAlliesHealth:
+db 0"""
+
+[[cheat]]
+id = "low-enemies-health"
+name = "Low enemies health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+bLowEnemiesHealth:
+db 1
+
+[DISABLE]
+
+bLowEnemiesHealth:
+db 0"""
+
+[[cheat]]
+id = "ships-health"
+name = "Ships health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+aobscanmodule(ShipsHealth,ACIII.exe,83 ?? 01 75 ?? F7 ?? ?? ?? ?? ?? ?? 75 ?? 48 ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? F3 ?? ?? ?? ?? ?? ?? ?? 48)
+alloc(ShipsHealth_CodeCave,$1000,ShipsHealth)
+
+label(popCode)
+label(originalCode)
+label(return)
+
+alloc(bInfPlsyerShipHealth,8)
+alloc(pPlayerShipHealth,8)
+//
+alloc(bInfAllyShipsHealth,8)
+alloc(pAllyShipsHealth,8)
+//
+alloc(bLowEnemyShipsHealth,8)
+alloc(pEnemyShipsHealth,8)
+
+registersymbol(bInfPlsyerShipHealth)
+registersymbol(bInfAllyShipsHealth)
+registersymbol(bLowEnemyShipsHealth)
+
+bInfPlsyerShipHealth:
+db 0
+bInfAllyShipsHealth:
+db 0
+bLowEnemyShipsHealth:
+db 0
+
+pEnemyShipsHealth:
+dd (float)10.00
+
+ShipsHealth_CodeCave:
+  push rax
+  test rdi,rdi
+  je popCode
+  cmp byte ptr [bInfPlsyerShipHealth],01
+  jne @F
+  cmp byte ptr [rdi+284],00 //Player ship ID (thx to Paul44)
+  jne @F
+  mov eax,[rdi+2B8] //Maximum ship health
+  mov [pPlayerShipHealth],eax
+  movss xmm6,[pPlayerShipHealth]
+  jmp popCode
+
+@@:
+  cmp byte ptr [bInfAllyShipsHealth],01
+  jne @F
+  cmp byte ptr [rdi+284],02 //Ally ships ID
+  jne @F
+  mov eax,[rdi+2B8]
+  mov [pAllyShipsHealth],eax
+  movss xmm6,[pAllyShipsHealth]
+  jmp popCode
+
+@@:
+  cmp byte ptr [bLowEnemyShipsHealth],01
+  jne popCode
+  cmp byte ptr [rdi+284],03 //Enemy ships ID
+  jne popCode
+  movss xmm6,[pEnemyShipsHealth]
+
+popCode:
+  pop rax
+
+originalCode:
+  movss [rdi+2C4],xmm6
+  jmp return
+
+ShipsHealth+21:
+  jmp ShipsHealth_CodeCave
+  nop 3
+return:
+registersymbol(ShipsHealth)
+
+[DISABLE]
+
+ShipsHealth+21:
+  db F3 0F 11 B7 C4 02 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+11E9F64
+
+ACIII.exe+11E9F34: 48 8B 94 24 20 01 00 00  - mov rdx,[rsp+00000120]
+ACIII.exe+11E9F3C: 8B C5                    - mov eax,ebp
+ACIII.exe+11E9F3E: F0 0F C1 42 08           - lock xadd [rdx+08],eax
+ACIII.exe+11E9F43: 83 F8 01                 - cmp eax,01
+ACIII.exe+11E9F46: 75 15                    - jne ACIII.exe+11E9F5D
+ACIII.exe+11E9F48: F7 42 0C FF FF FF 00     - test [rdx+0C],00FFFFFF
+ACIII.exe+11E9F4F: 75 0C                    - jne ACIII.exe+11E9F5D
+ACIII.exe+11E9F51: 48 8D 0D 68 24 06 02     - lea rcx,[ACIII.exe+324C3C0]
+ACIII.exe+11E9F58: E8 C3 E1 89 FF           - call ACIII.exe+A88120
+ACIII.exe+11E9F5D: 48 8B 87 40 0B 00 00     - mov rax,[rdi+00000B40]
+// ---------- INJECTING HERE ----------
+ACIII.exe+11E9F64: F3 0F 11 B7 C4 02 00 00  - movss [rdi+000002C4],xmm6
+// ---------- DONE INJECTING  ----------
+ACIII.exe+11E9F6C: 48 85 C0                 - test rax,rax
+ACIII.exe+11E9F6F: 74 1C                    - je ACIII.exe+11E9F8D
+ACIII.exe+11E9F71: 80 BF 45 0A 00 00 00     - cmp byte ptr [rdi+00000A45],00
+ACIII.exe+11E9F78: 74 13                    - je ACIII.exe+11E9F8D
+ACIII.exe+11E9F7A: 45 0F 2F C8              - comiss xmm9,xmm8
+ACIII.exe+11E9F7E: 76 0D                    - jna ACIII.exe+11E9F8D
+ACIII.exe+11E9F80: F3 41 0F 5E F9           - divss xmm7,xmm9
+ACIII.exe+11E9F85: F3 0F 11 B8 D0 03 00 00  - movss [rax+000003D0],xmm7
+ACIII.exe+11E9F8D: E8 9E 38 FA FF           - call ACIII.exe+118D830
+ACIII.exe+11E9F92: 48 8B 9F 08 01 00 00     - mov rbx,[rdi+00000108]
+}"""
+
+[[cheat]]
+id = "infinite-player-ship-health"
+name = "Infinite player ship health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+bInfPlsyerShipHealth:
+db 1
+
+[DISABLE]
+
+bInfPlsyerShipHealth:
+db 0"""
+
+[[cheat]]
+id = "infinite-ally-ships-health"
+name = "Infinite ally ships health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+bInfAllyShipsHealth:
+db 1
+
+[DISABLE]
+
+bInfAllyShipsHealth:
+db 0"""
+
+[[cheat]]
+id = "low-enemy-ships-health"
+name = "Low enemy ships health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+bLowEnemyShipsHealth:
+db 1
+
+[DISABLE]
+
+bLowEnemyShipsHealth:
+db 0"""
+
+[[cheat]]
+id = "fast-ship-weaponry-reload"
+name = "Fast ship weaponry reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ACIII.exe
+  Version: 1.03 Steam/Uplay
+  Date   : 2022-04-07
+  Author : hex
+}
+
+[ENABLE]
+
+aobscanmodule(ShipWeaponryReload_01,ACIII.exe,F3 ?? ?? ?? ?? 48 ?? ?? 79 ?? F3 ?? ?? ?? ?? ?? ?? ?? F3 ?? ?? ?? ?? ?? ?? ?? 33 ?? F3 ?? ?? ?? 0F ?? ?? 72 ?? F3 ?? ?? ?? 0F ?? ?? 73 ?? 48 ?? 00 00 00 00 00 00 00 80 48 ?? ?? F3 ?? ?? ?? ?? C6 ?? ?? 01 48 ?? ?? ?? 00 00 00 00 48 ?? ?? 48 ?? ?? 33)
+aobscanmodule(ShipWeaponryReload_02,ACIII.exe,F3 ?? ?? ?? ?? 48 ?? ?? 79 ?? F3 ?? ?? ?? ?? ?? ?? ?? F3 ?? ?? ?? 33 ?? F3 ?? ?? ?? ?? ?? ?? ?? 0F ?? ?? 72 ?? F3 ?? ?? ?? 0F ?? ?? 73 ?? 48 ?? 00 00 00 00 00 00 00 80 48 ?? ?? 48 ?? ?? ?? 30 F3 ?? ?? ?? ?? C6 ?? ?? ?? ?? ?? 01)
+aobscanmodule(ShipWeaponryReload_03,ACIII.exe,F3 ?? ?? ?? ?? 48 ?? ?? 79 ?? F3 ?? ?? ?? ?? ?? ?? ?? F3 ?? ?? ?? 33 ?? F3 ?? ?? ?? ?? ?? ?? ?? 0F ?? ?? 72 ?? F3 ?? ?? ?? 0F ?? ?? 73 ?? 48 ?? ?? 00 00 00 00 00 00 80 48 ?? ?? F3 ?? ?? ?? ?? C6 ?? C8 ?? ?? ?? 01 48 ?? ?? C0 ?? ?? ?? 00 00 00 00 48 ?? ?? 48 ?? ?? 48 ?? ?? B8 ?? ?? ?? C7 ?? AC ?? ?? ?? 03)
+
+ShipWeaponryReload_01+23:
+db 90 90
+
+ShipWeaponryReload_02+23:
+db 90 90
+
+ShipWeaponryReload_03+23:
+db 90 90
+
+registersymbol(ShipWeaponryReload_01)
+registersymbol(ShipWeaponryReload_02)
+registersymbol(ShipWeaponryReload_03)
+
+[DISABLE]
+
+ShipWeaponryReload_01+23:
+  db 72 16
+
+ShipWeaponryReload_02+23:
+  db 72 16
+
+ShipWeaponryReload_03+23:
+  db 72 16
+
+unregistersymbol(*)
+
+//ShipWeaponryReload_01
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+1551B94
+
+ACIII.exe+1551B68: B8 30 75 00 00                 - mov eax,00007530
+ACIII.exe+1551B6D: 48 89 53 40                    - mov [rbx+40],rdx
+ACIII.exe+1551B71: F3 48 0F 2A C0                 - cvtsi2ss xmm0,rax
+ACIII.exe+1551B76: 48 85 C0                       - test rax,rax
+ACIII.exe+1551B79: 79 08                          - jns ACIII.exe+1551B83
+ACIII.exe+1551B7B: F3 0F 58 05 B5 CC D5 00        - addss xmm0,[ACIII.exe+22AE838]
+ACIII.exe+1551B83: F3 0F 10 0D A9 CC D5 00        - movss xmm1,[ACIII.exe+22AE834]
+ACIII.exe+1551B8B: 33 C9                          - xor ecx,ecx
+ACIII.exe+1551B8D: F3 0F 59 C7                    - mulss xmm0,xmm7
+ACIII.exe+1551B91: 0F 2F C1                       - comiss xmm0,xmm1
+// ---------- INJECTING HERE ----------
+ACIII.exe+1551B94: 72 16                          - jb ACIII.exe+1551BAC
+// ---------- DONE INJECTING  ----------
+ACIII.exe+1551B96: F3 0F 5C C1                    - subss xmm0,xmm1
+ACIII.exe+1551B9A: 0F 2F C1                       - comiss xmm0,xmm1
+ACIII.exe+1551B9D: 73 0D                          - jae ACIII.exe+1551BAC
+ACIII.exe+1551B9F: 48 B8 00 00 00 00 00 00 00 80  - mov rax,8000000000000000
+ACIII.exe+1551BA9: 48 8B C8                       - mov rcx,rax
+ACIII.exe+1551BAC: F3 48 0F 2C C0                 - cvttss2si rax,xmm0
+ACIII.exe+1551BB1: C6 43 58 01                    - mov byte ptr [rbx+58],01
+ACIII.exe+1551BB5: 48 C7 43 50 00 00 00 00        - mov qword ptr [rbx+50],00000000
+ACIII.exe+1551BBD: 48 03 C1                       - add rax,rcx
+ACIII.exe+1551BC0: 48 03 C2                       - add rax,rdx
+}
+
+//ShipWeaponryReload_02
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+1BA45A0
+
+ACIII.exe+1BA4571: B8 30 75 00 00                    - mov eax,00007530
+ACIII.exe+1BA4576: 48 89 97 B0 00 00 00              - mov [rdi+000000B0],rdx
+ACIII.exe+1BA457D: F3 48 0F 2A C0                    - cvtsi2ss xmm0,rax
+ACIII.exe+1BA4582: 48 85 C0                          - test rax,rax
+ACIII.exe+1BA4585: 79 08                             - jns ACIII.exe+1BA458F
+ACIII.exe+1BA4587: F3 0F 58 05 A9 A2 70 00           - addss xmm0,[ACIII.exe+22AE838]
+ACIII.exe+1BA458F: F3 0F 59 C1                       - mulss xmm0,xmm1
+ACIII.exe+1BA4593: 33 C9                             - xor ecx,ecx
+ACIII.exe+1BA4595: F3 0F 10 0D 97 A2 70 00           - movss xmm1,[ACIII.exe+22AE834]
+ACIII.exe+1BA459D: 0F 2F C1                          - comiss xmm0,xmm1
+// ---------- INJECTING HERE ----------
+ACIII.exe+1BA45A0: 72 16                             - jb ACIII.exe+1BA45B8
+// ---------- DONE INJECTING  ----------
+ACIII.exe+1BA45A2: F3 0F 5C C1                       - subss xmm0,xmm1
+ACIII.exe+1BA45A6: 0F 2F C1                          - comiss xmm0,xmm1
+ACIII.exe+1BA45A9: 73 0D                             - jae ACIII.exe+1BA45B8
+ACIII.exe+1BA45AB: 48 B8 00 00 00 00 00 00 00 80     - mov rax,8000000000000000
+ACIII.exe+1BA45B5: 48 8B C8                          - mov rcx,rax
+ACIII.exe+1BA45B8: F3 48 0F 2C C0                    - cvttss2si rax,xmm0
+ACIII.exe+1BA45BD: C6 87 C8 00 00 00 01              - mov byte ptr [rdi+000000C8],01
+ACIII.exe+1BA45C4: 48 C7 87 C0 00 00 00 00 00 00 00  - mov qword ptr [rdi+000000C0],00000000
+ACIII.exe+1BA45CF: 48 03 C1                          - add rax,rcx
+ACIII.exe+1BA45D2: 48 03 C2                          - add rax,rdx
+}
+
+//ShipWeaponryReload_03
+{
+// ORIGINAL CODE - INJECTION POINT: ACIII.exe+1B9ED79
+
+ACIII.exe+1B9ED4A: B8 30 75 00 00                 - mov eax,00007530
+ACIII.exe+1B9ED4F: 4C 89 82 68 01 00 00           - mov [rdx+00000168],r8
+ACIII.exe+1B9ED56: F3 48 0F 2A C0                 - cvtsi2ss xmm0,rax
+ACIII.exe+1B9ED5B: 48 85 C0                       - test rax,rax
+ACIII.exe+1B9ED5E: 79 08                          - jns ACIII.exe+1B9ED68
+ACIII.exe+1B9ED60: F3 0F 58 05 D0 FA 70 00        - addss xmm0,[ACIII.exe+22AE838]
+ACIII.exe+1B9ED68: F3 0F 59 C1                    - mulss xmm0,xmm1
+ACIII.exe+1B9ED6C: 33 C9                          - xor ecx,ecx
+ACIII.exe+1B9ED6E: F3 0F 10 0D BE FA 70 00        - movss xmm1,[ACIII.exe+22AE834]
+ACIII.exe+1B9ED76: 0F 2F C1                       - comiss xmm0,xmm1
+// ---------- INJECTING HERE ----------
+ACIII.exe+1B9ED79: 72 16                          - jb ACIII.exe+1B9ED91
+// ---------- DONE INJECTING  ----------
+ACIII.exe+1B9ED7B: F3 0F 5C C1                    - subss xmm0,xmm1
+ACIII.exe+1B9ED7F: 0F 2F C1                       - comiss xmm0,xmm1
+ACIII.exe+1B9ED82: 73 0D                          - jae ACIII.exe+1B9ED91
+ACIII.exe+1B9ED84: 48 B8 00 00 00 00 00 00 00 80  - mov rax,8000000000000000
+ACIII.exe+1B9ED8E: 48 8B C8                       - mov rcx,rax
+ACIII.exe+1B9ED91: 48 8B 5C 24 30                 - mov rbx,[rsp+30]
+ACIII.exe+1B9ED96: F3 48 0F 2C C0                 - cvttss2si rax,xmm0
+ACIII.exe+1B9ED9B: C6 82 80 01 00 00 01           - mov byte ptr [rdx+00000180],01
+ACIII.exe+1B9EDA2: 48 03 C1                       - add rax,rcx
+ACIII.exe+1B9EDA5: 49 03 C0                       - add rax,r8
+}"""

@@ -1,0 +1,149 @@
+[game]
+name = "Have A Nice Death"
+exe = "release_have_a_nice_death.exe"
+notes = "Converted from a Cheat Engine table by Silas. Source: https://fearlessrevolution.com/viewtopic.php?t=29076"
+verified = []
+author = "Silas"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(HP,F3 41 0F 11 6F 30 F3 41 0F 10 47)
+alloc(newmem,$1000,HP)
+
+label(code)
+label(return)
+label(enemy)
+
+registersymbol(ohk)
+
+newmem:
+
+  push r12
+  mov r12,[pMain]
+  mov r12,[r12+20]
+  mov r12,[r12+38]
+  cmp r12,r15
+  pop r12
+  jne enemy
+  movss xmm5,[r15+34]
+  jmp code
+
+enemy:
+  cmp byte ptr [ohk],00
+  je code
+  xorps xmm5,xmm5
+
+code:
+  movss [r15+30],xmm5
+  jmp return
+
+ohk:
+  db 0
+
+HP:
+  jmp newmem
+  nop
+return:
+registersymbol(HP)
+
+[DISABLE]
+
+HP:
+  db F3 41 0F 11 6F 30
+
+unregistersymbol(*)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "1-hit-kill"
+name = "1 Hit Kill"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+ohk:
+db 01
+ 
+[DISABLE]
+ohk:
+db 00"""
+
+[[cheat]]
+id = "no-mana-consume"
+name = "No Mana Consume"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+ManaManager.SpendMana:
+  db C3
+ 
+[DISABLE]
+ManaManager.SpendMana:
+  db 55"""
+
+[[cheat]]
+id = "other"
+name = "« Other »"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,DeathApPlayerData:GetCollectibleCount)
+define(bytes,55 48 8B EC 48 83 EC 50 48 89 75 D8 48 89 7D E0)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+registersymbol(pData)
+
+newmem:
+
+  mov [pData],rcx
+
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,50
+  mov [rbp-28],rsi
+  mov [rbp-20],rdi
+  jmp return
+
+pData:
+  dq 0
+
+address:
+  jmp far newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(newmem)"""

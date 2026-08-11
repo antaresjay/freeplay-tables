@@ -1,0 +1,271 @@
+[game]
+name = "Songs Of Silence"
+exe = "songsofsilence.exe"
+notes = "Converted from a Cheat Engine table by iamdulo80. Source: https://fearlessrevolution.com/viewtopic.php?t=37342"
+verified = []
+author = "iamdulo80"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-resources"
+name = "Activate (Resources)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+  Extracts RBP.
+  Condition: ONLY updates if RBP ends in 00.
+  Run Once: Removed (Updates continuously if condition is met).
+}
+
+// Your specific long pattern
+aobscanmodule(INJECT_RBP_EXACT, GameAssembly.dll, 74 0E 48 63 00 48 8B 0C 28 B0 01 48 89 0F EB C1 E8 40 1B 4E FD)
+alloc(newmem,$1000,INJECT_RBP_EXACT)
+
+label(code)
+label(return)
+label(pRBPValue)
+
+registersymbol(INJECT_RBP_EXACT)
+registersymbol(pRBPValue)
+
+newmem:
+  // --- FILTER START ---
+  // Check if RBP ends in 00
+  push rax      // Save RAX (scratchpad)
+  mov rax,rbp   // Copy RBP to RAX
+  and rax,FF    // Isolate the last byte (last 2 hex digits)
+  cmp rax,0     // Compare with 00
+  pop rax       // Restore RAX
+  jne code      // If it is NOT 00, jump to code (skip saving)
+  // --- FILTER END ---
+
+  // If we are here, it ended in 00. Save it.
+  mov [pRBPValue],rbp
+
+code:
+  // Restore original code (We stole 6 bytes total)
+  mov rcx,[rax+rbp]
+  mov al,01
+  jmp return
+
+// DATA SECTION
+pRBPValue:
+  dq 0
+
+// Injection at Offset +5
+INJECT_RBP_EXACT+5:
+  jmp newmem
+  nop 1
+return:
+
+[DISABLE]
+// Restore: 48 8B 0C 28 (mov rcx...) + B0 01 (mov al...)
+INJECT_RBP_EXACT+5:
+  db 48 8B 0C 28 B0 01
+
+dealloc(newmem)
+unregistersymbol(INJECT_RBP_EXACT)
+unregistersymbol(pRBPValue)"""
+
+[[cheat]]
+id = "gold"
+name = "Gold "
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pRBPValue"
+hops = []
+
+[[cheat]]
+id = "building-material"
+name = "Building Material"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pRBPValue"
+hops = []
+
+[[cheat]]
+id = "essence"
+name = "Essence"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pRBPValue"
+hops = []
+
+[[cheat]]
+id = "gold-growth"
+name = "Gold Growth"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pRBPValue"
+hops = []
+
+[[cheat]]
+id = "building-material-growth"
+name = "Building Material Growth"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pRBPValue"
+hops = []
+
+[[cheat]]
+id = "essense-growth"
+name = "Essense Growth"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pRBPValue"
+hops = []
+
+[[cheat]]
+id = "infinite-movement"
+name = "Infinite Movement"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+// Scan for the pattern to find the correct address
+aobscanmodule(movWriteScan, GameAssembly.dll, 48 89 18 48 C7 44 24 30 00 00 00 00 49 8D 8F B8 01 00 00)
+
+// Directly replace the 3 bytes at the start of the scan with NOPs
+movWriteScan:
+db 90 90 90
+
+[DISABLE]
+
+// Restore the original 3 bytes
+movWriteScan:
+db 48 89 18"""
+
+[[cheat]]
+id = "activate-then-select-heroes"
+name = "Activate Then Select Heroes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(INJECT, GameAssembly.dll, F2 0F 10 04 18 8B 44 18 08 F2 0F 11 06 89 46 08 48 8B C6 48 83 C4 30 41 5E 41 5C 5F 5E 5B C3 E8 3F 51 4D)
+alloc(newmem, $1000, INJECT)
+
+label(code)
+label(return)
+
+label(SelectEXPAddress)
+registersymbol(SelectEXPAddress)
+registersymbol(INJECT)
+
+newmem:
+  // Use RCX instead of RAX for the calculation
+  push rcx                 // 1. Save RCX
+  lea rcx,[rax+rbx]        // 2. Calculate RAX+RBX and put the result in RCX
+  mov [SelectEXPAddress],rcx // 3. Copy RCX to our variable
+  pop rcx                  // 4. Restore RCX
+
+code:
+  movsd xmm0,[rax+rbx]
+  jmp return
+
+SelectEXPAddress:
+  dq 0
+
+INJECT:
+  jmp newmem
+return:
+
+[DISABLE]
+INJECT:
+  db F2 0F 10 04 18
+
+unregistersymbol(SelectEXPAddress)
+unregistersymbol(INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectEXPAddress"
+hops = []
+
+[[cheat]]
+id = "exp-points"
+name = "EXP Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectEXPAddress"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "upgrade-points"
+name = "Upgrade Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectEXPAddress"
+hops = []

@@ -1,0 +1,1687 @@
+[game]
+name = "Starion Tactics"
+exe = "shinkansen_starion_tactics.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3298"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+registersymbol(playerstats_basepointer)
+registersymbol(playerstatsupdate_enable)
+registersymbol(playerstatsset_enable)
+registersymbol(playerstatsid_value)
+
+alloc(playerstats_basepointer,4)
+alloc(playerstatsupdate_enable,4)
+alloc(playerstatsset_enable,4)
+alloc(playerstatsid_value,4)
+
+
+[DISABLE]
+
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstatsupdate_enable)
+unregistersymbol(playerstatsset_enable)
+unregistersymbol(playerstatsid_value)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstatsupdate_enable)
+dealloc(playerstatsset_enable)
+dealloc(playerstatsid_value)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-activate-load-game-to-update-play"
+name = "Player Stats Base Address Scan (To Activate: Load Game, To Update: Play)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstatsupdate_exit)
+label(playerstatsset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+aobscan(playerstats_searchedAOB,0F B6 47 55 8B F0 EB 02)
+
+alloc(playerstats_newmem,2048) //2kb should be enough
+
+
+playerstats_newmem:
+// Player check
+cmp byte ptr [edi+55], #1
+jne playerstatsset_exit
+
+mov eax, [edi+34],
+mov [playerstatsid_value], eax
+
+cmp dword ptr [playerstatsupdate_enable], #0
+je playerstatsupdate_exit
+mov [playerstats_basepointer], edi
+playerstatsupdate_exit:
+
+cmp dword ptr [playerstatsset_enable], #0
+je playerstatsset_exit
+mov [edi+40], #999
+playerstatsset_exit:
+
+
+playerstats_originalcode:
+db 0F B6 47 55 8B F0
+//movzx eax,byte ptr [edi+55]
+//mov esi,eax
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 0F B6 47 55 8B F0
+//movzx eax,byte ptr [edi+55]
+//mov esi,eax
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)"""
+
+[[cheat]]
+id = "resources-set-to-999"
+name = "Resources Set to 999?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstatsset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstatsupdate_enable"
+hops = []
+
+[[cheat]]
+id = "player-id"
+name = "player_id"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstatsid_value"
+hops = []
+
+[[cheat]]
+id = "planet-construction-instant-to-activate-load-game-to-update-play"
+name = "Planet Construction Instant (To Activate: Load Game, To Update: Play)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(planetconstructioninstant_savedAOB)
+label(planetconstructioninstant_returnhere)
+label(planetconstructioninstant_originalcode)
+label(planetconstructioninstant_exit)
+
+label(planetconstructioninstantset_exit)
+
+registersymbol(planetconstructioninstant_savedAOB)
+
+aobscan(planetconstructioninstant_searchedAOB,8B 47 30 3D 01 00 00 00 74 17)
+
+alloc(planetconstructioninstant_newmem,2048) //2kb should be enough
+
+
+planetconstructioninstant_newmem:
+// Player check
+mov eax, [edi+2c]
+cmp dword ptr [playerstatsid_value], eax
+jne planetconstructioninstantset_exit
+
+// Construction Round check
+cmp dword ptr [edi+34], #4294967295
+je planetconstructioninstantset_exit
+
+mov [edi+34], #1
+planetconstructioninstantset_exit:
+
+
+planetconstructioninstant_originalcode:
+db 8B 47 30 3D 01 00 00 00
+//mov eax,[edi+30]
+//cmp eax,00000001
+
+
+planetconstructioninstant_exit:
+jmp planetconstructioninstant_returnhere
+
+
+planetconstructioninstant_searchedAOB:
+planetconstructioninstant_savedAOB:
+jmp planetconstructioninstant_newmem
+nop
+nop
+nop
+planetconstructioninstant_returnhere:
+
+
+[DISABLE]
+planetconstructioninstant_savedAOB:
+db 8B 47 30 3D 01 00 00 00
+//mov eax,[edi+30]
+//cmp eax,00000001
+
+unregistersymbol(planetconstructioninstant_savedAOB)
+
+dealloc(planetconstructioninstant_newmem)"""
+
+[[cheat]]
+id = "ship-stats-massive-to-activate-load-game-to-update-play"
+name = "Ship Stats Massive (To Activate: Load Game, To Update: Play)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(shipstatsmassive_savedAOB)
+label(shipstatsmassive_returnhere)
+label(shipstatsmassive_originalcode)
+label(shipstatsmassive_exit)
+
+label(shipstatsmassiveset_exit)
+
+registersymbol(shipstatsmassive_savedAOB)
+
+aobscan(shipstatsmassive_searchedAOB,8D 44 87 10 8B 00 8B 40 4C 85 C0)
+
+alloc(shipstatsmassive_newmem,2048) //2kb should be enough
+alloc(shipstatsmassive_temp,2048)
+
+shipstatsmassive_newmem:
+mov [shipstatsmassive_temp], ebx
+
+// Player check
+mov ebx, [eax+18]
+cmp dword ptr [playerstatsid_value], ebx
+jne shipstatsmassiveset_exit
+
+mov [eax+2c], #99
+mov [eax+30], #99
+mov [eax+34], #99
+mov [eax+40], #99
+mov [eax+44], #99
+shipstatsmassiveset_exit:
+
+mov ebx, [shipstatsmassive_temp]
+
+
+shipstatsmassive_originalcode:
+db 8B 40 4C 85 C0
+//mov eax,[eax]
+//mov eax,[eax+4C]
+
+
+shipstatsmassive_exit:
+jmp shipstatsmassive_returnhere
+
+
+shipstatsmassive_searchedAOB + 6:
+shipstatsmassive_savedAOB:
+jmp shipstatsmassive_newmem
+shipstatsmassive_returnhere:
+
+
+[DISABLE]
+shipstatsmassive_savedAOB:
+db 8B 40 4C 85 C0
+//mov eax,[eax+4C]
+//test eax,eax
+
+unregistersymbol(shipstatsmassive_savedAOB)
+
+dealloc(shipstatsmassive_newmem)"""
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc",
+    "+0x0",
+]
+
+[[cheat]]
+id = "startresources"
+name = "StartResources"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "description"
+name = "description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:ISTF_BaoWeiDescription",
+    "1:ISTF_DuhonKahlopDescription",
+    "2:ISTF_NathanBurkeDescription",
+    "3:ISTF_PercivalFrancisDescription",
+    "4:UTF_JuriGrigaovDescription",
+    "5:UTF_JorgeEstabanDescription",
+    "6:UTF_HansHartmannDescription",
+    "7:UTF_BaahirSinghDescription",
+    "8:Hive_XklicDescription",
+    "9:Hive_KlakkDescription",
+    "10:Hive_GhizzDescription",
+    "11:Hive_BoxhiDescription",
+    "12:Kreton_RikhorTalanDescription",
+    "13:Kreton_FrothAlkabatorDescription",
+    "14:Kreton_BikhorTalanDescription",
+    "15:Kreton_SinklarThirbothDescription",
+    "16:ISTF_FactionDescription",
+    "17:UTF_FactionDescription",
+    "18:Hive_FactionDescription",
+    "19:Kreton_FactionDescription",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc",
+    "+0x40",
+]
+
+[[cheat]]
+id = "caninhabitbarren"
+name = "canInhabitBarren"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc",
+    "+0x44",
+]
+
+[[cheat]]
+id = "canuseterraform"
+name = "canUseTerraform"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc",
+    "+0x45",
+]
+
+[[cheat]]
+id = "canterraformoceanic"
+name = "canTerraformOceanic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc",
+    "+0x46",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "shipsgained"
+name = "ShipsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x8",
+]
+
+[[cheat]]
+id = "shipslost"
+name = "ShipsLost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0xc",
+]
+
+[[cheat]]
+id = "planetsgained"
+name = "PlanetsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x10",
+]
+
+[[cheat]]
+id = "planetslost"
+name = "PlanetsLost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x14",
+]
+
+[[cheat]]
+id = "resourcesgained"
+name = "ResourcesGained"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x18",
+]
+
+[[cheat]]
+id = "resourcesspent"
+name = "ResourcesSpent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "battleswon"
+name = "BattlesWon"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x20",
+]
+
+[[cheat]]
+id = "battleslost"
+name = "BattlesLost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x24",
+]
+
+[[cheat]]
+id = "cardsgained"
+name = "CardsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x28",
+]
+
+[[cheat]]
+id = "artifactsgained"
+name = "ArtifactsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "shipsdestroyed"
+name = "ShipsDestroyed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x30",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "shipsgained-2"
+name = "ShipsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x8",
+]
+
+[[cheat]]
+id = "shipslost-2"
+name = "ShipsLost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "planetsgained-2"
+name = "PlanetsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x10",
+]
+
+[[cheat]]
+id = "planetslost-2"
+name = "PlanetsLost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x14",
+]
+
+[[cheat]]
+id = "resourcesgained-2"
+name = "ResourcesGained"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x18",
+]
+
+[[cheat]]
+id = "resourcesspent-2"
+name = "ResourcesSpent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "battleswon-2"
+name = "BattlesWon"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x20",
+]
+
+[[cheat]]
+id = "battleslost-2"
+name = "BattlesLost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x24",
+]
+
+[[cheat]]
+id = "cardsgained-2"
+name = "CardsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x28",
+]
+
+[[cheat]]
+id = "artifactsgained-2"
+name = "ArtifactsGained"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "shipsdestroyed-2"
+name = "ShipsDestroyed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x1c",
+    "+0x30",
+]
+
+[[cheat]]
+id = "player-id-2"
+name = "player_id"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "teamid"
+name = "teamId"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "score"
+name = "score"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "resources"
+name = "resources"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "type"
+name = "type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:NOVICE_AI",
+    "1:SKILLED_AI",
+    "2:EXPERT_AI",
+    "3:HUMAN",
+    "4:MAX_TYPES",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "homeplanetindex"
+name = "HomePlanetIndex"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "seenconditions"
+name = "seenConditions"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "lastplanet"
+name = "lastPlanet"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "shouldgetcard"
+name = "shouldGetCard"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "ishuman"
+name = "isHuman"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x55"]
+
+[[cheat]]
+id = "claimedcard"
+name = "claimedCard"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "planet-stats-base-address-scan-initialization-activate-this-first"
+name = "Planet Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+registersymbol(planetstats_basepointer)
+registersymbol(planetstatsupdate_enable)
+registersymbol(planetstatsset_enable)
+
+alloc(planetstats_basepointer,4)
+alloc(planetstatsupdate_enable,4)
+alloc(planetstatsset_enable,4)
+
+
+[DISABLE]
+
+unregistersymbol(planetstats_basepointer)
+unregistersymbol(planetstatsupdate_enable)
+unregistersymbol(planetstatsset_enable)
+
+dealloc(planetstats_basepointer)
+dealloc(planetstatsupdate_enable)
+dealloc(planetstatsset_enable)"""
+
+[[cheat]]
+id = "planet-stats-base-address-scan-to-activate-view-planet-description-to-update-view-planet-description"
+name = "Planet Stats Base Address Scan (To Activate: View Planet Description, To Update: View Planet Description)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(planetstats_savedAOB)
+label(planetstats_returnhere)
+label(planetstats_originalcode)
+label(planetstats_exit)
+
+label(planetstatsupdate_exit)
+label(planetstatsset_exit)
+
+registersymbol(planetstats_savedAOB)
+
+aobscan(planetstats_searchedAOB,D9 9F D4 00 00 00 D9 46 40)
+
+alloc(planetstats_newmem,2048) //2kb should be enough
+
+
+planetstats_newmem:
+cmp dword ptr [planetstatsupdate_enable], #0
+je planetstatsupdate_exit
+mov [planetstats_basepointer], esi
+planetstatsupdate_exit:
+
+cmp dword ptr [planetstatsset_enable], #0
+je planetstatsset_exit
+planetstatsset_exit:
+
+
+planetstats_originalcode:
+db D9 9F D4 00 00 00
+//fstp dword ptr [edi+000000D4]
+//fld dword ptr [esi+40]
+
+planetstats_exit:
+jmp planetstats_returnhere
+
+
+planetstats_searchedAOB:
+planetstats_savedAOB:
+jmp planetstats_newmem
+nop
+planetstats_returnhere:
+
+
+[DISABLE]
+planetstats_savedAOB:
+db D9 9F D4 00 00 00
+//fstp dword ptr [edi+000000D4]
+//fld dword ptr [esi+40]
+
+unregistersymbol(planetstats_savedAOB)
+
+dealloc(planetstats_newmem)"""
+
+[[cheat]]
+id = "planet-stats-update-base-address"
+name = "Planet Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstatsupdate_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "planetindex"
+name = "PlanetIndex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "player-id-3"
+name = "Player_ID"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "extratype"
+name = "extraType"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:NONE",
+    "1:BARREN",
+    "2:RICH",
+    "3:HOMEPLANET",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "constructionrounds"
+name = "ConstructionRounds"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "constructionid"
+name = "ConstructionID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "radius"
+name = "radius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "mass"
+name = "mass"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "temperature"
+name = "temperature"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "ishomeplanet"
+name = "isHomePlanet"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "isrich"
+name = "isRich"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x49"]
+
+[[cheat]]
+id = "scale"
+name = "scale"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "planetstats_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "ship-stats-base-address-scan-initialization-activate-this-first"
+name = "Ship Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+
+registersymbol(shipstats_basepointer)
+registersymbol(shipstatsupdate_enable)
+registersymbol(shipstatsset_enable)
+
+alloc(shipstats_basepointer,4)
+alloc(shipstatsupdate_enable,4)
+alloc(shipstatsset_enable,4)
+
+
+[DISABLE]
+
+unregistersymbol(shipstats_basepointer)
+unregistersymbol(shipstatsupdate_enable)
+unregistersymbol(shipstatsset_enable)
+
+dealloc(shipstats_basepointer)
+dealloc(shipstatsupdate_enable)
+dealloc(shipstatsset_enable)"""
+
+[[cheat]]
+id = "ship-stats-base-address-scan-to-activate-view-ship-details-to-update-view-ship-details"
+name = "Ship Stats Base Address Scan (To Activate: View Ship Details, To Update: View Ship Details)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(shipstats_savedAOB)
+label(shipstats_returnhere)
+label(shipstats_originalcode)
+label(shipstats_exit)
+
+label(shipstatsupdate_exit)
+label(shipstatsset_exit)
+
+registersymbol(shipstats_savedAOB)
+
+aobscan(shipstats_searchedAOB,83 C4 10 8B 40 28 89 47 3C)
+
+alloc(shipstats_newmem,2048) //2kb should be enough
+
+
+shipstats_newmem:
+cmp dword ptr [shipstatsupdate_enable], #0
+je shipstatsupdate_exit
+mov [shipstats_basepointer], eax
+shipstatsupdate_exit:
+
+cmp dword ptr [shipstatsset_enable], #0
+je shipstatsset_exit
+shipstatsset_exit:
+
+
+shipstats_originalcode:
+db 8B 40 28 89 47 3C
+//mov eax,[eax+28]
+//mov [edi+3C],eax
+
+shipstats_exit:
+jmp shipstats_returnhere
+
+
+shipstats_searchedAOB + 3:
+shipstats_savedAOB:
+jmp shipstats_newmem
+nop
+shipstats_returnhere:
+
+
+[DISABLE]
+shipstats_savedAOB:
+db 8B 40 28 89 47 3C
+//mov eax,[eax+28]
+//mov [edi+3C],eax
+
+unregistersymbol(shipstats_savedAOB)
+
+dealloc(shipstats_newmem)"""
+
+[[cheat]]
+id = "ship-stats-update-base-address"
+name = "Ship Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstatsupdate_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ship-id"
+name = "ship_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "owner-id"
+name = "owner_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "at-planet-id"
+name = "at_planet_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "move-to-planet-id"
+name = "move_to_planet_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "moved-from-planet-id"
+name = "moved_from_planet_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "attack"
+name = "Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "attackbonus"
+name = "AttackBonus"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "hull"
+name = "Hull"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "hullbonus"
+name = "HullBonus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "experience"
+name = "Experience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "shield"
+name = "Shield"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "speed"
+name = "Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "built"
+name = "built"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "my-order"
+name = "my_order"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:IDLE",
+    "1:MOVE",
+    "2:ATTACK",
+    "3:TERRAFORM",
+    "4:DESTROY",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x4c"]

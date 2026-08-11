@@ -1,0 +1,209 @@
+[game]
+name = "Saints Row IV: Definitive Edition"
+exe = "saintsrowiv.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3331"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-ammo"
+name = "Infinite Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+"SaintsRowIV.exe"+660CCD:
+// This seems to be related to dual-wield pistols (2 shots = 1 ammo)
+// Get rid of the sub instruction that decrements ammo.
+// sub [eax],edx
+nop
+nop
+
+"SaintsRowIV.exe"+660D63:
+// Get rid of the sub instruction that decrements ammo.
+// sub [edi],eax
+nop
+nop
+
+"SaintsRowIV.exe"+838E08:
+// May be related to alt fire on some weapons
+nop
+nop
+nop
+nop
+nop
+nop
+
+[DISABLE]
+"SaintsRowIV.exe"+660CCD:
+sub [eax],edx
+
+"SaintsRowIV.exe"+660D63:
+sub [edi],eax
+
+"SaintsRowIV.exe"+838E08:
+sub [esi+0000017C],ecx"""
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+mov eax,#10000000000 // eax gets updated every time we spend or earn cache
+
+originalcode:
+mov [ecx],eax
+pop ebp
+ret 0004
+
+exit:
+jmp returnhere
+
+"SaintsRowIV.exe"+5DC418:
+jmp newmem
+nop
+returnhere:
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"SaintsRowIV.exe"+5DC418:
+mov [ecx],eax
+pop ebp
+ret 0004
+//Alt: db 89 01 5D C2 04 00"""
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(_Health,2048)
+label(_retHealth)
+label(_updateHealth)
+label(_oneHitKill)
+label(_lessHealth)
+
+label(iGodMode)
+label(iOneHitKill)
+
+registersymbol(iGodMode)
+registersymbol(iOneHitKill)
+
+_Health:
+cmp [esi+00001E0C],0 // == 0 if this is our player character
+jne _oneHitKill
+cmp [iGodMode],1
+jne _updateHealth
+// By now this is our player... but should we update health? What if we run over a health pickup?
+movss xmm1,[esi+00001E20]
+comiss xmm0,xmm1
+jb _lessHealth
+_updateHealth:
+movss [esi+00001E20],xmm0 // Not our player, so execute the instruction
+_lessHealth:
+jmp _retHealth
+
+_oneHitKill:
+cmp [iOneHitKill],1
+jne _updateHealth
+mov [esi+00001E20],0
+jmp _retHealth
+
+iGodMode:
+dd 0
+
+iOneHitKill:
+dd 0
+
+// Modified code
+"SaintsRowIV.exe"+5C53A7:
+jmp _Health
+nop
+nop
+nop
+_retHealth:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"SaintsRowIV.exe"+5C53A7:
+movss [esi+00001E20],xmm0
+//Alt: db F3 0F 11 86 20 1E 00 00
+
+unregistersymbol(godMode)
+unregistersymbol(oneHitKill)"""
+
+[[cheat]]
+id = "infinite-f1-power"
+name = "Infinite F1 Power"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(PowerA,1024)
+alloc(PowerB,1024)
+
+label(_retPowerA)
+label(_retPowerB)
+
+PowerA:
+mov [esi+edi*4+00002088],(float)1
+jmp _retPowerA
+
+PowerB:
+mov [esi+edi*4+00002088],(float)1
+jmp _retPowerB
+
+// Code injection
+"SaintsRowIV.exe"+24FDDA:
+jmp PowerA
+nop
+nop
+nop
+nop
+_retPowerA:
+
+"SaintsRowIV.exe"+24FDEA:
+jmp PowerB
+nop
+nop
+nop
+nop
+_retPowerB:
+
+[DISABLE]
+dealloc(PowerA)
+"SaintsRowIV.exe"+24FDDA:
+movss [esi+edi*4+00002088],xmm0
+
+dealloc(PowerB)
+"SaintsRowIV.exe"+24FDEA:
+movss [esi+edi*4+00002088],xmm0"""

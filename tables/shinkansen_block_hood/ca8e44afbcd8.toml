@@ -1,0 +1,2009 @@
+[game]
+name = "Block'hood"
+exe = "shinkansen_block_hood.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=2510"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "block-base-address-scan-initialization-activate-this-first"
+name = "Block Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Block_basepointer)
+registersymbol(Block_update_enable)
+registersymbol(Block_set_enable)
+registersymbol(Block_decayset_enable)
+registersymbol(Block_resourceoutputsset_enable)
+
+alloc(Block_basepointer, 4)
+alloc(Block_update_enable, 4)
+alloc(Block_set_enable, 4)
+alloc(Block_decayset_enable, 4)
+alloc(Block_resourceoutputsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Block_basepointer)
+unregistersymbol(Block_update_enable)
+unregistersymbol(Block_set_enable)
+unregistersymbol(Block_decayset_enable)
+unregistersymbol(Block_resourceoutputsset_enable)
+
+dealloc(Block_basepointer)
+dealloc(Block_update_enable)
+dealloc(Block_set_enable)
+dealloc(Block_decayset_enable)
+dealloc(Block_resourceoutputsset_enable)"""
+
+[[cheat]]
+id = "block-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Block Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Block_savedAOB)
+label(Block_returnhere)
+label(Block_originalcode)
+label(Block_exit)
+
+label(Block_update_exit)
+label(Block_set_exit)
+label(Block_decayset_exit)
+label(Block_resourceoutputsset_entry)
+label(Block_resourceoutputsset_exit)
+
+registersymbol(Block_savedAOB)
+
+//05566CDC - 83 EC 04              - sub esp,04
+//05566CDF - 8B 7D 08              - mov edi,[ebp+08]
+// Block:everyFrameUpdate+a
+//05566CE2 - 8B 87 64020000        - mov eax,[edi+00000264]
+//05566CE8 - 85 C0                 - test eax,eax
+//05566CEA - 7E 25                 - jle 05566D11
+//05566CEC - 8B 87 68020000        - mov eax,[edi+00000268]
+aobscan(Block_searchedAOB, 8B 87 64 02 00 00 85 C0)
+
+alloc(Block_newmem, 2048, Block_searchedAOB)
+alloc(Block_temp1, 4, Block_searchedAOB)
+alloc(Block_temp2, 4, Block_searchedAOB)
+alloc(Block_temp3, 4, Block_searchedAOB)
+alloc(Block_temp4, 4, Block_searchedAOB)
+alloc(Block_temp5, 4, Block_searchedAOB)
+
+
+Block_newmem:
+mov [Block_temp1], eax
+mov [Block_temp2], ebx
+mov [Block_temp3], ecx
+mov [Block_temp4], edx
+
+cmp dword ptr [Block_update_enable], #0
+je Block_update_exit
+cmp dword ptr [edi+264], #0
+je Block_update_exit
+mov [Block_basepointer], edi
+Block_update_exit:
+
+cmp dword ptr [Block_set_enable], #0
+je Block_set_exit
+Block_set_exit:
+
+cmp dword ptr [Block_decayset_enable], #0
+je Block_decayset_exit
+mov [edi+1f0], #0
+Block_decayset_exit:
+
+cmp dword ptr [Block_resourceoutputsset_enable], #0
+je Block_resourceoutputsset_exit
+mov ebx, [edi+d8]
+test ebx, ebx
+je Block_resourceoutputsset_exit
+mov ebx, [ebx+8]
+test ebx, ebx
+je Block_resourceoutputsset_exit
+mov ecx, [ebx+c]
+test ecx, ecx
+je Block_resourceoutputsset_exit
+add ecx, [ebx+c]
+add ecx, [ebx+c]
+add ecx, [ebx+c]
+Block_resourceoutputsset_entry:
+sub ecx, 4
+mov [ebx+ecx+10], (float)999
+cmp ecx, #0
+je Block_resourceoutputsset_exit
+jmp Block_resourceoutputsset_entry
+Block_resourceoutputsset_exit:
+
+mov eax, [Block_temp1]
+mov ebx, [Block_temp2]
+mov ecx, [Block_temp3]
+mov edx, [Block_temp4]
+
+
+Block_originalcode:
+db 8B 87 64 02 00 00
+//mov eax,[edi+00000264]
+
+
+Block_exit:
+jmp Block_returnhere
+
+
+Block_searchedAOB:
+Block_savedAOB:
+jmp Block_newmem
+nop
+Block_returnhere:
+
+
+[DISABLE]
+Block_savedAOB:
+db 8B 87 64 02 00 00
+//mov eax,[edi+00000264]
+
+unregistersymbol(Block_savedAOB)
+
+dealloc(Block_newmem)
+dealloc(Block_temp1)
+dealloc(Block_temp2)
+dealloc(Block_temp3)
+dealloc(Block_temp4)
+dealloc(Block_temp5)"""
+
+[[cheat]]
+id = "decay-set-to-0"
+name = "Decay Set to 0?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_decayset_enable"
+hops = []
+
+[[cheat]]
+id = "resource-outputs-set-to-massive"
+name = "Resource Outputs Set to Massive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_resourceoutputsset_enable"
+hops = []
+
+[[cheat]]
+id = "block-update-base-address"
+name = "Block Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = [
+    "+0xd8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = [
+    "+0xd8",
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "slot-1"
+name = "Slot 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = [
+    "+0xd8",
+    "+0x8",
+    "+0x10",
+]
+
+[[cheat]]
+id = "slot-2"
+name = "Slot 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = [
+    "+0xd8",
+    "+0x8",
+    "+0x14",
+]
+
+[[cheat]]
+id = "slot-3"
+name = "Slot 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = [
+    "+0xd8",
+    "+0x8",
+    "+0x18",
+]
+
+[[cheat]]
+id = "slot-4"
+name = "Slot 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = [
+    "+0xd8",
+    "+0x8",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "chance1"
+name = "chance1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "chance2"
+name = "chance2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x164"]
+
+[[cheat]]
+id = "havealt1"
+name = "haveAlt1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "havealt2"
+name = "haveAlt2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x169"]
+
+[[cheat]]
+id = "blocktocopy"
+name = "blockToCopy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x16c"]
+
+[[cheat]]
+id = "id"
+name = "ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "idinarray"
+name = "IDinArray"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "moneycost"
+name = "moneyCost"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x17c"]
+
+[[cheat]]
+id = "upkeep"
+name = "upKeep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "iswalkable"
+name = "isWalkable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x184"]
+
+[[cheat]]
+id = "allowupper"
+name = "allowUpper"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x185"]
+
+[[cheat]]
+id = "allowleft"
+name = "allowLeft"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x186"]
+
+[[cheat]]
+id = "allowright"
+name = "allowRight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x187"]
+
+[[cheat]]
+id = "allowfront"
+name = "allowFront"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "allowback"
+name = "allowBack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x189"]
+
+[[cheat]]
+id = "direction"
+name = "direction"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x18c"]
+
+[[cheat]]
+id = "connectforward"
+name = "connectForward"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "connectback"
+name = "connectBack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x191"]
+
+[[cheat]]
+id = "connectleft"
+name = "connectLeft"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x192"]
+
+[[cheat]]
+id = "connectright"
+name = "connectRight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x193"]
+
+[[cheat]]
+id = "connectupperforward"
+name = "connectUpperForward"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "connectupperback"
+name = "connectUpperBack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x195"]
+
+[[cheat]]
+id = "connectupperleft"
+name = "connectUpperLeft"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x196"]
+
+[[cheat]]
+id = "connectupperright"
+name = "connectUpperRight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x197"]
+
+[[cheat]]
+id = "currentconnectforward"
+name = "currentConnectForward"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "currentconnectback"
+name = "currentConnectBack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x199"]
+
+[[cheat]]
+id = "currentconnectleft"
+name = "currentConnectLeft"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x19a"]
+
+[[cheat]]
+id = "currentconnectright"
+name = "currentConnectRight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x19b"]
+
+[[cheat]]
+id = "currentconnectupperforward"
+name = "currentConnectUpperForward"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x19c"]
+
+[[cheat]]
+id = "currentconnectupperback"
+name = "currentConnectUpperBack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x19d"]
+
+[[cheat]]
+id = "currentconnectupperleft"
+name = "currentConnectUpperLeft"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x19e"]
+
+[[cheat]]
+id = "currentconnectupperright"
+name = "currentConnectUpperRight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x19f"]
+
+[[cheat]]
+id = "isaccessible"
+name = "isAccessible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "streetaccess"
+name = "streetAccess"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1a1"]
+
+[[cheat]]
+id = "upperlevelaccess"
+name = "upperLevelAccess"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1a2"]
+
+[[cheat]]
+id = "lowerlevelaccess"
+name = "lowerLevelAccess"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1a3"]
+
+[[cheat]]
+id = "distancetostreet"
+name = "distanceToStreet"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "inhabitable"
+name = "inhabitable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "rateofproduction"
+name = "rateOfProduction"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "staticoutput"
+name = "staticOutput"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "internalclock"
+name = "internalClock"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "idx"
+name = "idX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "idy"
+name = "idY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "idz"
+name = "idZ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "callonce"
+name = "callOnce"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "callonce2"
+name = "callOnce2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "cantiliverammount"
+name = "cantiliverAmmount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1cc"]
+
+[[cheat]]
+id = "heapindex"
+name = "heapIndex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "gcost"
+name = "gCost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "hcost"
+name = "hCost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1d8"]
+
+[[cheat]]
+id = "myparentid"
+name = "myParentID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1e8"]
+
+[[cheat]]
+id = "mytype"
+name = "myType"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1ec"]
+
+[[cheat]]
+id = "decay"
+name = "decay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1f0"]
+
+[[cheat]]
+id = "doneswapping"
+name = "doneSwapping"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1f4"]
+
+[[cheat]]
+id = "maxdecay"
+name = "maxDecay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "dodecay"
+name = "doDecay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1fc"]
+
+[[cheat]]
+id = "isdead"
+name = "isDead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1fd"]
+
+[[cheat]]
+id = "producedlastturn"
+name = "producedLastTurn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x1fe"]
+
+[[cheat]]
+id = "resourcespersecond"
+name = "resourcesPerSecond"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x200"]
+
+[[cheat]]
+id = "needsaccesstoproduce"
+name = "needsAccessToProduce"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x204"]
+
+[[cheat]]
+id = "needssoil"
+name = "needsSoil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x205"]
+
+[[cheat]]
+id = "doesntrotate"
+name = "doesntRotate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x206"]
+
+[[cheat]]
+id = "doesntdecay"
+name = "doesntDecay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x207"]
+
+[[cheat]]
+id = "localvariance"
+name = "localVariance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "doubleheight"
+name = "doubleHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x209"]
+
+[[cheat]]
+id = "tripleheight"
+name = "tripleHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x20a"]
+
+[[cheat]]
+id = "inhabited"
+name = "inhabited"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x20b"]
+
+[[cheat]]
+id = "willdie"
+name = "willDie"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x20c"]
+
+[[cheat]]
+id = "synergy"
+name = "synergy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x214"]
+
+[[cheat]]
+id = "prevsynergy"
+name = "prevSynergy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x218"]
+
+[[cheat]]
+id = "weathervarience"
+name = "weatherVarience"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x21c"]
+
+[[cheat]]
+id = "lastmonth"
+name = "lastMonth"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x220"]
+
+[[cheat]]
+id = "summermodif"
+name = "summerModif"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x224"]
+
+[[cheat]]
+id = "wintermodif"
+name = "winterModif"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x228"]
+
+[[cheat]]
+id = "fallmodif"
+name = "fallModif"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x22c"]
+
+[[cheat]]
+id = "springmodif"
+name = "springModif"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x230"]
+
+[[cheat]]
+id = "tick"
+name = "tick"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x234"]
+
+[[cheat]]
+id = "agentcreated"
+name = "agentCreated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x235"]
+
+[[cheat]]
+id = "agentinhabitingid"
+name = "agentInhabitingID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x238"]
+
+[[cheat]]
+id = "updatepropagation"
+name = "updatePropagation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x23c"]
+
+[[cheat]]
+id = "biodiversityacum"
+name = "biodiversityAcum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x240"]
+
+[[cheat]]
+id = "landvalacum"
+name = "landValAcum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x244"]
+
+[[cheat]]
+id = "biodiversity"
+name = "biodiversity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x248"]
+
+[[cheat]]
+id = "bioradius"
+name = "bioRadius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x24c"]
+
+[[cheat]]
+id = "landvalue"
+name = "landvalue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x250"]
+
+[[cheat]]
+id = "landvradius"
+name = "landVRadius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x254"]
+
+[[cheat]]
+id = "indestructible"
+name = "indestructible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x258"]
+
+[[cheat]]
+id = "leveloffinish"
+name = "levelOfFinish"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x25c"]
+
+[[cheat]]
+id = "regeneratedcount"
+name = "regeneratedCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x260"]
+
+[[cheat]]
+id = "inspectedcount"
+name = "inspectedCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x264"]
+
+[[cheat]]
+id = "inspectdecay"
+name = "inspectDecay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x268"]
+
+[[cheat]]
+id = "hovercount"
+name = "hoverCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x26c"]
+
+[[cheat]]
+id = "produceatstart"
+name = "produceAtStart"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "producefactor"
+name = "produceFactor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x274"]
+
+[[cheat]]
+id = "someoneshome"
+name = "someOnesHome"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x278"]
+
+[[cheat]]
+id = "eventmodifier"
+name = "eventModifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x27c"]
+
+[[cheat]]
+id = "rateofproductionmodif"
+name = "rateOfProductionModif"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x280"]
+
+[[cheat]]
+id = "realrateofproduction"
+name = "realRateOfProduction"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x284"]
+
+[[cheat]]
+id = "oldrealrateofproduction"
+name = "oldrealRateOfProduction"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x288"]
+
+[[cheat]]
+id = "customregen"
+name = "customRegen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x28c"]
+
+[[cheat]]
+id = "rseed"
+name = "rSeed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Block_basepointer"
+hops = ["+0x290"]

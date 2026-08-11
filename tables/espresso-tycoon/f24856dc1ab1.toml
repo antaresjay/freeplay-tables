@@ -1,0 +1,438 @@
+[game]
+name = "Espresso Tycoon"
+exe = "espresso tycoon.exe"
+notes = "Converted from a Cheat Engine table by HeathenGator. Source: https://fearlessrevolution.com/viewtopic.php?t=38682"
+verified = []
+author = "HeathenGator"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "money"
+name = "∞ Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address1,DreamWayGames.EspressoTycoon.MoneyManager:SpendMoneyAndGetInfo+ab)
+define(bytes1,F2 0F 5C C1)
+define(address2,DreamWayGames.EspressoTycoon.MoneyManager:CanSpendMoney+45)
+define(bytes2,40 0F 94 C0)
+
+[ENABLE]
+
+assert(address1,bytes1)
+assert(address2,bytes2)
+
+address1:
+  addsd xmm0,xmm1
+
+address2:
+  mov al,1
+  nop 2
+
+[DISABLE]
+
+address1:
+  db bytes1
+
+address2:
+  db bytes2"""
+
+[[cheat]]
+id = "low-price"
+name = "🔒 Low Price"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,DreamWayGames.EspressoTycoon.SocialGroupPreferences:LikesMargin)
+define(bytes,55 48 8B EC)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  mov al,1
+  ret
+  nop
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "maintenance"
+name = "✕ Maintenance"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// ==========================================
+// PATCH 1: Action Decay (Toilets, Machines)
+// ==========================================
+// Scan for: movss [rsi+000000D8],xmm5
+aobscanregion(SubProgAOB,DreamWayGames.EspressoTycoon.InteractiveItem:SubtractProgressStep,DreamWayGames.EspressoTycoon.InteractiveItem:SubtractProgressStep+100, F3 0F 11 AE D8 00 00 00)
+alloc(newmemSub,$64,SubProgAOB)
+label(returnSub)
+
+newmemSub:
+  // Brainwash: Ignore xmm5, write 1.0f (3F800000) directly to progress
+  mov dword ptr [rsi+000000D8], 3F800000
+  jmp returnSub
+
+SubProgAOB:
+  jmp newmemSub
+  nop 3
+returnSub:
+registersymbol(SubProgAOB)
+
+// ==========================================
+// PATCH 2: Timed Decay (Floors, Tables)
+// ==========================================
+// Scan for: movzx eax,byte ptr [rsi+000000EB] followed by test eax,eax
+aobscanregion(RestProgAOB,DreamWayGames.EspressoTycoon.InteractiveItem:RestartTimedProgress,DreamWayGames.EspressoTycoon.InteractiveItem:RestartTimedProgress+300, 0F B6 86 EB 00 00 00 85 C0)
+alloc(newmemRest,$64,RestProgAOB)
+label(returnRest)
+
+newmemRest:
+  // 1. Force progress to 1.0f
+  mov dword ptr [rsi+000000D8], 3F800000
+
+  // 2. Force eax to 0.
+  // This guarantees the 'test' instruction will trigger the 'je' jump.
+  xor eax, eax
+  test eax, eax
+  jmp returnRest
+
+RestProgAOB:
+  jmp newmemRest
+  nop 4
+returnRest:
+registersymbol(RestProgAOB)
+
+[DISABLE]
+SubProgAOB:
+  db F3 0F 11 AE D8 00 00 00
+unregistersymbol(SubProgAOB)
+dealloc(newmemSub)
+
+// Restore Timed Decay
+RestProgAOB:
+  db 0F B6 86 EB 00 00 00 85 C0
+unregistersymbol(RestProgAOB)
+dealloc(newmemRest)"""
+
+[[cheat]]
+id = "rubbish"
+name = "✕ Rubbish"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address1,DreamWayGames.EspressoTycoon.Customer:SpawnRubbish)
+define(bytes1,55 48 8B EC)
+define(address2,DreamWayGames.EspressoTycoon.AnimalController:ShouldLeaveRubbish)
+
+[ENABLE]
+
+assert(address1,bytes1)
+assert(address2,55)
+
+address1:
+  xor eax,eax
+  ret
+  nop
+
+address2:
+  ret
+
+[DISABLE]
+
+address1:
+  db bytes1
+
+address2:
+  db 55"""
+
+[[cheat]]
+id = "menu"
+name = "🔓 Menu"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,DreamWayGames.EspressoTycoon.MenuWindowUI:UpdateSlotStates+69)
+define(bytes,40 0F 94 C2)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  xor dl,dl
+  nop 2
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "research-speed-multiplier"
+name = "Research Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Scans for:
+// addsd xmm0,xmm1      (adds the double-precision increment to current progress)
+// cvtsd2ss xmm5,xmm0   (converts it back to float)
+// movss [rsi+6C],xmm5  (stores it back into _researchProgress)
+aobscanregion(ResearchSpeedAOB,DreamWayGames.EspressoTycoon.ResearchCategory:MakeProgressIfPossible,DreamWayGames.EspressoTycoon.ResearchCategory:MakeProgressIfPossible+300, F2 0F 58 C1 F2 0F 5A E8 F3 0F 11 6E 6C)
+alloc(newmem,$64,DreamWayGames.EspressoTycoon.ResearchCategory:MakeProgressIfPossible)
+alloc(fSpeedMult,$8,DreamWayGames.EspressoTycoon.ResearchCategory:MakeProgressIfPossible) // Allocated as 8 bytes because xmm1 is double-precision here
+
+// Set your custom multiplier here
+fSpeedMult:
+dq (double)500.0
+
+newmem:
+  mulsd xmm1, [fSpeedMult] // Multiply the incoming increment by your multiplier
+  addsd xmm0, xmm1         // Original code: Add increment to current progress
+  cvtsd2ss xmm5, xmm0      // Original code: Convert back to float
+  jmp return
+
+ResearchSpeedAOB:
+  jmp newmem
+  nop 3 // Pad the remaining 3 bytes of the 8 bytes we overwrote
+return:
+
+registersymbol(ResearchSpeedAOB)
+registersymbol(fSpeedMult)
+
+[DISABLE]
+ResearchSpeedAOB:
+  // Restore original instructions
+  db F2 0F 58 C1 F2 0F 5A E8
+
+unregistersymbol(ResearchSpeedAOB)
+unregistersymbol(fSpeedMult)
+dealloc(newmem)
+dealloc(fSpeedMult)"""
+
+[[cheat]]
+id = "fspeedmult"
+name = "fSpeedMult"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fSpeedMult"
+hops = []
+
+[[cheat]]
+id = "temporal-preferences"
+name = "🔒 Temporal Preferences"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,DreamWayGames.EspressoTycoon.CoffeePreferencesManager:DayPassed+58)
+define(bytes,75 11)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  db EB 11
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "default-logo"
+name = "Default Logo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Steaming Cup",
+    "1:2 Coffee Beans",
+    "2:Takeout Cup",
+    "3:3 Coffee Beans",
+    "4:Saucer Cup",
+    "5:Mug",
+    "6:Steaming Mug",
+    "7:Coffee Bean Cup",
+    "8:Star",
+    "9:Crown",
+    "10:Thumbs Up",
+    "11:$",
+    "12:Nuclear",
+    "13:Up/Down",
+    "14:Head & Mask",
+    "15:Tropico",
+    "16:Heart",
+    "17:Gift",
+    "18:Plane",
+    "19:Rocket",
+    "20:Music Note",
+    "21:Smartphone",
+    "22:Chef Hat",
+    "23:Book",
+    "24:Lightning",
+    "25:Gingerbread Man",
+    "26:Donut",
+    "27:Lemon",
+    "28:Banana",
+    "29:Money Bag",
+    "30:Camera",
+    "31:Ankh",
+    "32:Dreamway",
+    "33:Square",
+    "34:Circle",
+    "35:Triangle",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MyDefaultLogo"
+hops = []
+
+[[cheat]]
+id = "default-font"
+name = "Default Font"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:StyleScript",
+    "1:Lacquer",
+    "2:Teko Small",
+    "3:Bungee",
+    "4:GrenzeGotisch",
+    "5:Megrim",
+    "6:Felipa",
+    "7:Charm",
+    "8:MysteryQuest",
+    "9:Jersey10",
+    "10:Montserrat",
+    "11:RugeBoogie",
+    "12:PermanentMarker",
+    "13:PlaywriteVNGuides",
+    "14:GideonRoman",
+    "15:Gwendolyn Bold",
+    "16:UnifrakturMaguntia",
+    "17:LaBelleAurore",
+    "18:Graduate",
+    "19:Sacramento",
+    "20:RubikDirt",
+    "21:SigmarOne",
+    "22:Chewy",
+    "23:RockSalt",
+    "24:FrederickatheGreat",
+    "25:EmilysCandy",
+    "26:EagleLake",
+    "27:MoonDance",
+    "28:Aclonica",
+    "29:Aboreto",
+    "30:Tiny5",
+    "31:Aldrich",
+    "32:Sunshiney",
+    "33:Delius",
+    "34:MrDeHaviland",
+    "35:RubikDistressed",
+    "36:VinaSans",
+    "37:SpecialElite",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MyDefaultFont"
+hops = []
+
+[[cheat]]
+id = "items"
+name = "🔓 Items"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Scans only inside the InitializeItems function. The ? wildcards ignore the relative jump distance.
+aobscanregion(ResearchUnlockAOB,DreamWayGames.EspressoTycoon.ItemManager:InitializeItems,DreamWayGames.EspressoTycoon.ItemManager:InitializeItems+300, 0F B6 40 30 85 C0 0F 85 ? ? ? ? 83 3F 00)
+registersymbol(ResearchUnlockAOB)
+
+alloc(OriginalJumpBytes,6,DreamWayGames.EspressoTycoon.ItemManager:InitializeItems)
+registersymbol(OriginalJumpBytes)
+
+// Dynamically save the original jump (whether it's the vanilla one or the modded one)
+OriginalJumpBytes:
+readmem(ResearchUnlockAOB+6,6)
+
+// NOP out the jump
+ResearchUnlockAOB+6:
+  db 90 90 90 90 90 90
+
+[DISABLE]
+// Put the exact saved bytes back
+ResearchUnlockAOB+6:
+  readmem(OriginalJumpBytes,6)
+
+unregistersymbol(ResearchUnlockAOB)
+unregistersymbol(OriginalJumpBytes)
+dealloc(OriginalJumpBytes)"""
+
+[[cheat]]
+id = "coffee-ingredients"
+name = "🔓 Coffee Ingredients"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,DreamWayGames.EspressoTycoon.CoffeeEditorElementsManager:InitUnlockedElements+6e)
+define(bytes,0F 85 29 01 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+
+address:
+  jmp DreamWayGames.EspressoTycoon.CoffeeEditorElementsManager:InitUnlockedElements+19d
+  nop
+
+[DISABLE]
+
+address:
+  db bytes"""

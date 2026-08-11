@@ -1,0 +1,110 @@
+[game]
+name = "Paralives table v: 1.0 CT"
+exe = "paralives.exe"
+notes = "Converted from a Cheat Engine table by FreshMods. Source: https://fearlessrevolution.com/viewtopic.php?t=39745"
+verified = []
+author = "FreshMods"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(money, MoneyManager:get_Money+1,  MoneyManager:get_Money+4c, 48 63 40 50 48 8D 65 00) // should be unique
+alloc(newmem,$1000,money)
+
+label(code)
+label(return)
+
+label(moneyPtr)
+registersymbol(moneyPtr)
+
+label(moneyFlag)
+registersymbol(moneyFlag)
+
+newmem:
+  mov [moneyPtr], rax
+
+  cmp dword ptr [moneyFlag], 1
+  jne code
+
+  mov [rax+50], #999999
+code:
+  movsxd  rax,dword ptr [rax+50]
+  lea rsp,[rbp+00]
+  jmp return
+
+moneyPtr:
+dq 0
+
+moneyFlag:
+dd 0
+
+money:
+  jmp newmem
+  nop 3
+return:
+registersymbol(money)
+
+[DISABLE]
+
+money:
+  db 48 63 40 50 48 8D 65 00
+
+unregistersymbol(money)
+unregistersymbol(moneyPtr)
+unregistersymbol(moneyFlag)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: MoneyManager:get_Money+43
+
+MoneyManager:get_Money+15: 48 8B C8                       - mov rcx,rax
+MoneyManager:get_Money+18: 83 38 00                       - cmp dword ptr [rax],00
+MoneyManager:get_Money+1b: 66 66 90                       - nop 3
+MoneyManager:get_Money+1e: 49 BB D0 D6 4E 3A D8 01 00 00  - mov r11,HouseholdManager:get_CurrentHousehold
+MoneyManager:get_Money+28: 41 FF D3                       - call r11
+MoneyManager:get_Money+2b: 48 8B C8                       - mov rcx,rax
+MoneyManager:get_Money+2e: 83 38 00                       - cmp dword ptr [rax],00
+MoneyManager:get_Money+31: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+MoneyManager:get_Money+36: 49 BB D0 46 27 2E D7 01 00 00  - mov r11,AssetHousehold:get_Data
+MoneyManager:get_Money+40: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+MoneyManager:get_Money+43: 48 63 40 50                    - movsxd  rax,dword ptr [rax+50]
+// ---------- DONE INJECTING  ----------
+MoneyManager:get_Money+47: 48 8D 65 00                    - lea rsp,[rbp+00]
+MoneyManager:get_Money+4b: 5D                             - pop rbp
+MoneyManager:get_Money+4c: C3                             - ret 
+1D7664B320D: 00 00                          - add [rax],al
+1D7664B320F: 00 01                          - add [rcx],al
+1D7664B3211: 04 02                          - add al,02
+1D7664B3213: 05 04 03 01 50                 - add eax,50010304
+1D7664B3218: 00 00                          - add [rax],al
+1D7664B321A: 00 00                          - add [rax],al
+1D7664B321C: 00 00                          - add [rax],al
+}"""
+
+[[cheat]]
+id = "edit-money"
+name = "Edit Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "moneyPtr"
+hops = ["+0x50"]

@@ -1,0 +1,744 @@
+[game]
+name = "Disciples 3 Renaissance/Resurrection"
+exe = "disciplesiii.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3033"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-disciples-iii-resurrection-v1-09-steam-script-1-0-aob"
+name = "[X] <== Disciples III Resurrection v1.09 (steam) Script 1.0 AOB"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Game Title    : Disciples III Ressurection
+ Game Version  : 1.09
+ Game Sponsor  : Myself
+ Process Name  : DisciplesIII.exe
+ Script Version: 1.0
+ CE Version    : 6.3
+ Release date  : 01-Nov-2013
+ Author        : Recifense
+ History:
+ 04-Nov-2011: First Release (v1.07)
+ 01-Nov-2013: Release for v1.09 (steam)
+ Features:
+ - Minimum Resources:
+   - Gold
+   - Stone
+   - Mira
+   - Life mana
+   - Infernal mana
+   - Grove mana
+   - Runstone mana
+   - Death mana
+ - Movement Points
+ - God Mode
+ - Minimum XP
+ - Minimum Inventory Items
+ - pointers
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"DisciplesIII.exe")
+
+//=========================================
+// Constants used in the script (that can be changed)
+define(ctMMRS,#26300)  // Minimum Resources
+define(ctMMXP,#3630)   // Minimum XP
+
+[ENABLE]
+//=========================================
+//Look for hack points (cheating entry points)
+
+AOBScan(aobMPRS,c6 84 24 70 02 00 00 02 e8 ?? ?? ?? ?? 8d 8c 24 28 01 00 00)
+AOBScan(aobMAMP,89 81 a0 bb 00 00 b0 01 c3 32 c0 c3 cc cc ?? ?? ?? ?? ?? ??)
+AOBScan(aobGDMD,85 c0 89 56 18 ?? ?? 01 28 85 ed 0f 84 ?? ?? ?? ?? 8b 07 55)
+AOBScan(aobMAM1,89 8e a0 bb 00 00 8b 0d ?? ?? ?? ?? 8b 01 8d 96 64 ba 00 00)
+AOBScan(aobMPHO,8b 47 18 85 c0 53 b3 01 ?? ?? 83 bf b4 bb 00 00 01 ?? ?? 32 db 8b 07)
+AOBScan(aobMPFN,8b 83 a0 bb 00 00 8b 16 55 50 68 ?? ?? ?? ?? 8b ce ff 52 04)
+AOBScan(aobMGST,8a 81 68 01 00 00 84 c0 ?? ?? 8b df 8d b3 f4 08 00 00 8d bd)
+aobscan(aobMPIY,8b 43 08 83 f8 01 ?? ?? b8 01 00 00 00 50 68 ?? ?? ?? ?? 8d)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonPlayerRes)
+label(_MonPR00)
+label(_MonPR01)
+label(_MonPR02)
+label(_MonPR03)
+label(_MonPR04)
+label(_MonPR05)
+label(_MonPR06)
+label(_BackMPR)
+label(_ExitMPR)
+label(_MonArmyMP)
+label(_BackMAM)
+label(_ExitMAM)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonArmyMP1)
+label(_BackMA1)
+label(_ExitMA1)
+label(_MonPlayerHero)
+label(_BackMPH)
+label(_ExitMPH)
+label(_MonPlayerFaction)
+label(_MonPF00)
+label(_BackMPF)
+label(_ExitMPF)
+label(_MonGameStart)
+label(_BackMGS)
+label(_ExitMGS)
+label(_MonPlayerInv)
+label(_BackMPI)
+label(_ExitMPI)
+label(iEnableMPR)
+label(iEnableMAM)
+label(iEnableGMD)
+label(iEnableMXP)
+label(iEnableMPI)
+label(iMinXP)
+label(iMinRes)
+label(aFaction)
+label(pGold)
+label(pHero)
+label(pUnit)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(iEnableMPR)
+registersymbol(iEnableMAM)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMXP)
+registersymbol(iEnableMPI)
+registersymbol(iMinXP)
+registersymbol(iMinRes)
+registersymbol(aFaction)
+registersymbol(pGold)
+registersymbol(pHero)
+registersymbol(pUnit)
+registersymbol(aobMPRS)
+registersymbol(aobMAMP)
+registersymbol(aobGDMD)
+registersymbol(aobMAM1)
+registersymbol(aobMPHO)
+registersymbol(aobMPFN)
+registersymbol(aobMGST)
+registersymbol(aobMPIY)
+
+//=========================================
+MyCode:
+//========================================= 1.09
+// Player Resources at Minimum
+_MonPlayerRes:
+ mov [pGold],ebp                // Save pointer for debugging
+
+ cmp dword ptr [iEnableMPR],0
+ je _ExitMPR                    // Jump if feature is disabled
+
+ cmp dword ptr [ebp],1          // Is it the player's resource structure?
+ jne _ExitMPR                   // Jump if false
+
+ mov ecx,[iMinRes]              // Minimum Value
+
+//----> Checking Gold
+ cmp dword ptr [ebp+28],0       // Is there this resource?
+ je _MonPR00                    // Jump if false
+
+ cmp ecx,[ebp+28]               // Current resource >= Minimum?
+ jle _MonPR00                   // Jump if true
+
+ mov [ebp+28],ecx               // make this resource = minimum
+
+//----> Checking Stone
+_MonPR00:
+ cmp dword ptr [ebp+34],0       // Is there this resource?
+ je _MonPR01                    // Jump if false
+
+ cmp ecx,[ebp+34]               // Current resource >= Minimum?
+ jle _MonPR01                   // Jump if true
+
+ mov [ebp+34],ecx               // make this resource = minimum
+
+//----> Checking Mira
+_MonPR01:
+ cmp dword ptr [ebp+40],0       // Is there this resource?
+ je _MonPR02                    // Jump if false
+
+ cmp ecx,[ebp+40]               // Current resource >= Minimum?
+ jle _MonPR02                   // Jump if true
+
+ mov [ebp+40],ecx               // make this resource = minimum
+
+//----> Checking Life Mana
+_MonPR02:
+ cmp dword ptr [ebp+4c],0       // Is there this resource?
+ je _MonPR03                    // Jump if false
+
+ cmp ecx,[ebp+4c]               // Current resource >= Minimum?
+ jle _MonPR03                   // Jump if true
+
+ mov [ebp+4c],ecx               // make this resource = minimum
+
+//----> Checking Infernal Mana
+_MonPR03:
+ cmp dword ptr [ebp+58],0       // Is there this resource?
+ je _MonPR04                    // Jump if false
+
+ cmp ecx,[ebp+58]               // Current resource >= Minimum?
+ jle _MonPR04                   // Jump if true
+
+ mov [ebp+58],ecx               // make this resource = minimum
+
+//----> Checking Grove Mana
+_MonPR04:
+ cmp dword ptr [ebp+64],0       // Is there this resource?
+ je _MonPR05                    // Jump if false
+
+ cmp ecx,[ebp+64]               // Current resource >= Minimum?
+ jle _MonPR05                   // Jump if true
+
+ mov [ebp+64],ecx               // make this resource = minimum
+
+//----> Checking Runstone Mana
+_MonPR05:
+ cmp dword ptr [ebp+70],0       // Is there this resource?
+ je _MonPR06                    // Jump if false
+
+ cmp ecx,[ebp+70]               // Current resource >= Minimum?
+ jle _MonPR06                   // Jump if true
+
+ mov [ebp+70],ecx               // make this resource = minimum
+
+//----> Checking Death Mana
+_MonPR06:
+ cmp dword ptr [ebp+7c],0       // Is there this resource?
+ je _ExitMPR                    // Jump if false
+
+ cmp ecx,[ebp+7c]               // Current resource >= Minimum?
+ jle _ExitMPR                   // Jump if true
+
+ mov [ebp+7c],ecx               // make this resource = minimum
+
+_ExitMPR:
+ mov byte ptr [esp+00000270],02 // Original code
+ jmp _BackMPR                   // Back to main code
+
+//========================================= 1.09
+_MonArmyMP:
+ push edx
+
+ cmp dword ptr [iEnableMAM],0
+ je _ExitMAM                    // Jump if feature is disabled
+
+ mov edx,[ecx+0000ba18]         // Get pointer to faction
+ mov edx,[edx+1]                // Get Faction name
+
+ cmp edx,[aFaction]             // Is it a player's Army?
+ jne _ExitMAM                   // Jump if false
+
+ mov eax,[ecx+0000bba0]         // Get current MP
+
+_ExitMAM:
+ pop edx
+
+ mov [ecx+0000bba0],eax         // Original code
+ jmp _BackMAM                   // Back to main code
+
+//========================================= 1.09
+_GodMode:
+ push ecx
+
+ mov [pUnit],esi                // Save pointer for debugging
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                    // Jump if feature is disabled
+
+ mov ecx,[esi+0000ba18]         // Get pointer to faction
+ mov ecx,[ecx+1]                // Get Faction name
+
+ cmp ecx,[aFaction]             // Is it a player's Army?
+ jne _ExitGMD                   // Jump if false
+
+ mov edx,[esi+18]               // Get current HP
+
+_ExitGMD:
+ pop ecx
+
+ test eax,eax                   // Original code
+ mov [esi+18],edx               // Original code
+ jmp _BackGMD                   // Back to main code
+
+//========================================= 1.09
+_MonArmyMP1:
+ push edx
+
+ cmp dword ptr [iEnableMAM],0
+ je _ExitMA1                    // Jump if feature is disabled
+
+ mov edx,[esi+0000ba18]         // Get pointer to faction
+ mov edx,[edx+1]                // Get Faction name
+
+ cmp edx,[aFaction]             // Is it a player´s Army?
+ jne _ExitMA1                   // Jump if false
+
+ mov ecx,[esi+0000bba0]         // Get current MP
+
+_ExitMA1:
+ pop edx
+
+ mov [esi+0000bba0],ecx         // Original code
+ jmp _BackMA1                   // Back to main code
+
+//========================================= 1.09
+_MonPlayerHero:
+ mov eax,[edi+0000bb98]         // Is it a Leader?
+ cmp eax,0                      // Is it a Leader?
+ je _ExitMPH                    // Jump if false
+
+ mov [pHero],edi                // Save pointer for debugging
+
+_ExitMPH:
+ mov eax,[edi+18]               // Original code
+ test eax,eax                   // Original code
+ jmp _BackMPH                   // Back to main code
+
+//========================================= 1.09
+_MonPlayerFaction:
+ mov eax,[ebx+0000bb98]         // Is it a Leader?
+ cmp eax,0                      // Is it a Leader?
+ je _MonPF00                    // Jump if false
+
+ mov eax,[ebx+0000ba18]         // Get ptr to Hero´s faction
+ mov eax,[eax+1]                // Get faction Name
+ mov [aFaction],eax             // Save it for further use
+
+_MonPF00:
+ cmp dword ptr [iEnableMXP],0
+ je _ExitMPF                    // Jump if feature is disabled
+
+ cmp dword ptr [ebx+44],0       // Is there any XP?
+ je _ExitMPF                    // Jump if false
+
+ mov eax,[iMinXP]               // Get mininum XP value
+
+ cmp eax,[ebx+44]               // Current XP >= minimum?
+ jle _ExitMPF                   // Jump if true
+
+ mov [ebx+44],eax               // Make current XP = minimum
+
+_ExitMPF:
+ mov eax,[ebx+0000bba0]         // Original code
+ jmp _BackMPF                   // Back to main code
+
+//========================================= 1.09
+_MonGameStart:
+ mov dword ptr [aFaction],'ce63'
+
+_ExitMGS:
+ mov al,[ecx+00000168]          // Original code
+ jmp _BackMGS                   // Back to main code
+
+//========================================= 1.09
+_MonPlayerInv:
+ cmp dword ptr [iEnableMPI],0
+ je _ExitMPI                    // Jump if feature is disabled
+
+ mov eax,[esp+24]
+ cmp eax,[pHero]
+ jne _ExitMPI
+
+ mov eax,#10
+ cmp eax,[ebx+08]
+ jle _ExitMPI
+
+ mov [ebx+08],eax
+
+_ExitMPI:
+ mov eax,[ebx+08]               // Original code
+ cmp eax,01                     // Original code
+ jmp _BackMPI                   // Back to main code
+
+//=========================================
+ db '================================>'
+ db 'CE6.3 Script by Recifense 110113'
+//=========================================
+// Variables
+iEnableMPR:
+ dd 0
+iEnableMAM:
+ dd 0
+iEnableGMD:
+ dd 0
+iEnableMXP:
+ dd 0
+iEnableMPI:
+ dd 0
+iMinXP:
+ dd ctMMXP
+iMinRes:
+ dd ctMMRS
+aFaction:
+ db 'CE63'
+pGold:
+ dd 0
+pHero:
+ dd 0
+pUnit:
+ dd 0
+
+//=========================================
+// Hacking Points
+aobMPRS:
+ jmp _MonPlayerRes
+ nop
+ nop
+ nop
+_BackMPR:
+
+aobMAMP:
+ jmp _MonArmyMP
+ nop
+_BackMAM:
+
+aobGDMD:
+ jmp _GodMode
+_BackGMD:
+
+aobMAM1:
+ jmp _MonArmyMP1
+ nop
+_BackMA1:
+
+aobMPHO:
+ jmp _MonPlayerHero
+_BackMPH:
+
+aobMPFN:
+ jmp _MonPlayerFaction
+ nop
+_BackMPF:
+
+aobMGST:
+ jmp _MonGameStart
+ nop
+_BackMGS:
+
+aobMPIY:
+ jmp _MonPlayerInv
+ nop
+_BackMPI:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+aobMPRS:
+// mov byte ptr [esp+00000270],02
+ db c6 84 24 70 02 00 00 02
+
+aobMAMP:
+// mov [ecx+0000bba0],eax
+ db 89 81 a0 bb 00 00
+
+aobGDMD:
+// test eax,eax
+// mov [esi+18],edx
+ db 85 c0 89 56 18
+
+aobMAM1:
+// mov [esi+0000bba0],ecx
+ db 89 8e a0 bb 00 00
+
+aobMPHO:
+// mov eax,[edi+18]
+// test eax,eax
+ db 8b 47 18 85 c0
+
+aobMPFN:
+// mov eax,[ebx+0000BBA0]
+ db 8b 83 a0 bb 00 00
+
+aobMGST:
+// mov al,[ecx+00000168]
+ db 8a 81 68 01 00 00
+
+aobMPIY:
+// mov eax,[ebx+08]
+// cmp eax,01
+ db 8b 43 08 83 f8 01
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(iEnableMPR)
+unregistersymbol(iEnableMAM)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMXP)
+unregistersymbol(iEnableMPI)
+unregistersymbol(iMinXP)
+unregistersymbol(iMinRes)
+unregistersymbol(aFaction)
+unregistersymbol(pGold)
+unregistersymbol(pHero)
+unregistersymbol(pUnit)
+unregistersymbol(aobMPRS)
+unregistersymbol(aobMAMP)
+unregistersymbol(aobGDMD)
+unregistersymbol(aobMAM1)
+unregistersymbol(aobMPHO)
+unregistersymbol(aobMPFN)
+unregistersymbol(aobMGST)
+unregistersymbol(aobMPIY)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}"""
+
+[[cheat]]
+id = "minimum-resource-value"
+name = "Minimum Resource Value ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinRes"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-move-points-1-0"
+name = "Enable/Disable Unlimited Move Points => (1/0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMAM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-god-mode-1-0"
+name = "Enable/Disable God Mode => (1/0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGMD"
+hops = []
+
+[[cheat]]
+id = "minimum-xp-value"
+name = "Minimum XP Value ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinXP"
+hops = []
+
+[[cheat]]
+id = "enable-disable-minimum-inventory-items-1-0"
+name = "Enable/Disable Minimum Inventory Items => (1/0)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMPI"
+hops = []
+
+[[cheat]]
+id = "current-army-leader-hp"
+name = "Current Army Leader HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "current-army-leader-xp"
+name = "Current Army Leader XP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "attrib-10"
+name = "Attrib +10"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "current-army-leader-skill-points"
+name = "Current Army Leader Skill Points"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x2ac"]
+
+[[cheat]]
+id = "current-army-leader-base-initiative"
+name = "Current Army Leader Base Initiative"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "current-army-leader-base-strength"
+name = "Current Army Leader Base Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "current-army-leader-base-intellect"
+name = "Current Army Leader Base Intellect"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "current-army-leader-base-dexterity"
+name = "Current Army Leader Base Dexterity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "current-army-leader-base-agility"
+name = "Current Army Leader Base Agility"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "current-army-leader-base-endurance"
+name = "Current Army Leader Base Endurance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "current-army-leader-base-armor"
+name = "Current Army Leader Base Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x7c"]

@@ -1,0 +1,522 @@
+[game]
+name = "Plague, Inc: Evolved"
+exe = "plagueincevolved.exe"
+notes = "Converted from a Cheat Engine table by jgoemat. Source: https://fearlessrevolution.com/viewtopic.php?t=7715"
+verified = []
+author = "jgoemat"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "script-select-country"
+name = "Script: Select Country"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : PlagueIncEvolved.exe
+  Version: 
+  Date   : 2018-04-12
+  Author : Jason
+
+  Called when you select a country.  This accesses the pointer in SPLocalDisease
+  that points to SPLocalDiseaseData.  The actual offset is A4 and this accesse
+  EDI+54 so EDI must point to +50 into the structure.  This seems to be one
+  instance of SPLocalDisease with the pointer to SPLocalDiseaseData for whichever
+  country is selected.
+
+  globals+0200: pLocalDiseaseData
+  globals+0204: pCHUDNecroaSubScreen
+  globals+1100: flag 1 for cheat to infect country
+
+  CHUDNecroaSubScreen is subclass of CHUDContextSubScreen
+
+  1c: humanBar (HudBarObject)
+  20: currentHumanBar (HudBarObject)
+  24: humanText (HudTextObject)
+  28: currentHumanText (HutTextObject)
+  2c: contextTitleText (UILabel)
+  58: _state (CHUDContextSubscreen.ContextState)
+  44: abilitySubScreen (CHUDAbilitySubScreen)
+  50: mpDisease (Disease)
+  54: mpLocalDisease (LocalDisease) - selected country's disease data
+      A4: mpLocalDiseaseData
+
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+aobscan(INJECT_SELECT_COUNTRY,89 85 58 ff ff ff 8B 47 54 83 EC 0C 50 39 00 E8) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+  mov [globals+0204],edi // store pointer to CHUDNecroaSubScreen?  Base Class CHUDContextSubScreen
+code:
+
+  mov eax,[edi+54] // original code
+  mov [globals+0200],eax // store pointer to SPLocalDisease
+
+  push ebx
+  mov ebx,[eax+a4] // mpDiseaseData
+  test ebx,ebx
+  jz skip
+
+  cmp [globals+1100],1
+  jne skip
+  cmp [ebx+fc],0 // uninfectedPopulation high 32 bits
+  ja doIt
+  cmp [ebx+f8],0 // uninfectedPopulation low 32 bits
+  ja doIt
+  doIt:
+  cmp [ebx+84],0 // infectedPopulationOverride
+  ja skip
+  mov [ebx+84],(float)100.0 // will cause the game to add this infected
+  skip:
+
+  pop ebx
+
+  sub esp,0C       // original code
+  jmp return
+
+INJECT_SELECT_COUNTRY+6:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT_SELECT_COUNTRY)
+
+[DISABLE]
+
+INJECT_SELECT_COUNTRY+6:
+  db 8B 47 54 83 EC 0C
+
+unregistersymbol(INJECT_SELECT_COUNTRY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 4AEF4F66
+
+""+4AEF4F43: 8B 85 5C FF FF FF  -  mov eax,[ebp-000000A4]
+""+4AEF4F49: 83 EC 08           -  sub esp,08
+""+4AEF4F4C: 51                 -  push ecx
+""+4AEF4F4D: 50                 -  push eax
+""+4AEF4F4E: 39 00              -  cmp [eax],eax
+""+4AEF4F50: E8 3B BA FD FF     -  call 4AED0990
+""+4AEF4F55: 83 C4 10           -  add esp,10
+""+4AEF4F58: E9 B4 00 00 00     -  jmp 4AEF5011
+""+4AEF4F5D: 8B 47 28           -  mov eax,[edi+28]
+""+4AEF4F60: 89 85 58 FF FF FF  -  mov [ebp-000000A8],eax
+// ---------- INJECTING HERE ----------
+""+4AEF4F66: 8B 47 54           -  mov eax,[edi+54]
+""+4AEF4F69: 83 EC 0C           -  sub esp,0C
+// ---------- DONE INJECTING  ----------
+""+4AEF4F6C: 50                 -  push eax
+""+4AEF4F6D: 39 00              -  cmp [eax],eax
+""+4AEF4F6F: E8 14 A2 FF FF     -  call 4AEEF188
+""+4AEF4F74: 83 C4 10           -  add esp,10
+""+4AEF4F77: 89 55 CC           -  mov [ebp-34],edx
+""+4AEF4F7A: 89 45 C8           -  mov [ebp-38],eax
+""+4AEF4F7D: 89 85 70 FF FF FF  -  mov [ebp-00000090],eax
+""+4AEF4F83: 8B 45 CC           -  mov eax,[ebp-34]
+""+4AEF4F86: 89 85 74 FF FF FF  -  mov [ebp-0000008C],eax
+""+4AEF4F8C: 8D 85 70 FF FF FF  -  lea eax,[ebp-00000090]
+}"""
+
+[[cheat]]
+id = "cheat-infect-countries-you-select"
+name = "CHEAT: Infect countries you select"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+globalalloc(globals,$100000)
+
+[enable]
+globals+1100:
+  dd 1
+
+[disable]
+globals+1100:
+  dd 0"""
+
+[[cheat]]
+id = "plocaldisease"
+name = "pLocalDisease"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []
+
+[[cheat]]
+id = "lobbygamemodestatusui"
+name = "LobbyGameModeStatusUI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []
+
+[[cheat]]
+id = "script-evopoints-diseasedata"
+name = "Script: EvoPoints (DiseaseData)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : PlagueIncEvolved.exe
+  Version: 
+  Date   : 2018-04-11
+  Author : Jason
+
+  Injection is at SPDisease:get_evoPoints+13.  SPDiseaseData
+  structure:
+
+  000C: _evoPoints
+
+  Use mono features, lot of good stuff here, about 300 properties with
+  multipliers for infectiousness, vampire stuff, castles, zombies, etc.
+
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+aobscan(INJECT_EVOPOINTS,8B 40 0C C9 C3 55) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip_DisableCure)
+label(skip_EvoPoints)
+label(skip_HyperInfective)
+label(return)
+
+newmem:
+  mov [globals+0004],eax
+
+  cmp [globals+1000],1
+  jne skip_DisableCure
+  mov [eax+44],0 // globalCureResearch
+  mov [eax+48],0 // globalCureResearchThisTurn
+  mov [eax+4c],0 // cureCompletePercent
+  mov [eax+f4],0 // _diseaseNoticed
+  skip_DisableCure:
+
+  cmp [globals+1004],1
+  jne skip_EvoPoints
+  cmp [eax+0c],500
+  jge skip_EvoPoints
+  mov [eax+0c],500
+  skip_EvoPoints:
+
+  cmp [globals+1008],1
+  jne skip_HyperInfective
+//  mov [eax+50],(float)10000 // globalAirRate - doesn't seem to do much
+//  mov [eax+54],(float)10000 // globalSeaRate - doesn't seem to do much
+//  mov [eax+58],(float)10000 // globalLandRate - doesn't seem to do much
+  mov [eax+00f8],(float)10000 // wealthy
+  mov [eax+00fc],(float)10000 // poverty
+  mov [eax+0100],(float)10000 // urban
+  mov [eax+0104],(float)10000 // rural
+  mov [eax+0108],(float)10000 // hot
+  mov [eax+010c],(float)10000 // cold
+  mov [eax+0110],(float)10000 // humid
+  mov [eax+0114],(float)10000 // arid
+  mov [eax+0118],(float)10000 // landTransmission
+  mov [eax+011c],(float)10000 // seaTransmission
+  mov [eax+0120],(float)10000 // airTransmission
+  mov [eax+0124],(float)10000 // corpseTransmission
+  skip_HyperInfective:
+
+code:
+  mov eax,[eax+0C]
+  leave 
+  ret 
+  jmp return
+
+INJECT_EVOPOINTS:
+  jmp newmem
+return:
+registersymbol(INJECT_EVOPOINTS)
+
+[DISABLE]
+
+INJECT_EVOPOINTS:
+  db 8B 40 0C C9 C3
+
+unregistersymbol(INJECT_EVOPOINTS)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 4AE9BC7B
+
+""+4AE9BC5F: D9 80 0C 01 00 00              -  fld dword ptr [eax+0000010C]
+""+4AE9BC65: C9                             -  leave 
+""+4AE9BC66: C3                             -  ret 
+""+4AE9BC67: 00 55 8B                       -  add [ebp-75],dl
+""+4AE9BC6A: EC                             -  in al,dx
+""+4AE9BC6B: 83 EC 08                       -  sub esp,08
+""+4AE9BC6E: 8B 45 08                       -  mov eax,[ebp+08]
+""+4AE9BC71: 8B 80 20 02 00 00              -  mov eax,[eax+00000220]
+""+4AE9BC77: 8B C8                          -  mov ecx,eax
+""+4AE9BC79: 39 09                          -  cmp [ecx],ecx
+// ---------- INJECTING HERE ----------
+""+4AE9BC7B: 8B 40 0C                       -  mov eax,[eax+0C]
+""+4AE9BC7E: C9                             -  leave 
+""+4AE9BC7F: C3                             -  ret 
+// ---------- DONE INJECTING  ----------
+""+4AE9BC80: 55                             -  push ebp
+""+4AE9BC81: 8B EC                          -  mov ebp,esp
+""+4AE9BC83: 83 EC 08                       -  sub esp,08
+""+4AE9BC86: 8B 45 08                       -  mov eax,[ebp+08]
+""+4AE9BC89: 8B 80 20 02 00 00              -  mov eax,[eax+00000220]
+""+4AE9BC8F: 83 EC 08                       -  sub esp,08
+""+4AE9BC92: FF 75 0C                       -  push [ebp+0C]
+""+4AE9BC95: 50                             -  push eax
+""+4AE9BC96: 39 00                          -  cmp [eax],eax
+""+4AE9BC98: E8 13 00 00 00                 -  call SPDiseaseData:set_evoPoints
+}"""
+
+[[cheat]]
+id = "cheat-disable-cure"
+name = "CHEAT: Disable Cure"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+globalalloc(globals,$100000)
+
+[enable]
+globals+1000:
+  dd 1
+
+[disable]
+globals+1000:
+  dd 0"""
+
+[[cheat]]
+id = "cheat-always-have-at-least-500-evopoints"
+name = "CHEAT: Always have at least 500 EvoPoints"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+globalalloc(globals,$100000)
+
+[enable]
+globals+1004:
+  dd 1
+
+[disable]
+globals+1004:
+  dd 0"""
+
+[[cheat]]
+id = "cheat-hyper-infective"
+name = "CHEAT: Hyper Infective"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+globalalloc(globals,$100000)
+
+[enable]
+globals+1008:
+  dd 1
+
+[disable]
+globals+1008:
+  dd 0"""
+
+[[cheat]]
+id = "evopoints"
+name = "EvoPoints"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "labbaseresearch"
+name = "LabBaseResearch"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = ["+0x364"]
+
+[[cheat]]
+id = "globalcureresearch"
+name = "globalCureResearch"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "curecompletepercent"
+name = "cureCompletePercent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "old-script-selectedcountry"
+name = "OLD Script: SelectedCountry"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : PlagueIncEvolved.exe
+  Version: 
+  Date   : 2018-04-12
+  Author : Jason
+
+  Called to access the _controlledInfected field of SPLocalDiseaseData.  This
+  makes EDI actually point to offset 4 into the structure definition as
+  reported by MonoDataCollector.  Offsets listed here are then 4 more than
+  what EDI would be, so subtract 4 from EDI first...
+
+  0010 - (int64) killedPopulation (Dead shown at bottom of screen)
+  0018 - (int64) _controlledInfected (Infected shown at bottom of screen)
+  0028 - (int64) uncontrolledInfected (?)
+  0058 - (float) localCureResearch
+  005C - (float) cureResearchAllocation
+  0060 - (float) localPriorityCounter
+  0064 - (float) localInfectiousness (101.43 for good non-cheat virus)
+  0084 - (float) infectedPopulationOverride (can add here and game will increase infected)
+  00F0 - (int64) originalPopulation
+  00F8 - (int64) uninfectedPopulation
+
+  USES:
+
+    globals+0100 - pointer to selected country
+    globals+1100 - flag for ensure selected country is infected
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+aobscanmodule(INJECT_SELECTED_COUNTRY,PlagueExternal.dll,8B 7D 0C 83 C4 18 8B 4F 20 03 4F 10 8B 57 24 13 57 14 83 FE 01 7d 07 BE * * 00 00 EB 73) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip_infectCountry)
+label(do_infectCountry)
+label(return)
+
+newmem:
+  mov edi,[ebp+0C]
+  sub edi,4
+  mov [globals+100],edi // store pointer to selected country
+
+  cmp [globals+1100],1
+  jne skip_infectCountry
+  cmp [edi+FC],0 // uninfectedPopulation (high 32 bits)
+  jne do_infectCountry
+  cmp [edi+F8],0 // uninfectedPopulation
+  je skip_infectCountry
+  do_infectCountry:
+  mov [edi+84],1 // infectedPopulationOverride
+  skip_infectCountry:
+
+code:
+  mov edi,[ebp+0C]  // original code
+  add esp,18        // original code
+  jmp return
+
+INJECT_SELECTED_COUNTRY:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT_SELECTED_COUNTRY)
+
+[DISABLE]
+
+INJECT_SELECTED_COUNTRY:
+  db 8B 7D 0C 83 C4 18
+
+unregistersymbol(INJECT_SELECTED_COUNTRY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "PlagueExternal.dll"+74F4
+
+"PlagueExternal.dll"+74CE: C7 04 24 CD CC CC 3D     -  mov [esp],3DCCCCCD
+"PlagueExternal.dll"+74D5: FF 15 2C 42 2A 63        -  call dword ptr [PlagueExternal.dll+2422C]
+"PlagueExternal.dll"+74DB: 6A 64                    -  push 64
+"PlagueExternal.dll"+74DD: 6A 00                    -  push 00
+"PlagueExternal.dll"+74DF: D9 5D FC                 -  fstp dword ptr [ebp-04]
+"PlagueExternal.dll"+74E2: FF 15 28 42 2A 63        -  call dword ptr [PlagueExternal.dll+24228]
+"PlagueExternal.dll"+74E8: 6A 64                    -  push 64
+"PlagueExternal.dll"+74EA: 6A 00                    -  push 00
+"PlagueExternal.dll"+74EC: 8B F0                    -  mov esi,eax
+"PlagueExternal.dll"+74EE: FF 15 28 42 2A 63        -  call dword ptr [PlagueExternal.dll+24228]
+// ---------- INJECTING HERE ----------
+"PlagueExternal.dll"+74F4: 8B 7D 0C                 -  mov edi,[ebp+0C]
+"PlagueExternal.dll"+74F7: 83 C4 18                 -  add esp,18
+// ---------- DONE INJECTING  ----------
+"PlagueExternal.dll"+74FA: 8B 4F 20                 -  mov ecx,[edi+20]
+"PlagueExternal.dll"+74FD: 03 4F 10                 -  add ecx,[edi+10]
+"PlagueExternal.dll"+7500: 8B 57 24                 -  mov edx,[edi+24]
+"PlagueExternal.dll"+7503: 13 57 14                 -  adc edx,[edi+14] // actually accesses _controlledInfected
+"PlagueExternal.dll"+7506: 83 FE 01                 -  cmp esi,01
+"PlagueExternal.dll"+7509: 7D 07                    -  jnl PlagueExternal.dll+7512
+"PlagueExternal.dll"+750B: BE 88 13 00 00           -  mov esi,00001388
+"PlagueExternal.dll"+7510: EB 73                    -  jmp PlagueExternal.dll+7585
+"PlagueExternal.dll"+7512: BE 01 00 00 00           -  mov esi,00000001
+"PlagueExternal.dll"+7517: C7 45 08 64 00 00 00     -  mov [ebp+08],00000064
+}"""

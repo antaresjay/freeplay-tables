@@ -1,0 +1,324 @@
+[game]
+name = "JaggedAlliance Back in Action Demo"
+exe = "gamedemo.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4415"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "setcurrenthealthtomax"
+name = "SetCurrentHealthToMax"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(MyCode,1024)
+
+// Declarations
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+
+registersymbol(MyCode)
+//registersymbol(iEnableGM)
+
+// Hack points
+GameDemo.exe+199E6:
+  jmp _GodMode
+  nop
+_BackGM:
+
+MyCode:
+_GodMode:
+// cmp dword ptr [iEnacheatbleGM],0
+// je _ExitGM
+// fld dword ptr[esi+00000298]
+ fild dword ptr[esi+0000029C]
+ fstp dword ptr[esi+00000294]
+_ExitGM:
+ fld dword ptr[esi+00000294]
+ jmp _BackGM
+
+// Variables
+//iEnableGM:
+// dd 1
+
+// Original
+[DISABLE]
+GameDemo.exe+199E6:
+ fld dword ptr[esi+00000294]
+
+ dealloc(MyCode)
+ unregistersymbol(MyCode)
+// unregistersymbol(iEnableGM)"""
+
+[[cheat]]
+id = "setcurrentammotomax"
+name = "SetCurrentAmmoToMax"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(MyAmmo,1024)
+
+// Declarations
+label(_AmmoMode)
+label(_BackAM)
+label(_ExitAM)
+
+registersymbol(MyAmmo)
+//registersymbol(iEnableGM)
+
+// Hack points
+GameDemo.exe+2C21A:
+  jmp _AmmoMode
+  nop
+  nop
+_BackAM:
+
+MyAmmo:
+_AmmoMode:
+ cmp word ptr[ebp+00000170], 0xFFFF
+ je _ExitAM
+ movzx edx, word ptr [ebp+00000170]
+ mov word ptr [edi+02], dx
+_ExitAM:
+ mov [ebp+00000174],dx
+ jmp _BackAM
+
+// Original
+[DISABLE]
+GameDemo.exe+2C21A:
+ mov [ebp+00000174],dx
+
+ dealloc(MyAmmo)
+ unregistersymbol(MyAmmo)"""
+
+[[cheat]]
+id = "nodamage-onehitkills"
+name = "NoDamage+OneHitKills"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(MyDM,1024)
+
+// Declarations
+label(_DamMode)
+label(_BackDM)
+label(_ExitDM)
+label(iEnableGM)
+label(iEnableOH)
+label(_Player)
+label(_Enemy)
+label(meh)
+label(damDebug)
+
+registersymbol(MyDM)
+registersymbol(iEnableGM)
+registersymbol(iEnableOH)
+registersymbol(meh)
+registersymbol(damDebug)
+//registersymbol(iEnableGM)
+
+// Hack points
+GameDemo.exe+113C31:
+  jmp _DamMode
+  nop
+_BackDM:
+
+MyDM:
+_DamMode:
+ mov [damDebug], ebp
+ cmp dword ptr [ebp+0000028c], 0
+ jne _Enemy
+_Player:
+ cmp dword ptr[iEnableGM], 1
+ jne _ExitDM
+ mov ecx, 0
+ jmp _ExitDM
+_Enemy:
+ cmp dword ptr[iEnableOH], 1
+ jne _ExitDM
+ fld dword ptr[ebp+294]
+ fiadd dword ptr[iEnableOH]
+ fistp dword ptr[meh]
+ mov ecx, dword ptr[meh]
+_ExitDM:
+ mov edx,ecx
+ mov [esp+48],edx
+ jmp _BackDM
+
+// Variables
+iEnableGM:
+ dd 1
+iEnableOH:
+ dd 1
+meh:
+ dd 1
+damDebug:
+ dd 0
+
+// Original
+[DISABLE]
+GameDemo.exe+113C31:
+ mov edx,ecx
+ mov [esp+48],edx
+ fild dword ptr[esp+48]
+
+ dealloc(MyDM)
+ unregistersymbol(MyDM)"""
+
+[[cheat]]
+id = "noammo-charge-decrease"
+name = "NoAmmo/Charge Decrease"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(MyAM,1024)
+
+// Declarations
+label(_AmMode)
+label(_BackAM)
+label(_ExitAM)
+label(iEnableAM)
+label(_CgMode)
+label(_BackCg)
+label(_ExitCg)
+registersymbol(MyAM)
+registersymbol(iEnableAM)
+
+// Hack points
+GameDemo.exe+11F68E: // Main hand ammo
+  jmp _AmMode
+_BackAM:
+
+GameDemo.exe+118B05: // Offhand charges
+ jmp _CgMode
+_BackCg:
+
+MyAM:
+// Mainhand ammo
+_AmMode:
+ cmp dword ptr [esi+00000118], 0
+ jne _ExitAM
+ cmp dword ptr[iEnableAM], 1
+ jmp _BackAM
+_ExitAM:
+ dec eax
+ mov [esi+52],ax
+ jmp _BackAM
+// Offhand charges
+_CgMode:
+ cmp dword ptr [esi+00000118], 0
+ jne _ExitCg
+ cmp dword ptr[iEnableAM], 1
+ jmp _BackCg
+_ExitCg:
+ dec eax
+ mov [esi+1E],ax
+ jmp _BackCg
+
+// Variables
+iEnableAM:
+ dd 1
+
+// Original
+[DISABLE]
+GameDemo.exe+11F68E:
+ dec eax
+ mov [esi+52],ax
+GameDemo.exe+118B05:
+ dec eax
+ mov [esi+1E],ax
+
+dealloc(MyAM)
+unregistersymbol(MyAM)
+unregistersymbol(iEnableAM)"""
+
+[[cheat]]
+id = "nodurabilityloss"
+name = "NoDurabilityLoss"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(MyDura,1024)
+
+// Declarations
+label(_Dura1_Start)
+label(_Dura1_Back)
+label(_Dura1_Exit)
+label(_Dura2_Start)
+label(_Dura2_Back)
+label(_Dura2_Exit)
+label(iEnableDura)
+registersymbol(MyDura)
+registersymbol(iEnableDura)
+
+// Hack points
+GameDemo.exe+113AEC: // Clothes Durability Reduction max always 10?
+  jmp _Dura1_Start
+_Dura1_Back:
+
+GameDemo.exe+11F632: // Weapon Durability Reduction
+ jmp _Dura2_Start
+ nop
+ nop
+_Dura2_Back:
+
+MyDura:
+// Clothes Durability Reduction
+_Dura1_Start:
+ cmp dword ptr [ebp+0000028C], 0
+ jne _Dura1_Exit
+ cmp dword ptr[iEnableDura], 1
+ mov [ecx], 64 // Set max dura?
+ jmp _Dura1_Back
+_Dura1_Exit:
+ and eax,edx
+ mov [ecx], ax
+ jmp _Dura1_Back
+// Offhand charges
+_Dura2_Start:
+ cmp dword ptr [ecx+0000028C], 0
+ jne _Dura2_Exit
+ cmp dword ptr[iEnableDura], 1
+ jmp _Dura2_Back
+_Dura2_Exit:
+ mov [ecx+00000188], ax
+ jmp _Dura2_Back
+
+// Variables
+iEnableDura:
+ dd 1
+
+// Original
+[DISABLE]
+GameDemo.exe+113AEC:
+ and eax,edx
+ mov [ecx], ax
+GameDemo.exe+11F632:
+ mov [ecx+00000188], ax
+ //db 66 89 81 88 01 00 00
+
+dealloc(MyDura)
+unregistersymbol(MyDura)
+unregistersymbol(iEnableDura)"""

@@ -1,0 +1,366 @@
+[game]
+name = "Shadow Harvest - Phatom Ops"
+exe = "sh.exe"
+notes = "Converted from a Cheat Engine table by Recifense. Source: https://fearlessrevolution.com/viewtopic.php?t=631"
+verified = []
+author = "Recifense"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "shadow-harvest-v01-00-script"
+name = "<-- Shadow Harvest V01.00 Script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Shadow Harvest - Phantom Ops
+ Game Version  : 1.0
+ Script Version: 1.0
+ CE Version    : 6.0
+ GM, Night Vision, Invisibility, Nanites and Ammo(weapons/grenade)
+ 07-Apr-2011
+ By Recifense
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("XpMain.dll"+02768b,f3 0f 11 86 4c 01 00 00)
+assert("Shadow Harvest.dll"+017702,66 81 86 d0 01 00 00 ff ff)
+assert("XpMain.dll"+025523,f3 0f 11 86 f8 00 00 00)
+assert("Shadow Harvest.dll"+02f331,f3 0f 11 86 44 05 00 00)
+assert("Shadow Harvest.dll"+01a49b,8b 44 24 14 89 47 08)
+assert("Shadow Harvest.dll"+03996f,80 83 a8 05 00 00 ff)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonAmmo)
+label(_BackMA)
+label(_ExitMA)
+label(_MonNV)
+label(_BackMN)
+label(_ExitMN)
+label(_MonEnergy)
+label(_BackME)
+label(_ExitME)
+label(_MonGrenade)
+label(_BackMG)
+label(_ExitMG)
+label(_MonNanites)
+label(_BackMNs)
+label(_ExitMNs)
+label(pAmmo)
+label(pUnit)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMN)
+label(iEnableME)
+label(iEnableMNs)
+
+registersymbol(MyCode)
+registersymbol(pAmmo)
+registersymbol(pUnit)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMN)
+registersymbol(iEnableME)
+registersymbol(iEnableMNs)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ pushfd
+
+ mov [pUnit],esi                    // Save ptr for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp esi,[XpMain.dll+0CB0F0]
+ jne _ExitGM
+
+ movss xmm0,[esi+00000148]         // Get Max HP
+
+_ExitGM:
+ popfd
+
+ movss [esi+0000014C],xmm0         // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonAmmo:
+ mov [pAmmo],esi                   // Save ptr for debugging
+
+ add word ptr [esi+000001D0],FFFF  // Original code (Decrease Ammo by 1)
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                        // Jump if feature is disabled
+
+ mov eax,[esi+0000016c]            // Get weapon owner
+
+ cmp eax,[XpMain.dll+0CB0F0]
+ jne _ExitMA
+
+ add word ptr [esi+000001D0],0001  // Restore Ammo
+
+_ExitMA:
+ jmp _BackMA                       // Back to main code
+
+//=========================================
+_MonNV:
+ pushfd
+ push eax
+
+ movss [esi+000000F8],xmm0         // Original code
+
+ cmp dword ptr [iEnableMN],0
+ je _ExitMN                        // Jump if feature is disabled
+
+ mov eax,[esi+20]                  // Get Owner
+ cmp eax,[XpMain.dll+0CB0F0]
+ jne _ExitMN
+
+ mov dword ptr [esi+000000F8],(float)1 // Max Night Vision
+
+_ExitMN:
+ pop eax
+ popfd
+ jmp _BackMN                       // Back to main code
+
+//=========================================
+_MonEnergy:
+ pushfd
+
+ movss [esi+00000544],xmm0         // Original code
+
+ cmp dword ptr [iEnableME],0
+ je _ExitME                        // Jump if feature is disabled
+
+ cmp esi,[XpMain.dll+0CB0F0]
+ jne _ExitME
+
+ mov dword ptr [esi+00000544],(float)1 // Max Energy
+
+_ExitME:
+ popfd
+ jmp _BackME                       // Back to main code
+
+//=========================================
+_MonGrenade:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ mov eax,[esp+1c]
+ cmp eax,[XpMain.dll+0CB0F0]
+ jne _ExitMG
+
+ mov eax,[edi+08]                  // Get current Grenage
+ cmp eax,[esp+14]
+ jle _ExitMG
+
+ mov [esp+14],eax
+
+_ExitMG:
+ mov eax,[esp+14]                  // Original code
+ mov [edi+08],eax                  // Original code
+ jmp _BackMG                       // Back to main code
+
+//=========================================
+_MonNanites:
+ add byte ptr [ebx+000005A8],FF    // Original code (decrease nanites by 1)
+
+ cmp dword ptr [iEnableMNs],0
+ je _ExitMNs                       // Jump if feature is disabled
+
+ cmp ebx,[XpMain.dll+0CB0F0]
+ jne _ExitMNs
+
+ add byte ptr [ebx+000005A8],01    // Restore Nanites (add 1)
+
+_ExitMNs:
+ jmp _BackMNs                      // Back to main code
+
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMN:
+ dd 1
+iEnableME:
+ dd 1
+iEnableMNs:
+ dd 1
+pAmmo:
+ dd 0
+pUnit:
+ dd 0
+
+//=========================================
+// Hacking Points
+"XpMain.dll"+02768b:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGM:
+
+"Shadow Harvest.dll"+017702:
+ jmp _MonAmmo
+ nop
+ nop
+ nop
+ nop
+_BackMA:
+
+"XpMain.dll"+025523:
+ jmp _MonNV
+ nop
+ nop
+ nop
+_BackMN:
+
+"Shadow Harvest.dll"+02f331:
+ jmp _MonEnergy
+ nop
+ nop
+ nop
+_BackME:
+
+"Shadow Harvest.dll"+01a49b:
+ jmp _MonGrenade
+ nop
+ nop
+_BackMG:
+
+"Shadow Harvest.dll"+03996f:
+ jmp _MonNanites
+ nop
+ nop
+_BackMNs:
+
+//=========================================
+// Original Codes
+[DISABLE]
+"XpMain.dll"+02768b:
+ movss [esi+0000014C],xmm0
+
+"Shadow Harvest.dll"+017702:
+ add word ptr [esi+000001D0],FFFF
+
+"XpMain.dll"+025523:
+ movss [esi+000000F8],xmm0
+
+"Shadow Harvest.dll"+02f331:
+ movss [esi+00000544],xmm0
+
+"Shadow Harvest.dll"+01a49b:
+ mov eax,[esp+14]
+ mov [edi+08],eax
+
+"Shadow Harvest.dll"+03996f:
+ add byte ptr [ebx+000005A8],FF
+
+unregistersymbol(MyCode)
+unregistersymbol(pAMmo)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMN)
+unregistersymbol(iEnableME)
+unregistersymbol(iEnableMNs)
+
+dealloc(MyCode)"""
+
+[[cheat]]
+id = "enable-disable-god-mode"
+name = "Enable/Disable God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-ammo"
+name = "Enable/Disable Unlimited Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMA"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-nightvision"
+name = "Enable/Disable Unlimited Nightvision"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMN"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-invisibility"
+name = "Enable/Disable Unlimited Invisibility"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableME"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-nanites"
+name = "Enable/Disable Unlimited Nanites"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableME"
+hops = []

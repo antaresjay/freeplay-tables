@@ -1,0 +1,496 @@
+[game]
+name = "Kagura Douchuuki"
+exe = "s_kagura_r.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2295"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-initialization-activate-this-first"
+name = "Battle Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(battlestats_basepointer)
+registersymbol(battlestats_enemy_basepointer)
+registersymbol(battlestats_update_enable)
+registersymbol(battlestats_set_enable)
+registersymbol(battlestats_foodset_enable)
+registersymbol(battlestats_lifeset_enable)
+registersymbol(battlestats_willset_enable)
+registersymbol(battlestats_expset_enable)
+
+alloc(battlestats_basepointer, 4)
+alloc(battlestats_enemy_basepointer, 4)
+alloc(battlestats_update_enable, 4)
+alloc(battlestats_set_enable, 4)
+alloc(battlestats_foodset_enable, 4)
+alloc(battlestats_lifeset_enable, 4)
+alloc(battlestats_willset_enable, 4)
+alloc(battlestats_expset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestats_enemy_basepointer)
+unregistersymbol(battlestats_update_enable)
+unregistersymbol(battlestats_set_enable)
+unregistersymbol(battlestats_foodset_enable)
+unregistersymbol(battlestats_lifeset_enable)
+unregistersymbol(battlestats_willset_enable)
+unregistersymbol(battlestats_expset_enable)
+
+dealloc(battlestats_basepointer)
+dealloc(battlestats_enemy_basepointer)
+dealloc(battlestats_update_enable)
+dealloc(battlestats_set_enable)
+dealloc(battlestats_foodset_enable)
+dealloc(battlestats_lifeset_enable)
+dealloc(battlestats_willset_enable)
+dealloc(battlestats_expset_enable)"""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-to-update-move-attack"
+name = "Battle Stats Base Address Scan (To Update: Move / Attack)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(battlestats_savedAOB)
+label(battlestats_returnhere)
+label(battlestats_originalcode)
+label(battlestats_exit)
+
+label(battlestats_update_exit)
+label(battlestats_set_exit)
+label(battlestats_foodset_exit)
+label(battlestats_lifeset_exit)
+label(battlestats_willset_exit)
+label(battlestats_expset_exit)
+
+registersymbol(battlestats_savedAOB)
+
+//s_kagura_r.exe+172AE - 8B 7C 24 08           - mov edi,[esp+08]
+//s_kagura_r.exe+172B2 - F2 0F10 2D 58A14E00   - movsd xmm5,[s_kagura_r.exe+22A158]
+//s_kagura_r.exe+172BA - F2 0F10 87 10010000   - movsd xmm0,[edi+00000110]
+//s_kagura_r.exe+172C2 - F2 0F5E 87 48010000   - divsd xmm0,[edi+00000148]
+//s_kagura_r.exe+172CA - F2 0F10 25 D8A14E00   - movsd xmm4,[s_kagura_r.exe+22A1D8]
+//s_kagura_r.exe+172D2 - 66 0F2F E8            - comisd xmm5,xmm0
+//s_kagura_r.exe+172D6 - F2 0F11 64 24 38      - movsd [esp+38],xmm4
+aobscan(battlestats_searchedAOB, F2 0F 10 87 10 01 00 00 F2 0F 5E 87 48 01 00 00)
+
+alloc(battlestats_newmem, 2048)
+
+
+battlestats_newmem:
+cmp dword ptr [edi+fc], #0
+jne battlestats_expset_exit
+
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_update_exit
+mov [battlestats_basepointer], edi
+battlestats_update_exit:
+
+cmp dword ptr [battlestats_set_enable], #0
+je battlestats_set_exit
+battlestats_set_exit:
+
+cmp dword ptr [battlestats_foodset_enable], #0
+je battlestats_foodset_exit
+fld qword ptr [edi+140]
+fstp qword ptr [edi+108]
+battlestats_foodset_exit:
+
+cmp dword ptr [battlestats_lifeset_enable], #0
+je battlestats_lifeset_exit
+fld qword ptr [edi+148]
+fstp qword ptr [edi+110]
+battlestats_lifeset_exit:
+
+cmp dword ptr [battlestats_willset_enable], #0
+je battlestats_willset_exit
+fld qword ptr [edi+150]
+fstp qword ptr [edi+118]
+battlestats_willset_exit:
+
+cmp dword ptr [battlestats_expset_enable], #0
+je battlestats_expset_exit
+mov [edi+100], #0
+mov [edi+104], #1093567608
+battlestats_expset_exit:
+
+
+battlestats_originalcode:
+db F2 0F 10 87 10 01 00 00
+//movsd xmm0,[edi+00000110]
+
+
+battlestats_exit:
+jmp battlestats_returnhere
+
+
+battlestats_searchedAOB:
+battlestats_savedAOB:
+jmp battlestats_newmem
+nop
+nop
+nop
+battlestats_returnhere:
+
+
+[DISABLE]
+battlestats_savedAOB:
+db F2 0F 10 87 10 01 00 00
+//movsd xmm0,[edi+00000110]
+
+unregistersymbol(battlestats_savedAOB)
+
+dealloc(battlestats_newmem)"""
+
+[[cheat]]
+id = "set-food-to-max"
+name = "Set Food to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_foodset_enable"
+hops = []
+
+[[cheat]]
+id = "set-life-to-max"
+name = "Set Life to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_lifeset_enable"
+hops = []
+
+[[cheat]]
+id = "set-will-to-max"
+name = "Set Will to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_willset_enable"
+hops = []
+
+[[cheat]]
+id = "set-exp-to-massive"
+name = "Set Exp to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_expset_enable"
+hops = []
+
+[[cheat]]
+id = "battle-stats-update-base-address"
+name = "Battle Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "exp"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "food"
+name = "Food"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "life"
+name = "Life"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "will-force"
+name = "Will / Force"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "attack"
+name = "Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "defense"
+name = "Defense"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "will"
+name = "Will"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "cheat"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "max-food"
+name = "Max Food"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x140"]
+
+[[cheat]]
+id = "max-life"
+name = "Max Life"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "max-will"
+name = "Max Will"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "attack-2"
+name = "Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "defense-2"
+name = "Defense"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "will-2"
+name = "Will"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "player-0-player"
+name = "Player (0 = Player)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "s_kagura_r.exe"
+offset = "0x25e630"
+hops = []

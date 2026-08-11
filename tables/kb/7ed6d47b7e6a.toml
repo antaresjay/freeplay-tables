@@ -1,0 +1,404 @@
+[game]
+name = "King's Bounty - Armored Princess"
+exe = "kb.exe"
+notes = "Converted from a Cheat Engine table by fenuzulage. Source: https://fearlessrevolution.com/viewtopic.php?t=29140"
+verified = []
+author = "fenuzulage"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "invinceable-troops"
+name = "Invinceable troops"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : kb.exe
+  Version: 1.2 build 5730
+  Date   : 2024-05-09
+  Author : fenuzulage
+
+  This script makes your troops invinceable and sets enemy HP/Stacksize to 1
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,kb.exe,89 51 0C 8B 06) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+{ distinguish me/opponent: ecx+...
+\t104: me: 9             opp: 4
+\t1dc: me: 1             opp: 4
+\t1e0: me: 1             opp: 4
+}
+  cmp [ecx+1dc],1
+  jne @f
+  //me:
+  mov edx,[ecx+0C]         // write old health to new health
+  { to prevent loss of stack size:
+    write actual stack size (ecx+10)
+    to new stacksize (esi+14).
+    Because in original code esi+14 (new troopsize) will overwrite ecx+10 (troopsize) }
+  push edx
+  mov edx, [ecx+10]
+  mov [esi+14], edx
+  pop edx
+  // continue with original
+  jmp code
+@@:
+  //opponent: set stacksize=0, health=0, but that does not kill the stack :(
+  mov edx,1
+  mov [esi+14],1
+  jmp code
+
+// original
+code:
+  // write new health (edx) to troop health
+  mov [ecx+0C],edx
+  mov eax,[esi]
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 51 0C 8B 06
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: kb.exe+62A81
+
+kb.exe+62A64: 8B 44 24 10           - mov eax,[esp+10]
+kb.exe+62A68: 85 C0                 - test eax,eax
+kb.exe+62A6A: 74 06                 - je kb.exe+62A72
+kb.exe+62A6C: 50                    - push eax
+kb.exe+62A6D: E8 7E 0E FA FF        - call kb.exe+38F0
+kb.exe+62A72: 8B 5C 24 14           - mov ebx,[esp+14]
+kb.exe+62A76: 8B 75 0C              - mov esi,[ebp+0C]
+kb.exe+62A79: 8B 06                 - mov eax,[esi]
+kb.exe+62A7B: 8B 48 70              - mov ecx,[eax+70]
+kb.exe+62A7E: 8B 56 10              - mov edx,[esi+10]
+// ---------- INJECTING HERE ----------
+kb.exe+62A81: 89 51 0C              - mov [ecx+0C],edx
+// ---------- DONE INJECTING  ----------
+kb.exe+62A84: 8B 06                 - mov eax,[esi]
+kb.exe+62A86: 8B 48 70              - mov ecx,[eax+70]
+kb.exe+62A89: 8B 56 14              - mov edx,[esi+14]
+kb.exe+62A8C: 89 51 10              - mov [ecx+10],edx
+kb.exe+62A8F: 8B 4E 20              - mov ecx,[esi+20]
+kb.exe+62A92: F6 C1 08              - test cl,08
+kb.exe+62A95: 75 5F                 - jne kb.exe+62AF6
+kb.exe+62A97: A1 2C 73 B7 01        - mov eax,[kb.exe+177732C]
+kb.exe+62A9C: 83 B8 AC 03 00 00 01  - cmp dword ptr [eax+000003AC],01
+kb.exe+62AA3: 75 05                 - jne kb.exe+62AAA
+}"""
+
+[[cheat]]
+id = "max-mana-rage-wait-for-couple-seconds"
+name = "Max Mana/Rage [wait for couple seconds]"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : kb.exe
+  Version: 1.2 build 5730
+  Date   : 2024-05-09
+  Author : fenuzulage
+
+  This script sets Mana and Rage to its maximum values when the game updates
+  these (every some seconds).
+  Works on adventure map and in a fight.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,kb.exe,8B 7C 24 10 C7 44 24 18 70 1A F9 00) // should be unique
+alloc(newmem,$100)
+
+label(code)
+label(return)
+
+newmem:
+{
+  The problem here ist, that the code that writes player stats is used for multiple stats.
+  To change the wanted stat, one must determine what kind of stat the code is about to change.
+
+  Another problem: the object containing the value (Stat) does not know its type.
+  The Stat only contains a string count/limit/...
+  A pair count/limit of a Stat (ie mana, rage) is kept in an array of pointers
+  (statArray).
+
+ - EBP+0C is Stat-Array base
+ - [[edi]+4]+0c contains name of stat ie "mana"/"rage"
+ - inside Stat-Array, count-Stat is index 0 and limit-Stat is index 1
+ - ESP+1C is new value to write
+ - a Stat has its value at +08
+ - can use edi, because it gets written in original code
+}
+
+  // get the name of the stat
+  mov edi,[edi+04]   // pointer to struct containing stat name
+  mov edi,[edi+0c]   // name
+  // check the name is mana or rage
+  cmp edi,'mana'
+  je @f
+  cmp edi,'rage'
+  je @f
+  // otherwise: run original code
+  jmp code
+
+@@:
+  // get the stat limit (index 1 in stat array)
+  mov edi,[ebp+0C]   // array base == pointer to stat0 (count)
+  mov edi,[edi+04]   // pointer to stat1==stat limit
+  mov edi,[edi+08]   // value of limit
+  // overwrite new value with limit
+  mov [esp+1C],edi
+
+// original
+code:
+  mov edi,[esp+10]
+  mov [esp+18],kb.exe+B91A70
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 7
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 8B 7C 24 10 C7 44 24 18 70 1A F9 00
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: kb.exe+8C899
+
+kb.exe+8C878: 2B D8                    - sub ebx,eax
+kb.exe+8C87A: 0F 85 9D 00 00 00        - jne kb.exe+8C91D
+kb.exe+8C880: 5F                       - pop edi
+kb.exe+8C881: 5D                       - pop ebp
+kb.exe+8C882: C7 06 00 00 00 00        - mov [esi],00000000
+kb.exe+8C888: C7 46 04 00 00 00 00     - mov [esi+04],00000000
+kb.exe+8C88F: C6 46 14 00              - mov byte ptr [esi+14],00
+kb.exe+8C893: 8B C6                    - mov eax,esi
+kb.exe+8C895: 5B                       - pop ebx
+kb.exe+8C896: C2 18 00                 - ret 0018
+// ---------- INJECTING HERE ----------
+kb.exe+8C899: 8B 7C 24 10              - mov edi,[esp+10]
+// ---------- DONE INJECTING  ----------
+kb.exe+8C89D: C7 44 24 18 70 1A F9 00  - mov [esp+18],kb.exe+B91A70
+kb.exe+8C8A5: 38 5C 24 24              - cmp [esp+24],bl
+kb.exe+8C8A9: 75 18                    - jne kb.exe+8C8C3
+kb.exe+8C8AB: 8B 47 6C                 - mov eax,[edi+6C]
+kb.exe+8C8AE: 3B C3                    - cmp eax,ebx
+kb.exe+8C8B0: 74 11                    - je kb.exe+8C8C3
+kb.exe+8C8B2: 8B 48 1C                 - mov ecx,[eax+1C]
+kb.exe+8C8B5: C1 E9 03                 - shr ecx,03
+kb.exe+8C8B8: 80 E1 01                 - and cl,01
+kb.exe+8C8BB: 74 06                    - je kb.exe+8C8C3
+}"""
+
+[[cheat]]
+id = "player-stats-open-hero"
+name = "Player Stats [open hero]"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : kb.exe
+  Version: 1.2 build 5730
+  Date   : 2024-05-09
+  Author : fenuzulage
+
+  This script captures the adresses of Gold/Mana/Rage so they can be changed.
+  Open the hero window to capture.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,kb.exe,8B 34 81 89 74 24 10 EB 06 89 5C 24 10 8B F3 0F) // should be unique
+alloc(newmem,$100)
+alloc(gold_base,$4)
+registersymbol(gold_base)
+alloc(rage_base,$4)
+registersymbol(rage_base)
+alloc(mana_base,$4)
+registersymbol(mana_base)
+
+label(code)
+label(return)
+
+gold_base:
+  dd 0
+mana_base:
+  dd 0
+rage_base:
+  dd 0
+
+newmem:
+{
+    - [ecx+eax*4] gives Stats base adress, +8 its value
+    - can use esi because it will be written
+    - StatsType stored in local variable ESP+30 [X+4]+c: name
+    vs
+    - StatsType is in [EDI+4]+c
+}
+  // capture money/count
+  mov esi,[edi+04]    // pointer to struct containing stat name: mana/rage/money/.item/
+  cmp [esi+0C],'mone' // 4byte-compare
+  jne @f
+  mov esi,[ecx+eax*4] // Stat
+  mov esi,[esi+04]    // pointer to struct containing stat type: count/limit/...
+  cmp [esi+0C],'count'
+  jne @f
+  mov esi,[ecx+eax*4] // Stat
+  mov [gold_base], esi
+  jmp code
+
+@@:
+  // capture rage/count
+  mov esi,[edi+04]    // pointer to struct containing stat name: mana/rage/money/.item/
+  cmp [esi+0C],'rage'
+  jne @f
+  mov esi,[ecx+eax*4] // Stat
+  mov esi,[esi+04]    // pointer to struct containing stat type: count/limit/...
+  cmp [esi+0C],'count'
+  jne @f
+  mov esi,[ecx+eax*4] // Stat
+  mov [rage_base], esi
+  jmp code
+
+@@:
+  // capture mana/count
+  mov esi,[edi+04]    // pointer to struct containing stat name: mana/rage/money/.item/
+  cmp [esi+0C],'mana'
+  jne @f
+  mov esi,[ecx+eax*4] // Stat
+  mov esi,[esi+04]    // pointer to struct containing stat type: count/limit/...
+  cmp [esi+0C],'count'
+  jne @f
+  mov esi,[ecx+eax*4] // Stat
+  mov [mana_base], esi
+  jmp code
+
+@@:
+  jmp code         // not needed, would fall through
+
+code:
+  mov esi,[ecx+eax*4]
+  mov [esp+10],esi
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 2
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 8B 34 81 89 74 24 10
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+dealloc(gold_base)
+unregistersymbol(gold_base)
+dealloc(rage_base)
+unregistersymbol(rage_base)
+dealloc(mana_base)
+unregistersymbol(mana_base)
+
+{
+// ORIGINAL CODE - INJECTION POINT: kb.exe+4CBD3
+
+kb.exe+4CBB6: 8B F8              - mov edi,eax
+kb.exe+4CBB8: 85 FF              - test edi,edi
+kb.exe+4CBBA: 0F 84 6C FF FF FF  - je kb.exe+4CB2C
+kb.exe+4CBC0: 8B 6C 24 34        - mov ebp,[esp+34]
+kb.exe+4CBC4: 55                 - push ebp
+kb.exe+4CBC5: 8B CF              - mov ecx,edi
+kb.exe+4CBC7: E8 A4 1B 1F 00     - call kb.exe+23E770
+kb.exe+4CBCC: 85 C0              - test eax,eax
+kb.exe+4CBCE: 7C 0C              - jl kb.exe+4CBDC
+kb.exe+4CBD0: 8B 4F 0C           - mov ecx,[edi+0C]
+// ---------- INJECTING HERE ----------
+kb.exe+4CBD3: 8B 34 81           - mov esi,[ecx+eax*4]
+// ---------- DONE INJECTING  ----------
+kb.exe+4CBD6: 89 74 24 10        - mov [esp+10],esi
+kb.exe+4CBDA: EB 06              - jmp kb.exe+4CBE2
+kb.exe+4CBDC: 89 5C 24 10        - mov [esp+10],ebx
+kb.exe+4CBE0: 8B F3              - mov esi,ebx
+kb.exe+4CBE2: 0F B6 55 00        - movzx edx,byte ptr [ebp+00]
+kb.exe+4CBE6: 8B 44 24 14        - mov eax,[esp+14]
+kb.exe+4CBEA: 52                 - push edx
+kb.exe+4CBEB: E8 60 CF 00 00     - call kb.exe+59B50
+kb.exe+4CBF0: 84 C0              - test al,al
+kb.exe+4CBF2: 0F 84 F6 00 00 00  - je kb.exe+4CCEE
+}"""
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gold_base"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "rage"
+name = "Rage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "rage_base"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "mana"
+name = "Mana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "mana_base"
+hops = ["+0x8"]

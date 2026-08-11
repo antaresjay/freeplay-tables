@@ -1,0 +1,258 @@
+[game]
+name = "Alexander The Great (Sparta II)"
+exe = "awe_sparta2_030412.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4342"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "alexander-the-great-sparta-ii-script-aob"
+name = "Alexander The Great (Sparta II) Script AOB"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Alexander the Great (Sparta II)
+ Game Version  : Unknown (Maybe 1.00)
+ Script Version: 1.0
+ CE Version    : 6.0
+ GodMode, Resources and XP
+ 27-Mar-2011
+ By Recifense
+===========================================
+}
+
+[ENABLE]
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+
+aobscan(aobGodMode,d9 9e f8 01 00 00 d9 ee d8 5c 24 10)
+aobscan(aobMonResources,8b 81 98 06 00 00 85 c0)
+aobscan(aobMonXP,d9 9e bc 01 00 00 8b ce ?? ?? ?? ?? ?? 5e 59)
+
+//=========================================
+// Declaration section
+label(pGodMode)
+label(pMonResources)
+label(pMonXP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonResources)
+label(_BackMR)
+label(_ExitMR)
+label(_MonR0)
+label(_MonXP)
+label(_BackMX)
+label(_ExitMX)
+label(iEnableGM)
+label(iEnableMR)
+label(iEnableMX)
+label(fMinRes)
+label(pPlayer)
+
+registersymbol(MyCode)
+registersymbol(iEnableGM)
+registersymbol(iEnableMR)
+registersymbol(iEnableMX)
+registersymbol(fMinRes)
+registersymbol(pPlayer)
+registersymbol(pGodMode)
+registersymbol(pMonResources)
+registersymbol(pMonXP)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ fstp dword ptr [esi+000001f8]  // Orignal code (Update %HP)
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+
+ mov eax,[esi+10]               // Get pointer to additional info
+ cmp dword ptr [eax+00000708],1 // Player's unit?
+ jne _ExitGM                    // Jump if false
+
+ mov eax,(float)1.0
+ mov [esi+000001f8],eax         // Make HP = 100%
+
+_ExitGM:
+ jmp _BackGM                    // Back to main code
+
+//====================================== ok
+_MonResources:
+ push ebx                       // Save EBX context
+
+ mov eax,[ecx+00000698]         // Get pointer to player structure
+ test eax,eax
+ jz _ExitMR                     // Jump if pointer is Null
+
+ mov [pPlayer],eax              // Save pointer for debugging
+
+ cmp dword ptr [iEnableMR],0
+ je _ExitMR                     // Jump if feature is disabled
+
+ mov ebx,[fMinRes]              // Get minimum resource value
+
+ cmp ebx,[eax+0000094c]         // Current Wood >= minimum?
+ jle _MonR0                     // Jump if true
+
+ mov [eax+0000094c],ebx         // Make corrent wood = minimum
+
+_MonR0:
+ cmp ebx,[eax+00000950]         // Current Metal >= minimum?
+ jle _ExitMR                    // Jump if true
+
+ mov [eax+00000950],ebx         // Make corrent Metal = minimum
+
+_ExitMR:
+ pop ebx                        // Restore EBX context
+
+ mov eax,[ecx+00000698]         // Orignal code
+ jmp _BackMR
+
+//=========================================
+_MonXP:
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX                     // Jump if feature is disabled
+
+ mov eax,[esi+10]               // Get pointer to additional info
+ cmp dword ptr [eax+00000708],1 // Player's unit?
+ jne _ExitMX                    // Jump if false
+
+ mov eax,[esi+000001c0]         // Get current level
+ cmp eax,[esi+000001c4]         // Already maximum?
+ je _ExitMX                     // Jump if true
+
+ fstp st(0)                     // Discard value
+ fld dword ptr [esi+000001bc]   // Get Current XP
+ fadd dword ptr [esi+000001b8]  // Add basic XP
+
+_ExitMX:
+ fstp dword ptr [esi+000001BC]  // Original code (Upds XP)
+ jmp _BackMX                    // Back to main code
+
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMR:
+ dd 1
+iEnableMX:
+ dd 1
+pPlayer:
+ dd 0
+fMinRes:
+ dd (float)5000.0
+
+//=========================================
+// Hacking Points
+aobGodMode:
+pGodMode:
+ jmp _GodMode
+ nop
+_BackGM:
+
+aobMonResources:
+pMonResources:
+ jmp _MonResources
+ nop
+_BackMR:
+
+aobMonXP:
+pMonXP:
+ jmp _MonXP
+ nop
+_BackMX:
+
+//=========================================
+// Original Codes
+[DISABLE]
+pGodMode:
+ fstp dword ptr [esi+000001f8]
+
+pMonResources:
+ mov eax,[ecx+00000698]
+
+pMonXP:
+ fstp dword ptr [esi+000001BC]
+
+unregistersymbol(MyCode)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMR)
+unregistersymbol(iEnableMX)
+unregistersymbol(fMinRes)
+unregistersymbol(pPlayer)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonResources)
+unregistersymbol(pMonXP)
+
+dealloc(MyCode)"""
+
+[[cheat]]
+id = "enable-disable-god-mode"
+name = "Enable/Disable God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-minimum-resources"
+name = "Enable/Disable Minimum Resources"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMR"
+hops = []
+
+[[cheat]]
+id = "enable-disable-quick-level-up"
+name = "Enable/Disable Quick Level Up"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMX"
+hops = []
+
+[[cheat]]
+id = "minimum-resource-value"
+name = "Minimum Resource Value"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMinRes"
+hops = []

@@ -1,0 +1,83 @@
+[game]
+name = "Company of Heroes 3 – Final Stand"
+exe = "reliccoh3.exe"
+notes = "Converted from a Cheat Engine table by PatchBreaker. Source: https://fearlessrevolution.com/viewtopic.php?t=40289"
+verified = []
+author = "PatchBreaker"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-trainer"
+name = "Enable Trainer"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(coh3_player_probe,RelicCoH3.exe,48 83 EC 68 48 85 C9 74 0F 80 B9 82 06 00 00 00 0F 95 C0 48 83 C4 68 C3 48 8D 15 ?? ?? ?? ?? 48 8D 4C 24 38)
+aobscanmodule(coh3_queue_probe,RelicCoH3.exe,80 BF 59 05 00 00 00 74 09 C7 46 30 00 00 00 00 EB 4E)
+
+assert(coh3_player_probe+09,80 B9 82 06 00 00 00)
+assert(coh3_queue_probe,80 BF 59 05 00 00 00)
+
+// These allocations are intentionally not freed on disable. Restoring the
+// hooks while keeping their trampolines valid avoids a cross-thread cleanup race.
+// Windows reclaims them when RelicCoH3.exe exits.
+alloc(coh3_data,$1000,coh3_queue_probe)
+alloc(coh3_player_mem,$1000,coh3_player_probe)
+alloc(coh3_queue_mem,$1000,coh3_queue_probe)
+
+label(coh3_pPlayer)
+label(coh3_player_return)
+label(coh3_queue_capture_done)
+label(coh3_queue_return)
+
+registersymbol(coh3_pPlayer)
+registersymbol(coh3_player_probe)
+registersymbol(coh3_queue_probe)
+
+coh3_data:
+coh3_pPlayer:
+  dq 0
+
+coh3_player_mem:
+  cmp byte ptr [rcx+00000682],00
+  jne short @f
+  mov [coh3_pPlayer],rcx
+@@:
+  cmp byte ptr [rcx+00000682],00
+  jmp coh3_player_return
+
+coh3_player_probe+09:
+  jmp coh3_player_mem
+  nop 2
+coh3_player_return:
+
+coh3_queue_mem:
+  cmp byte ptr [rdi+00000682],00
+  jne short coh3_queue_capture_done
+  mov [coh3_pPlayer],rdi
+coh3_queue_capture_done:
+  cmp byte ptr [rdi+00000559],00
+  jmp coh3_queue_return
+
+coh3_queue_probe:
+  jmp coh3_queue_mem
+  nop 2
+coh3_queue_return:
+
+[DISABLE]
+coh3_player_probe+09:
+  db 80 B9 82 06 00 00 00
+coh3_queue_probe:
+  db 80 BF 59 05 00 00 00
+unregistersymbol(coh3_pPlayer)
+unregistersymbol(coh3_player_probe)
+unregistersymbol(coh3_queue_probe)
+// Deliberately no dealloc commands; see the safety note above."""

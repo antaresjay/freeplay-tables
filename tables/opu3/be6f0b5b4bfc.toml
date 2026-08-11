@@ -1,0 +1,3805 @@
+[game]
+name = "One Piece: Unlimited World Red - Deluxe Edition"
+exe = "opu3.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=4697"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-initialization-activate-this-first"
+name = "Battle Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(battlestats_basepointer)
+registersymbol(battlestats_update_enable)
+registersymbol(battlestats_set_enable)
+registersymbol(battlestats_hpset_enable)
+registersymbol(battlestats_spset_enable)
+
+alloc(battlestats_basepointer, 4)
+alloc(battlestats_update_enable, 4)
+alloc(battlestats_set_enable, 4)
+alloc(battlestats_hpset_enable, 4)
+alloc(battlestats_spset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestats_update_enable)
+unregistersymbol(battlestats_set_enable)
+unregistersymbol(battlestats_hpset_enable)
+unregistersymbol(battlestats_spset_enable)
+
+dealloc(battlestats_basepointer)
+dealloc(battlestats_update_enable)
+dealloc(battlestats_set_enable)
+dealloc(battlestats_hpset_enable)
+dealloc(battlestats_spset_enable)"""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-to-update-battle"
+name = "Battle Stats Base Address Scan (To Update: Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(battlestats_savedAOB)
+label(battlestats_returnhere)
+label(battlestats_originalcode)
+label(battlestats_exit)
+
+label(battlestats_update_exit)
+label(battlestats_set_exit)
+label(battlestats_hpset_exit)
+label(battlestats_spset_exit)
+
+registersymbol(battlestats_savedAOB)
+
+//OPU3.exe+143BF5 - 8D 86 84040000        - lea eax,[esi+00000484]
+//OPU3.exe+143BFB - 89 02                 - mov [edx],eax
+//OPU3.exe+143BFD - 8B 86 88040000        - mov eax,[esi+00000488]
+//OPU3.exe+143C03 - 0F57 C0               - xorps xmm0,xmm0
+//OPU3.exe+143C06 - 66 0F6E 48 04         - movd xmm1,[eax+04]
+//OPU3.exe+143C0B - 0F5B C9               - cvtdq2ps xmm1,xmm1
+//OPU3.exe+143C0E - F3 0F11 45 C4         - movss [ebp-3C],xmm0
+//OPU3.exe+143C13 - 0F2F C8               - comiss xmm1,xmm0
+//OPU3.exe+143C16 - 76 1E                 - jna OPU3.exe+143C36
+// Accesses HP
+//OPU3.exe+143C18 - 8B 00                 - mov eax,[eax]
+aobscan(battlestats_searchedAOB, 8B 86 88 04 00 00 0F 57 C0)
+
+alloc(battlestats_newmem, 2048, battlestats_searchedAOB)
+alloc(battlestats_temp1, 4, battlestats_searchedAOB)
+alloc(battlestats_temp2, 4, battlestats_searchedAOB)
+alloc(battlestats_temp3, 4, battlestats_searchedAOB)
+alloc(battlestats_temp4, 4, battlestats_searchedAOB)
+alloc(battlestats_temp5, 4, battlestats_searchedAOB)
+
+
+battlestats_newmem:
+mov [battlestats_temp1], eax
+mov [battlestats_temp2], ebx
+mov [battlestats_temp3], ecx
+mov [battlestats_temp4], edx
+
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_update_exit
+mov [battlestats_basepointer], esi
+battlestats_update_exit:
+
+cmp dword ptr [battlestats_set_enable], #0
+je battlestats_set_exit
+battlestats_set_exit:
+
+cmp dword ptr [battlestats_hpset_enable], #0
+je battlestats_hpset_exit
+mov ebx, [esi+488]
+test ebx, ebx
+je battlestats_hpset_exit
+mov ecx, [ebx+4]
+mov [ebx], ecx
+battlestats_hpset_exit:
+
+cmp dword ptr [battlestats_spset_enable], #0
+je battlestats_spset_exit
+mov ebx, [esi+488]
+test ebx, ebx
+je battlestats_hpset_exit
+mov ecx, [ebx+20]
+mov [ebx+1c], ecx
+battlestats_spset_exit:
+
+mov eax, [battlestats_temp1]
+mov ebx, [battlestats_temp2]
+mov ecx, [battlestats_temp3]
+mov edx, [battlestats_temp4]
+
+
+battlestats_originalcode:
+db 8B 86 88 04 00 00
+//mov eax,[esi+00000488]
+
+
+battlestats_exit:
+jmp battlestats_returnhere
+
+
+battlestats_searchedAOB:
+battlestats_savedAOB:
+jmp battlestats_newmem
+nop
+battlestats_returnhere:
+
+
+[DISABLE]
+battlestats_savedAOB:
+db 8B 86 88 04 00 00
+//mov eax,[esi+00000488]
+
+unregistersymbol(battlestats_savedAOB)
+
+dealloc(battlestats_newmem)
+dealloc(battlestats_temp1)
+dealloc(battlestats_temp2)
+dealloc(battlestats_temp3)
+dealloc(battlestats_temp4)
+dealloc(battlestats_temp5)"""
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "sp-set-to-max"
+name = "SP Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_spset_enable"
+hops = []
+
+[[cheat]]
+id = "battle-stats-update-base-address"
+name = "Battle Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0x488",
+    "+0x0",
+]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0x488",
+    "+0x0",
+]
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0x488",
+    "+0x4",
+]
+
+[[cheat]]
+id = "sp"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0x488",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "max-sp"
+name = "Max SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0x488",
+    "+0x20",
+]
+
+[[cheat]]
+id = "inventory-stats-base-address-scan-initialization-activate-this-first"
+name = "Inventory Stats Base Address Scan Initialization (Activate This First)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(inventorystats_basepointer)
+registersymbol(inventorystats_update_enable)
+registersymbol(inventorystats_set_enable)
+
+alloc(inventorystats_basepointer, 4)
+alloc(inventorystats_update_enable, 4)
+alloc(inventorystats_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(inventorystats_basepointer)
+unregistersymbol(inventorystats_update_enable)
+unregistersymbol(inventorystats_set_enable)
+
+dealloc(inventorystats_basepointer)
+dealloc(inventorystats_update_enable)
+dealloc(inventorystats_set_enable)"""
+
+[[cheat]]
+id = "inventory-stats-base-address-scan-to-update-play-level"
+name = "Inventory Stats Base Address Scan (To Update: Play Level)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(inventorystats_savedAOB)
+label(inventorystats_returnhere)
+label(inventorystats_originalcode)
+label(inventorystats_exit)
+
+label(inventorystats_update_exit)
+label(inventorystats_set_exit)
+
+registersymbol(inventorystats_savedAOB)
+
+//OPU3.exe+43D92 - C1 E0 04              - shl eax,04
+//OPU3.exe+43D95 - 03 05 C0A68400        - add eax,[OPU3.exe+62A6C0]
+// Accesses Money
+//OPU3.exe+43D9B - 8B 40 08              - mov eax,[eax+08]
+//OPU3.exe+43D9E - C3                    - ret
+//OPU3.exe+43D9F - CC                    - int 3
+//OPU3.exe+43DA0 - 55                    - push ebp
+//OPU3.exe+43DA1 - 8B EC                 - mov ebp,esp
+//OPU3.exe+43DA3 - 8B 91 88040000        - mov edx,[ecx+00000488]
+//OPU3.exe+43DA9 - FF B1 30170000        - push [ecx+00001730]
+//OPU3.exe+43DAF - 8B 42 1C              - mov eax,[edx+1C]
+//OPU3.exe+43DB2 - 2B 45 08              - sub eax,[ebp+08]
+aobscan(inventorystats_searchedAOB, 8B 40 08 C3 CC 55 8B EC 8B 91 88 04 00 00 FF B1 30 17 00 00)
+
+alloc(inventorystats_newmem, 2048, inventorystats_searchedAOB)
+alloc(inventorystats_temp1, 4, inventorystats_searchedAOB)
+alloc(inventorystats_temp2, 4, inventorystats_searchedAOB)
+alloc(inventorystats_temp3, 4, inventorystats_searchedAOB)
+alloc(inventorystats_temp4, 4, inventorystats_searchedAOB)
+alloc(inventorystats_temp5, 4, inventorystats_searchedAOB)
+
+
+inventorystats_newmem:
+mov [inventorystats_temp1], eax
+mov [inventorystats_temp2], ebx
+mov [inventorystats_temp3], ecx
+mov [inventorystats_temp4], edx
+
+mov ebx, [inventorystats_savedAOB-4]
+
+cmp dword ptr [inventorystats_update_enable], #0
+je inventorystats_update_exit
+mov [inventorystats_basepointer], ebx
+inventorystats_update_exit:
+
+cmp dword ptr [inventorystats_set_enable], #0
+je inventorystats_set_exit
+inventorystats_set_exit:
+
+mov eax, [inventorystats_temp1]
+mov ebx, [inventorystats_temp2]
+mov ecx, [inventorystats_temp3]
+mov edx, [inventorystats_temp4]
+
+
+inventorystats_originalcode:
+db 8B 40 08 C3 CC
+//mov eax,[eax+08]
+//ret
+//int 3
+
+
+inventorystats_exit:
+jmp inventorystats_returnhere
+
+
+inventorystats_searchedAOB:
+inventorystats_savedAOB:
+jmp inventorystats_newmem
+inventorystats_returnhere:
+
+
+[DISABLE]
+inventorystats_savedAOB:
+db 8B 40 08 C3 CC
+//mov eax,[eax+08]
+//ret
+//int 3
+
+unregistersymbol(inventorystats_savedAOB)
+
+dealloc(inventorystats_newmem)
+dealloc(inventorystats_temp1)
+dealloc(inventorystats_temp2)
+dealloc(inventorystats_temp3)
+dealloc(inventorystats_temp4)
+dealloc(inventorystats_temp5)"""
+
+[[cheat]]
+id = "inventory-stats-update-base-address"
+name = "Inventory Stats Update Base Address?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x0",
+]
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x58",
+]
+
+[[cheat]]
+id = "heal-capsule"
+name = "Heal Capsule"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x151e",
+]
+
+[[cheat]]
+id = "heal-drink"
+name = "Heal Drink"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x151f",
+]
+
+[[cheat]]
+id = "heal-ampoule"
+name = "Heal Ampoule"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1520",
+]
+
+[[cheat]]
+id = "secret-medicine"
+name = "Secret Medicine"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1521",
+]
+
+[[cheat]]
+id = "heal-incense"
+name = "Heal Incense"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1522",
+]
+
+[[cheat]]
+id = "super-heal-incense"
+name = "Super Heal Incense"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1523",
+]
+
+[[cheat]]
+id = "purifier"
+name = "Purifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1524",
+]
+
+[[cheat]]
+id = "attack-up"
+name = "Attack Up"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1525",
+]
+
+[[cheat]]
+id = "attack-up-incense"
+name = "Attack Up Incense"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1526",
+]
+
+[[cheat]]
+id = "defense-up"
+name = "Defense Up"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1527",
+]
+
+[[cheat]]
+id = "defense-up-incense"
+name = "Defense Up Incense"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1528",
+]
+
+[[cheat]]
+id = "speed-up"
+name = "Speed Up"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1529",
+]
+
+[[cheat]]
+id = "speed-up-incense"
+name = "Speed Up Incense"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x152a",
+]
+
+[[cheat]]
+id = "revival"
+name = "Revival"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x152b",
+]
+
+[[cheat]]
+id = "pandaman-red"
+name = "Pandaman Red"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x152c",
+]
+
+[[cheat]]
+id = "pandaman-blue"
+name = "Pandaman Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x152d",
+]
+
+[[cheat]]
+id = "pandaman-yellow"
+name = "Pandaman Yellow"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x152e",
+]
+
+[[cheat]]
+id = "pandaman-green"
+name = "Pandaman Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x152f",
+]
+
+[[cheat]]
+id = "pandaman-white"
+name = "Pandaman White"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1530",
+]
+
+[[cheat]]
+id = "pandaman-black"
+name = "Pandaman Black"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1531",
+]
+
+[[cheat]]
+id = "pandaman-gold"
+name = "Pandaman Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1532",
+]
+
+[[cheat]]
+id = "fishing-rod-lv1"
+name = "Fishing Rod Lv1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1533",
+]
+
+[[cheat]]
+id = "strong-fishing-rod-lv1"
+name = "Strong Fishing Rod Lv1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1534",
+]
+
+[[cheat]]
+id = "super-fishing-rod-lv1"
+name = "Super Fishing Rod Lv1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1535",
+]
+
+[[cheat]]
+id = "insect-net-lv1"
+name = "Insect Net Lv1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1536",
+]
+
+[[cheat]]
+id = "strong-insect-net-lv1"
+name = "Strong Insect Net Lv1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1537",
+]
+
+[[cheat]]
+id = "super-insect-net-lv1"
+name = "Super Insect Net Lv1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1538",
+]
+
+[[cheat]]
+id = "wood-block"
+name = "Wood Block"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1539",
+]
+
+[[cheat]]
+id = "big-wood"
+name = "Big Wood"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x153a",
+]
+
+[[cheat]]
+id = "charcoal"
+name = "Charcoal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x153b",
+]
+
+[[cheat]]
+id = "junk"
+name = "Junk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x153c",
+]
+
+[[cheat]]
+id = "sticky-clay"
+name = "Sticky Clay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x153d",
+]
+
+[[cheat]]
+id = "rusty-scrap-iron"
+name = "Rusty Scrap Iron"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x153e",
+]
+
+[[cheat]]
+id = "iron-clump"
+name = "Iron Clump"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x153f",
+]
+
+[[cheat]]
+id = "pure-iron-and-steel"
+name = "Pure Iron and Steel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1540",
+]
+
+[[cheat]]
+id = "small-parts"
+name = "Small Parts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1541",
+]
+
+[[cheat]]
+id = "shiny-parts"
+name = "Shiny Parts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1542",
+]
+
+[[cheat]]
+id = "coal"
+name = "Coal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1543",
+]
+
+[[cheat]]
+id = "diamond-shard"
+name = "Diamond Shard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1544",
+]
+
+[[cheat]]
+id = "glass-shard"
+name = "Glass Shard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1545",
+]
+
+[[cheat]]
+id = "sparkling-crystal"
+name = "Sparkling Crystal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1546",
+]
+
+[[cheat]]
+id = "gunpowder"
+name = "Gunpowder"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1547",
+]
+
+[[cheat]]
+id = "superior-gunpowder"
+name = "Superior Gunpowder"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1548",
+]
+
+[[cheat]]
+id = "dial-fragment"
+name = "Dial fragment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1549",
+]
+
+[[cheat]]
+id = "brick-fragment"
+name = "Brick Fragment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x154a",
+]
+
+[[cheat]]
+id = "soft-soil"
+name = "Soft Soil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x154b",
+]
+
+[[cheat]]
+id = "spider-web"
+name = "Spider Web"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x154c",
+]
+
+[[cheat]]
+id = "slime-toxin"
+name = "Slime Toxin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x154d",
+]
+
+[[cheat]]
+id = "slime-gas"
+name = "Slime Gas"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x154e",
+]
+
+[[cheat]]
+id = "soapy-fluid"
+name = "Soapy Fluid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x154f",
+]
+
+[[cheat]]
+id = "special-soapy-fluid"
+name = "Special Soapy Fluid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1550",
+]
+
+[[cheat]]
+id = "island-cloud-fragment"
+name = "Island Cloud Fragment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1551",
+]
+
+[[cheat]]
+id = "keratin-particle"
+name = "Keratin Particle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1552",
+]
+
+[[cheat]]
+id = "ice-shard"
+name = "Ice Shard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1553",
+]
+
+[[cheat]]
+id = "iced-fish"
+name = "Iced Fish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1554",
+]
+
+[[cheat]]
+id = "explosive-rock-piece"
+name = "Explosive Rock Piece"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1555",
+]
+
+[[cheat]]
+id = "magma-clump"
+name = "Magma Clump"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1556",
+]
+
+[[cheat]]
+id = "beautiful-shell"
+name = "Beautiful Shell"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1557",
+]
+
+[[cheat]]
+id = "large-pearl"
+name = "Large Pearl"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1558",
+]
+
+[[cheat]]
+id = "snow-water"
+name = "Snow Water"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1559",
+]
+
+[[cheat]]
+id = "cinders"
+name = "Cinders"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x155a",
+]
+
+[[cheat]]
+id = "fine-ash"
+name = "Fine Ash"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x155b",
+]
+
+[[cheat]]
+id = "soft-coral"
+name = "Soft Coral"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x155c",
+]
+
+[[cheat]]
+id = "precious-coral"
+name = "Precious Coral"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x155d",
+]
+
+[[cheat]]
+id = "old-gold-coin"
+name = "Old Gold Coin"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x155e",
+]
+
+[[cheat]]
+id = "mushroom"
+name = "Mushroom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x155f",
+]
+
+[[cheat]]
+id = "gourmet-mushroom"
+name = "Gourmet Mushroom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1560",
+]
+
+[[cheat]]
+id = "matsutake-mushroom"
+name = "Matsutake Mushroom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1561",
+]
+
+[[cheat]]
+id = "golden-matsutake"
+name = "Golden Matsutake"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1562",
+]
+
+[[cheat]]
+id = "mystery-egg"
+name = "Mystery Egg"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1563",
+]
+
+[[cheat]]
+id = "golden-egg"
+name = "Golden Egg"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1564",
+]
+
+[[cheat]]
+id = "normal-rice"
+name = "Normal Rice"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1565",
+]
+
+[[cheat]]
+id = "golden-rice"
+name = "Golden Rice"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1566",
+]
+
+[[cheat]]
+id = "normal-wheat"
+name = "Normal Wheat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1567",
+]
+
+[[cheat]]
+id = "legendary-wheat"
+name = "Legendary Wheat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1568",
+]
+
+[[cheat]]
+id = "all-purpose-oil"
+name = "All-Purpose Oil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1569",
+]
+
+[[cheat]]
+id = "salth-seaweed"
+name = "Salth Seaweed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x156a",
+]
+
+[[cheat]]
+id = "salt-crystal"
+name = "Salt Crystal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x156b",
+]
+
+[[cheat]]
+id = "small-meat"
+name = "Small Meat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x156c",
+]
+
+[[cheat]]
+id = "hard-meat"
+name = "Hard Meat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x156d",
+]
+
+[[cheat]]
+id = "superior-meat"
+name = "Superior Meat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x156e",
+]
+
+[[cheat]]
+id = "dragon-meat"
+name = "Dragon Meat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x156f",
+]
+
+[[cheat]]
+id = "jumbo-banana"
+name = "Jumbo Banana"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1570",
+]
+
+[[cheat]]
+id = "black-pepper"
+name = "Black Pepper"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1571",
+]
+
+[[cheat]]
+id = "royal-jelly"
+name = "Royal Jelly"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1572",
+]
+
+[[cheat]]
+id = "sweet-sap"
+name = "Sweet Sap"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1573",
+]
+
+[[cheat]]
+id = "super-sweet-sap"
+name = "Super Sweet Sap"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1574",
+]
+
+[[cheat]]
+id = "sharp-carrot"
+name = "Sharp Carrot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1575",
+]
+
+[[cheat]]
+id = "super-onion"
+name = "Super Onion"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1576",
+]
+
+[[cheat]]
+id = "big-potato"
+name = "Big Potato"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1577",
+]
+
+[[cheat]]
+id = "cannon-ball-cabbage"
+name = "Cannon Ball Cabbage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1578",
+]
+
+[[cheat]]
+id = "tomatomato"
+name = "Tomatomato"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1579",
+]
+
+[[cheat]]
+id = "bitter-grass"
+name = "Bitter Grass"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x157a",
+]
+
+[[cheat]]
+id = "herb"
+name = "Herb"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x157b",
+]
+
+[[cheat]]
+id = "amazing-herb"
+name = "Amazing Herb"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x157c",
+]
+
+[[cheat]]
+id = "flower-nectar"
+name = "Flower Nectar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x157d",
+]
+
+[[cheat]]
+id = "strong-flower-nectar"
+name = "Strong Flower Nectar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x157e",
+]
+
+[[cheat]]
+id = "red-fruit"
+name = "Red Fruit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x157f",
+]
+
+[[cheat]]
+id = "ripe-red-fruit"
+name = "Ripe Red Fruit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1580",
+]
+
+[[cheat]]
+id = "blue-fruit"
+name = "Blue Fruit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1581",
+]
+
+[[cheat]]
+id = "ripe-blue-fruit"
+name = "Ripe Blue Fruit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1582",
+]
+
+[[cheat]]
+id = "brown-fruit"
+name = "Brown Fruit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1583",
+]
+
+[[cheat]]
+id = "ripe-brown-fruit"
+name = "Ripe Brown Fruit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1584",
+]
+
+[[cheat]]
+id = "golden-fruit"
+name = "Golden Fruit"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1585",
+]
+
+[[cheat]]
+id = "ripe-golden-fruit"
+name = "Ripe Golden Fruit"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1586",
+]
+
+[[cheat]]
+id = "coconut"
+name = "Coconut"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1587",
+]
+
+[[cheat]]
+id = "cactus-pulp"
+name = "Cactus Pulp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1588",
+]
+
+[[cheat]]
+id = "juicy-cactus-pulp"
+name = "Juicy Cactus Pulp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1589",
+]
+
+[[cheat]]
+id = "cactus-flower"
+name = "Cactus Flower"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x158a",
+]
+
+[[cheat]]
+id = "conache"
+name = "Conache"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x158b",
+]
+
+[[cheat]]
+id = "bamboo"
+name = "Bamboo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x158c",
+]
+
+[[cheat]]
+id = "supple-bamboo"
+name = "Supple Bamboo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x158d",
+]
+
+[[cheat]]
+id = "sky-flower"
+name = "Sky Flower"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x158e",
+]
+
+[[cheat]]
+id = "fast-growing-grass"
+name = "Fast Growing Grass"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x158f",
+]
+
+[[cheat]]
+id = "fluff"
+name = "Fluff"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1590",
+]
+
+[[cheat]]
+id = "long-ivy"
+name = "Long Ivy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1591",
+]
+
+[[cheat]]
+id = "pine-cone"
+name = "Pine Cone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1592",
+]
+
+[[cheat]]
+id = "poison-nectar"
+name = "Poison Nectar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1593",
+]
+
+[[cheat]]
+id = "sleep-nectar"
+name = "Sleep Nectar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1594",
+]
+
+[[cheat]]
+id = "special-fruit"
+name = "Special Fruit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1595",
+]
+
+[[cheat]]
+id = "clear-honey"
+name = "Clear Honey"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1596",
+]
+
+[[cheat]]
+id = "round-lens"
+name = "Round Lens"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1597",
+]
+
+[[cheat]]
+id = "shiny-flower"
+name = "Shiny Flower"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1598",
+]
+
+[[cheat]]
+id = "mysterious-metal"
+name = "Mysterious Metal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x1599",
+]
+
+[[cheat]]
+id = "mysterious-stone"
+name = "Mysterious Stone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x159a",
+]
+
+[[cheat]]
+id = "balloon"
+name = "Balloon"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x159b",
+]
+
+[[cheat]]
+id = "panda-balloon"
+name = "Panda Balloon"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x159c",
+]
+
+[[cheat]]
+id = "heal-capsule-root"
+name = "Heal Capsule Root"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x159d",
+]
+
+[[cheat]]
+id = "heal-drink-root"
+name = "Heal Drink Root"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x159e",
+]
+
+[[cheat]]
+id = "heal-ampoule-root"
+name = "Heal Ampoule Root"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x159f",
+]
+
+[[cheat]]
+id = "voice-jewel"
+name = "Voice Jewel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a0",
+]
+
+[[cheat]]
+id = "growth-jewel"
+name = "Growth Jewel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a1",
+]
+
+[[cheat]]
+id = "silver-jewel"
+name = "Silver Jewel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a2",
+]
+
+[[cheat]]
+id = "gold-jewel"
+name = "Gold Jewel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a3",
+]
+
+[[cheat]]
+id = "palm-seed"
+name = "Palm Seed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a4",
+]
+
+[[cheat]]
+id = "blue-seed"
+name = "Blue Seed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a5",
+]
+
+[[cheat]]
+id = "red-seed"
+name = "Red Seed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a6",
+]
+
+[[cheat]]
+id = "brown-seed"
+name = "Brown Seed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a7",
+]
+
+[[cheat]]
+id = "pine-cone-2"
+name = "Pine Cone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a8",
+]
+
+[[cheat]]
+id = "kona-seed"
+name = "Kona Seed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15a9",
+]
+
+[[cheat]]
+id = "mysterious-seed"
+name = "Mysterious Seed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15aa",
+]
+
+[[cheat]]
+id = "gold-seed"
+name = "Gold Seed"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15ab",
+]
+
+[[cheat]]
+id = "transponder-snail"
+name = "Transponder Snail"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15ac",
+]
+
+[[cheat]]
+id = "gold-transponder-snail"
+name = "Gold Transponder Snail"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15ad",
+]
+
+[[cheat]]
+id = "hercules-beetle"
+name = "Hercules Beetle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15ae",
+]
+
+[[cheat]]
+id = "atlas-beetle"
+name = "Atlas Beetle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15af",
+]
+
+[[cheat]]
+id = "golden-hercules"
+name = "Golden Hercules"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b0",
+]
+
+[[cheat]]
+id = "thunder-beetle"
+name = "Thunder Beetle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b1",
+]
+
+[[cheat]]
+id = "swallowtail-butterfly"
+name = "Swallowtail Butterfly"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b2",
+]
+
+[[cheat]]
+id = "cross-bone-butterfly"
+name = "Cross Bone Butterfly"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b3",
+]
+
+[[cheat]]
+id = "honeybee"
+name = "Honeybee"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b4",
+]
+
+[[cheat]]
+id = "doctor-hornet"
+name = "Doctor Hornet"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b5",
+]
+
+[[cheat]]
+id = "tree-frog"
+name = "Tree Frog"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b6",
+]
+
+[[cheat]]
+id = "red-eye-warted-toad"
+name = "Red-Eye Warted Toad"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b7",
+]
+
+[[cheat]]
+id = "rockin-lizard"
+name = "Rockin' Lizard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b8",
+]
+
+[[cheat]]
+id = "tempest-rat"
+name = "Tempest Rat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15b9",
+]
+
+[[cheat]]
+id = "mole"
+name = "Mole"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15ba",
+]
+
+[[cheat]]
+id = "don-praying-mantis"
+name = "Don Praying Mantis"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15bb",
+]
+
+[[cheat]]
+id = "mountain-emperor"
+name = "Mountain Emperor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15bc",
+]
+
+[[cheat]]
+id = "army-ant"
+name = "Army Ant"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15bd",
+]
+
+[[cheat]]
+id = "dragon-bird"
+name = "Dragon Bird"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15be",
+]
+
+[[cheat]]
+id = "land-gator"
+name = "Land Gator"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15bf",
+]
+
+[[cheat]]
+id = "cow-bull"
+name = "Cow Bull"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c0",
+]
+
+[[cheat]]
+id = "death-squirrel"
+name = "Death Squirrel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c1",
+]
+
+[[cheat]]
+id = "kung-fu-dot"
+name = "Kung-Fu Dot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c2",
+]
+
+[[cheat]]
+id = "tailed-frog"
+name = "Tailed Frog"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c3",
+]
+
+[[cheat]]
+id = "stag-beetle"
+name = "Stag Beetle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c4",
+]
+
+[[cheat]]
+id = "bluefin-elephant-tuna"
+name = "Bluefin Elephant Tuna"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c5",
+]
+
+[[cheat]]
+id = "panda-shark"
+name = "Panda Shark"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c6",
+]
+
+[[cheat]]
+id = "shark"
+name = "Shark"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c7",
+]
+
+[[cheat]]
+id = "sky-fish"
+name = "Sky Fish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c8",
+]
+
+[[cheat]]
+id = "fork-tail-killifish"
+name = "Fork Tail Killifish"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15c9",
+]
+
+[[cheat]]
+id = "glistening-saury"
+name = "Glistening Saury"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15ca",
+]
+
+[[cheat]]
+id = "balloon-catfish"
+name = "Balloon Catfish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15cb",
+]
+
+[[cheat]]
+id = "adventure-fish"
+name = "Adventure Fish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15cc",
+]
+
+[[cheat]]
+id = "bone-fish"
+name = "Bone Fish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15cd",
+]
+
+[[cheat]]
+id = "gastropod"
+name = "Gastropod"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15ce",
+]
+
+[[cheat]]
+id = "treasure-pearl-clam"
+name = "Treasure Pearl Clam"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15cf",
+]
+
+[[cheat]]
+id = "armored-crab"
+name = "Armored Crab"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d0",
+]
+
+[[cheat]]
+id = "smiley-jellyfish"
+name = "Smiley Jellyfish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d1",
+]
+
+[[cheat]]
+id = "skull-knight"
+name = "Skull Knight"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d2",
+]
+
+[[cheat]]
+id = "old-deep-sea-fish"
+name = "Old Deep-Sea Fish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d3",
+]
+
+[[cheat]]
+id = "marine-flounder"
+name = "Marine Flounder"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d4",
+]
+
+[[cheat]]
+id = "gyoriiza"
+name = "Gyoriiza"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d5",
+]
+
+[[cheat]]
+id = "kragen"
+name = "Kragen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d6",
+]
+
+[[cheat]]
+id = "octopus-balloon"
+name = "Octopus Balloon"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d7",
+]
+
+[[cheat]]
+id = "sandora-catfish"
+name = "Sandora Catfish"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d8",
+]
+
+[[cheat]]
+id = "sky-lobster"
+name = "Sky Lobster"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15d9",
+]
+
+[[cheat]]
+id = "hamme-sea-anemone"
+name = "Hamme Sea Anemone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15da",
+]
+
+[[cheat]]
+id = "sea-king-family"
+name = "Sea King Family"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15db",
+]
+
+[[cheat]]
+id = "slot-191"
+name = "Slot 191"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15dc",
+]
+
+[[cheat]]
+id = "slot-192"
+name = "Slot 192"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15dd",
+]
+
+[[cheat]]
+id = "3-fork-tail-killifish"
+name = "3-Fork Tail Killifish"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15de",
+]
+
+[[cheat]]
+id = "lovely-angel"
+name = "Lovely Angel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorystats_basepointer"
+hops = [
+    "+0x0",
+    "+0x15df",
+]

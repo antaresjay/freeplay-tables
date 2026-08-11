@@ -1,0 +1,309 @@
+[game]
+name = "Star Ocean First Departure (PSP) Using PPSSPP"
+exe = "star_ocean_first_departure_psp_using_ppsspp_1_4_2.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=4461"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(FolReadInStatusMenuAOB,8B 90 18 ?? ?? ?? 8B 4D F4 83 C1 20)
+registersymbol(FolReadInStatusMenuAOB)
+
+///
+alloc(newmem,2048,FolReadInStatusMenuAOB)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(FolPtr)
+registersymbol(FolPtr)
+label(DynamicOffset)
+registersymbol(DynamicOffset)
+label(FolReadInStatusMenuOriginalAOB)
+registersymbol(FolReadInStatusMenuOriginalAOB)
+label(Char1CurrentHPPtr)
+registersymbol(Char1CurrentHPPtr)
+
+newmem:
+  push ebx
+  mov ebx,eax
+  add ebx,[DynamicOffset]
+  mov [FolPtr],ebx
+  
+originalcode:
+  mov edx,[ebx]
+  add ebx,2CC4
+  mov [Char1CurrentHPPtr],ebx
+  pop ebx
+  
+exit:
+  jmp returnhere
+  
+FolPtr:
+dq 0
+Char1CurrentHPPtr:
+dq 0
+DynamicOffset:
+readmem(FolReadInStatusMenuAOB+2,4)
+FolReadInStatusMenuOriginalAOB:
+readmem(FolReadInStatusMenuAOB,6)
+
+FolReadInStatusMenuAOB:
+  jmp newmem
+  nop
+  returnhere:
+  
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+FolReadInStatusMenuAOB:
+readmem(FolReadInStatusMenuOriginalAOB,6)
+
+unregistersymbol(FolPtr)
+unregistersymbol(DynamicOffset)
+unregistersymbol(FolReadInStatusMenuAOB)
+unregistersymbol(FolReadInStatusMenuOriginalAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "battle-character-misc-scripts"
+name = "[Battle,Character,Misc Scripts]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(InjectionPointAOB,8B 0C 95 ?? ?? ?? ?? 89 1C 88 83 3C 95)
+registersymbol(InjectionPointAOB)
+
+///
+alloc(newmem,8192,InjectionPointAOB)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+///
+label(BattleInfoOffset)
+registersymbol(BattleInfoOffset)
+label(BattleInfoNumPartyMembers)
+registersymbol(BattleInfoNumPartyMembers)
+label(InfiniteHP)
+registersymbol(InfiniteHP)
+label(InfiniteMP)
+registersymbol(InfiniteMP)
+
+///
+label(SetMinimumFol)
+registersymbol(SetMinimumFol)
+label(MinimumFolAmt)
+registersymbol(MinimumFolAmt)
+
+///
+label(DynamicOffset2)
+registersymbol(DynamicOffset2)
+label(InjectionPointOriginalAOB)
+registersymbol(InjectionPointOriginalAOB)
+
+///
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+  push ebx
+  push ecx
+  push eax
+  push edx
+  mov ebx,0
+  mov ecx,[FolPtr]
+  mov edx,[Char1CurrentHPPtr]
+  cmp ecx,0
+  je _DoneMiscScripts
+StartLoopTwo:
+  cmp ebx,[BattleInfoNumPartyMembers]
+  jge _DoneBattleScripts
+  cmp [InfiniteHP],1
+  jne @F
+  mov eax,[edx-8]
+  cmp eax,dword ptr [edx]
+  je @F
+  mov [edx],eax
+@@:
+  cmp [InfiniteMP],1
+  jne @F
+  xor eax,eax
+  mov ax,[edx+4]
+  cmp ax,word ptr [edx+8]
+  je @F
+  mov [edx+8],ax
+@@:
+  inc ebx
+  add edx,[BattleInfoOffset]
+  jmp StartLoopTwo
+  
+_DoneBattleScripts:
+
+  cmp [SetMinimumFol],1
+  jne @F
+  mov eax,[MinimumFolAmt]
+  cmp [ecx],eax
+  jge @F
+  mov [ecx],eax
+@@:
+
+_DoneMiscScripts:
+
+  pop edx
+  pop eax
+  pop ecx
+  pop ebx
+
+originalcode:
+  push ebx
+  mov ebx,edx
+  imul ebx,4
+  add ebx,[DynamicOffset2]
+  mov ecx,[ebx]
+  pop ebx
+
+exit:
+jmp returnhere
+
+DynamicOffset2:
+readmem(InjectionPointAOB+3,4)
+InjectionPointOriginalAOB:
+readmem(InjectionPointAOB,7)
+BattleInfoOffset:
+dd 60
+BattleInfoNumPartyMembers:
+dd 4
+InfiniteHP:
+dd 1
+InfiniteMP:
+dd 1
+SetMinimumFol:
+dd 0
+MinimumFolAmt:
+dq #25000
+
+InjectionPointAOB: 
+jmp newmem
+nop
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+InjectionPointAOB:
+readmem(InjectionPointOriginalAOB,7)
+
+dealloc(newmem)
+unregistersymbol(InjectionPointAOB)
+unregistersymbol(InjectionPointOriginalAOB)
+unregistersymbol(DynamicOffset2)
+
+///
+unregistersymbol(BattleInfoOffset)
+unregistersymbol(BattleInfoNumPartyMembers)
+unregistersymbol(InfiniteHP)
+unregistersymbol(InfiniteMP)
+unregistersymbol(SetMinimumFol)
+unregistersymbol(MinimumFolAmt)"""
+
+[[cheat]]
+id = "infinite-hp"
+name = "Infinite HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteHP"
+hops = []
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteMP"
+hops = []
+
+[[cheat]]
+id = "enable-minimum-fol"
+name = "Enable Minimum Fol"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetMinimumFol"
+hops = []
+
+[[cheat]]
+id = "minimum-fol-amount"
+name = "Minimum Fol Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinimumFolAmt"
+hops = []
+
+[[cheat]]
+id = "fol"
+name = "Fol"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "FolPtr"
+hops = ["+0x0"]

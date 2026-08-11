@@ -1,0 +1,1214 @@
+[game]
+name = "Immoral-Bathhouse"
+exe = "immoral-bathhouse.exe"
+notes = "Converted from a Cheat Engine table by igromanru. Source: https://fearlessrevolution.com/viewtopic.php?t=38661"
+verified = []
+author = "igromanru"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-debug-mode-press-tab-to-open-the-menu"
+name = 'Enable Debug Mode (Press "Tab" to open the Menu)'
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Date   : 2026-03-20
+  Author : Igromanru
+
+  Enable Debug Mode
+}
+
+[ENABLE]
+AOBScanRegion(debugMode, DataController:get_debugMode, DataController:get_debugMode+a, 48 83 ? ? 33 C0)
+alloc(newmem,$100, debugMode)
+
+label(debugModeBackUp)
+label(return)
+
+newmem:
+debugModeBackUp:
+  readMem(debugMode, 6)
+  mov eax, 1
+  jmp far return
+
+debugMode:
+  jmp newmem
+  nop
+return:
+
+registersymbol(debugMode)
+registersymbol(debugModeBackUp)
+
+[DISABLE]
+debugMode:
+  readMem(debugModeBackUp, 6)
+
+dealloc(*)
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: DataController:get_debugMode
+
+// ---------- INJECTING HERE ----------
+DataController:get_debugMode: 48 83 EC 08  - sub rsp,08
+DataController:get_debugMode+4: 33 C0        - xor eax,eax
+// ---------- DONE INJECTING  ----------
+DataController:get_debugMode+6: 48 83 C4 08  - add rsp,08
+DataController:get_debugMode+a: C3           - ret
+}"""
+
+[[cheat]]
+id = "infinite-stamina"
+name = "Infinite Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Date   : 2026-03-20
+  Author : Igromanru
+
+  Infinite Stamina
+}
+
+[ENABLE]
+AOBScanRegion(infMoney, DataController:SetStamina+8, DataController:SetStamina+50, 89 48 ? 48 B8 ? ? ? ? ? ? ? ? 48 8B 00)
+alloc(newmem,$100)
+
+label(infMoneyBackUp)
+label(return)
+
+newmem:
+  mov ecx, (int)900
+infMoneyBackUp:
+  readMem(infMoney, 16)
+  jmp far return
+
+infMoney:
+  jmp far newmem
+  nop 2
+return:
+
+registersymbol(infMoney)
+registersymbol(infMoneyBackUp)
+
+[DISABLE]
+infMoney:
+  readMem(infMoneyBackUp, 16)
+
+dealloc(*)
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: DataController:SetStamina+1d
+
+DataController:SetStamina: 55                             - push rbp
+DataController:SetStamina+1: 48 8B EC                       - mov rbp,rsp
+DataController:SetStamina+4: 48 83 EC 30                    - sub rsp,30
+DataController:SetStamina+8: 48 89 4D F8                    - mov [rbp-08],rcx
+DataController:SetStamina+c: 48 B8 88 AF 0B 07 7F 01 00 00  - mov rax,0000017F070BAF88
+DataController:SetStamina+16: 48 8B 00                       - mov rax,[rax]
+DataController:SetStamina+19: 48 63 4D F8                    - movsxd  rcx,dword ptr [rbp-08]
+// ---------- INJECTING HERE ----------
+DataController:SetStamina+1d: 89 48 2C                       - mov [rax+2C],ecx
+DataController:SetStamina+20: 48 B8 88 AF 0B 07 7F 01 00 00  - mov rax,0000017F070BAF88
+DataController:SetStamina+2a: 48 8B 00                       - mov rax,[rax]
+// ---------- DONE INJECTING  ----------
+DataController:SetStamina+2d: 48 63 40 2C                    - movsxd  rax,dword ptr [rax+2C]
+DataController:SetStamina+31: 48 B9 88 AF 0B 07 7F 01 00 00  - mov rcx,0000017F070BAF88
+DataController:SetStamina+3b: 48 8B 09                       - mov rcx,[rcx]
+DataController:SetStamina+3e: 48 63 49 30                    - movsxd  rcx,dword ptr [rcx+30]
+DataController:SetStamina+42: 3B C1                          - cmp eax,ecx
+DataController:SetStamina+44: 7E 21                          - jle DataController:SetStamina+67
+DataController:SetStamina+46: 48 B8 88 AF 0B 07 7F 01 00 00  - mov rax,0000017F070BAF88
+DataController:SetStamina+50: 48 8B 00                       - mov rax,[rax]
+}"""
+
+[[cheat]]
+id = "dices-always-roll-values"
+name = "Dices Always Roll Values:"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Date   : 2026-03-20
+  Author : Igromanru
+
+  Dices Always Roll Values
+}
+
+[ENABLE]
+AOBScanRegion(dince1Roll, ExploreMainUI:Update+19, ExploreMainUI:Update+63, 89 86 ? ? ? ? 33 C9 BA 06 00 00 00 48 8D ? ? ?)
+AOBScanRegion(dince2Roll, ExploreMainUI:Update+33, ExploreMainUI:Update+88, 89 86 ? ? ? ? 48 63 ? ? ? ? ? 48 8B CE)
+alloc(newmem,$128)
+
+label(dince1RollValue)
+label(dince1RollBackUp)
+label(dince2RollCode dince2RollRet)
+label(dince2RollValue)
+label(dince2RollBackUp)
+label(return)
+
+newmem:
+  mov eax, [dince1RollValue]
+dince1RollBackUp:
+  readMem(dince1Roll, 18)
+  jmp far return
+dince2RollCode:
+  mov eax, [dince2RollValue]
+dince2RollBackUp:
+  readMem(dince2Roll, 16)
+  jmp far dince2RollRet
+dince1RollValue:
+  dd (int)5
+dince2RollValue:
+  dd (int)5
+  align 10 CC
+
+dince1Roll:
+  jmp far newmem
+  nop 4
+return:
+
+dince2Roll:
+  jmp far dince2RollCode
+  nop 2
+dince2RollRet:
+
+registersymbol(dince1Roll)
+registersymbol(dince1RollBackUp)
+registersymbol(dince2RollBackUp)
+registersymbol(dince1RollValue)
+registersymbol(dince2RollValue)
+
+[DISABLE]
+dince1Roll:
+  readMem(dince1RollBackUp, 18)
+
+dince2Roll:
+  readMem(dince2RollBackUp, 16)
+
+dealloc(*)
+unregistersymbol(*)
+{
+// ORIGINAL CODE - INJECTION POINT: ExploreMainUI:Update+33
+
+ExploreMainUI:Update+4: 48 83 EC 30                    - sub rsp,30
+ExploreMainUI:Update+8: 48 89 75 F8                    - mov [rbp-08],rsi
+ExploreMainUI:Update+c: 48 8B F1                       - mov rsi,rcx
+ExploreMainUI:Update+f: 48 63 86 F4 00 00 00           - movsxd  rax,dword ptr [rsi+000000F4]
+ExploreMainUI:Update+16: 83 F8 02                       - cmp eax,02
+ExploreMainUI:Update+19: 0F 85 E4 00 00 00              - jne ExploreMainUI:Update+103
+ExploreMainUI:Update+1f: 33 C9                          - xor ecx,ecx
+ExploreMainUI:Update+21: BA 06 00 00 00                 - mov edx,00000006
+ExploreMainUI:Update+26: 49 BB 30 53 F4 8D 33 02 00 00  - mov r11,UnityEngine.Random:Range
+ExploreMainUI:Update+30: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+ExploreMainUI:Update+33: 89 86 E4 00 00 00              - mov [rsi+000000E4],eax
+ExploreMainUI:Update+39: 33 C9                          - xor ecx,ecx
+ExploreMainUI:Update+3b: BA 06 00 00 00                 - mov edx,00000006
+ExploreMainUI:Update+40: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+// ---------- DONE INJECTING  ----------
+ExploreMainUI:Update+45: 90                             - nop
+ExploreMainUI:Update+46: 49 BB 30 53 F4 8D 33 02 00 00  - mov r11,UnityEngine.Random:Range
+ExploreMainUI:Update+50: 41 FF D3                       - call r11
+ExploreMainUI:Update+53: 89 86 E8 00 00 00              - mov [rsi+000000E8],eax
+ExploreMainUI:Update+59: 48 63 96 E4 00 00 00           - movsxd  rdx,dword ptr [rsi+000000E4]
+ExploreMainUI:Update+60: 48 8B CE                       - mov rcx,rsi
+ExploreMainUI:Update+63: 66 66 90                       - nop 3
+}
+{
+// ORIGINAL CODE - INJECTION POINT: ExploreMainUI:Update+53
+
+ExploreMainUI:Update+21: BA 06 00 00 00                 - mov edx,00000006
+ExploreMainUI:Update+26: 49 BB 30 53 F4 8D 33 02 00 00  - mov r11,UnityEngine.Random:Range
+ExploreMainUI:Update+30: 41 FF D3                       - call r11
+ExploreMainUI:Update+33: 89 86 E4 00 00 00              - mov [rsi+000000E4],eax
+ExploreMainUI:Update+39: 33 C9                          - xor ecx,ecx
+ExploreMainUI:Update+3b: BA 06 00 00 00                 - mov edx,00000006
+ExploreMainUI:Update+40: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+ExploreMainUI:Update+45: 90                             - nop
+ExploreMainUI:Update+46: 49 BB 30 53 F4 8D 33 02 00 00  - mov r11,UnityEngine.Random:Range
+ExploreMainUI:Update+50: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+ExploreMainUI:Update+53: 89 86 E8 00 00 00              - mov [rsi+000000E8],eax
+ExploreMainUI:Update+59: 48 63 96 E4 00 00 00           - movsxd  rdx,dword ptr [rsi+000000E4]
+ExploreMainUI:Update+60: 48 8B CE                       - mov rcx,rsi
+// ---------- DONE INJECTING  ----------
+ExploreMainUI:Update+63: 66 66 90                       - nop 3
+ExploreMainUI:Update+66: 49 BB 10 48 0D 23 34 02 00 00  - mov r11,ExploreMainUI:showRandomDice1
+ExploreMainUI:Update+70: 41 FF D3                       - call r11
+ExploreMainUI:Update+73: 48 63 96 E8 00 00 00           - movsxd  rdx,dword ptr [rsi+000000E8]
+ExploreMainUI:Update+7a: 48 8B CE                       - mov rcx,rsi
+ExploreMainUI:Update+7d: 90                             - nop
+ExploreMainUI:Update+7e: 49 BB C0 49 0D 23 34 02 00 00  - mov r11,ExploreMainUI:showRandomDice2
+ExploreMainUI:Update+88: 41 FF D3                       - call r11
+}"""
+
+[[cheat]]
+id = "dice-1"
+name = "Dice 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:1",
+    "1:2",
+    "2:3",
+    "3:4",
+    "4:5",
+    "5:6",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dince1RollValue"
+hops = []
+
+[[cheat]]
+id = "dice-2"
+name = "Dice 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:1",
+    "1:2",
+    "2:3",
+    "3:4",
+    "4:5",
+    "5:6",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dince2RollValue"
+hops = []
+
+[[cheat]]
+id = "unlock-all-memories-gallery-temporally"
+name = "Unlock All Memories / Gallery (temporally)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Date   : 2026-03-26
+  Author : Igromanru
+
+  Unlock All Memories / Gallery
+}
+
+[ENABLE]
+AOBScanRegion(unlockMemories1, ExtraMemoryItem:get_isUnlocked, ExtraMemoryItem:get_isUnlocked+f, 55 48 8B)
+AOBScanRegion(itemInitFind, ExtraSDR18Item:Init+2e, ExtraSDR18Item:Init+84, 85 C0 0F 85 ? ? ? ?)
+AOBScanRegion(itemOnClickFind, ExtraSDR18Item:OnClick+2e, ExtraSDR18Item:OnClick+84, 85 C0 75 ? 48 8D)
+define(itemInit, itemInitFind+2)
+define(itemOnClick, itemOnClickFind+2)
+alloc(newmem,$100)
+
+label(unlockMemories1BackUp)
+label(itemInitBackUp)
+label(itemOnClickBackUp)
+
+newmem:
+unlockMemories1BackUp:
+  readMem(unlockMemories1, 8)
+itemInitBackUp:
+  readMem(itemInit, 6)
+itemOnClickBackUp:
+  readMem(itemOnClick, 2)
+
+unlockMemories1:
+  mov eax, 1
+  ret
+  nop 2
+
+itemInit:
+  db 90 E9
+
+itemOnClick:
+  db EB
+
+registersymbol(unlockMemories1)
+registersymbol(unlockMemories1BackUp)
+registersymbol(itemInitBackUp)
+registersymbol(itemOnClickBackUp)
+
+[DISABLE]
+unlockMemories1:
+  readMem(unlockMemories1BackUp, 8)
+
+itemInit:
+  readMem(itemInitBackUp, 6)
+
+itemOnClick:
+  readMem(itemOnClickBackUp, 2)
+
+dealloc(*)
+unregistersymbol(*)
+{
+// ORIGINAL CODE - INJECTION POINT: ExtraMemoryItem:get_isUnlocked
+
+// ---------- INJECTING HERE ----------
+ExtraMemoryItem:get_isUnlocked: 55                             - push rbp
+ExtraMemoryItem:get_isUnlocked+1: 48 8B EC                       - mov rbp,rsp
+ExtraMemoryItem:get_isUnlocked+4: 48 83 EC 50                    - sub rsp,50
+// ---------- DONE INJECTING  ----------
+ExtraMemoryItem:get_isUnlocked+8: 48 89 75 F8                    - mov [rbp-08],rsi
+ExtraMemoryItem:get_isUnlocked+c: 48 8B F1                       - mov rsi,rcx
+ExtraMemoryItem:get_isUnlocked+f: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+ExtraMemoryItem:get_isUnlocked+16: 49 BB 09 B7 2E D9 52 01 00 00  - mov r11,00000152D92EB709
+ExtraMemoryItem:get_isUnlocked+20: 41 FF D3                       - call r11
+ExtraMemoryItem:get_isUnlocked+23: 48 8B 40 10                    - mov rax,[rax+10]
+ExtraMemoryItem:get_isUnlocked+27: 48 8B 56 30                    - mov rdx,[rsi+30]
+ExtraMemoryItem:get_isUnlocked+2b: 48 8B C8                       - mov rcx,rax
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: ExtraSDR18Item:Init+5d
+
+ExtraSDR18Item:Init+2e: 49 BB 40 4F 04 00 53 01 00 00  - mov r11,DataController:get_globalData
+ExtraSDR18Item:Init+38: 41 FF D3                       - call r11
+ExtraSDR18Item:Init+3b: 48 8B 40 18                    - mov rax,[rax+18]
+ExtraSDR18Item:Init+3f: 49 63 57 2C                    - movsxd  rdx,dword ptr [r15+2C]
+ExtraSDR18Item:Init+43: 48 8B C8                       - mov rcx,rax
+ExtraSDR18Item:Init+46: 83 38 00                       - cmp dword ptr [rax],00
+ExtraSDR18Item:Init+49: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+ExtraSDR18Item:Init+4e: 49 BB 00 73 0E 00 53 01 00 00  - mov r11,System.Collections.Generic.List`1[ResourcesType]:Contains
+ExtraSDR18Item:Init+58: 41 FF D3                       - call r11
+ExtraSDR18Item:Init+5b: 85 C0                          - test eax,eax
+// ---------- INJECTING HERE ----------
+ExtraSDR18Item:Init+5d: 0F 85 21 00 00 00              - jne ExtraSDR18Item:Init+84
+// ---------- DONE INJECTING  ----------
+ExtraSDR18Item:Init+63: 66 66 90                       - nop 3
+ExtraSDR18Item:Init+66: 49 BB 40 4F 04 00 53 01 00 00  - mov r11,DataController:get_globalData
+ExtraSDR18Item:Init+70: 41 FF D3                       - call r11
+ExtraSDR18Item:Init+73: 0F B6 40 21                    - movzx eax,byte ptr [rax+21]
+ExtraSDR18Item:Init+77: 85 C0                          - test eax,eax
+ExtraSDR18Item:Init+79: 75 09                          - jne ExtraSDR18Item:Init+84
+ExtraSDR18Item:Init+7b: 33 C0                          - xor eax,eax
+ExtraSDR18Item:Init+7d: 85 C0                          - test eax,eax
+ExtraSDR18Item:Init+7f: E9 7C 00 00 00                 - jmp ExtraSDR18Item:Init+100
+ExtraSDR18Item:Init+84: 49 8B 47 20                    - mov rax,[r15+20]
+}
+{
+// ORIGINAL CODE - INJECTION POINT: ExtraSDR18Item:OnClick+5d
+
+ExtraSDR18Item:OnClick+2e: 49 BB 6D 95 B4 B1 0B 01 00 00  - mov r11,0000010BB1B4956D
+ExtraSDR18Item:OnClick+38: 41 FF D3                       - call r11
+ExtraSDR18Item:OnClick+3b: 48 8B 40 18                    - mov rax,[rax+18]
+ExtraSDR18Item:OnClick+3f: 48 63 56 2C                    - movsxd  rdx,dword ptr [rsi+2C]
+ExtraSDR18Item:OnClick+43: 48 8B C8                       - mov rcx,rax
+ExtraSDR18Item:OnClick+46: 83 38 00                       - cmp dword ptr [rax],00
+ExtraSDR18Item:OnClick+49: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+ExtraSDR18Item:OnClick+4e: 49 BB 93 03 12 41 0E 01 00 00  - mov r11,0000010E41120393
+ExtraSDR18Item:OnClick+58: 41 FF D3                       - call r11
+ExtraSDR18Item:OnClick+5b: 85 C0                          - test eax,eax
+// ---------- INJECTING HERE ----------
+ExtraSDR18Item:OnClick+5d: 75 25                          - jne ExtraSDR18Item:OnClick+84
+// ---------- DONE INJECTING  ----------
+ExtraSDR18Item:OnClick+5f: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+ExtraSDR18Item:OnClick+66: 49 BB 6D 95 B4 B1 0B 01 00 00  - mov r11,0000010BB1B4956D
+ExtraSDR18Item:OnClick+70: 41 FF D3                       - call r11
+ExtraSDR18Item:OnClick+73: 0F B6 40 21                    - movzx eax,byte ptr [rax+21]
+ExtraSDR18Item:OnClick+77: 85 C0                          - test eax,eax
+ExtraSDR18Item:OnClick+79: 75 09                          - jne ExtraSDR18Item:OnClick+84
+ExtraSDR18Item:OnClick+7b: 33 C0                          - xor eax,eax
+ExtraSDR18Item:OnClick+7d: 85 C0                          - test eax,eax
+ExtraSDR18Item:OnClick+7f: E9 57 00 00 00                 - jmp ExtraSDR18Item:OnClick+db
+ExtraSDR18Item:OnClick+84: B9 1A 00 00 00                 - mov ecx,0000001A
+}"""
+
+[[cheat]]
+id = "scorelevel-spa-upgrade-level"
+name = "scoreLevel (Spa Upgrade Level)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "hasbreak"
+name = "hasBreak"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "debtbeenpaid"
+name = "debtBeenPaid"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x1d"]
+
+[[cheat]]
+id = "sexdesireoverload"
+name = "sexDesireOverload"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x1e"]
+
+[[cheat]]
+id = "isoperated"
+name = "isOperated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x1f"]
+
+[[cheat]]
+id = "score-reputation"
+name = "score (Reputation)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "money"
+name = "money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "day"
+name = "day"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "stamina"
+name = "stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "maxstamina"
+name = "maxStamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "sexdesire-libido"
+name = "sexDesire (Libido)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "maxsexdesire"
+name = "maxSexDesire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "timeperiod"
+name = "timePeriod"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Morning",
+    "1:Afternoon",
+    "2:Night",
+    "3:Midnight",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "normalroom"
+name = "normalRoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "superroom"
+name = "superRoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "viproom"
+name = "vipRoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "counter"
+name = "counter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "spring"
+name = "spring"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "sauna"
+name = "sauna"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "lounge"
+name = "lounge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "sake"
+name = "sake"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "oil"
+name = "oil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "meals"
+name = "meals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "dvd"
+name = "dvd"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "skin"
+name = "skin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "vip"
+name = "vip"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "selfclean"
+name = "selfClean"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "cleaner"
+name = "cleaner"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "isplayedunlock"
+name = "isPlayedUnlock"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "isfevertime"
+name = "isFeverTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x55"]
+
+[[cheat]]
+id = "grandconsumer"
+name = "grandConsumer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "remainfevertimer"
+name = "remainFeverTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dataControllerStaticPtr"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "operationui-pointer-bathhouse-game"
+name = "OperationUI Pointer (Bathhouse Game)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Date   : 2026-03-23
+  Author : Igromanru
+
+  OperationUI Pointer (Bathhouse Game)
+}
+
+[ENABLE]
+AOBScanRegion(operationUiUpdate, OperationUI:FixedUpdate, OperationUI:FixedUpdate+53, 48 8B ? ? 48 89 ? ? ? ? ? 48 B8 ? ? ? ? ? ? ? ? 48)
+alloc(newmem,$100)
+
+label(operationUiUpdateBackUp)
+label(operationUiPtr)
+label(return)
+
+newmem:
+  mov [operationUiPtr], rsi
+operationUiUpdateBackUp:
+  readMem(operationUiUpdate, 21)
+  jmp return
+
+operationUiPtr:
+  dq 0
+
+operationUiUpdate:
+  jmp far newmem
+  nop 7
+return:
+
+registersymbol(operationUiUpdate)
+registersymbol(operationUiUpdateBackUp)
+registersymbol(operationUiPtr)
+
+[DISABLE]
+operationUiUpdate:
+  readMem(operationUiUpdateBackUp, 21)
+
+dealloc(newmem)
+unregistersymbol(*)
+{
+// ORIGINAL CODE - INJECTION POINT: OperationUI:FixedUpdate+27
+
+OperationUI:FixedUpdate: 55                             - push rbp
+OperationUI:FixedUpdate+1: 48 8B EC                       - mov rbp,rsp
+OperationUI:FixedUpdate+4: 48 81 EC C0 00 00 00           - sub rsp,000000C0
+OperationUI:FixedUpdate+b: 48 89 75 F8                    - mov [rbp-08],rsi
+OperationUI:FixedUpdate+f: 48 8B F1                       - mov rsi,rcx
+OperationUI:FixedUpdate+12: 48 B8 92 D8 6A E0 33 02 00 00  - mov rax,00000233E06AD892
+OperationUI:FixedUpdate+1c: 0F B6 00                       - movzx eax,byte ptr [rax]
+OperationUI:FixedUpdate+1f: 85 C0                          - test eax,eax
+OperationUI:FixedUpdate+21: 0F 85 34 08 00 00              - jne OperationUI:FixedUpdate+85b
+// ---------- INJECTING HERE ----------
+OperationUI:FixedUpdate+27: 48 8B 46 38                    - mov rax,[rsi+38]
+OperationUI:FixedUpdate+2b: 48 89 85 78 FF FF FF           - mov [rbp-00000088],rax
+OperationUI:FixedUpdate+32: 48 B8 74 E5 10 EC 33 02 00 00  - mov rax,00000233EC10E574
+// ---------- DONE INJECTING  ----------
+OperationUI:FixedUpdate+3c: 48 63 08                       - movsxd  rcx,dword ptr [rax]
+OperationUI:FixedUpdate+3f: 89 4D C0                       - mov [rbp-40],ecx
+OperationUI:FixedUpdate+42: 48 63 48 04                    - movsxd  rcx,dword ptr [rax+04]
+OperationUI:FixedUpdate+46: 89 4D C4                       - mov [rbp-3C],ecx
+OperationUI:FixedUpdate+49: 48 63 40 08                    - movsxd  rax,dword ptr [rax+08]
+OperationUI:FixedUpdate+4d: 89 45 C8                       - mov [rbp-38],eax
+OperationUI:FixedUpdate+50: 48 8B CE                       - mov rcx,rsi
+OperationUI:FixedUpdate+53: 66 66 90                       - nop 3
+}"""
+
+[[cheat]]
+id = "nextaddcustomertime"
+name = "nextAddCustomerTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "operatingtimer-change-to-increase-decrease-time"
+name = "operatingTimer (Change to increase/decrease time)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "pausepasstime"
+name = "pausePassTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "punishtimer"
+name = "punishTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "maxselfcleancount"
+name = "maxSelfCleanCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "maxcleanercount"
+name = "maxCleanerCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "isfirstguestentry"
+name = "isFirstGuestEntry"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "isforcemainentry"
+name = "isForceMainEntry"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xc9"]
+
+[[cheat]]
+id = "isfirstmaincharacterentry"
+name = "isFirstMainCharacterEntry"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xca"]
+
+[[cheat]]
+id = "issecondmaincharacterentry"
+name = "isSecondMainCharacterEntry"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xcb"]
+
+[[cheat]]
+id = "isthirdmaincharacterentry"
+name = "isThirdMainCharacterEntry"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "istimepunishcd"
+name = "isTimePunishCD"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xcd"]
+
+[[cheat]]
+id = "issettlementing"
+name = "isSettlementing"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "operationUiPtr"
+hops = ["+0xce"]

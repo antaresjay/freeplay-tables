@@ -1,0 +1,655 @@
+[game]
+name = "Yatagarasu Attack on Cataclysm"
+exe = "shinkansen_yatagarasu_attack_on_cataclysm.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2726"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-initialization-activate-this-first"
+name = "Battle Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(battlestats_basepointer)
+registersymbol(battlestats_enemy_basepointer)
+registersymbol(battlestats_update_enable)
+registersymbol(battlestats_set_enable)
+registersymbol(battlestats_hpset_enable)
+registersymbol(battlestats_superset_enable)
+registersymbol(battlestats_guardset_enable)
+registersymbol(battlestats_enemyset_enable)
+
+alloc(battlestats_basepointer, 4)
+alloc(battlestats_enemy_basepointer, 4)
+alloc(battlestats_update_enable, 4)
+alloc(battlestats_set_enable, 4)
+alloc(battlestats_hpset_enable, 4)
+alloc(battlestats_superset_enable, 4)
+alloc(battlestats_guardset_enable, 4)
+alloc(battlestats_enemyset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestats_enemy_basepointer)
+unregistersymbol(battlestats_update_enable)
+unregistersymbol(battlestats_set_enable)
+unregistersymbol(battlestats_hpset_enable)
+unregistersymbol(battlestats_superset_enable)
+unregistersymbol(battlestats_guardset_enable)
+unregistersymbol(battlestats_enemyset_enable)
+
+dealloc(battlestats_basepointer)
+dealloc(battlestats_enemy_basepointer)
+dealloc(battlestats_update_enable)
+dealloc(battlestats_set_enable)
+dealloc(battlestats_hpset_enable)
+dealloc(battlestats_superset_enable)
+dealloc(battlestats_guardset_enable)
+dealloc(battlestats_enemyset_enable)"""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-to-update-play-level"
+name = "Battle Stats Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(battlestats_savedAOB)
+label(battlestats_returnhere)
+label(battlestats_originalcode)
+label(battlestats_exit)
+
+label(battlestats_update_exit)
+label(battlestats_set_exit)
+label(battlestats_hpset_exit)
+label(battlestats_superset_exit)
+label(battlestats_guardset_exit)
+label(battlestats_enemyset_entry)
+label(battlestats_enemyupdate_exit)
+label(battlestats_enemyset_exit)
+
+registersymbol(battlestats_savedAOB)
+
+//004707CE - 90                    - nop
+//004707CF - 90                    - nop
+//004707D0 - 8B 41 04              - mov eax,[ecx+04]
+//004707D3 - 56                    - push esi
+//004707D4 - 8B 71 0C              - mov esi,[ecx+0C]
+//004707D7 - 33 D2                 - xor edx,edx
+//004707D9 - 3B C6                 - cmp eax,esi
+//004707DB - 5E                    - pop esi
+//004707DC - 0F9D C2               - setge dl
+aobscan(battlestats_searchedAOB, 8B 41 04 56 8B 71 0C 33 D2)
+
+alloc(battlestats_newmem, 2048)
+alloc(battlestats_temp1, 4)
+
+
+battlestats_newmem:
+mov [battlestats_temp1], ebx
+
+// Check if HP
+cmp dword ptr [ecx+8], #51600
+jne battlestats_enemyset_exit
+
+// If Meter null, out of battle
+cmp dword ptr [ecx+a3c], #0
+je battlestats_enemyset_exit
+
+// Check if Player 1
+cmp dword ptr [ecx+504], #1
+jne battlestats_enemyset_entry
+
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_update_exit
+mov [battlestats_basepointer], ecx
+battlestats_update_exit:
+
+cmp dword ptr [battlestats_set_enable], #0
+je battlestats_set_exit
+battlestats_set_exit:
+
+cmp dword ptr [battlestats_hpset_enable], #0
+je battlestats_hpset_exit
+mov eax, [ecx+8]
+mov [ecx+4], eax
+battlestats_hpset_exit:
+
+cmp dword ptr [battlestats_superset_enable], #0
+je battlestats_superset_exit
+mov ebx, [ecx+a3c]
+mov eax, [ebx+788]
+mov [ebx+78c], eax
+battlestats_superset_exit:
+
+cmp dword ptr [battlestats_guardset_enable], #0
+je battlestats_guardset_exit
+mov eax, [ecx+a9c]
+mov [ecx+a98], eax
+battlestats_guardset_exit:
+
+jmp battlestats_enemyset_exit
+
+battlestats_enemyset_entry:
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_enemyupdate_exit
+mov [battlestats_enemy_basepointer], ecx
+battlestats_enemyupdate_exit:
+
+cmp dword ptr [battlestats_enemyset_enable], #0
+je battlestats_enemyset_exit
+mov ebx, [ecx+a3c]
+mov [ebx+78c], #0
+mov [ecx+a98], #0
+cmp dword ptr [ecx+4], #5
+jl battlestats_enemyset_exit
+mov [ecx+4], #0
+battlestats_enemyset_exit:
+
+mov ebx, [battlestats_temp1]
+
+
+battlestats_originalcode:
+db 8B 41 04 56 8B 71 0C
+//mov eax,[ecx+04]
+//push esi
+//mov esi,[ecx+0C]
+
+
+battlestats_exit:
+jmp battlestats_returnhere
+
+
+battlestats_searchedAOB:
+battlestats_savedAOB:
+jmp battlestats_newmem
+nop
+nop
+battlestats_returnhere:
+
+
+[DISABLE]
+battlestats_savedAOB:
+db 8B 41 04 56 8B 71 0C
+//mov eax,[ecx+04]
+//push esi
+//mov esi,[ecx+0C]
+
+unregistersymbol(battlestats_savedAOB)
+
+dealloc(battlestats_newmem)
+dealloc(battlestats_temp1)"""
+
+[[cheat]]
+id = "hp-gauge-set-to-max"
+name = "HP Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "super-gauge-set-to-max"
+name = "Super Gauge Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_superset_enable"
+hops = []
+
+[[cheat]]
+id = "guard-gauge-set-to-max"
+name = "Guard Gauge Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_guardset_enable"
+hops = []
+
+[[cheat]]
+id = "enemy-set-to-weak"
+name = "Enemy Set to Weak?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemyset_enable"
+hops = []
+
+[[cheat]]
+id = "battle-stats-update-base-address"
+name = "Battle Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "hp-gauge"
+name = "HP Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "max-hp-gauge"
+name = "Max HP Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "stun"
+name = "Stun"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "player"
+name = "Player"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x504"]
+
+[[cheat]]
+id = "player-2"
+name = "Player"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x508"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "max-sp-gauge"
+name = "Max SP Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x788",
+]
+
+[[cheat]]
+id = "sp-gauge"
+name = "SP Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x78c",
+]
+
+[[cheat]]
+id = "sp-gauge-display"
+name = "SP Gauge Display"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x790",
+]
+
+[[cheat]]
+id = "guard-gauge"
+name = "Guard Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0xa98"]
+
+[[cheat]]
+id = "max-guard-gauge"
+name = "Max Guard Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0xa9c"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "hp-gauge-2"
+name = "HP Gauge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "max-hp-gauge-2"
+name = "Max HP Gauge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "stun-2"
+name = "Stun"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "player-3"
+name = "Player"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x504"]
+
+[[cheat]]
+id = "player-4"
+name = "Player"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x508"]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "max-sp-gauge-2"
+name = "Max SP Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x788",
+]
+
+[[cheat]]
+id = "sp-gauge-2"
+name = "SP Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x78c",
+]
+
+[[cheat]]
+id = "sp-gauge-display-2"
+name = "SP Gauge Display"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = [
+    "+0xa3c",
+    "+0x790",
+]
+
+[[cheat]]
+id = "guard-gauge-2"
+name = "Guard Gauge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0xa98"]
+
+[[cheat]]
+id = "max-guard-gauge-2"
+name = "Max Guard Gauge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0xa9c"]

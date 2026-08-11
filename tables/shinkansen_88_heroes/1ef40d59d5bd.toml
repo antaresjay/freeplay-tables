@@ -1,0 +1,3586 @@
+[game]
+name = "88 Heroes"
+exe = "shinkansen_88_heroes.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=744"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "game-static-base-address-scan-initialization-activate-this-first"
+name = "Game_static Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Game_static_basepointer)
+registersymbol(Game_static_update_enable)
+registersymbol(Game_static_set_enable)
+registersymbol(Game_static_timeset_enable)
+
+alloc(Game_static_basepointer, 4)
+alloc(Game_static_update_enable, 4)
+alloc(Game_static_set_enable, 4)
+alloc(Game_static_timeset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Game_static_basepointer)
+unregistersymbol(Game_static_update_enable)
+unregistersymbol(Game_static_set_enable)
+unregistersymbol(Game_static_timeset_enable)
+
+dealloc(Game_static_basepointer)
+dealloc(Game_static_update_enable)
+dealloc(Game_static_set_enable)
+dealloc(Game_static_timeset_enable)"""
+
+[[cheat]]
+id = "game-static-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Game_static Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Game_static_savedAOB)
+label(Game_static_returnhere)
+label(Game_static_originalcode)
+label(Game_static_exit)
+
+label(Game_static_update_exit)
+label(Game_static_set_exit)
+label(Game_static_timeset_exit)
+
+registersymbol(Game_static_savedAOB)
+
+//0EB30D14 - 8B 0D AC0E3507        - mov ecx,[07350EAC] : [000003DC]
+//0EB30D1A - 41                    - inc ecx
+//0EB30D1B - B8 AC0E3507           - mov eax,07350EAC : [000003DC]
+// com.bitmapbureau.heroes:Game:update+c8
+//0EB30D20 - 89 08                 - mov [eax],ecx
+//0EB30D22 - 83 EC 0C              - sub esp,0C
+//0EB30D25 - 6A 01                 - push 01
+//0EB30D27 - E8 D402FEFF           - call 0EB11000
+//0EB30D2C - 83 C4 10              - add esp,10
+//0EB30D2F - 0FB6 05 590E3507      - movzx eax,byte ptr [07350E59] : [01]
+//0EB30D36 - 85 C0                 - test eax,eax
+//0EB30D38 - 75 16                 - jne 0EB30D50
+//0EB30D3A - 0FB6 05 5C0E3507      - movzx eax,byte ptr [07350E5C] : [00]
+aobscan(Game_static_searchedAOB, 89 08 83 EC 0C 6A 01 * * * * * 83 C4 10 * * * * * * * 85 C0)
+
+alloc(Game_static_newmem, 2048, Game_static_searchedAOB)
+alloc(Game_static_temp1, 4, Game_static_searchedAOB)
+alloc(Game_static_temp2, 4, Game_static_searchedAOB)
+alloc(Game_static_temp3, 4, Game_static_searchedAOB)
+alloc(Game_static_temp4, 4, Game_static_searchedAOB)
+alloc(Game_static_temp5, 4, Game_static_searchedAOB)
+
+
+Game_static_newmem:
+mov [Game_static_temp1], eax
+mov [Game_static_temp2], ebx
+mov [Game_static_temp3], ecx
+mov [Game_static_temp4], edx
+
+mov ebx, [Game_static_savedAOB-4]
+sub ebx, 9c
+
+cmp dword ptr [Game_static_update_enable], #0
+je Game_static_update_exit
+mov [Game_static_basepointer], ebx
+Game_static_update_exit:
+
+cmp dword ptr [Game_static_set_enable], #0
+je Game_static_set_exit
+Game_static_set_exit:
+
+cmp dword ptr [Game_static_timeset_enable], #0
+je Game_static_timeset_exit
+cmp dword ptr [ebx+98], #0
+je Game_static_timeset_exit
+mov edx, [ebx+98]
+mov [edx+8], #99999
+Game_static_timeset_exit:
+
+
+mov eax, [Game_static_temp1]
+mov ebx, [Game_static_temp2]
+mov ecx, [Game_static_temp3]
+mov edx, [Game_static_temp4]
+
+
+Game_static_originalcode:
+db 89 08 83 EC 0C
+//mov [eax],ecx
+//sub esp,0C
+
+
+Game_static_exit:
+jmp Game_static_returnhere
+
+
+Game_static_searchedAOB:
+Game_static_savedAOB:
+jmp Game_static_newmem
+Game_static_returnhere:
+
+
+[DISABLE]
+Game_static_savedAOB:
+db 89 08 83 EC 0C
+//mov [eax],ecx
+//sub esp,0C
+
+unregistersymbol(Game_static_savedAOB)
+
+dealloc(Game_static_newmem)
+dealloc(Game_static_temp1)
+dealloc(Game_static_temp2)
+dealloc(Game_static_temp3)
+dealloc(Game_static_temp4)
+dealloc(Game_static_temp5)"""
+
+[[cheat]]
+id = "time-set-to-massive"
+name = "Time Set to Massive?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_timeset_enable"
+hops = []
+
+[[cheat]]
+id = "game-static-update-base-address"
+name = "Game_static Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ingame"
+name = "inGame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "continuing"
+name = "continuing"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x9"]
+
+[[cheat]]
+id = "hero-count-normal"
+name = "HERO_COUNT_NORMAL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "hero-count-with-dlc"
+name = "HERO_COUNT_WITH_DLC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "hero-count-max"
+name = "HERO_COUNT_MAX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "dlc-0-boxed-ps4"
+name = "DLC_0_BOXED_PS4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "dlc-0-hero-extra"
+name = "DLC_0_HERO_EXTRA"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "dlc-0-hero-max"
+name = "DLC_0_HERO_MAX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "dlc-1-indie"
+name = "DLC_1_INDIE"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "dlc-1-hero-extra"
+name = "DLC_1_HERO_EXTRA"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "dlc-1-hero-max"
+name = "DLC_1_HERO_MAX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "mode-88"
+name = "MODE_88"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "mode-8"
+name = "MODE_8"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "mode-solo"
+name = "MODE_SOLO"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "mode-training"
+name = "MODE_TRAINING"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "mode-h8"
+name = "MODE_H8"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "mode"
+name = "mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "bossbattle"
+name = "bossBattle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "paused"
+name = "paused"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x49"]
+
+[[cheat]]
+id = "displayingprompt"
+name = "displayingPrompt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x4a"]
+
+[[cheat]]
+id = "ineditor"
+name = "inEditor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x4b"]
+
+[[cheat]]
+id = "gameover"
+name = "gameOver"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "endofgame"
+name = "endOfGame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x4d"]
+
+[[cheat]]
+id = "endofroom"
+name = "endOfRoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x4e"]
+
+[[cheat]]
+id = "endofroomtimer"
+name = "endOfRoomTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "endofareatimer"
+name = "endOfAreaTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "herodeathtimer"
+name = "heroDeathTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "room"
+name = "room"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "score"
+name = "score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "coins"
+name = "coins"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "blocks"
+name = "blocks"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "kills"
+name = "kills"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "perfects"
+name = "perfects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "areatimes-type-haxe-root-array-unknown"
+name = "areaTimes (type: haxe.root.Array) UNKNOWN"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "heroorder-type-haxe-root-array-unknown"
+name = "heroOrder (type: haxe.root.Array) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "heroorderindex"
+name = "heroOrderIndex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "heroused-type-haxe-root-array-unknown"
+name = "heroUsed (type: haxe.root.Array) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "herodead-type-haxe-root-array-unknown"
+name = "heroDead (type: haxe.root.Array) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "heroeskilledthisroom-type-haxe-root-array-unknown"
+name = "heroesKilledThisRoom (type: haxe.root.Array) UNKNOWN"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "particlequantity"
+name = "particleQuantity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "clumsybotroom"
+name = "clumsyBotRoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "lightsout"
+name = "lightsOut"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "raining"
+name = "raining"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x95"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = [
+    "+0x98",
+    "+0x0",
+]
+
+[[cheat]]
+id = "time"
+name = "time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = [
+    "+0x98",
+    "+0x8",
+]
+
+[[cheat]]
+id = "seconds"
+name = "seconds"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = [
+    "+0x98",
+    "+0xc",
+]
+
+[[cheat]]
+id = "prevseconds"
+name = "prevSeconds"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = [
+    "+0x98",
+    "+0x10",
+]
+
+[[cheat]]
+id = "callback"
+name = "callback"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = [
+    "+0x98",
+    "+0x14",
+]
+
+[[cheat]]
+id = "ticks"
+name = "ticks"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "leveltrack-type-com-twissgreen-engine-media-sound-unknown"
+name = "levelTrack (type: com.twissgreen.engine.media.Sound) UNKNOWN"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "leveltrackassetid"
+name = "levelTrackAssetID"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "leveltrackchannel"
+name = "levelTrackChannel"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "dogameupdate"
+name = "doGameUpdate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "deadheroindices-type-haxe-root-array-unknown"
+name = "deadHeroIndices (type: haxe.root.Array) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "countdownshown"
+name = "countdownShown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "countdown-start"
+name = "COUNTDOWN_START"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "countdown"
+name = "countdown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "tauntsound-type-com-twissgreen-engine-media-sound-unknown"
+name = "tauntSound (type: com.twissgreen.engine.media.Sound) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "freezetimer"
+name = "freezeTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "autopause"
+name = "autoPause"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "deferengageeventdeathbuttonpushed"
+name = "deferEngageEventDeathButtonPushed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xd1"]
+
+[[cheat]]
+id = "deferengageeventtransitiontoboss"
+name = "deferEngageEventTransitionToBoss"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_static_basepointer"
+hops = ["+0xd2"]
+
+[[cheat]]
+id = "hero-base-address-scan-initialization-activate-this-first"
+name = "Hero Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Hero_basepointer)
+registersymbol(Hero_update_enable)
+registersymbol(Hero_set_enable)
+registersymbol(Hero_invincibleset_enable)
+registersymbol(Hero_jumpset_enable)
+registersymbol(Hero_massset_enable)
+
+alloc(Hero_basepointer, 4)
+alloc(Hero_update_enable, 4)
+alloc(Hero_set_enable, 4)
+alloc(Hero_invincibleset_enable, 4)
+alloc(Hero_jumpset_enable, 4)
+alloc(Hero_massset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Hero_basepointer)
+unregistersymbol(Hero_update_enable)
+unregistersymbol(Hero_set_enable)
+unregistersymbol(Hero_invincibleset_enable)
+unregistersymbol(Hero_jumpset_enable)
+unregistersymbol(Hero_massset_enable)
+
+dealloc(Hero_basepointer)
+dealloc(Hero_update_enable)
+dealloc(Hero_set_enable)
+dealloc(Hero_invincibleset_enable)
+dealloc(Hero_jumpset_enable)
+dealloc(Hero_massset_enable)"""
+
+[[cheat]]
+id = "hero-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Hero Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Hero_savedAOB)
+label(Hero_returnhere)
+label(Hero_originalcode)
+label(Hero_exit)
+
+label(Hero_update_exit)
+label(Hero_set_exit)
+label(Hero_invincibleset_exit)
+label(Hero_jumpset_exit)
+label(Hero_massset_exit)
+
+registersymbol(Hero_savedAOB)
+
+//0EB35C7F - 85 C0                 - test eax,eax
+//0EB35C81 - 0F84 0D020000         - je 0EB35E94
+// com.bitmapbureau.heroes.sprites:Hero:update+1f
+//0EB35C87 - DD 87 F0000000        - fld qword ptr [edi+000000F0]
+//0EB35C8D - DD 05 98829D0C        - fld qword ptr [0C9D8298] : [(double)0.5000]
+//0EB35C93 - DEC9                  - fmulp st(1),st(0)
+//0EB35C95 - DD 9F F0000000        - fstp qword ptr [edi+000000F0]
+//0EB35C9B - 0FB6 47 74            - movzx eax,byte ptr [edi+74]
+//0EB35C9F - 85 C0                 - test eax,eax
+//0EB35CA1 - 0F84 49000000         - je 0EB35CF0
+aobscan(Hero_searchedAOB, DD 87 F0 00 00 00 * * * * * * DE C9 DD 9F F0 00 00 00 0F B6 47 74)
+
+alloc(Hero_newmem, 2048, Hero_searchedAOB)
+alloc(Hero_temp1, 4, Hero_searchedAOB)
+alloc(Hero_temp2, 4, Hero_searchedAOB)
+alloc(Hero_temp3, 4, Hero_searchedAOB)
+alloc(Hero_temp4, 4, Hero_searchedAOB)
+alloc(Hero_temp5, 4, Hero_searchedAOB)
+
+
+Hero_newmem:
+mov [Hero_temp1], eax
+mov [Hero_temp2], ebx
+mov [Hero_temp3], ecx
+mov [Hero_temp4], edx
+
+cmp dword ptr [Hero_update_enable], #0
+je Hero_update_exit
+mov [Hero_basepointer], edi
+Hero_update_exit:
+
+cmp dword ptr [Hero_set_enable], #0
+je Hero_set_exit
+Hero_set_exit:
+
+cmp dword ptr [Hero_invincibleset_enable], #0
+je Hero_invincibleset_exit
+mov byte [edi+294], #1
+Hero_invincibleset_exit:
+
+cmp dword ptr [Hero_jumpset_enable], #0
+je Hero_jumpset_exit
+mov [edi+240], #0
+mov [edi+244], #3224633344
+Hero_jumpset_exit:
+
+cmp dword ptr [Hero_massset_enable], #0
+je Hero_massset_exit
+mov [edi+c8], #0
+mov [edi+cc], #1065353216
+Hero_massset_exit:
+
+
+mov eax, [Hero_temp1]
+mov ebx, [Hero_temp2]
+mov ecx, [Hero_temp3]
+mov edx, [Hero_temp4]
+
+
+Hero_originalcode:
+db DD 87 F0 00 00 00
+//fld qword ptr [edi+000000F0]
+
+
+Hero_exit:
+jmp Hero_returnhere
+
+
+Hero_searchedAOB:
+Hero_savedAOB:
+jmp Hero_newmem
+nop
+Hero_returnhere:
+
+
+[DISABLE]
+Hero_savedAOB:
+db DD 87 F0 00 00 00
+//fld qword ptr [edi+000000F0]
+
+unregistersymbol(Hero_savedAOB)
+
+dealloc(Hero_newmem)
+dealloc(Hero_temp1)
+dealloc(Hero_temp2)
+dealloc(Hero_temp3)
+dealloc(Hero_temp4)
+dealloc(Hero_temp5)"""
+
+[[cheat]]
+id = "invincible-set-to-invincible"
+name = "Invincible Set to Invincible?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_invincibleset_enable"
+hops = []
+
+[[cheat]]
+id = "jump-set-to-massive"
+name = "Jump Set to Massive?"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_jumpset_enable"
+hops = []
+
+[[cheat]]
+id = "mass-set-to-tiny"
+name = "Mass Set to Tiny?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_massset_enable"
+hops = []
+
+[[cheat]]
+id = "hero-update-base-address"
+name = "Hero Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stepfirst"
+name = "stepFirst"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "name"
+name = "name"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "type"
+name = "type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "state"
+name = "state"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "prevstate"
+name = "prevState"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "layer"
+name = "layer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "scale"
+name = "scale"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "bounciness"
+name = "bounciness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "isenemy"
+name = "isEnemy"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "isprojectile"
+name = "isProjectile"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x59"]
+
+[[cheat]]
+id = "istrap"
+name = "isTrap"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x5a"]
+
+[[cheat]]
+id = "cancastshadow"
+name = "canCastShadow"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x5b"]
+
+[[cheat]]
+id = "drawrotated"
+name = "drawRotated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "canbecrushed"
+name = "canBeCrushed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x5d"]
+
+[[cheat]]
+id = "canlandonlifts"
+name = "canLandOnLifts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x5e"]
+
+[[cheat]]
+id = "canbemanipulated"
+name = "canBeManipulated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x5f"]
+
+[[cheat]]
+id = "canfallinlove"
+name = "canFallInLove"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "canbepickedup"
+name = "canBePickedUp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x61"]
+
+[[cheat]]
+id = "canfly"
+name = "canFly"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x62"]
+
+[[cheat]]
+id = "candrown"
+name = "canDrown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x63"]
+
+[[cheat]]
+id = "canbepushed"
+name = "canBePushed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "canbeeaten"
+name = "canBeEaten"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x65"]
+
+[[cheat]]
+id = "isfire"
+name = "isFire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x66"]
+
+[[cheat]]
+id = "lovedup"
+name = "lovedUp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x67"]
+
+[[cheat]]
+id = "cointype"
+name = "coinType"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "drawflipped"
+name = "drawFlipped"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "electric"
+name = "electric"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x6d"]
+
+[[cheat]]
+id = "invisible"
+name = "invisible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x6e"]
+
+[[cheat]]
+id = "istrigger"
+name = "isTrigger"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x6f"]
+
+[[cheat]]
+id = "important"
+name = "important"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "canwalk"
+name = "canWalk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x71"]
+
+[[cheat]]
+id = "ignorespecialtiles"
+name = "ignoreSpecialTiles"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x72"]
+
+[[cheat]]
+id = "onconveyor"
+name = "onConveyor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x73"]
+
+[[cheat]]
+id = "visible"
+name = "visible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "forcedraw"
+name = "forceDraw"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x75"]
+
+[[cheat]]
+id = "canbehit"
+name = "canBeHit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x76"]
+
+[[cheat]]
+id = "canbeharmedbyspikes"
+name = "canBeHarmedBySpikes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x77"]
+
+[[cheat]]
+id = "canwalkonspikes"
+name = "canWalkOnSpikes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "hp"
+name = "hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "armour"
+name = "armour"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "gravitydir"
+name = "gravityDir"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "editorframe"
+name = "editorFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "x"
+name = "x"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "y"
+name = "y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "prevx"
+name = "prevX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "prevy"
+name = "prevY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "alignment"
+name = "alignment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "c"
+name = "c"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "r"
+name = "r"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "speed"
+name = "speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "mass"
+name = "mass"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "float-value"
+name = "float_value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "vx"
+name = "vx"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "vy"
+name = "vy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "prevvy"
+name = "prevVy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "addedvx"
+name = "addedVx"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "addedvy"
+name = "addedVy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "dogroundcheck"
+name = "doGroundCheck"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "grounded"
+name = "grounded"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x101"]
+
+[[cheat]]
+id = "power"
+name = "power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "ho"
+name = "ho"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "vo"
+name = "vo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "frame"
+name = "frame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "frameoffset"
+name = "frameOffset"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x114"]
+
+[[cheat]]
+id = "prevframe"
+name = "prevFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "animcolumn"
+name = "animColumn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "animrow"
+name = "animRow"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "animtick"
+name = "animTick"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x124"]
+
+[[cheat]]
+id = "animtickrate"
+name = "animTickRate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "animtimer"
+name = "animTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "animdir"
+name = "animDir"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "loops"
+name = "loops"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x13c"]
+
+[[cheat]]
+id = "facing"
+name = "facing"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x140"]
+
+[[cheat]]
+id = "vflip"
+name = "vflip"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x144"]
+
+[[cheat]]
+id = "ticks-2"
+name = "ticks"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "timer"
+name = "timer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x14c"]
+
+[[cheat]]
+id = "bounces"
+name = "bounces"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "range"
+name = "range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "distance"
+name = "distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "angle"
+name = "angle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "drawangleoffset"
+name = "drawAngleOffset"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "flash"
+name = "flash"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x170"]
+
+[[cheat]]
+id = "shake"
+name = "shake"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "onscreen"
+name = "onScreen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "width"
+name = "width"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x184"]
+
+[[cheat]]
+id = "height"
+name = "height"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "columns"
+name = "columns"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x18c"]
+
+[[cheat]]
+id = "rows"
+name = "rows"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "numframes"
+name = "numFrames"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "framewidth"
+name = "frameWidth"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "frameheight"
+name = "frameHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x19c"]
+
+[[cheat]]
+id = "screenx"
+name = "screenX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "screeny"
+name = "screenY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "disabled"
+name = "disabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "gap-check-hdir"
+name = "gap_check_hdir"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "gap-check-vdir"
+name = "gap_check_vdir"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "ignorebounds"
+name = "ignoreBounds"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "domapcheck"
+name = "doMapCheck"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1b5"]
+
+[[cheat]]
+id = "squidgy"
+name = "squidgy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1b6"]
+
+[[cheat]]
+id = "loopchannel"
+name = "loopChannel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "firstidleframe"
+name = "firstIdleFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "lastidleframe"
+name = "lastIdleFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "firstwalkframe"
+name = "firstWalkFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "lastwalkframe"
+name = "lastWalkFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "firstactionframe"
+name = "firstActionFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1cc"]
+
+[[cheat]]
+id = "lastactionframe"
+name = "lastActionFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "idlespeed"
+name = "idleSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "walkanimspeed"
+name = "walkAnimSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1d8"]
+
+[[cheat]]
+id = "effecttimer"
+name = "effectTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1e0"]
+
+[[cheat]]
+id = "explosionres"
+name = "explosionRes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x1e4"]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "leadhero"
+name = "leadHero"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "canappearinintro"
+name = "canAppearInIntro"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x209"]
+
+[[cheat]]
+id = "canmovewhileattackingandgrounded"
+name = "canMoveWhileAttackingAndGrounded"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x20a"]
+
+[[cheat]]
+id = "canmovewhilecrouched"
+name = "canMoveWhileCrouched"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x20b"]
+
+[[cheat]]
+id = "canmovewhileattackingandairborne"
+name = "canMoveWhileAttackingAndAirborne"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x20c"]
+
+[[cheat]]
+id = "ignoreinputs"
+name = "ignoreInputs"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x20d"]
+
+[[cheat]]
+id = "jumpframe"
+name = "jumpFrame"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x210"]
+
+[[cheat]]
+id = "fallframe"
+name = "fallFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x214"]
+
+[[cheat]]
+id = "duckframe"
+name = "duckFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x218"]
+
+[[cheat]]
+id = "drag"
+name = "drag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x220"]
+
+[[cheat]]
+id = "aerialdrag"
+name = "aerialDrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x228"]
+
+[[cheat]]
+id = "acceleration"
+name = "acceleration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x230"]
+
+[[cheat]]
+id = "aerialacceleration"
+name = "aerialAcceleration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x238"]
+
+[[cheat]]
+id = "jumpvy"
+name = "jumpVy"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x240"]
+
+[[cheat]]
+id = "namesamplestring"
+name = "nameSampleString"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x248"]
+
+[[cheat]]
+id = "introsoundstring"
+name = "introSoundString"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x24c"]
+
+[[cheat]]
+id = "endsoundstring"
+name = "endSoundString"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x250"]
+
+[[cheat]]
+id = "soundtimer"
+name = "soundTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x254"]
+
+[[cheat]]
+id = "jumpsoundchance"
+name = "jumpSoundChance"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x258"]
+
+[[cheat]]
+id = "actionspeechchance"
+name = "actionSpeechChance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x260"]
+
+[[cheat]]
+id = "targetvx"
+name = "targetVx"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x268"]
+
+[[cheat]]
+id = "targetvy"
+name = "targetVy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "duckheight"
+name = "duckHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x278"]
+
+[[cheat]]
+id = "standingheight"
+name = "standingHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x27c"]
+
+[[cheat]]
+id = "iconvo"
+name = "iconVo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x280"]
+
+[[cheat]]
+id = "iconscale"
+name = "iconScale"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x288"]
+
+[[cheat]]
+id = "points"
+name = "points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x290"]
+
+[[cheat]]
+id = "invincible"
+name = "invincible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Hero_basepointer"
+hops = ["+0x294"]

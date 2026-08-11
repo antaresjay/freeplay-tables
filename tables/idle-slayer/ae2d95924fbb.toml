@@ -1,0 +1,825 @@
+[game]
+name = "Idle Slayer"
+exe = "idle slayer.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=32321"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "grab-game-data"
+name = "Grab Game Data"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//PlayerInventory.Update
+//Send@FearlessRevolution|Sintrix
+define(address,PlayerInventory.Update)
+define(bytes,40 53 48 83 EC 30)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,PlayerInventory.Update)
+registersymbol(inv)
+label(code return inv)
+
+
+newmem:
+mov [inv],rcx
+
+code:
+  push rbx
+  sub rsp,30
+  jmp return
+
+inv:
+dq 0
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+aobscanmodule(ehp,GameAssembly.dll,F2 0F 5C C6 66 0F 2F F8 F2 0F 11 83 B0)
+alloc(newmem,$1000,ehp)
+label(code)
+label(return)
+
+newmem:
+xorps xmm0,xmm0
+
+code:
+  subsd xmm0,xmm6
+  comisd xmm7,xmm0
+  jmp return
+//EnemyGameObject.TakeDamage
+ehp:
+  jmp newmem
+  nop 3
+return:
+registersymbol(ehp)
+//Send@FearlessRevolution|Sintrix
+aobscanmodule(bhp,GameAssembly.dll,F3 0F 5C C7 0F 2F F0)
+alloc(newmem2,$1000,bhp)
+label(code2)
+label(return2)
+
+newmem2:
+xorps xmm0,xmm0
+code2:
+  subss xmm0,xmm7
+  comiss xmm6,xmm0
+  jmp return2
+//BossMapController.TakeDamage
+bhp:
+  jmp newmem2
+  nop 2
+return2:
+registersymbol(bhp)
+
+[DISABLE]
+
+ehp:
+  db F2 0F 5C C6 66 0F 2F F8
+
+bhp:
+  db F3 0F 5C C7 0F 2F F0
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "always-perfect-chest-hunt"
+name = "Always Perfect Chest Hunt"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ChestHuntManager.GenerateChests)
+define(bytes,40 53 48 83 EC 50)
+//Send@Sintrix/FearlessRevoltuon
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,ChestHuntManager.GenerateChests)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+2C],#0
+
+code:
+  push rbx
+  sub rsp,50
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+//Send@Sintrix/FearlessRevoltuon
+
+
+dealloc(*)"""
+
+[[cheat]]
+id = "easy-bonus-maps"
+name = "Easy Bonus Maps"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+aobscanmodule(bonus_score,GameAssembly.dll,FF C0 89 47 70)
+alloc(newmem,$1000,bonus_score)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  inc eax
+  mov eax,#99999999 //
+  mov [rdi+70],eax
+  jmp return
+
+bonus_score:
+  jmp newmem
+return:
+registersymbol(bonus_score)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+bonus_score:
+  db FF C0 89 47 70
+
+unregistersymbol(*)
+dealloc(*)
+//BonusMapController.AddBonusSphere"""
+
+[[cheat]]
+id = "ascension-skill-cost-set-to-zero"
+name = "Ascension Skill Cost Set To Zero"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix/FearlessRevolution
+//AscensionSkill.CanBeBought
+define(address,AscensionSkill.CanBeBought)
+define(bytes,48 89 6C 24 20)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,AscensionSkill.CanBeBought)
+
+label(code)
+label(return)
+
+newmem:
+push rdx
+mov rdx,(double)0
+mov [rcx+48],rdx
+pop rdx
+
+code:
+  mov [rsp+20],rbp
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(*)
+//Send@Sintrix/FearlessRevolution"""
+
+[[cheat]]
+id = "no-materials-required-to-craft"
+name = "No Materials Required To Craft"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+CraftableItem.HasRequiredItems:
+db B0 01 C3
+CraftableItem.HasRequiredAscensionUpgrades:
+db B0 01 C3
+CraftableItem.HasAllMaterialsUnlocked:
+db B0 01 C3
+CraftableItem.HasRequiredMaterials:
+db B0 01 C3
+CraftableItem.HasRequiredUpgrades:
+db B0 01 C3
+//Send@FearlessRevolution|Sintrix
+[DISABLE]
+CraftableItem.HasRequiredItems:
+db 48 89 5C 24 08
+CraftableItem.HasRequiredAscensionUpgrades:
+db 48 83 EC 28
+CraftableItem.HasAllMaterialsUnlocked:
+db 48 83 EC 28
+CraftableItem.HasRequiredMaterials:
+db 48 83 EC 28
+CraftableItem.HasRequiredUpgrades:
+db 48 83 EC 28
+//Send@FearlessRevolution|Sintrix"""
+
+[[cheat]]
+id = "crafting-cost-set-to-zero"
+name = "Crafting Cost Set To Zero"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+
+aobscanmodule(craftcost,GameAssembly.dll,F2 0F 10 48 50 48 8B 4C)
+alloc(newmem,$1000,craftcost)
+
+label(code)
+label(return)
+
+newmem:
+push r10
+mov r10,(double)0
+mov [rax+50],r10
+pop r10
+
+code:
+  movsd xmm1,[rax+50]
+  jmp return
+
+craftcost:
+  jmp newmem
+return:
+registersymbol(craftcost)
+
+aobscanmodule(craftcost2,GameAssembly.dll,66 0F 6E 48 18 4C)
+alloc(newmem2,$1000,craftcost2)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov [rax+18],#0
+  movd xmm1,[rax+18]
+  jmp return2
+
+craftcost2:
+  jmp newmem2
+return2:
+registersymbol(craftcost2)
+
+[DISABLE]
+
+craftcost:
+  db F2 0F 10 48 50
+//PermanentCraftableItemObject.Setup
+
+craftcost2:
+  db 66 0F 6E 48 18
+//MaterialRequirementObject.Update
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "divinities-cost-set-to-zero"
+name = "Divinities Cost Set To Zero"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Divinity.GetDescription)
+define(bytes,40 53 48 83 EC 20)
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Divinity.GetDescription)
+
+label(code)
+label(return)
+//Divinity.GetDescription
+//Send@Sintrix|FearlessRevolution
+newmem:
+push r13
+mov r13,(double)0
+mov [rcx+48],r13
+pop r13
+
+code:
+  push rbx
+  sub rsp,20
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(*)
+//Send@Sintrix|FearlessRevolution"""
+
+[[cheat]]
+id = "power-upgrade-cost-set-to-zero"
+name = "Power Upgrade Cost Set To Zero"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+Power.CalculateCost:
+db C3
+
+[DISABLE]
+Power.CalculateCost:
+db 48 89 5C 24 10"""
+
+[[cheat]]
+id = "upgrade-cost-set-to-zero"
+name = "Upgrade Cost Set To Zero"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+
+aobscanmodule(ucost,GameAssembly.dll,F2 0F 10 77 40 F2 0F 11)
+alloc(newmem,$1000,ucost)
+label(code return)
+
+newmem:
+
+code:
+  movsd xmm6,[rdi+40]
+  xorps xmm6,xmm6
+  jmp return
+
+ucost:
+  jmp newmem
+return:
+registersymbol(ucost)
+
+[DISABLE]
+
+ucost:
+  db F2 0F 10 77 40
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "minion-task-cost-set-to-zero"
+name = "Minion Task Cost Set To Zero"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+define(address,Minion.AddTime)
+define(bytes,40 53 48 83 EC 40)
+//Minion.AddTime
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Minion.AddTime)
+
+label(code)
+label(return)
+
+newmem:
+push r15
+mov r15,(double)0
+mov [rcx+40],r15
+pop r15
+
+code:
+  push rbx
+  sub rsp,40
+  jmp return
+//Send@Sintrix|FearlessRevolution
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(*)
+//Send@Sintrix|FearlessRevolution"""
+
+[[cheat]]
+id = "freeze-bonus-map-timer"
+name = "Freeze Bonus Map Timer"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//Send@Sintrix
+aobscanmodule(bonusmaptimer,GameAssembly.dll,F3 0F 10 73 68 E8)
+alloc(newmem,$1000,bonusmaptimer)
+label(code return)
+
+newmem:
+
+code:
+  movss xmm6,[new]
+  jmp return
+
+new:
+dd (float)50
+
+bonusmaptimer:
+  jmp newmem
+return:
+registersymbol(bonusmaptimer)
+
+[DISABLE]
+
+bonusmaptimer:
+  db F3 0F 10 73 68
+//BonusMapController.Update
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-daily-quests"
+name = "Infinite Daily Quests"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+
+aobscanmodule(daily,GameAssembly.dll,F2 0F 10 4B 20 F2)
+alloc(newmem,$1000,daily)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movsd xmm1,[rbx+20]
+  xorps xmm1,xmm1
+  jmp return
+
+daily:
+  jmp newmem
+return:
+registersymbol(daily)
+
+[DISABLE]
+
+daily:
+  db F2 0F 10 4B 20
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-weekly-quests"
+name = "Infinite Weekly Quests"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+
+aobscanmodule(weekly,GameAssembly.dll,F2 0F 10 46 20 0F 57)
+alloc(newmem,$1000,weekly)
+
+label(code)
+label(return)
+
+newmem:
+push r13
+mov r13,(double)5
+mov [rsi+20],r13
+pop r13
+
+code:
+  movsd xmm0,[rsi+20]
+  //xorps xmm0,xmm0
+  jmp return
+
+weekly:
+  jmp newmem
+return:
+registersymbol(weekly)
+
+[DISABLE]
+
+weekly:
+  db F2 0F 10 46 20
+//WeeklyQuestsManager.CheckDate
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "instant-complete-quests"
+name = "Instant Complete Quests"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix
+[ENABLE]
+
+aobscanmodule(quest,GameAssembly.dll,8B 41 50 39 41 54 0F)
+alloc(newmem,$1000,quest)
+label(code return)
+
+newmem:
+mov [rcx+50],#0
+
+code:
+  mov eax,[rcx+50]
+  cmp [rcx+54],eax
+  jmp return
+
+quest:
+  jmp newmem
+  nop
+return:
+registersymbol(quest)
+
+[DISABLE]
+
+quest:
+  db 8B 41 50 39 41 54
+//Quest.Init
+//Above Quest.ResetProgress
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "instant-complete-minion-task"
+name = "Instant Complete Minion Task"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+
+aobscanmodule(minion,GameAssembly.dll,F2 0F 11 7B 70)
+alloc(newmem,$1000,minion)
+
+label(code)
+label(return)
+
+newmem:
+//Send@Sintrix|FearlessRevolution
+code:
+  movsd xmm7,[new]
+  movsd [rbx+70],xmm7
+  jmp return
+
+new:
+dq (double)9999999999999
+
+minion:
+  jmp newmem
+return:
+registersymbol(minion)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+minion:
+  db F2 0F 11 7B 70
+  //Send@Sintrix|FearlessRevolution
+//Minion.AddTime
+unregistersymbol(minion)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "force-max-minion-level"
+name = "Force Max Minion Level"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+aobscanmodule(MaxMinionPrestige,GameAssembly.dll,8B 47 78 FF C8)
+alloc(newmem,$1000,MaxMinionPrestige)
+
+label(code)
+label(return)
+
+newmem:
+//Send@Sintrix|FearlessRevolution
+code:
+  mov [rdi+78],#150
+  mov eax,[rdi+78]
+  dec eax
+  jmp return
+
+MaxMinionPrestige:
+  jmp newmem
+return:
+registersymbol(MaxMinionPrestige)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+MaxMinionPrestige:
+  db 8B 47 78 FF C8
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-rage-cooldown"
+name = "No Rage Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ButtonAbilityCD,GameAssembly.dll,F2 0F 11 8B 98 00 00 00 EB)
+alloc(newmem,$1000,ButtonAbilityCD)
+//Send@FearlessRevolution|Sintrix
+label(code)
+label(return)
+
+newmem:
+
+code:
+  xorpd xmm1,xmm1
+  movsd [rbx+00000098],xmm1
+  jmp return
+
+ButtonAbilityCD:
+  jmp newmem
+  nop 3
+return:
+registersymbol(ButtonAbilityCD)
+
+[DISABLE]
+
+ButtonAbilityCD:
+  db F2 0F 11 8B 98 00 00 00
+//RageModeManager
+//RageModeManager.Update
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-boost-cooldown"
+name = "No Boost Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Boost.DoUpdate)
+define(bytes,40 53 48 83 EC 50)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,Boost.DoUpdate)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+3C],(float)0
+mov [rcx+38],(float)0
+
+code:
+  push rbx
+  sub rsp,50
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "no-portal-cooldown"
+name = "No Portal Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+//PortalButton.Update
+[ENABLE]
+
+aobscanmodule(portal_cd,GameAssembly.dll,F2 0F 11 77 48)
+alloc(newmem,$1000,portal_cd)
+label(code return)
+
+newmem:
+
+code:
+  xorps xmm6,xmm6
+  movsd [rdi+48],xmm6
+  jmp return
+
+portal_cd:
+  jmp newmem
+return:
+registersymbol(portal_cd)
+
+[DISABLE]
+
+portal_cd:
+  db F2 0F 11 77 48
+
+unregistersymbol(*)
+dealloc(*)"""

@@ -1,0 +1,1071 @@
+[game]
+name = "Assassins Creed Shadows 30+ Complete Inventory editor NO DLLS"
+exe = "acshadows.exe"
+notes = "Converted from a Cheat Engine table by JenAriDev. Source: https://fearlessrevolution.com/viewtopic.php?t=39839"
+verified = []
+author = "JenAriDev"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game    : ACShadows.exe
+  Feature : God Mode (Player-Guarded, No-Decrease)
+  Notes   : Hooks the health setter (vmovss [rax+174],xmm0 ; ret).
+            Guards on the player class vtable so only the player is
+            protected (enemies/other objects untouched -> no crash).
+            Blocks health decreases; heals/regen still apply.
+}
+
+[ENABLE]
+aobscanmodule(godmode_standalone, ACShadows.exe, C5 FA 11 80 74 01 00 00 C3)
+registersymbol(godmode_standalone)
+alloc(newmem, 256, godmode_standalone)
+alloc(pPlayerVT, 8)
+registersymbol(pPlayerVT)
+label(returnhere)
+label(normalwrite)
+label(originalcode)
+
+pPlayerVT:
+  dq ACShadows.exe+8F8EF60
+
+newmem:
+  pushfq
+  push rbx
+  mov rbx,[rax]
+  cmp rbx,[pPlayerVT]
+  jne normalwrite
+  // player object: block any health decrease
+  sub rsp,10
+  vmovss [rsp],xmm5
+  vmovss xmm5,[rax+00000174]
+  vcomiss xmm0,xmm5
+  vmovss xmm5,[rsp]
+  lea rsp,[rsp+10]
+  jae normalwrite            // new >= current -> allow (heal/regen)
+  // damage -> skip the store, health stays
+  pop rbx
+  popfq
+  jmp returnhere
+
+normalwrite:
+  pop rbx
+  popfq
+
+originalcode:
+  vmovss [rax+00000174],xmm0
+  jmp returnhere
+
+godmode_standalone:
+  jmp newmem
+  nop 3
+returnhere:
+
+[DISABLE]
+godmode_standalone:
+  db C5 FA 11 80 74 01 00 00
+unregistersymbol(godmode_standalone)
+unregistersymbol(pPlayerVT)
+dealloc(newmem)
+dealloc(pPlayerVT)"""
+
+[[cheat]]
+id = "death-immunity-anti-finisher-desync"
+name = "Death Immunity (Anti-Finisher Desync)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Blocks the instakill -1.0 health write for the PLAYER only (vtable-guarded).
+  Stops heavy-enemy finishers from desyncing while keeping enemies killable. }
+
+[ENABLE]
+aobscanmodule(deathwrite1, ACShadows.exe, C7 85 74 01 00 00 00 00 80 BF)
+aobscanmodule(deathwrite2, ACShadows.exe, C7 86 74 01 00 00 00 00 80 BF)
+registersymbol(deathwrite1)
+registersymbol(deathwrite2)
+alloc(diNewmem1, 256, deathwrite1)
+alloc(diNewmem2, 256, deathwrite2)
+alloc(diPlayerVT, 8)
+registersymbol(diPlayerVT)
+label(diRet1)
+label(diRet2)
+label(diNP1)
+label(diNP2)
+
+diPlayerVT:
+  dq ACShadows.exe+8F8EF60
+
+diNewmem1:
+  push rax
+  pushfq
+  mov rax,[rbp]
+  cmp rax,[diPlayerVT]
+  jne diNP1
+  popfq
+  pop rax
+  jmp diRet1
+diNP1:
+  popfq
+  pop rax
+  db C7 85 74 01 00 00 00 00 80 BF
+  jmp diRet1
+
+deathwrite1:
+  jmp diNewmem1
+  nop 5
+diRet1:
+
+diNewmem2:
+  push rax
+  pushfq
+  mov rax,[rsi]
+  cmp rax,[diPlayerVT]
+  jne diNP2
+  popfq
+  pop rax
+  jmp diRet2
+diNP2:
+  popfq
+  pop rax
+  db C7 86 74 01 00 00 00 00 80 BF
+  jmp diRet2
+
+deathwrite2:
+  jmp diNewmem2
+  nop 5
+diRet2:
+
+[DISABLE]
+deathwrite1:
+  db C7 85 74 01 00 00 00 00 80 BF
+deathwrite2:
+  db C7 86 74 01 00 00 00 00 80 BF
+unregistersymbol(deathwrite1)
+unregistersymbol(deathwrite2)
+unregistersymbol(diPlayerVT)
+dealloc(diNewmem1)
+dealloc(diNewmem2)
+dealloc(diPlayerVT)"""
+
+[[cheat]]
+id = "infinite-oxygen"
+name = "Infinite Oxygen"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game    : ACShadows.exe
+  Version :
+  Date    : 2026-01-30
+  Author  : JenAriSkywalker
+
+  This script NOPs the oxygen write instruction to prevent air depletion.
+}
+
+[ENABLE]
+
+aobscanmodule(oxygenaob,ACShadows.exe,C5 FA 11 41 70 48 89 F1) // Unique AOB from your original code
+registersymbol(oxygenaob)
+
+oxygenaob:
+  db 90 90 90 90 90 // NOPing vmovss [rcx+70],xmm0
+
+[DISABLE]
+
+oxygenaob:
+  db C5 FA 11 41 70 // Restore original vmovss instruction
+
+unregistersymbol(oxygenaob)"""
+
+[[cheat]]
+id = "auto-block"
+name = "Auto Block"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game    : ACShadows.exe
+  Feature : Auto Block (player-gated) }
+
+[ENABLE]
+aobscanmodule(autoBlockAOB, ACShadows.exe, 48 8B 84 24 80 00 00 00 F6 40 34 01 75 34)
+registersymbol(autoBlockAOB)
+alloc(newmem, 256, autoBlockAOB)
+label(returnhere)
+label(abDone)
+
+newmem:
+  mov rax,[rsp+00000080]
+  push rcx
+  mov rcx,[rbx+000000A8]
+  test rcx,rcx
+  jz abDone
+  mov rcx,[rcx+000014A0]
+  cmp rcx,rbx
+  jne abDone
+  pop rcx
+  or byte ptr [rax+34],01
+  jmp returnhere
+abDone:
+  pop rcx
+  jmp returnhere
+
+autoBlockAOB:
+  jmp newmem
+  nop 3
+returnhere:
+
+[DISABLE]
+autoBlockAOB:
+  db 48 8B 84 24 80 00 00 00
+unregistersymbol(autoBlockAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "unlimited-adrenaline"
+name = "Unlimited Adrenaline"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game    : ACShadows.exe
+  Feature : Unlimited Adrenaline (Force-Max)
+  Forces the gameplay adrenaline field [rcx+0C] to 800.0 at both update
+  sites every time they run, so it re-pins faster than abilities drain it. }
+
+[ENABLE]
+aobscanmodule(adr_gain, ACShadows.exe, C5 FA 11 59 0C C5 FA 11 51 48 C6 41 4C 01 48 8B 51 18 48 85 D2 74 98)
+aobscanmodule(adr_use,  ACShadows.exe, C5 FA 11 59 0C C5 FA 11 51 48 C6 41 4C 01 48 8B 51 18 48 85 D2 74 B3)
+registersymbol(adr_gain)
+registersymbol(adr_use)
+alloc(adrNewG, 128, adr_gain)
+alloc(adrNewU, 128, adr_use)
+label(adrRetG)
+label(adrRetU)
+
+adrNewG:
+  push rax
+  mov eax,44480000
+  movd xmm3,eax
+  pop rax
+  vmovss [rcx+0C],xmm3
+  jmp adrRetG
+adr_gain:
+  jmp adrNewG
+adrRetG:
+
+adrNewU:
+  push rax
+  mov eax,44480000
+  movd xmm3,eax
+  pop rax
+  vmovss [rcx+0C],xmm3
+  jmp adrRetU
+adr_use:
+  jmp adrNewU
+adrRetU:
+
+[DISABLE]
+adr_gain:
+  db C5 FA 11 59 0C
+adr_use:
+  db C5 FA 11 59 0C
+unregistersymbol(adr_gain)
+unregistersymbol(adr_use)
+dealloc(adrNewG)
+dealloc(adrNewU)"""
+
+[[cheat]]
+id = "instant-ability-recharge"
+name = "Instant Ability Recharge"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game    : ACShadows.exe
+  Version :
+  Date    : 2026-01-30
+  Author  : JenAriSkywalker
+
+  This script NOPs the state and timer writes for abilities,
+  resulting in instant cooldown for all ability slots.
+}
+
+[ENABLE]
+
+// --- Ability State Instruction ---
+// Original: mov [rsi+40],rdi
+aobscanmodule(abilitynocooldown,ACShadows.exe,48 89 7E 40 48 8B 4E 30 48 85 C9 48 0F 44 C8 * * * * 80)
+registersymbol(abilitynocooldown)
+
+// --- Ability Timer Instruction ---
+// Original: mov [rdi+00000080],r12
+aobscanmodule(abilitynocooldown2,ACShadows.exe,4C 89 A7 80 00 00 00 48 8B 4F)
+registersymbol(abilitynocooldown2)
+
+// We replace the original bytes with NOPs (90) directly.
+// This avoids using 'jmp newmem' which often triggers anti-cheat lag.
+
+abilitynocooldown:
+  db 90 90 90 90 // NOPing 'mov [rsi+40],rdi' (4 bytes)
+
+abilitynocooldown2:
+  db 90 90 90 90 90 90 90 // NOPing 'mov [rdi+00000080],r12' (7 bytes)
+
+[DISABLE]
+
+abilitynocooldown:
+  db 48 89 7E 40 // Restore original state write
+
+abilitynocooldown2:
+  db 4C 89 A7 80 00 00 00 // Restore original timer write
+
+unregistersymbol(abilitynocooldown)
+unregistersymbol(abilitynocooldown2)"""
+
+[[cheat]]
+id = "always-stealthy"
+name = "Always Stealthy"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(someFlagsSetAOB,$process,E8 * * * * 4* * * * * 00 00 * * 74 * 4* * * * * 00 00 00 74)
+registersymbol(someFlagsSetAOB)
+
+label(pProne)
+registersymbol(pProne)
+label(pCrouch)
+registersymbol(pCrouch)
+
+alloc(newmem,2048,someFlagsSetAOB+5) //"ACShadows.exe"+CE17F)
+label(returnhere)
+label(originalcode_someFlagsSetAOB)
+registersymbol(originalcode_someFlagsSetAOB)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+push r9
+mov r9,0000000C8000001D
+cmp r13,r9
+jne end
+
+cmp r12,30 //prone
+jne @f
+lea r9,[r14+de]
+push r9
+mov r9,pProne
+pop [r9]
+
+@@:
+cmp r12,a8 //crouch
+jne @f
+lea r9,[r14+de]
+push r9
+mov r9,pCrouch
+pop [r9]
+
+end:
+pop r9
+
+originalcode_someFlagsSetAOB:
+readmem(someFlagsSetAOB+5,7)
+//mov [r14+000000DE],al
+
+exit:
+jmp returnhere
+
+///
+pProne:
+dq 0
+pCrouch:
+dq 0
+
+someFlagsSetAOB+5: //"ACShadows.exe"+CE17F:
+jmp newmem
+nop 2
+returnhere:
+
+///**************************************************///
+aobscanmodule(someBase1CReadAOB,$process,8* * 01 8* * * 8* * 75 09 4* * * FF * * * * * 4*)
+registersymbol(someBase1CReadAOB)
+
+LABEL(sSA)
+registersymbol(sSA)
+LABEL(pCrouchAlt)
+registersymbol(pCrouchAlt)
+
+alloc(newmem2,2048,someBase1CReadAOB+a) //"ACShadows.exe"+2B810)
+label(returnhere2)
+label(originalcode2_someBase1CReadAOB)
+registersymbol(originalcode2_someBase1CReadAOB)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov rax,sSA
+mov [rax],rcx
+lea rax,[rcx+2de8]
+push rax
+mov rax,pCrouchAlt
+pop [rax]
+
+originalcode2_someBase1CReadAOB:
+readmem(someBase1CReadAOB+a,9)
+//mov rax,[rcx]
+//call qword ptr [rax+000000D8]
+
+exit2:
+jmp returnhere2
+
+///+2de8
+sSA:
+dq 0
+pCrouchAlt:
+dq 0
+///
+
+someBase1CReadAOB+a: //"ACShadows.exe"+2B810:
+jmp newmem2
+nop 4
+returnhere2:
+
+///**************************************************///
+aobscanmodule(senseThresholdFlagChkAOB,$process,E8 * * * * 8* * 0F 85 * * * * * * * 00 00 4* * * * * 00 0F 84)
+registersymbol(senseThresholdFlagChkAOB)
+
+label(bStealthKeyPressed)
+registersymbol(bStealthKeyPressed)
+
+alloc(newmem3,2048,senseThresholdFlagChkAOB+12) //"ACShadows.exe"+2183A66)
+label(returnhere3)
+label(originalcode3_senseThresholdFlagChkAOB)
+registersymbol(originalcode3_senseThresholdFlagChkAOB)
+label(exit3)
+
+newmem3: //this is allocated memory, you have read,write,execute access
+//place your code here
+push rax
+mov rax,pProne
+mov rax,[rax]
+test rax,rax
+jz @f
+cmp byte ptr [rax],1
+jne @f
+pop rax
+jmp exit3
+
+@@:
+mov rax,pCrouch
+mov rax,[rax]
+test rax,rax
+jz @f
+cmp byte ptr [rax],1
+jne @f
+pop rax
+jmp exit3
+
+@@:
+mov rax,pCrouchAlt
+mov rax,[rax]
+test rax,rax
+jz @f
+cmp byte ptr [rax],1
+jne @f
+pop rax
+jmp exit3
+
+@@:
+mov rax,bStealthKeyPressed
+cmp byte ptr [rax],1
+jne @f
+pop rax
+jmp exit3
+
+end3:
+pop rax
+
+originalcode3_senseThresholdFlagChkAOB:
+readmem(senseThresholdFlagChkAOB+12,6)
+//cmp byte ptr [r12+28],00
+
+exit3:
+jmp returnhere3
+
+///
+bStealthKeyPressed:
+///
+
+senseThresholdFlagChkAOB+12: //"ACShadows.exe"+2183A66:
+jmp newmem3
+nop
+returnhere3:
+
+///**************************************************///
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+someFlagsSetAOB+5: //"ACShadows.exe"+CE17F:
+readmem(originalcode_someFlagsSetAOB,7)
+//db 41 88 86 DE 00 00 00
+//mov [r14+000000DE],al
+unregistersymbol(originalcode_someFlagsSetAOB)
+
+unregistersymbol(pProne)
+unregistersymbol(pCrouch)
+
+///**************************************************///
+dealloc(newmem2)
+someBase1CReadAOB+a: //"ACShadows.exe"+2B810:
+readmem(originalcode2_someBase1CReadAOB,9)
+//db 48 8B 01 FF 90 D8 00 00 00
+//mov rax,[rcx]
+//call qword ptr [rax+000000D8]
+unregistersymbol(originalcode2_someBase1CReadAOB)
+
+unregistersymbol(sSA)
+unregistersymbol(pCrouchAlt)
+
+///**************************************************///
+dealloc(newmem3)
+senseThresholdFlagChkAOB+12: //"ACShadows.exe"+2183A66:
+readmem(originalcode3_senseThresholdFlagChkAOB,6)
+//db 41 80 7C 24 28 00
+//cmp byte ptr [r12+28],00
+unregistersymbol(originalcode3_senseThresholdFlagChkAOB)
+
+unregistersymbol(bStealthKeyPressed)
+
+///**************************************************///"""
+
+[[cheat]]
+id = "disable"
+name = "DISABLE"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bStealthKeyPressed"
+hops = []
+
+[[cheat]]
+id = "ignore-skill-points"
+name = "Ignore Skill Points"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(skillPtsSufficientChkOnSkillHighlightedAOB,$process,E8 * * * * 0F * * * * 00 00 3* * 0F 96 C0 8* * * * E*)
+registersymbol(skillPtsSufficientChkOnSkillHighlightedAOB)
+
+skillPtsSufficientChkOnSkillHighlightedAOB+e: //"ACShadows.exe"+67925D0:
+db 90 B0 01
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+skillPtsSufficientChkOnSkillHighlightedAOB+e: //"ACShadows.exe"+67925D0:
+db 0F 96 C0
+//setbe al
+
+/*
+ACShadows.exe+6792530 - E8 9BBA87F9           - call ACShadows.exe+DFD0
+ACShadows.exe+6792535 - 48 89 D9              - mov rcx,rbx
+ACShadows.exe+6792538 - FF D6                 - call rsi
+ACShadows.exe+679253A - EB B7                 - jmp ACShadows.exe+67924F3
+ACShadows.exe+679253C - 31 F6                 - xor esi,esi
+ACShadows.exe+679253E - EB 04                 - jmp ACShadows.exe+6792544
+ACShadows.exe+6792540 - 8B 74 24 24           - mov esi,[rsp+24]
+ACShadows.exe+6792544 - 48 8B 4C 24 30        - mov rcx,[rsp+30]
+ACShadows.exe+6792549 - 48 31 E1              - xor rcx,rsp
+ACShadows.exe+679254C - E8 FF5BBAFE           - call ACShadows.exe+5338150
+ACShadows.exe+6792551 - 89 F0                 - mov eax,esi
+ACShadows.exe+6792553 - 48 83 C4 38           - add rsp,38 { 56 }
+ACShadows.exe+6792557 - 5B                    - pop rbx
+ACShadows.exe+6792558 - 5D                    - pop rbp
+ACShadows.exe+6792559 - 5F                    - pop rdi
+ACShadows.exe+679255A - 5E                    - pop rsi
+ACShadows.exe+679255B - 41 5C                 - pop r12
+ACShadows.exe+679255D - 41 5D                 - pop r13
+ACShadows.exe+679255F - 41 5E                 - pop r14
+ACShadows.exe+6792561 - 41 5F                 - pop r15
+ACShadows.exe+6792563 - C3                    - ret
+ACShadows.exe+6792564 - 48 8B 5C 11 08        - mov rbx,[rcx+rdx+08]
+ACShadows.exe+6792569 - 48 8D 0D 50131D04     - lea rcx,[ACShadows.exe+A9638C0] { (-1) }
+ACShadows.exe+6792570 - 4C 8D 0D 0133B204     - lea r9,[ACShadows.exe+B2B5878] { (7FF6C2C45240) }
+ACShadows.exe+6792577 - 31 D2                 - xor edx,edx
+ACShadows.exe+6792579 - 49 89 D8              - mov r8,rbx
+ACShadows.exe+679257C - E8 FFBD87F9           - call ACShadows.exe+E380
+ACShadows.exe+6792581 - 48 89 44 24 28        - mov [rsp+28],rax
+ACShadows.exe+6792586 - 48 85 DB              - test rbx,rbx
+ACShadows.exe+6792589 - 0F84 C7FEFFFF         - je ACShadows.exe+6792456
+ACShadows.exe+679258F - 8B 47 10              - mov eax,[rdi+10]
+ACShadows.exe+6792592 - 31 DB                 - xor ebx,ebx
+ACShadows.exe+6792594 - 83 F8 01              - cmp eax,01 { 1 }
+ACShadows.exe+6792597 - 74 43                 - je ACShadows.exe+67925DC
+ACShadows.exe+6792599 - 85 C0                 - test eax,eax
+ACShadows.exe+679259B - 75 21                 - jne ACShadows.exe+67925BE
+ACShadows.exe+679259D - 48 8D 15 44FA1E03     - lea rdx,[ACShadows.exe+9981FE8] { (7FF6C1311CD0) }
+ACShadows.exe+67925A4 - 48 8D 4C 24 28        - lea rcx,[rsp+28]
+ACShadows.exe+67925A9 - E8 82FB9AF9           - call ACShadows.exe+142130
+ACShadows.exe+67925AE - 48 85 C0              - test rax,rax
+ACShadows.exe+67925B1 - 74 0B                 - je ACShadows.exe+67925BE
+ACShadows.exe+67925B3 - 8B 58 08              - mov ebx,[rax+08]
+ACShadows.exe+67925B6 - 31 C9                 - xor ecx,ecx
+ACShadows.exe+67925B8 - 2B 58 14              - sub ebx,[rax+14]
+ACShadows.exe+67925BB - 0F42 D9               - cmovb ebx,ecx
+ACShadows.exe+67925BE - 48 8B 4F 08           - mov rcx,[rdi+08]
+skillPtsSufficientChkOnSkillHighlightedAOB- E8 A9EF2CFE           - call ACShadows.exe+4A61570
+ACShadows.exe+67925C7 - 0FAF 86 9C000000      - imul eax,[rsi+0000009C]
+ACShadows.exe+67925CE - 39 D8                 - cmp eax,ebx
+ACShadows.exe+67925D0 - 0F96 C0               - setbe al
+ACShadows.exe+67925D3 - 89 44 24 24           - mov [rsp+24],eax
+ACShadows.exe+67925D7 - E9 A7FEFFFF           - jmp ACShadows.exe+6792483
+ACShadows.exe+67925DC - 48 8D 15 05FA1E03     - lea rdx,[ACShadows.exe+9981FE8] { (7FF6C1311CD0) }
+ACShadows.exe+67925E3 - 48 8D 4C 24 28        - lea rcx,[rsp+28]
+ACShadows.exe+67925E8 - E8 43FB9AF9           - call ACShadows.exe+142130
+ACShadows.exe+67925ED - 48 85 C0              - test rax,rax
+ACShadows.exe+67925F0 - 74 CC                 - je ACShadows.exe+67925BE
+ACShadows.exe+67925F2 - 8B 58 0C              - mov ebx,[rax+0C]
+ACShadows.exe+67925F5 - 31 C9                 - xor ecx,ecx
+ACShadows.exe+67925F7 - 2B 58 18              - sub ebx,[rax+18]
+ACShadows.exe+67925FA - EB BF                 - jmp ACShadows.exe+67925BB
+ACShadows.exe+67925FC - CC                    - int 3
+ACShadows.exe+67925FD - CC                    - int 3
+ACShadows.exe+67925FE - CC                    - int 3
+ACShadows.exe+67925FF - CC                    - int 3
+ACShadows.exe+6792600 - 41 57                 - push r15
+ACShadows.exe+6792602 - 41 56                 - push r14
+ACShadows.exe+6792604 - 41 55                 - push r13
+ACShadows.exe+6792606 - 41 54                 - push r12
+ACShadows.exe+6792608 - 56                    - push rsi
+ACShadows.exe+6792609 - 57                    - push rdi
+ACShadows.exe+679260A - 55                    - push rbp
+ACShadows.exe+679260B - 53                    - push rbx
+ACShadows.exe+679260C - 48 83 EC 48           - sub rsp,48 { 72 }
+ACShadows.exe+6792610 - 48 8B 05 E9E69702     - mov rax,[ACShadows.exe+9110D00] { (1571435949) }
+ACShadows.exe+6792617 - 48 31 E0              - xor rax,rsp
+ACShadows.exe+679261A - 48 89 44 24 40        - mov [rsp+40],rax
+ACShadows.exe+679261F - 48 83 79 08 00        - cmp qword ptr [rcx+08],00 { 0 }
+ACShadows.exe+6792624 - 0F84 71010000         - je ACShadows.exe+679279B
+ACShadows.exe+679262A - 48 89 D6              - mov rsi,rdx
+ACShadows.exe+679262D - 48 89 CF              - mov rdi,rcx
+ACShadows.exe+6792630 - 8B 42 10              - mov eax,[rdx+10]
+*/"""
+
+[[cheat]]
+id = "shared-movement-hooks-auto-enabled-by-no-clip-free-cam-leave-alone"
+name = "* Shared Movement Hooks (AUTO - enabled by No Clip/Free Cam; leave alone)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(bSuppressWrite,1)
+alloc(bNoDeath,1)
+alloc(pNCcoord,8)
+registersymbol(bSuppressWrite)
+registersymbol(bNoDeath)
+registersymbol(pNCcoord)
+bSuppressWrite:
+db 0
+bNoDeath:
+db 0
+pNCcoord:
+dq 0
+
+aobscanmodule(ncBase, ACShadows.exe, 48 8D 7C 24 20 F6)
+alloc(ncmem,$200,ncBase)
+registersymbol(ncBase)
+registersymbol(ncmem)
+label(ncwrite)
+label(ncskip)
+label(ncret)
+ncmem:
+pushfq
+push rax
+push rbx
+mov al,[bSuppressWrite]
+test al,al
+je ncwrite
+mov rbx,[pNCcoord]
+cmp rbx,rsi
+je ncskip
+ncwrite:
+pop rbx
+pop rax
+popfq
+vmovaps [rsi+50],xmm0
+jmp ncret
+ncskip:
+pop rbx
+pop rax
+popfq
+jmp ncret
+ncBase+26:
+jmp ncmem
+ncret:
+
+aobscanmodule(hpHook, ACShadows.exe, 48 8D BE 98 01 00 00 48 85)
+alloc(hpmem,$100,hpHook)
+registersymbol(hpHook)
+registersymbol(hpmem)
+label(hpdone)
+label(hpret)
+hpmem:
+lea rdi,[rsi+00000198]
+push rax
+test rsi,rsi
+je hpdone
+mov al,[bNoDeath]
+test al,al
+je hpdone
+mov [rsi+000001BC],al
+hpdone:
+pop rax
+jmp hpret
+hpHook:
+jmp hpmem
+nop 2
+hpret:
+
+[DISABLE]
+ncBase+26:
+db C5 F8 29 46 50
+hpHook:
+db 48 8D BE 98 01 00 00
+unregistersymbol(ncBase)
+unregistersymbol(ncmem)
+unregistersymbol(hpHook)
+unregistersymbol(hpmem)
+unregistersymbol(bSuppressWrite)
+unregistersymbol(bNoDeath)
+unregistersymbol(pNCcoord)
+dealloc(ncmem)
+dealloc(hpmem)
+dealloc(bSuppressWrite)
+dealloc(bNoDeath)
+dealloc(pNCcoord)"""
+
+[[cheat]]
+id = "time-cycle"
+name = "Time Cycle"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fTimeOfDayMod"
+hops = []
+
+[[cheat]]
+id = "current-time"
+name = "Current Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTimeOfDay"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "advance-time"
+name = "Advance Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bAdvanceTimeOfDay"
+hops = []
+
+[[cheat]]
+id = "rewind-time"
+name = "Rewind Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bRewindTimeOfDay"
+hops = []
+
+[[cheat]]
+id = "time-scale"
+name = "Time Scale"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(gameSpeedManipulateFlagChk1AOB,$process,A8 10 74 ?? 4D 85 E4 74 ?? A8 08 74 ??)
+registersymbol(gameSpeedManipulateFlagChk1AOB)
+
+label(dCustGameSpeed)
+registersymbol(dCustGameSpeed)
+
+alloc(newmem,2048,gameSpeedManipulateFlagChk1AOB+4)
+label(returnhere)
+label(originalcode_gameSpeedManipulateFlagChk1AOB)
+registersymbol(originalcode_gameSpeedManipulateFlagChk1AOB)
+label(exit)
+
+newmem:
+push rax
+push rbx
+
+// SAFETY CHECK: Ensure r14 is valid before writing to it
+test r14,r14
+jz end
+
+mov rax,dCustGameSpeed
+mov ebx,[rax]
+cmp ebx,[rax+4]
+jne @f
+
+cmp byte ptr [rax+8],0
+je end
+
+mov byte ptr [rax+8],0
+mov byte ptr [r14+16C4],0
+jmp end
+
+@@:
+mov byte ptr [rax+8],1
+mov byte ptr [r14+16C4],1
+
+end:
+pop rbx
+pop rax
+
+originalcode_gameSpeedManipulateFlagChk1AOB:
+// FIXED: Use assembly instead of DB to ensure jump target is correct
+test r12,r12
+// Jump to the calculated target (AOB + 9 + 0x12 = AOB + 0x1B)
+je gameSpeedManipulateFlagChk1AOB+1B
+test al,08
+
+exit:
+jmp returnhere
+
+dCustGameSpeed:
+dd (float)1
+dd (float)1
+dd 0
+
+gameSpeedManipulateFlagChk1AOB+4:
+jmp newmem
+nop 2
+returnhere:
+
+///*****************************************///
+// (The second part of your script was fine, keep it as is)
+ ///*****************************************///
+
+aobscanmodule(custSpeedMultApplyAOB,$process,48 89 F9 41 FF D6 85 C0 0F 85 ?? ?? ?? ?? E9 ?? ?? ?? ?? C5 CA 59 76 24)
+
+registersymbol(custSpeedMultApplyAOB)
+
+
+alloc(newmem2,2048,custSpeedMultApplyAOB+13)
+
+label(returnhere2)
+
+label(originalcode2_custSpeedMultApplyAOB)
+
+registersymbol(originalcode2_custSpeedMultApplyAOB)
+
+label(exit2)
+
+
+newmem2:
+
+mov rcx,dCustGameSpeed
+
+db C5 CA 59 76 24
+
+//vmulss xmm6,xmm6,[rsi+24]
+
+vmulss xmm6,xmm6,[rcx]
+
+jmp exit2
+
+
+originalcode2_custSpeedMultApplyAOB:
+
+db C5 CA 59 76 24
+
+//vmulss xmm6,xmm6,[rsi+24]
+
+
+exit2:
+
+jmp returnhere2
+
+
+custSpeedMultApplyAOB+13:
+
+jmp newmem2
+
+returnhere2:
+
+
+[DISABLE]
+
+dealloc(newmem)
+
+gameSpeedManipulateFlagChk1AOB+4:
+
+db 4D 85 E4 74 12 A8 08
+
+unregistersymbol(originalcode_gameSpeedManipulateFlagChk1AOB)
+
+unregistersymbol(dCustGameSpeed)
+
+
+dealloc(newmem2)
+
+custSpeedMultApplyAOB+13:
+
+db C5 CA 59 76 24
+
+unregistersymbol(originalcode2_custSpeedMultApplyAOB)"""
+
+[[cheat]]
+id = "speed-modifier-use-to-change-season"
+name = "Speed Modifier | Use to Change Season"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dCustGameSpeed"
+hops = []
+
+[[cheat]]
+id = "infinite-scouts"
+name = "Infinite Scouts"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(scoutCountWriteAOB,$process,41 88 AF CC 00 00 00 4C 89 F9)
+registersymbol(scoutCountWriteAOB)
+
+alloc(newmem,2048,scoutCountWriteAOB)
+label(retnhere)
+
+newmem:
+mov bpl,6
+mov [r15+000000CC],bpl
+jmp retnhere
+
+scoutCountWriteAOB:
+jmp newmem
+nop 2
+retnhere:
+
+[DISABLE]
+dealloc(newmem)
+scoutCountWriteAOB:
+db 41 88 AF CC 00 00 00"""
+
+[[cheat]]
+id = "easy-quest-kill-chain-not-tested"
+name = "Easy Quest Kill Chain (Not Tested)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//FF 86 E8 00 00 00 48 8B 4C
+aobscanmodule(questprogress,$process,FF??????????488B??????4831??E8????????4889??4889??4883????5B5F5E415E415FE9)
+alloc(newmem,$1000,questprogress)
+label(code return)
+
+
+newmem:
+
+code:
+  mov [rsi+000000E8],#120
+  jmp return
+
+questprogress:
+  jmp newmem
+  nop
+return:
+registersymbol(questprogress)
+
+[DISABLE]
+
+questprogress:
+  db FF 86 E8 00 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+//ACShadows.exe+5BC14B - 48 8B 9E F0000000     - mov rbx,[rsi+000000F0]
+//ACShadows.exe+5BC152 - 48 85 DB              - test rbx,rbx
+//ACShadows.exe+5BC155 - 0F84 B4FEFFFF         - je ACShadows.exe+5BC00F
+//ACShadows.exe+5BC15B - FF 86 E8000000        - inc [rsi+000000E8]
+//ACShadows.exe+5BC161 - 48 8B 4C 24 28        - mov rcx,[rsp+28]
+//ACShadows.exe+5BC166 - 48 31 E1              - xor rcx,rsp
+//ACShadows.exe+5BC169 - E8 22D9D704           - call ACShadows.exe+5339A90
+//ACShadows.exe+5BC16E - 48 89 D9              - mov rcx,rbx
+//ACShadows.exe+5BC171 - 48 89 FA              - mov rdx,rdi"""

@@ -1,0 +1,595 @@
+[game]
+name = "Blade Arcus from Shining: Battle Arena"
+exe = "game.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1645"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_enemy_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_healthset_enable)
+registersymbol(playerstats_forceset_enable)
+registersymbol(playerstats_supportset_enable)
+registersymbol(playerstats_apset_enable)
+registersymbol(playerstats_enemyset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_enemy_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_healthset_enable, 4)
+alloc(playerstats_forceset_enable, 4)
+alloc(playerstats_supportset_enable, 4)
+alloc(playerstats_apset_enable, 4)
+alloc(playerstats_enemyset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_enemy_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_healthset_enable)
+unregistersymbol(playerstats_forceset_enable)
+unregistersymbol(playerstats_supportset_enable)
+unregistersymbol(playerstats_apset_enable)
+unregistersymbol(playerstats_enemyset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_enemy_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_healthset_enable)
+dealloc(playerstats_forceset_enable)
+dealloc(playerstats_supportset_enable)
+dealloc(playerstats_apset_enable)
+dealloc(playerstats_enemyset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-battle"
+name = "Player Stats Base Address Scan (To Update: Battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_healthset_exit)
+label(playerstats_forceset_exit)
+label(playerstats_supportset_exit)
+label(playerstats_apset_exit)
+label(playerstats_enemy_entry)
+label(playerstats_enemyupdate_exit)
+label(playerstats_enemyset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//game.exe+1808EE - 85 F6                 - test esi,esi
+//game.exe+1808F0 - 0F84 17010000         - je game.exe+180A0D
+//game.exe+1808F6 - 0FB7 86 8C1B0000      - movzx eax,word ptr [esi+00001B8C]
+//game.exe+1808FD - 66 89 43 04           - mov [ebx+04],ax
+//game.exe+180901 - 0FB7 86 8E1B0000      - movzx eax,word ptr [esi+00001B8E]
+//game.exe+180908 - 66 89 43 06           - mov [ebx+06],ax
+aobscan(playerstats_searchedAOB, 0F B7 86 8C 1B 00 00 66 89 43 04)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], ebx
+
+cmp byte ptr [esi+38], 30
+jne playerstats_enemy_entry
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], esi
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_healthset_enable], #0
+je playerstats_healthset_exit
+mov bx, [esi+1b96]
+mov word ptr [esi+1b8c], bx
+mov word ptr [esi+1b8e], bx
+playerstats_healthset_exit:
+
+cmp dword ptr [playerstats_forceset_enable], #0
+je playerstats_forceset_exit
+mov bx, [esi+1b98]
+mov word ptr [esi+1b90], bx
+playerstats_forceset_exit:
+
+cmp dword ptr [playerstats_supportset_enable], #0
+je playerstats_supportset_exit
+mov bx, [esi+1b9a]
+mov word ptr [esi+1b92], bx
+playerstats_supportset_exit:
+
+cmp dword ptr [playerstats_apset_enable], #0
+je playerstats_apset_exit
+mov bx, [esi+1b9c]
+mov word ptr [esi+1b94], bx
+playerstats_apset_exit:
+
+jmp playerstats_enemyset_exit
+
+playerstats_enemy_entry:
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_enemyupdate_exit
+mov [playerstats_enemy_basepointer], esi
+playerstats_enemyupdate_exit:
+
+cmp dword ptr [playerstats_enemyset_enable], #0
+je playerstats_enemyset_exit
+mov word ptr [esi+1b90], #0
+mov word ptr [esi+1b92], #0
+mov word ptr [esi+1b94], #0
+cmp word ptr [esi+1b8c], #5
+jl playerstats_enemyset_exit
+mov word ptr [esi+1b8c], #1
+mov word ptr [esi+1b8e], #1
+je playerstats_enemyset_exit
+
+playerstats_enemyset_exit:
+
+mov ebx, [playerstats_temp1]
+
+
+playerstats_originalcode:
+db 0F B7 86 8C 1B 00 00
+//movzx eax,word ptr [esi+00001B8C]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 0F B7 86 8C 1B 00 00
+//movzx eax,word ptr [esi+00001B8C]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)"""
+
+[[cheat]]
+id = "health-gauge-set-to-max"
+name = "Health Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "force-gauge-set-to-max"
+name = "Force Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_forceset_enable"
+hops = []
+
+[[cheat]]
+id = "support-gauge-set-to-max"
+name = "Support Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_supportset_enable"
+hops = []
+
+[[cheat]]
+id = "ap-gauge-set-to-max"
+name = "AP Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_apset_enable"
+hops = []
+
+[[cheat]]
+id = "enemy-set-to-weak"
+name = "Enemy Set to Weak?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemyset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "health-gauge-1"
+name = "Health Gauge 1"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b8c"]
+
+[[cheat]]
+id = "health-gauge-2"
+name = "Health Gauge 2"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b8e"]
+
+[[cheat]]
+id = "force-gauge"
+name = "Force Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b90"]
+
+[[cheat]]
+id = "support-gauge"
+name = "Support Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b92"]
+
+[[cheat]]
+id = "ap-gauge"
+name = "AP Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b94"]
+
+[[cheat]]
+id = "max-health-gauge"
+name = "Max Health Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b96"]
+
+[[cheat]]
+id = "max-force-gauge"
+name = "Max Force Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b98"]
+
+[[cheat]]
+id = "max-support-gauge"
+name = "Max Support Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b9a"]
+
+[[cheat]]
+id = "max-ap-gauge"
+name = "Max AP Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1b9c"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "health-gauge-1-2"
+name = "Health Gauge 1"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b8c"]
+
+[[cheat]]
+id = "health-gauge-2-2"
+name = "Health Gauge 2"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b8e"]
+
+[[cheat]]
+id = "force-gauge-2"
+name = "Force Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b90"]
+
+[[cheat]]
+id = "support-gauge-2"
+name = "Support Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b92"]
+
+[[cheat]]
+id = "ap-gauge-2"
+name = "AP Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b94"]
+
+[[cheat]]
+id = "max-health-gauge-2"
+name = "Max Health Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b96"]
+
+[[cheat]]
+id = "max-force-gauge-2"
+name = "Max Force Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b98"]
+
+[[cheat]]
+id = "max-support-gauge-2"
+name = "Max Support Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b9a"]
+
+[[cheat]]
+id = "max-ap-gauge-2"
+name = "Max AP Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_enemy_basepointer"
+hops = ["+0x1b9c"]

@@ -1,0 +1,292 @@
+[game]
+name = "Crisis Core Final Fantasy 7 Reunion"
+exe = "ccff7r-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=22295"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-damage-modifier-options-god-mode-one-hit-kill-etc"
+name = "Enable Damage Modifier Options (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanmodule(DamageModAOB,$process,44 8B 44 24 60 44 8B 8F E8 01 00 00 C7 44 24 40 9F 86 01 00) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,1024,DamageModAOB)
+
+///
+label(return)
+label(DamageModAOBSave)
+registersymbol(DamageModAOBSave)
+label(GodMode)
+registersymbol(GodMode)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(fHeroHealingMult)
+registersymbol(fHeroHealingMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fEnemyHealingMult)
+registersymbol(fEnemyHealingMult)
+
+newmem:
+  mov [R15Save],r15
+  mov [R14Save],r14
+  cmp dword ptr [rdi+000001E4],0
+  jne EnemyHit
+  jmp HeroHit
+HeroHit:
+  cmp edx,0
+  jl HeroDamageHit
+  jg HeroHealingHit
+  jmp MyCleanUp1
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  neg edx
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [rsp]
+  pop edx
+  cmp edx,0
+  jne CheckGodMode
+  mov edx,1
+CheckGodMode:
+  neg edx
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor edx,edx
+  jmp MyCleanUp1
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne MyCleanUp1
+  neg edx
+  cmp edx,[rdi+000001E8]
+  jl @F
+  xor edx,edx
+@@:
+  neg edx
+  jmp MyCleanUp1  
+HeroHealingHit:
+  cmp [fHeroHealingMult],(float)0.0
+  je MyCleanUp1
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroHealingMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp MyCleanUp1
+EnemyHit:
+  cmp edx,0
+  jl EnemyDamageHit
+  jg EnemyHealingHit
+  jmp MyCleanUp1
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  neg edx
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [rsp]
+  pop edx
+  cmp edx,0
+  jne CheckOneHitKill
+  mov edx,1
+CheckOneHitKill:
+  neg edx
+  cmp [OneHitKill],1
+  jne MyCleanUp1
+  mov edx,[rdi+000001E8]
+  neg edx
+  jmp MyCleanUp1
+EnemyHealingHit:
+  cmp [fEnemyHealingMult],(float)0.0
+  je MyCleanUp1
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyHealingMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp MyCleanUp1
+
+MyCleanUp1:  
+  mov r15,[R15Save]
+  mov r14,[R14Save]
+  jmp originalcode
+  
+originalcode:
+DamageModAOBSave:
+  readmem(DamageModAOB,20)
+  jmp DamageModAOB+14
+
+R14Save:
+dq 0
+R15Save:
+dq 0
+GodMode:
+dq 0
+fHeroDamageMult:
+dq (float)0.25
+fHeroHealingMult:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)2.0
+fEnemyHealingMult:
+dq (float)0.5
+
+///
+DamageModAOB:
+  jmp newmem
+  return:
+
+[DISABLE]
+
+DamageModAOB:
+  readmem(DamageModAOB,20)
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(DamageModAOBSave)
+unregistersymbol(GodMode)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(fHeroHealingMult)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fEnemyHealingMult)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-hp"
+name = "Hero Damage Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-hp"
+name = "Hero Healing Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die"
+name = "Hero Cannot Die"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-hp"
+name = "Enemy Damage Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-hp"
+name = "Enemy Healing Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []

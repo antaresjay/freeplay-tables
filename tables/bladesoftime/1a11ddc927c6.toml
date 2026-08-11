@@ -1,0 +1,284 @@
+[game]
+name = "Blades of Time (GM and No Reload)"
+exe = "bladesoftime.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4300"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-blades-of-time-v1-000-script"
+name = "[X] <== Blades of Time V1.000 Script"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Game Title    : Blades of Time
+ Game Version  : 1.0.0.0
+ Process Name  : bladesoftime.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 18-Apr-2012
+ Author        : Recifense
+ Features:
+ - God Mode (on combat)
+ - Ammo
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(bladesoftime.exe+000620fe,f3 0f 10 86 60 06 00 00)
+assert(bladesoftime.exe+002128e4,8b c7 f3 0f 11 03)
+assert(bladesoftime.exe+0021475a,8b 08 8b 50 04)
+assert(bladesoftime.exe+0020e806,8b 78 04 89 7e 04)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonHeroin)
+label(_BackMH)
+label(_ExitMH)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonWeapon)
+label(_BackMW)
+label(_ExitMW)
+label(_MonAmmo)
+label(_BackMA)
+label(_ExitMA)
+label(pHero)
+label(pHP)
+label(pWeapon)
+label(pAmmo)
+label(iEnableGM)
+label(iEnableMA)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pHP)
+registersymbol(pWeapon)
+registersymbol(pAmmo)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+
+//=========================================
+MyCode:
+//=========================================
+_MonHeroin:
+ push eax
+
+ lea eax,[esi+00000660]
+ mov [pHero],esi
+ mov [pHP],eax
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitMH                        // Jump if feature is disabled
+
+ mov eax,[esi+00000688]
+ mov [esi+00000660],eax
+
+_ExitMH:
+ pop eax
+ jmp _BackMH                       // Back to main code
+
+//=========================================
+_GodMode:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ cmp ebx,[pHP]
+ jne _ExitGM
+
+ movss xmm0,[ebx+28]               // Get maximum HP
+
+_ExitGM:
+ mov eax,edi                       // Original code
+ movss [ebx],xmm0                  // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonWeapon:
+ mov ecx,[ebp+50]
+ cmp ecx,[ebp+58]
+ jne _ExitMW
+
+ cmp ecx,[pHero]
+ jne _ExitMW
+
+ mov edx,[eax+04]
+ mov ecx,[edx+000000a0]
+ test ecx,ecx
+ jz _ExitMW
+
+ mov ecx,[edx+04]
+ cmp ecx,1
+ jle _ExitMW
+
+ mov ecx,[edx+000000b8]
+ cmp ecx,#300
+ jne _ExitMW
+
+ mov [pWeapon],edx
+
+ lea ecx,[edx+000000a4]
+ mov [pAmmo],ecx
+
+ cmp dword ptr [iEnableMA],0
+ je _ExitMW                        // Jump if feature is disabled
+
+ mov ecx,[edx+000000a0]
+ mov [edx+000000a8],ecx
+
+_ExitMW:
+ mov ecx,[eax]                     // Original code
+ mov edx,[eax+04]                  // Original code
+ jmp _BackMW                       // Back to main code
+
+//=========================================
+_MonAmmo:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                        // Jump if feature is disabled
+
+ cmp esi,[pAmmo]
+ jne _ExitMA
+
+ mov edi,[esi-04]
+ test edi,edi
+ jz _ExitMA
+
+ cmp edi,#100
+ jge _ExitMA
+
+ mov [eax+04],edi
+
+_ExitMA:
+ mov edi,[eax+04]                  // Original code
+ mov [esi+04],edi                  // Original code
+ jmp _BackMA                       // Back to main code
+
+//=========================================
+ db '=============================>'
+ db 'CE6.1 Script by Recifense 041812'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+pHero:
+ dd 0
+pHP:
+ dd MyCode
+pWeapon:
+ dd 0
+pAmmo:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+bladesoftime.exe+000620fe:
+ jmp _MonHeroin
+ nop
+ nop
+ nop
+_BackMH:
+
+bladesoftime.exe+002128e4:
+ jmp _GodMode
+ nop
+_BackGM:
+
+bladesoftime.exe+0021475a:
+ jmp _MonWeapon
+_BackMW:
+
+bladesoftime.exe+0020e806:
+ jmp _MonAmmo
+ nop
+_BackMA:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+bladesoftime.exe+000620fe:
+// movss xmm0,[esi+00000660]
+ db f3 0f 10 86 60 06 00 00
+
+bladesoftime.exe+002128e4:
+// mov eax,edi
+// movss [ebx],xmm0
+ db 8b c7 f3 0f 11 03
+
+bladesoftime.exe+0021475a:
+// mov ecx,[eax]
+// mov edx,[eax+04]
+ db 8b 08 8b 50 04
+
+bladesoftime.exe+0020e806:
+// mov edi,[eax+04]
+// mov [esi+04],edi
+ db 8b 78 04 89 7e 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pHP)
+unregistersymbol(pWeapon)
+unregistersymbol(pAmmo)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}"""
+
+[[cheat]]
+id = "disable"
+name = "Disable"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "disable-2"
+name = "Disable"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMA"
+hops = []

@@ -1,0 +1,1484 @@
+[game]
+name = "Jack Nicklaus Perfect Golf"
+exe = "shinkansen_jack_nicklaus_perfect_golf.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1685"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playerinfo-base-address-scan-initialization-activate-this-first"
+name = "PlayerInfo Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerInfo_basepointer)
+registersymbol(PlayerInfo_update_enable)
+registersymbol(PlayerInfo_set_enable)
+registersymbol(PlayerInfo_team_value)
+
+alloc(PlayerInfo_basepointer, 4)
+alloc(PlayerInfo_update_enable, 4)
+alloc(PlayerInfo_set_enable, 4)
+alloc(PlayerInfo_team_value, 4)
+
+PlayerInfo_team_value:
+dd #0
+
+
+[DISABLE]
+unregistersymbol(PlayerInfo_basepointer)
+unregistersymbol(PlayerInfo_update_enable)
+unregistersymbol(PlayerInfo_set_enable)
+unregistersymbol(PlayerInfo_team_value)
+
+dealloc(PlayerInfo_basepointer)
+dealloc(PlayerInfo_update_enable)
+dealloc(PlayerInfo_set_enable)
+dealloc(PlayerInfo_team_value)"""
+
+[[cheat]]
+id = "playerinfo-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "PlayerInfo Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerInfo_savedAOB)
+label(PlayerInfo_returnhere)
+label(PlayerInfo_originalcode)
+label(PlayerInfo_exit)
+
+label(PlayerInfo_update_exit)
+label(PlayerInfo_set_exit)
+
+registersymbol(PlayerInfo_savedAOB)
+
+//2312D989 - E8 0AD8FEFF           - call 2311B198
+//2312D98E - 83 C4 10              - add esp,10
+// PlayerInfo:Write+29
+//2312D991 - 0FB6 46 14            - movzx eax,byte ptr [esi+14]
+//2312D995 - 85 C0                 - test eax,eax
+//2312D997 - 75 0C                 - jne 2312D9A5
+//2312D999 - 0FB6 46 15            - movzx eax,byte ptr [esi+15]
+//2312D99D - 85 C0                 - test eax,eax
+aobscan(PlayerInfo_searchedAOB, 0F B6 46 14 85 C0 75 0C)
+
+alloc(PlayerInfo_newmem, 2048, PlayerInfo_searchedAOB)
+alloc(PlayerInfo_temp1, 4, PlayerInfo_searchedAOB)
+
+
+PlayerInfo_newmem:
+mov [PlayerInfo_temp1], ebx
+
+cmp byte ptr [esi+14], #1
+jne PlayerInfo_set_exit
+
+mov ebx, [PlayerInfo_team_value]
+cmp dword ptr [esi+6c], ebx
+jne PlayerInfo_set_exit
+
+cmp dword ptr [PlayerInfo_update_enable], #0
+je PlayerInfo_update_exit
+mov [PlayerInfo_basepointer], esi
+PlayerInfo_update_exit:
+
+cmp dword ptr [PlayerInfo_set_enable], #0
+je PlayerInfo_set_exit
+mov [esi+94], #0
+PlayerInfo_set_exit:
+
+mov ebx, [PlayerInfo_temp1]
+
+
+PlayerInfo_originalcode:
+db 0F B6 46 14 85 C0
+//movzx eax,byte ptr [esi+14]
+//test eax,eax
+
+
+PlayerInfo_exit:
+jmp PlayerInfo_returnhere
+
+
+PlayerInfo_searchedAOB:
+PlayerInfo_savedAOB:
+jmp PlayerInfo_newmem
+nop
+PlayerInfo_returnhere:
+
+
+[DISABLE]
+PlayerInfo_savedAOB:
+db 0F B6 46 14 85 C0
+//movzx eax,byte ptr [esi+14]
+//test eax,eax
+
+unregistersymbol(PlayerInfo_savedAOB)
+
+dealloc(PlayerInfo_newmem)
+dealloc(PlayerInfo_temp1)"""
+
+[[cheat]]
+id = "player-team"
+name = "Player Team"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Team1",
+    "1:Team2",
+    "2:Team3",
+    "3:Team4",
+    "4:Team5",
+    "5:Team6",
+    "6:Team7",
+    "7:Team8",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_team_value"
+hops = []
+
+[[cheat]]
+id = "player-team-set-to-1st-shot"
+name = "Player Team Set to 1st Shot?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_set_enable"
+hops = []
+
+[[cheat]]
+id = "playerinfo-update-base-address"
+name = "PlayerInfo Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x0",
+]
+
+[[cheat]]
+id = "ballspeed"
+name = "ballSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x10",
+]
+
+[[cheat]]
+id = "launchangle"
+name = "launchAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x14",
+]
+
+[[cheat]]
+id = "spin"
+name = "spin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x18",
+]
+
+[[cheat]]
+id = "spinaxis"
+name = "spinAxis"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "launchdirection"
+name = "launchDirection"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x20",
+]
+
+[[cheat]]
+id = "ballcarry"
+name = "ballCarry"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x24",
+]
+
+[[cheat]]
+id = "roll"
+name = "roll"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x28",
+]
+
+[[cheat]]
+id = "totaldistance"
+name = "totalDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "maxheight"
+name = "maxHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x30",
+]
+
+[[cheat]]
+id = "landingangle"
+name = "landingAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x34",
+]
+
+[[cheat]]
+id = "rehit"
+name = "rehit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x40",
+]
+
+[[cheat]]
+id = "gimme"
+name = "gimme"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x41",
+]
+
+[[cheat]]
+id = "mulligan"
+name = "mulligan"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x42",
+]
+
+[[cheat]]
+id = "drop"
+name = "drop"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x43",
+]
+
+[[cheat]]
+id = "advance"
+name = "advance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x44",
+]
+
+[[cheat]]
+id = "fade"
+name = "fade"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x50",
+]
+
+[[cheat]]
+id = "slice"
+name = "slice"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x54",
+]
+
+[[cheat]]
+id = "draw"
+name = "draw"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x58",
+]
+
+[[cheat]]
+id = "hook"
+name = "hook"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "clubheadspeed"
+name = "clubHeadSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x60",
+]
+
+[[cheat]]
+id = "clubfaceangle"
+name = "clubFaceAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x64",
+]
+
+[[cheat]]
+id = "clubpathangle"
+name = "clubPathAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x38",
+    "+0x68",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x0",
+]
+
+[[cheat]]
+id = "longestdrive"
+name = "longestDrive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x8",
+]
+
+[[cheat]]
+id = "fairwayattempts"
+name = "fairwayAttempts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0xc",
+]
+
+[[cheat]]
+id = "fairwayhit"
+name = "fairwayHit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x10",
+]
+
+[[cheat]]
+id = "driveyardsinfairway"
+name = "driveYardsInFairway"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x14",
+]
+
+[[cheat]]
+id = "holesplayed"
+name = "holesPlayed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x18",
+]
+
+[[cheat]]
+id = "greenhitinregulation"
+name = "greenHitInRegulation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "puttdistancetopin"
+name = "puttDistanceToPin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x20",
+]
+
+[[cheat]]
+id = "totalputts"
+name = "totalPutts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x24",
+]
+
+[[cheat]]
+id = "totalputtsgir"
+name = "totalPuttsGIR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x28",
+]
+
+[[cheat]]
+id = "sandsaves"
+name = "sandSaves"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "sandattempts"
+name = "sandAttempts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x30",
+]
+
+[[cheat]]
+id = "scrambling"
+name = "scrambling"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x40",
+    "+0x34",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x0",
+]
+
+[[cheat]]
+id = "approachclosesttopin"
+name = "approachClosestToPin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0xc",
+]
+
+[[cheat]]
+id = "cumulativeapproachdistancetopin"
+name = "cumulativeApproachDistanceToPin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x10",
+]
+
+[[cheat]]
+id = "longestdrive-2"
+name = "longestDrive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x14",
+]
+
+[[cheat]]
+id = "cumulativedrive"
+name = "cumulativeDrive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x18",
+]
+
+[[cheat]]
+id = "closestchip"
+name = "closestChip"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "cumulativechipdistance"
+name = "cumulativeChipDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x20",
+]
+
+[[cheat]]
+id = "troubledistance"
+name = "troubleDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x24",
+]
+
+[[cheat]]
+id = "cumulativetroubledistance"
+name = "cumulativeTroubleDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x28",
+]
+
+[[cheat]]
+id = "closestsandshot"
+name = "closestSandShot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "cumulativesanddistance"
+name = "cumulativeSandDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x30",
+]
+
+[[cheat]]
+id = "puttclosesttopin"
+name = "puttClosestToPin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x34",
+]
+
+[[cheat]]
+id = "puttcumulativedistancetopin"
+name = "puttCumulativeDistanceToPin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x38",
+]
+
+[[cheat]]
+id = "drivepoints"
+name = "drivePoints"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "chippoints"
+name = "chipPoints"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x40",
+]
+
+[[cheat]]
+id = "approachpoints"
+name = "approachPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x44",
+]
+
+[[cheat]]
+id = "troublepoints"
+name = "troublePoints"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x48",
+]
+
+[[cheat]]
+id = "sandpoints"
+name = "sandPoints"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "totalpoints"
+name = "totalPoints"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x50",
+]
+
+[[cheat]]
+id = "checkedgreen"
+name = "checkedGreen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x54",
+]
+
+[[cheat]]
+id = "oneputtcount"
+name = "onePuttCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x58",
+]
+
+[[cheat]]
+id = "eagle"
+name = "eagle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "albatross"
+name = "albatross"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x5d",
+]
+
+[[cheat]]
+id = "birdie"
+name = "birdie"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = [
+    "+0x44",
+    "+0x5e",
+]
+
+[[cheat]]
+id = "ready"
+name = "ready"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "loadingprogress"
+name = "loadingProgress"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "pintending"
+name = "pinTending"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "slot"
+name = "slot"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "ping"
+name = "ping"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "gamehandicap"
+name = "gameHandicap"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "currentscore"
+name = "currentScore"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "pointsmoney"
+name = "pointsMoney"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "distancetopin"
+name = "distanceToPin"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "heighttopin"
+name = "heightToPin"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "challengeattempts"
+name = "challengeAttempts"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "activeholeshotcount"
+name = "activeHoleShotCount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "shotinfopower"
+name = "shotInfoPower"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "scrambleactive"
+name = "scrambleActive"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerInfo_basepointer"
+hops = ["+0x9c"]

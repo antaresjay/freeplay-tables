@@ -1,0 +1,587 @@
+[game]
+name = "Alien Swarm Steam AOB"
+exe = "swarm.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1441"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "script-find-ammo"
+name = "Script: Find Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : swarm.exe
+  Version:
+  Date   : 2013-12-10
+  Author : jgoemat
+
+  This injection executes every frame to check your ammo.
+
+  Structure:
+    04F8: Current ammo
+    04FC: Current grenades
+
+  Globals:
+    0000: pAmmo
+}
+
+globalalloc(globals,$100000)
+
+[ENABLE]
+
+aobscanmodule(INJECT_FINDAMMO,server.dll,83 BE F8 04 00 00 00 75 5B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [globals],esi
+  cmp dword ptr [esi+000004F8],00
+  jmp return
+
+INJECT_FINDAMMO:
+  jmp code
+  nop
+  nop
+return:
+registersymbol(INJECT_FINDAMMO)
+
+[DISABLE]
+
+INJECT_FINDAMMO:
+  db 83 BE F8 04 00 00 00
+
+unregistersymbol(INJECT_FINDAMMO)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "server.dll"+3EFBD3
+
+"server.dll"+3EFBAF: 8B CF             - mov ecx,edi
+"server.dll"+3EFBB1: E8 DAF6FCFF       - call server.dll+3BF290
+"server.dll"+3EFBB6: 8A 98 4C120000    - mov bl,[eax+0000124C]
+"server.dll"+3EFBBC: 8B 06             - mov eax,[esi]
+"server.dll"+3EFBBE: 8B 90 28050000    - mov edx,[eax+00000528]
+"server.dll"+3EFBC4: 8B CE             - mov ecx,esi
+"server.dll"+3EFBC6: C6 86 2E050000 00 - mov byte ptr [esi+0000052E],00
+"server.dll"+3EFBCD: FF D2             - call edx
+"server.dll"+3EFBCF: 84 C0             - test al,al
+"server.dll"+3EFBD1: 74 64             - je server.dll+3EFC37
+// ---------- INJECTING HERE ----------
+"server.dll"+3EFBD3: 83 BE F8040000 00 - cmp dword ptr [esi+000004F8],00
+// ---------- DONE INJECTING  ----------
+"server.dll"+3EFBDA: 75 5B             - jne server.dll+3EFC37
+"server.dll"+3EFBDC: 8B 06             - mov eax,[esi]
+"server.dll"+3EFBDE: 8B 90 0C050000    - mov edx,[eax+0000050C]
+"server.dll"+3EFBE4: 8B CE             - mov ecx,esi
+"server.dll"+3EFBE6: FF D2             - call edx
+"server.dll"+3EFBE8: A8 02             - test al,02
+"server.dll"+3EFBEA: 75 4B             - jne server.dll+3EFC37
+"server.dll"+3EFBEC: 84 DB             - test bl,bl
+"server.dll"+3EFBEE: 74 47             - je server.dll+3EFC37
+"server.dll"+3EFBF0: A1 50AC9813       - mov eax,[server.dll+76AC50]
+}"""
+
+[[cheat]]
+id = "script-ammo"
+name = "Script: Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : swarm.exe
+  Version:
+  Date   : 2013-12-10
+  Author : jgoemat
+
+  This is where ammo is updated after firing.  The cheat will not update if
+  the new value is less.
+
+  Structure:
+    04F8: Ammo (int)
+
+  Globals
+    0100: pAmmo
+    0104: bUnlimitedAmmo
+}
+
+globalalloc(globals,$100000)
+
+[ENABLE]
+
+aobscanmodule(INJECT_AMMO,server.dll,89 BE F8 04 00 00 6A 00 68) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(setAmmo)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+100],esi
+  cmp [globals+104],1
+  jne setAmmo // not cheating
+  cmp edi,[esi+000004F8]
+  ja setAmmo // allow increase
+  mov edi,[esi+000004F8]
+
+setAmmo:
+  mov [esi+000004F8],edi
+  jmp return
+
+INJECT_AMMO:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_AMMO)
+
+[DISABLE]
+
+INJECT_AMMO:
+  db 89 BE F8 04 00 00
+
+unregistersymbol(INJECT_AMMO)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "server.dll"+3F1A0F
+
+"server.dll"+3F19EB: 80 7E 54 00          - cmp byte ptr [esi+54],00
+"server.dll"+3F19EF: 74 06                - je server.dll+3F19F7
+"server.dll"+3F19F1: 80 4E 58 01          - or byte ptr [esi+58],01
+"server.dll"+3F19F5: EB 18                - jmp server.dll+3F1A0F
+"server.dll"+3F19F7: 8B 4E 18             - mov ecx,[esi+18]
+"server.dll"+3F19FA: 85 C9                - test ecx,ecx
+"server.dll"+3F19FC: 74 11                - je server.dll+3F1A0F
+"server.dll"+3F19FE: 81 09 01010000       - or [ecx],00000101
+"server.dll"+3F1A04: E8 27D8D4FF          - call server.dll+13F230
+"server.dll"+3F1A09: 66 C7 40 02 0000     - mov word ptr [eax+02],0000
+// ---------- INJECTING HERE ----------
+"server.dll"+3F1A0F: 89 BE F8040000       - mov [esi+000004F8],edi
+// ---------- DONE INJECTING  ----------
+"server.dll"+3F1A15: 6A 00                - push 00
+"server.dll"+3F1A17: 68 7C388E13          - push server.dll+6C387C
+"server.dll"+3F1A1C: 68 90A18B13          - push server.dll+69A190
+"server.dll"+3F1A21: 6A 00                - push 00
+"server.dll"+3F1A23: 8B CE                - mov ecx,esi
+"server.dll"+3F1A25: E8 A645CCFF          - call server.dll+B5FD0
+"server.dll"+3F1A2A: 50                   - push eax
+"server.dll"+3F1A2B: E8 7BB60900          - call server.dll+48D0AB
+"server.dll"+3F1A30: 8B F8                - mov edi,eax
+"server.dll"+3F1A32: 83 C4 14             - add esp,14
+}"""
+
+[[cheat]]
+id = "script-ammo2-shotgun"
+name = "Script: Ammo2 (Shotgun)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : swarm.exe
+  Version:
+  Date   : 2013-12-10
+  Author : jgoemat
+
+
+  This is for secondary ammo (shotgun at least for me)
+
+  Structure:
+    04F8: Ammo (int)
+
+  Globals
+    0100: pAmmo
+    0104: bUnlimitedAmmo
+    0108: pAmmo2
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+aobscanmodule(INJECT_AMMO2,server.dll,50 56 8B CF E8 * * * * 8B 86 F8 04 00 00 8D 78 FF 3B C7) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+108],esi
+  cmp dword ptr [globals+104],1
+  jne skip
+  mov eax,[esi+000004F8]
+  mov edi,eax
+  jmp return+3
+
+
+skip:
+  mov eax,[esi+000004F8]
+  jmp return
+
+INJECT_AMMO2+09:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_AMMO2)
+
+[DISABLE]
+
+INJECT_AMMO2+09:
+  db 8B 86 F8 04 00 00
+
+unregistersymbol(INJECT_AMMO2)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "server.dll"+3F30D8
+
+"server.dll"+3F30BC: E8 3F74F4FF        - call server.dll+33A500
+"server.dll"+3F30C1: 8B 06              - mov eax,[esi]
+"server.dll"+3F30C3: 8B 90 C8050000     - mov edx,[eax+000005C8]
+"server.dll"+3F30C9: 6A 00              - push 00
+"server.dll"+3F30CB: 8B CE              - mov ecx,esi
+"server.dll"+3F30CD: FF D2              - call edx
+"server.dll"+3F30CF: 50                 - push eax
+"server.dll"+3F30D0: 56                 - push esi
+"server.dll"+3F30D1: 8B CF              - mov ecx,edi
+"server.dll"+3F30D3: E8 68ACF3FF        - call server.dll+32DD40
+// ---------- INJECTING HERE ----------
+"server.dll"+3F30D8: 8B 86 F8040000     - mov eax,[esi+000004F8]
+// ---------- DONE INJECTING  ----------
+"server.dll"+3F30DE: 8D 78 FF           - lea edi,[eax-01] // subtract 1 from ammo
+"server.dll"+3F30E1: 3B C7              - cmp eax,edi
+"server.dll"+3F30E3: 74 2A              - je server.dll+3F310F
+"server.dll"+3F30E5: 80 7E 54 00        - cmp byte ptr [esi+54],00
+"server.dll"+3F30E9: 74 06              - je server.dll+3F30F1
+"server.dll"+3F30EB: 80 4E 58 01        - or byte ptr [esi+58],01
+"server.dll"+3F30EF: EB 18              - jmp server.dll+3F3109
+"server.dll"+3F30F1: 8B 4E 18           - mov ecx,[esi+18]
+"server.dll"+3F30F4: 85 C9              - test ecx,ecx
+"server.dll"+3F30F6: 74 11              - je server.dll+3F3109
+}"""
+
+[[cheat]]
+id = "script-grenades"
+name = "Script: Grenades"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : swarm.exe
+  Version:
+  Date   : 2013-12-10
+  Author : jgoemat
+
+  This is where grenade count is updated after firing.  The cheat will not
+  update if the new value is less.
+
+  Structure:
+    04FC: Grenades (int)
+
+  Globals
+    0200: pGrenades
+    0204: bUnlimitedGrenades
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT_GRENADES,server.dll,89 BE FC 04 00 00 EB 0F) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(setGrenades)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+200],esi
+  cmp [globals+204],1
+  jne setGrenades // not cheating
+  cmp edi,[esi+000004FC]
+  ja setGrenades // allow increase
+  mov edi,[esi+000004FC]
+
+setGrenades:
+  mov [esi+000004FC],edi
+  jmp return
+
+INJECT_GRENADES:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_GRENADES)
+
+[DISABLE]
+
+INJECT_GRENADES:
+  db 89 BE FC 04 00 00
+
+unregistersymbol(INJECT_GRENADES)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "server.dll"+388C07
+
+"server.dll"+388BE4: 74 0B             - je server.dll+388BF1
+"server.dll"+388BE6: 08 5E 58          - or [esi+58],bl
+"server.dll"+388BE9: 89 BE FC040000    - mov [esi+000004FC],edi
+"server.dll"+388BEF: EB 2D             - jmp server.dll+388C1E
+"server.dll"+388BF1: 8B 4E 18          - mov ecx,[esi+18]
+"server.dll"+388BF4: 3B CD             - cmp ecx,ebp
+"server.dll"+388BF6: 74 0F             - je server.dll+388C07
+"server.dll"+388BF8: 81 09 01010000    - or [ecx],00000101
+"server.dll"+388BFE: E8 2D66DBFF       - call server.dll+13F230
+"server.dll"+388C03: 66 89 68 02       - mov [eax+02],bp
+// ---------- INJECTING HERE ----------
+"server.dll"+388C07: 89 BE FC040000    - mov [esi+000004FC],edi
+// ---------- DONE INJECTING  ----------
+"server.dll"+388C0D: EB 0F             - jmp server.dll+388C1E
+"server.dll"+388C0F: 8B 8E F4040000    - mov ecx,[esi+000004F4]
+"server.dll"+388C15: 51                - push ecx
+"server.dll"+388C16: 53                - push ebx
+"server.dll"+388C17: 8B CF             - mov ecx,edi
+"server.dll"+388C19: E8 A2A1D2FF       - call server.dll+B2DC0
+"server.dll"+388C1E: E8 BD30F8FF       - call server.dll+30BCE0
+"server.dll"+388C23: 8B C8             - mov ecx,eax
+"server.dll"+388C25: E8 4633F8FF       - call server.dll+30BF70
+"server.dll"+388C2A: 8D 4C 24 6C       - lea ecx,[esp+6C]
+}"""
+
+[[cheat]]
+id = "script-health"
+name = "Script: Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : swarm.exe
+  Version:
+  Date   : 2013-12-10
+  Author : Jason
+
+  This code loads health every frame, code below loads only after taking damage.
+
+  Structure:
+    04F8: Ammo (int)
+
+  Globals
+    0300: pHealth (last one)
+    0304: bGodMode
+}
+
+[ENABLE]
+
+
+aobscanmodule(INJECT_HEALTH,client.dll,8B 8E E4 00 00 00 3B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [globals+300],esi
+  cmp dword ptr [globals+304],1
+  jne skip
+  mov ecx,9999
+  mov [esi+10AC],ecx
+  mov //ecx,[esi+10AC] // load max health
+  mov [esi+000000E4],ecx
+
+skip:
+  mov ecx,[esi+000000E4]
+  jmp return
+
+INJECT_HEALTH:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_HEALTH)
+
+[DISABLE]
+
+INJECT_HEALTH:
+  db 8B 8E E4 00 00 00
+
+unregistersymbol(INJECT_HEALTH)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "client.dll"+20CECA
+
+"client.dll"+20CEAC: 85 C9             - test ecx,ecx
+"client.dll"+20CEAE: 74 14             - je client.dll+20CEC4
+"client.dll"+20CEB0: 8B 01             - mov eax,[ecx]
+"client.dll"+20CEB2: 8B 3D F82DEE12    - mov edi,[client.dll+782DF8]
+"client.dll"+20CEB8: 8B 50 08          - mov edx,[eax+08]
+"client.dll"+20CEBB: 83 C7 48          - add edi,48
+"client.dll"+20CEBE: FF D2             - call edx
+"client.dll"+20CEC0: 8B 00             - mov eax,[eax]
+"client.dll"+20CEC2: 89 07             - mov [edi],eax
+"client.dll"+20CEC4: 8B 86 B0100000    - mov eax,[esi+000010B0]
+// ---------- INJECTING HERE ----------
+"client.dll"+20CECA: 8B 8E E4000000    - mov ecx,[esi+000000E4]
+// ---------- DONE INJECTING  ----------
+"client.dll"+20CED0: 3B C1             - cmp eax,ecx
+"client.dll"+20CED2: 74 27             - je client.dll+20CEFB
+"client.dll"+20CED4: 7D 0F             - jnl client.dll+20CEE5
+"client.dll"+20CED6: 8B 0D A42CE712    - mov ecx,[client.dll+712CA4]
+"client.dll"+20CEDC: D9 41 0C          - fld dword ptr [ecx+0C]
+"client.dll"+20CEDF: D9 9E B4100000    - fstp dword ptr [esi+000010B4]
+"client.dll"+20CEE5: 6A 01             - push 01
+"client.dll"+20CEE7: 8D 4E F8          - lea ecx,[esi-08]
+"client.dll"+20CEEA: E8 11F1FFFF       - call client.dll+20C000
+"client.dll"+20CEEF: 8B 96 E4000000    - mov edx,[esi+000000E4]
+}"""
+
+[[cheat]]
+id = "unlimited-ammo"
+name = "Unlimited Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Cheat flag: Unlimited Ammo }
+
+[ENABLE]
+globals+104:
+  dd 1
+
+[DISABLE]
+globals+104:
+  dd 0"""
+
+[[cheat]]
+id = "unlimited-grenades"
+name = "Unlimited Grenades"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Cheat flag: Unlimited Grenades }
+
+[ENABLE]
+globals+204:
+  dd 1
+
+[DISABLE]
+globals+204:
+  dd 0"""
+
+[[cheat]]
+id = "max-health"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Cheat flag: Unlimited Grenades }
+
+[ENABLE]
+globals+304:
+  dd 1
+
+[DISABLE]
+globals+304:
+  dd 0"""
+
+[[cheat]]
+id = "pammo-script-find-ammo"
+name = "pAmmo (Script: Find Ammo)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []
+
+[[cheat]]
+id = "pammo-script-ammo"
+name = "pAmmo (Script: Ammo)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []
+
+[[cheat]]
+id = "pammo2-script-ammo2"
+name = "pAmmo2 (Script: Ammo2)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []
+
+[[cheat]]
+id = "pgrenades-script-grenades"
+name = "pGrenades (Script: Grenades)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []
+
+[[cheat]]
+id = "phealth-script-health"
+name = "pHealth (Script: Health)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []

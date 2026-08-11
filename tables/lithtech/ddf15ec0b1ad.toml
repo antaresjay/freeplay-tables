@@ -1,0 +1,1403 @@
+[game]
+name = "TRON"
+exe = "lithtech.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3700"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "readme-double-click-on-script"
+name = "README:  double click on <script> ---------> "
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+  Date:    2014-05-08
+
+  AoB scans are used. So it might work with other versions.
+
+  Player Trainer:
+
+  * Unlimited Health: Health will not decrease
+  * Unlimited Energy: Energy will not decrease
+  * One Shot Kill: Enemies are killed with one shot
+  * Float up/down:
+      Press X to float up
+      Press Shift-X to float down
+
+  Subroutine Trainer:
+
+  * Auto-Disinfect Subroutine: All Subroutine are disinfected when
+      you enter the subroutine menu (F1).
+  * Auto-Gold Subroutines: Subroutines received are automatically
+      converted to gold version.
+  * Insta-Process: Defrag, Disinfect and Port take no time (you
+      have to exit and re-enter the subroutine menu though).
+
+  Light Cycle Trainer:
+
+  * Power Light Cycle: The maximum speed is much higher and the
+      minimum speed is almost a standstill.
+
+  Notes:
+     There is a fight in the Progress Bar where you have to
+     protect Ma3a. You might want to turn off 'One Shot Kill',
+     because Ma3a is also regarded as a NPC.
+
+     You should enable Unlimited Health when using float up.
+     Because the fall will kill you otherwise.
+     Float-Up and Float-Down go though ceilings and floors. So if
+     you get stuck above a ceiling when floating up, just press
+     shift-X until you are free again.
+}
+
+[ENABLE]
+[DISABLE]"""
+
+[[cheat]]
+id = "enable-player-trainer"
+name = "Enable Player Trainer"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  The injection point is called whenever a character is hit (player and NPC).
+  Register esi contains a pointer to struct sPlayer, which holds Health
+  and Energy. Offset pPlayer+0x88 is 0 for NPCs and 1 for the player.
+}
+
+[ENABLE]
+aobscan(inject_HEALTH,D9 5E 64 F6 C4 44)
+alloc(mem_HEALTH,2048)
+label(code_HEALTH)
+label(bEnableHealth)
+label(bEnableOneShotKill)
+label(pPlayer)
+label(returnhere)
+label(exit)
+label(npc)
+label(player)
+registersymbol(inject_HEALTH)
+registersymbol(mem_HEALTH)
+registersymbol(code_HEALTH)
+registersymbol(bEnableHealth)
+registersymbol(bEnableOneShotKill)
+registersymbol(pPlayer)
+
+mem_HEALTH:
+bEnableHealth:
+dd 01
+bEnableOneShotKill:
+dd 01
+pPlayer:
+dd 00
+
+code_HEALTH:
+fstp dword ptr [esi+64]  // orig code: set health
+push eax
+
+cmp dword [esi+88], 1
+je player
+cmp dword [esi+88], 0
+je npc
+jmp exit
+
+player:
+mov [pPlayer], esi
+
+cmp [bEnableHealth], 0
+je exit
+mov eax, [esi+60]        // max health
+mov [esi+64], eax        // current health
+jmp exit
+
+npc:
+cmp [bEnableOneShotKill], 0
+je exit
+mov [esi+64], (float)0    // current health
+
+exit:
+pop eax
+test ah,44
+jmp returnhere
+
+inject_HEALTH:
+//"object.lto"+DECC3:
+jmp code_HEALTH
+nop
+returnhere:
+
+[DISABLE]
+//object.ObjectDLLSetup+3BD01 - D9 46 7C              - fld dword ptr [esi+7C]
+//object.ObjectDLLSetup+3BD04 - D8 1D FC42720D        - fcomp dword ptr [0D7242FC] : [00000000]
+//object.ObjectDLLSetup+3BD0A - D9 46 64              - fld dword ptr [esi+64]
+//object.ObjectDLLSetup+3BD0D - D8 64 24 10           - fsub dword ptr [esp+10]
+//object.ObjectDLLSetup+3BD11 - DFE0                  - fnstsw ax
+//----------- Inject Here ------------------
+//object.ObjectDLLSetup+3BD13 - D9 5E 64              - fstp dword ptr [esi+64]
+//object.ObjectDLLSetup+3BD16 - F6 C4 44              - test ah,44
+//----------- Inject Here ------------------
+//object.ObjectDLLSetup+3BD19 - 7B 3C                 - jnp object.ObjectDLLSetup+3BD57
+//object.ObjectDLLSetup+3BD1B - 8B CE                 - mov ecx,esi
+//object.ObjectDLLSetup+3BD1D - E8 0EF7FFFF           - call object.ObjectDLLSetup+3B430
+
+inject_HEALTH:
+db D9 5E 64 F6 C4 44
+
+dealloc(mem_HEALTH)
+unregistersymbol(inject_HEALTH)
+unregistersymbol(mem_HEALTH)
+unregistersymbol(code_HEALTH)
+unregistersymbol(bEnableHealth)
+unregistersymbol(bEnableOneShotKill)
+unregistersymbol(pPlayer)"""
+
+[[cheat]]
+id = "unlimited-health"
+name = "Unlimited Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableHealth:
+dd 01
+
+[DISABLE]
+bEnableHealth:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-energy"
+name = "Unlimited Energy"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  The injection point is called in a loop. Register esi contains a
+  pointer with points to sPlayer with a certain negative offset.
+  We constantly set the energy to the max energy.
+}
+
+[ENABLE]
+aobscan(inject_ENERGY,D9 86 CC 04 00 00 D8 9E 14 0D 00 00)
+alloc(mem_ENERGY,2048)
+label(code_ENERGY)
+label(returnhere)
+label(originalcode)
+label(exit)
+registersymbol(inject_ENERGY)
+registersymbol(mem_ENERGY)
+registersymbol(code_ENERGY)
+
+mem_ENERGY:
+code_ENERGY:
+push eax
+mov eax,[esi+4C8]     // max Energy
+mov [esi+4CC],eax     // current Energy
+pop eax
+
+originalcode:
+fld dword ptr [esi+000004CC]
+
+exit:
+jmp returnhere
+
+inject_ENERGY:
+//"object.lto"+78D26:
+jmp code_ENERGY
+nop
+returnhere:
+ 
+ 
+[DISABLE]
+inject_ENERGY:
+//"object.lto"+78D26:
+//fld dword ptr [esi+000004CC]
+db D9 86 CC 04 00 00
+
+dealloc(mem_ENERGY)
+unregistersymbol(inject_ENERGY)
+unregistersymbol(mem_ENERGY)
+unregistersymbol(code_ENERGY)"""
+
+[[cheat]]
+id = "one-shot-kill"
+name = "One Shot Kill"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableOneShotKill:
+dd 01
+
+[DISABLE]
+bEnableOneShotKill:
+dd 00"""
+
+[[cheat]]
+id = "float-up-down-press-x-shift-x-in-game"
+name = "Float up/down (Press X/Shift-X in game)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  There are two injection points. inject_FLOAT2 is entered
+  evertime the player moves. Here we remember the pointer to
+  the player's objects (sPlayerPos). The player consists of
+  more then one object. Usually two (might be player + weapon).
+  Changing coordinates here does not work. They are overwritten
+  later.
+
+  Injection point inject_FLOAT is called in a loop for every
+  object. If it's one of the player's objects, then we check the
+  keyboard and manipulate the object's coordinates accordingly.
+}
+
+[ENABLE]
+aobscan(inject_FLOAT,8B 91 C8 00 00 00 89 10)
+aobscan(inject_FLOAT2,8B 8C 24 40 05 00 00 51)
+alloc(mem_FLOAT,2048)
+label(code_FLOAT)
+label(pPlayerPos1)
+label(pPlayerPos2)
+label(pPlayerPos3)
+label(pPlayerPos4)
+label(returnhere)
+label(returnhere2)
+label(originalcode)
+label(originalcode2)
+label(checkKeyPressedEnd)
+label(iCounter)
+label(fDirection)
+label(fIncStep)
+label(checkKeyPressed)
+label(player)
+label(nokey)
+label(code_FLOAT2)
+registersymbol(inject_FLOAT)
+registersymbol(inject_FLOAT2)
+registersymbol(mem_FLOAT)
+registersymbol(code_FLOAT)
+registersymbol(code_FLOAT2)
+registersymbol(fIncStep)
+registersymbol(pPlayerPos1)
+registersymbol(pPlayerPos2)
+registersymbol(pPlayerPos3)
+registersymbol(pPlayerPos4)
+
+mem_FLOAT:
+fIncStep:
+dd (float)0.7
+fDirection:
+dd 00
+iCounter:
+dd 00
+pPlayerPos1:
+dd 00
+pPlayerPos2:
+dd 00
+pPlayerPos3:
+dd 00
+pPlayerPos4:
+dd 00
+
+// -------------------------------------------------------------------
+// cheat code: Entered in a loop for all objects (ecx = object pointer).
+// If the current object is on the mini stack, then let's handle it.
+// -------------------------------------------------------------------
+
+code_FLOAT:
+
+cmp [pPlayerPos1], ecx
+je player
+cmp [pPlayerPos2], ecx
+je player
+cmp [pPlayerPos3], ecx
+je player
+cmp [pPlayerPos4], ecx
+je player
+jmp originalcode
+
+player:
+call checkKeyPressed
+
+cmp [fDirection], (float)0
+je originalcode
+
+fld [ecx+000000CC]   // load num1 and push it onto the fpu stack
+fld [fIncStep]       // load num2 and push it onto the fpu stack
+fld [fDirection]     // load num2 and push it onto the fpu stack
+fmulp
+faddp                // pop two numbers, add them, push sum on the stack
+fstp [ecx+000000CC]  // pop sum from the stack and store it in res
+mov [ecx+000000E8], (float)0
+
+originalcode:
+mov edx,[ecx+000000C8]
+
+jmp returnhere
+
+
+// -------------------------------------------------------------------
+// cheat code: Entered when player moves (only for player object).
+// [esi+8] contains pointer to sPlayerPos. The routine is entered
+// with more then one object here. Only one is the correct one. Since
+// we don't know which, we store them all in some sort of mini stack
+// (pPlayerPos1-4).
+// -------------------------------------------------------------------
+
+code_FLOAT2:
+
+test esi, esi
+jz originalcode2
+
+mov ecx, [esi+8]
+test ecx, ecx
+jz originalcode2
+
+// leave, if object is already on stack.
+cmp [pPlayerPos1], ecx
+je originalcode2
+cmp [pPlayerPos2], ecx
+je originalcode2
+cmp [pPlayerPos3], ecx
+je originalcode2
+cmp [pPlayerPos4], ecx
+je originalcode2
+
+// otherwise push object pointer on stack.
+push ecx
+mov ecx, [pPlayerPos3]
+mov [pPlayerPos4], ecx
+mov ecx, [pPlayerPos2]
+mov [pPlayerPos3], ecx
+mov ecx, [pPlayerPos1]
+mov [pPlayerPos2], ecx
+pop ecx
+mov [pPlayerPos1], ecx
+
+originalcode2:
+mov ecx,[esp+00000540]
+
+jmp returnhere2
+
+
+
+// -------------------------------------------------------------------
+// subroutine checkKeyPressed
+// -------------------------------------------------------------------
+
+checkKeyPressed:
+
+// We are in a loop which is called very often.
+// It's not neccesary to check ever time.
+add [iCounter], 1
+cmp [iCounter], #20
+jl checkKeyPressedEnd
+mov [iCounter], 0
+
+// save everything
+pushad
+pushfd
+
+mov [fDirection], 0
+//virtual key codes
+push 'X'
+call GetAsyncKeyState
+shr ax,#15 //bit 15 is 1 if it is CURRENTLY down
+jz nokey
+
+mov [fDirection], (float)1
+
+push A0 // VK_LSHIFT
+call GetAsyncKeyState
+shr ax,#15 //bit 15 is 1 if it is CURRENTLY down
+jz nokey
+
+mov [fDirection], (float)-1
+
+nokey:
+popfd
+popad
+
+checkKeyPressedEnd:
+ret
+
+// -------------------------------------------------------------------
+// Code Injection Point
+// -------------------------------------------------------------------
+
+inject_FLOAT:
+//"Lithtech.exe"+74D0:
+jmp code_FLOAT
+nop
+returnhere:
+
+inject_FLOAT2:
+//"Lithtech.exe"+50228:
+jmp code_FLOAT2
+nop
+nop
+returnhere2:
+
+
+ 
+[DISABLE]
+inject_FLOAT:
+//"Lithtech.exe"+74D0:
+//mov edx,[ecx+000000C8]
+db 8B 91 C8 00 00 00
+
+inject_FLOAT2:
+//"Lithtech.exe"+50228:
+//mov ecx,[esp+00000540]
+db 8B 8C 24 40 05 00 00
+
+dealloc(mem_FLOAT)
+unregistersymbol(inject_FLOAT)
+unregistersymbol(inject_FLOAT2)
+unregistersymbol(mem_FLOAT)
+unregistersymbol(code_FLOAT)
+unregistersymbol(code_FLOAT2)
+unregistersymbol(fIncStep)
+unregistersymbol(pPlayerPos1)
+unregistersymbol(pPlayerPos2)
+unregistersymbol(pPlayerPos3)
+unregistersymbol(pPlayerPos4)"""
+
+[[cheat]]
+id = "float-rate"
+name = "Float Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fIncStep"
+hops = []
+
+[[cheat]]
+id = "enable-subroutine-trainer"
+name = "Enable Subroutine Trainer"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  Register esi has a pointer to struct sTools. sTools+0x07C8 points
+  to an array of pointers to sPayload (payload is a subroutine).
+  The injection point is called for each payload upon entering the
+  subroutine menu (F1). Address [esp+14] contains a pointer to the
+  currently processed payload. sPayload contains the subroutine
+  build state (alpha, beta, gold) and an infection state.
+}
+
+[ENABLE]
+aobscan(inject_TOOLS,8B 42 0C 83 C9 FF 89 42 08)
+
+alloc(mem_TOOLS,2048)
+label(pTools)
+label(bEnableDisinfect)
+label(bEnableGold)
+label(code_TOOLS)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(endofhack)
+label(nogold)
+label(tool)
+registersymbol(inject_TOOLS)
+registersymbol(mem_TOOLS)
+registersymbol(code_TOOLS)
+registersymbol(pTools)
+registersymbol(bEnableDisinfect)
+registersymbol(bEnableGold)
+
+mem_TOOLS:
+pTools:
+dd 00
+bEnableDisinfect:
+dd 01
+bEnableGold:
+dd 01
+
+code_TOOLS:
+mov [pTools], esi
+
+mov eax, [esp+14]   // current pPayload
+test eax, eax
+jz originalcode
+
+push ecx
+// There are two special payloads which are not subroutines.
+// 'bad_block' is a fragmented slot. And base_code is an
+// empty slot. We ignore both.
+mov ecx, [eax+0]         // pPayload->Type (string)
+cmp [ecx], 5F646162      // 'bad_'block
+je endofhack
+cmp [ecx], 65736162      // 'base'_code
+jne tool
+cmp [ecx+4], 646F635F    // base'_cod'e
+je endofhack
+
+tool:
+cmp [bEnableGold], 0
+je nogold
+mov [eax+4], 2           // 0=alpha,1=beta,2=gold
+nogold:
+
+cmp [bEnableDisinfect], 0
+je endofhack
+mov [eax+14], 0
+
+endofhack:
+pop ecx
+
+
+originalcode:
+mov eax,[edx+0C]
+or ecx,-01
+
+exit:
+jmp returnhere
+
+inject_TOOLS:
+//"cshell.dll"+86F95:
+jmp code_TOOLS
+nop
+returnhere:
+
+
+[DISABLE]
+inject_TOOLS:
+//"cshell.dll"+86F95:
+//mov eax,[edx+0C]
+//or ecx,-01
+db 8B 42 0C 83 C9 FF
+
+dealloc(mem_TOOLS)
+unregistersymbol(inject_TOOLS)
+unregistersymbol(mem_TOOLS)
+unregistersymbol(code_TOOLS)
+unregistersymbol(pTools)
+unregistersymbol(bEnableDisinfect)
+unregistersymbol(bEnableGold)"""
+
+[[cheat]]
+id = "auto-disinfected-subroutines"
+name = "Auto-Disinfected Subroutines"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableDisinfect:
+dd 01
+
+[DISABLE]
+bEnableDisinfect:
+dd 00"""
+
+[[cheat]]
+id = "auto-gold-subroutines"
+name = "Auto-Gold Subroutines"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableGold:
+dd 01
+
+[DISABLE]
+bEnableGold:
+dd 00"""
+
+[[cheat]]
+id = "insta-process"
+name = "Insta-Process"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  At the injection point we get a pointer to struct sMain.
+  sMain contains a pointer array to three processors (defrag,
+  disinfect and port). Each processors (struct sProcessor) can
+  have a payload (subroutine - struct sPayload) assigned. The
+  progress of the task is in sPayload itself.
+}
+
+[ENABLE]
+aobscan(inject_PROC,55 8B E9 56 8B 85)
+
+alloc(mem_PROC,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(code_PROC)
+label(pMain)
+label(pPort)
+label(pDefrag)
+label(pDisinfect)
+label(bInstaProcess)
+label(doProgress)
+label(doProgressEnd)
+registersymbol(inject_PROC)
+registersymbol(mem_PROC)
+registersymbol(code_PROC)
+registersymbol(pMain)
+registersymbol(pPort)
+registersymbol(pDisinfect)
+registersymbol(pDefrag)
+registersymbol(bInstaProcess)
+
+mem_PROC:
+pMain:
+dd 00
+pPort:
+dd 00
+pDisinfect:
+dd 00
+pDefrag:
+dd 00
+bInstaProcess:
+dd 01
+
+code_PROC:
+push edx
+mov [pMain], ecx
+mov eax, [ecx+1134]   // pointer array to sProcessor
+mov edx, [eax]
+mov [pPort], edx
+mov edx, [eax+4]
+mov [pDisinfect], edx
+mov edx, [eax+8]
+mov [pDefrag], edx
+pop edx
+cmp [bInstaProcess], 1
+jne originalcode
+
+// set progress of all payloads to 100%
+mov eax, [pPort]
+call doProgress
+mov eax, [pDisinfect]
+call doProgress
+mov eax, [pDefrag]
+call doProgress
+jmp originalcode
+
+doProgress:
+test eax, eax      // safety check processor
+je doProgressEnd
+mov eax, [eax+0138]
+test eax, eax      // has payload assigned?
+je doProgressEnd
+mov [eax+10], (float)1.0  // progress 100%
+doProgressEnd:
+ret
+
+originalcode:
+push ebp
+mov ebp,ecx
+push esi
+mov eax,[ebp+00001150]
+
+exit:
+jmp returnhere
+
+inject_PROC:
+//"cshell.dll"+9BF08:
+jmp code_PROC
+nop
+nop
+nop
+nop
+nop
+returnhere:
+
+
+[DISABLE]
+inject_PROC:
+//"cshell.dll"+9BF08:
+//push ebp
+//mov ebp,ecx
+//push esi
+//mov eax,[ebp+00001150]
+db 55 8B E9 56 8B 85 50 11 00 00
+
+dealloc(mem_PROC)
+unregistersymbol(mem_PROC)
+unregistersymbol(code_PROC)
+unregistersymbol(pMain)
+unregistersymbol(pPort)
+unregistersymbol(pDisinfect)
+unregistersymbol(pDefrag)
+unregistersymbol(bInstaProcess)"""
+
+[[cheat]]
+id = "power-light-cycle"
+name = "Power Light Cycle"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Tron 2.0
+  Version: Patch v1.042
+  Author:  gwodus (gwodusx@xsmail.com)
+
+  At the injection point we get a pointer to struct sCycle, which
+  holds a couple cycle characteristics we can beef up.
+}
+
+[ENABLE]
+aobscan(inject_CYCLE,D9 45 74 E8 FB 24 1A 00)
+alloc(mem_CYCLE,2048)
+label(code_CYCLE)
+label(pCycle)
+label(returnhere)
+label(originalcode)
+label(exit)
+registersymbol(inject_CYCLE)
+registersymbol(mem_CYCLE)
+registersymbol(code_CYCLE)
+registersymbol(pCycle)
+
+mem_CYCLE:
+pCycle:
+dd 00
+
+code_CYCLE:
+mov [pCycle], ebp
+mov edx, ebp
+cmp edx, 0
+je originalcode
+
+mov [edx+7c], (float)10000    // boost
+mov [edx+88], (float)100      // min speed
+
+mov [edx+8c], (float)5000     // Acceleration
+mov [edx+90], (float)5000     // Deceleration
+mov [edx+94], (float)2000     // Acceleration back to normal when no key is pressed
+mov [edx+98], (float)2000     // Deceleration back to normal when no key is pressed
+
+originalcode:
+fld dword ptr [ebp+74]
+call cshell.dll+1D4176
+
+exit:
+jmp returnhere
+
+inject_CYCLE:
+//"cshell.dll"+31C73:
+jmp code_CYCLE
+nop
+nop
+nop
+returnhere:
+
+
+[DISABLE]
+inject_CYCLE:
+//"cshell.dll"+31C73:
+//fld dword ptr [ebp+74]
+//call cshell.dll+1D4176
+db D9 45 74 E8 FB 24 1A 00
+
+dealloc(newmem)
+unregistersymbol(inject_CYCLE)
+unregistersymbol(mem_CYCLE)
+unregistersymbol(code_CYCLE)
+unregistersymbol(pCycle)"""
+
+[[cheat]]
+id = "pplayer"
+name = "pPlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = []
+
+[[cheat]]
+id = "pplayerpos1"
+name = "pPlayerPos1"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerPos1"
+hops = []
+
+[[cheat]]
+id = "pplayerpos2"
+name = "pPlayerPos2"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerPos2"
+hops = []
+
+[[cheat]]
+id = "pplayerpos3"
+name = "pPlayerPos3"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerPos3"
+hops = []
+
+[[cheat]]
+id = "pplayerpos4"
+name = "pPlayerPos4"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerPos4"
+hops = []
+
+[[cheat]]
+id = "speed"
+name = "Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCycle"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "ptools"
+name = "pTools"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTools"
+hops = []
+
+[[cheat]]
+id = "done-defrag-percent-100"
+name = "Done Defrag (Percent / 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pDefrag"
+hops = [
+    "+0x138",
+    "+0x10",
+]
+
+[[cheat]]
+id = "done-disinfect-percent-100"
+name = "Done Disinfect (Percent / 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pDisinfect"
+hops = [
+    "+0x138",
+    "+0x10",
+]
+
+[[cheat]]
+id = "done-port-percent-100"
+name = "Done Port (Percent / 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPort"
+hops = [
+    "+0x138",
+    "+0x10",
+]
+
+[[cheat]]
+id = "pmain"
+name = "pMain"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMain"
+hops = []
+
+[[cheat]]
+id = "pdefrag"
+name = "pDefrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pDefrag"
+hops = []
+
+[[cheat]]
+id = "pdisinfect"
+name = "pDisinfect"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pDisinfect"
+hops = []
+
+[[cheat]]
+id = "pport"
+name = "pPort"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPort"
+hops = []
+
+[[cheat]]
+id = "coordinates"
+name = "Coordinates"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(mem_COORD,2048)
+label(code_COORD)
+label(pCoord)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(npc)
+registersymbol(mem_COORD)
+registersymbol(code_COORD)
+registersymbol(pCoord)
+
+mem_COORD:
+pCoord:
+dd 00
+
+code_COORD:
+
+push eax
+
+sub eax, 24
+cmp [eax+44], 6867694C //'Ligh'
+jne originalcode
+cmp [eax+48], 63794374 //'tCyc'
+jne npc
+cmp [eax+4C], 6C42656C //'leBl'
+jne npc
+cmp word ptr [eax+50], 6575 //'ue'
+jne npc
+cmp byte ptr [eax+52], 0
+jne npc
+nop
+mov [pCoord], ecx
+
+jmp originalcode
+
+npc:
+nop
+mov [ecx+000000C8], (float)0
+
+//mov [pOponent], eax
+//mov [eax+18], (float)1
+//mov [eax+20], (float)0
+
+originalcode:
+pop eax
+mov edx,[ecx+000000C8]
+
+exit:
+jmp returnhere
+
+"Lithtech.exe"+74D0:
+jmp code_COORD
+nop
+returnhere:
+
+ 
+[DISABLE]
+"Lithtech.exe"+74D0:
+//mov edx,[ecx+000000C8]
+db 8B 91 C8 00 00 00
+
+dealloc(mem_COORD)
+unregistersymbol(mem_COORD)
+unregistersymbol(code_COORD)
+unregistersymbol(pCoord)"""
+
+[[cheat]]
+id = "pcoord"
+name = "pCoord"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCoord"
+hops = []
+
+[[cheat]]
+id = "pcoord-x"
+name = "pCoord->X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCoord"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "dir"
+name = "Dir"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Tried to freeze the cycles orientation into one direction.
+  Unfortunatley only works for player. No effect on NPC.
+}
+
+[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(npc)
+label(pOponent)
+label(code_DIR)
+registersymbol(code_DIR)
+registersymbol(pOponent)
+
+newmem:
+pOponent:
+dd 00
+
+code_DIR:
+push eax
+
+sub eax, 18
+cmp [eax+44], 6867694C //'Ligh'
+jne originalcode
+cmp [eax+48], 63794374 //'tCyc'
+jne npc
+cmp [eax+4C], 6C42656C //'leBl'
+jne npc
+cmp word ptr [eax+50], 6575 //'ue'
+jne npc
+cmp byte ptr [eax+52], 0
+jne npc
+jmp originalcode
+
+npc:
+mov [pOponent], eax
+//mov [eax+18], (float)1
+//mov [eax+20], (float)0
+
+originalcode:
+pop eax
+mov edx,[esi]
+lea eax,[esp+48]
+
+exit:
+jmp returnhere
+
+"cshell.dll"+F4E00:
+jmp code_DIR
+nop
+returnhere:
+
+
+
+
+[DISABLE]
+dealloc(newmem)
+"cshell.dll"+F4E00:
+mov edx,[esi]
+lea eax,[esp+48]
+//Alt: db 8B 16 8D 44 24 48
+
+unregistersymbol(code_DIR)
+unregistersymbol(pOponent)"""
+
+[[cheat]]
+id = "poponent"
+name = "pOponent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pOponent"
+hops = []
+
+[[cheat]]
+id = "poponent-x"
+name = "pOponent->X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pOponent"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "move-coord-npc"
+name = "Move Coord NPC"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Tried to change the cycles position. Unfortunatly this has only
+  and effect on the 3D-objects. There are still invisible traces
+  the player crashes into.
+}
+
+[ENABLE]
+//"cshell.dll"+1306B
+alloc(mem_NPC,2048)
+label(returnhere)
+label(code_NPC)
+label(pCycleNpc)
+label(originalcode)
+label(exit)
+label(npc)
+label(nocycle)
+registersymbol(mem_NPC)
+registersymbol(code_NPC)
+registersymbol(pCycleNpc)
+
+mem_NPC:
+pCycleNpc:
+dd 00
+
+code_NPC:
+//mov [esp+14], (float)0 // x
+//mov [esp+1C], (float)0 // y
+//mov [esp+38], (float)0 // y
+
+push eax
+mov eax, ebx
+
+cmp [eax+44], 6867694C //'Ligh'
+jne nocycle
+cmp [eax+48], 63794374 //'tCyc'
+jne npc
+cmp [eax+4C], 6C42656C //'leBl'
+jne npc
+cmp word ptr [eax+50], 6575 //'ue'
+jne npc
+cmp byte ptr [eax+52], 0
+jne npc
+nop
+
+jmp originalcode
+
+npc:
+mov [pCycleNpc], eax
+//mov [eax+24], (float)0
+//mov [eax+28], (float)0
+//mov [eax+2C], (float)0
+nop
+
+jmp originalcode
+nocycle:
+nop
+
+originalcode:
+pop eax
+mov [ebx+24],ecx
+mov [ebx+28],edx
+
+exit:
+jmp returnhere
+
+"cshell.dll"+1306B:
+jmp code_NPC
+nop
+returnhere:
+
+ 
+[DISABLE]
+"cshell.dll"+1306B:
+//mov [ebx+24],ecx
+//mov [ebx+28],edx
+db 89 4B 24 89 53 28
+
+dealloc(newmem)
+unregistersymbol(mem_NPC)
+unregistersymbol(code_NPC)"""
+
+[[cheat]]
+id = "pcyclenpc"
+name = "pCycleNpc"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCycleNpc"
+hops = []
+
+[[cheat]]
+id = "pcyclenpc-x"
+name = "pCycleNpc->X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCycleNpc"
+hops = ["+0x24"]

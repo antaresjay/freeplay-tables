@@ -1,0 +1,1204 @@
+[game]
+name = "Artificer Science of Magic"
+exe = "artificer.exe"
+notes = "Converted from a Cheat Engine table by gideon25. Source: https://fearlessrevolution.com/viewtopic.php?t=15791"
+verified = []
+author = "gideon25"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activatethisfirst"
+name = "***ACTIVATETHISFIRST***"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(currentsanity,StatusBar:Update+1,StatusBar:Update+92,48 8b 00 f3 0f 10 80 ?? ?? ?? ?? f3 0f 5a c0 48) // should be unique
+alloc(newmem,$200)
+registersymbol(currentsanity)
+
+label(code)
+label(return)
+label(cursanityread)
+registersymbol(cursanityread)
+registersymbol(sanityoffsett)
+label(sanityoffsett)
+
+label(xsanity)
+label(speedofwork)
+
+label(workspeed)
+registersymbol(workspeed)
+
+label(maxsanity)
+registersymbol(maxsanity)
+
+
+newmem:
+  mov rax,[rax]
+  cmp [workspeed],00000001
+  jne xsanity
+
+  push rdx
+
+  mov edx,[sanityoffsett]               //;get current sanity offset / [rax+218]
+  sub edx,8                            //;sub -8 back for Work Speed
+  movss xmm0,[speedofwork]            //;get speed of work value / [rax+210] max saxity
+  movss [rax+rdx],xmm0                //mov [movss [rax+00000210],xmm0 ;max sasnity into current sanity
+
+  pop rdx
+
+xsanity:
+  cmp [maxsanity],00000001
+  jne code
+  push rdx
+
+   mov edx,[sanityoffsett]               //current sanity;[rax+00000218]
+   add edx,28                          //;add 40 bytes
+   movss xmm0,[rax+rdx]                 // [rax+00000240]
+
+  db F3 0F 11 80                  //mov [movss [rax+00000218],xmm0 ;max sanity into current sanity
+  readmem(currentsanity+7,4)            //current sanity
+
+  pop rdx
+
+
+code:
+  readmem(currentsanity+3,12)
+  jmp return
+
+cursanityread:
+readmem(currentsanity,15)
+
+sanityoffsett:
+readmem(currentsanity+7,4)
+
+workspeed:
+dd 0
+
+maxsanity:
+dd 0
+
+speedofwork:
+dd (float)60
+
+
+currentsanity:
+  db FF 25 00 00 00 00 //jmp QWORD PTR  14 byte jump
+  dq newmem
+  nop
+return:
+
+[DISABLE]
+
+currentsanity:
+readmem(cursanityread,15)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: StatusBar:Update+58
+
+StatusBar:Update+21: 0F 1F 00                       - nop dword ptr [rax]
+StatusBar:Update+24: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+StatusBar:Update+28: 48 B8 00 9E FB 5A 0D 02 00 00  - mov rax,0000020D5AFB9E00
+StatusBar:Update+32: 48 8B 00                       - mov rax,[rax]
+StatusBar:Update+35: F3 0F 10 88 10 01 00 00        - movss xmm1,[rax+00000110]
+StatusBar:Update+3d: F3 0F 5A C9                    - cvtss2sd xmm1,xmm1
+StatusBar:Update+41: F2 0F 5E C1                    - divsd xmm0,xmm1
+StatusBar:Update+45: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+StatusBar:Update+49: F3 0F 11 6E 58                 - movss [rsi+58],xmm5
+StatusBar:Update+4e: 48 B8 00 9E FB 5A 0D 02 00 00  - mov rax,0000020D5AFB9E00
+// ---------- INJECTING HERE ----------
+StatusBar:Update+58: 48 8B 00                       - mov rax,[rax]
+// ---------- DONE INJECTING  ----------
+StatusBar:Update+5b: F3 0F 10 80 18 02 00 00        - movss xmm0,[rax+00000218]
+StatusBar:Update+63: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+StatusBar:Update+67: 48 B8 00 9E FB 5A 0D 02 00 00  - mov rax,0000020D5AFB9E00
+StatusBar:Update+71: 48 8B 00                       - mov rax,[rax]
+StatusBar:Update+74: F3 0F 10 88 40 02 00 00        - movss xmm1,[rax+00000240]
+StatusBar:Update+7c: F3 0F 5A C9                    - cvtss2sd xmm1,xmm1
+StatusBar:Update+80: F2 0F 5E C1                    - divsd xmm0,xmm1
+StatusBar:Update+84: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+StatusBar:Update+88: F3 0F 11 6E 5C                 - movss [rsi+5C],xmm5
+StatusBar:Update+8d: F3 0F 10 46 50                 - movss xmm0,[rsi+50]
+}"""
+
+[[cheat]]
+id = "craft-for-free"
+name = "Craft for Free"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(craftfree,CraftingUI:tryToCraftItem,CraftingUI:tryToCraftItem+25b,41 FF D3 83 F8 01 75 ) // should be unique
+registersymbol(craftfree)
+
+craftfree+6:
+ db 74  //je
+
+
+[DISABLE]
+
+craftfree+6:
+  db 75   //jne
+
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CraftingUI:tryToCraftItem+216
+
+CraftingUI:tryToCraftItem+1e9: FF 90 80 00 00 00              - call qword ptr [rax+00000080]
+CraftingUI:tryToCraftItem+1ef: 85 C0                          - test eax,eax
+CraftingUI:tryToCraftItem+1f1: 75 25                          - jne CraftingUI:tryToCraftItem+218
+CraftingUI:tryToCraftItem+1f3: 48 B8 10 FF 85 53 26 02 00 00  - mov rax,000002265385FF10
+CraftingUI:tryToCraftItem+1fd: 48 8B 08                       - mov rcx,[rax]
+CraftingUI:tryToCraftItem+200: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+CraftingUI:tryToCraftItem+205: 90                             - nop 
+CraftingUI:tryToCraftItem+206: 49 BB B0 1D 73 4A 27 02 00 00  - mov r11,MainLoop:getPlotValue
+CraftingUI:tryToCraftItem+210: 41 FF D3                       - call r11
+CraftingUI:tryToCraftItem+213: 83 F8 01                       - cmp eax,01
+// ---------- INJECTING HERE ----------
+CraftingUI:tryToCraftItem+216: 75 12                          - jne CraftingUI:tryToCraftItem+22a
+// ---------- DONE INJECTING  ----------
+CraftingUI:tryToCraftItem+218: 48 8B 46 20                    - mov rax,[rsi+20]
+CraftingUI:tryToCraftItem+21c: 48 8B C8                       - mov rcx,rax
+CraftingUI:tryToCraftItem+21f: 48 8B 00                       - mov rax,[rax]
+CraftingUI:tryToCraftItem+222: FF 90 28 01 00 00              - call qword ptr [rax+00000128]
+CraftingUI:tryToCraftItem+228: EB 31                          - jmp CraftingUI:tryToCraftItem+25b
+CraftingUI:tryToCraftItem+22a: 48 B8 70 2B D9 72 25 02 00 00  - mov rax,0000022572D92B70
+CraftingUI:tryToCraftItem+234: 48 8B 00                       - mov rax,[rax]
+CraftingUI:tryToCraftItem+237: 48 8B C8                       - mov rcx,rax
+CraftingUI:tryToCraftItem+23a: 48 BA 90 86 66 65 27 02 00 00  - mov rdx,0000022765668690
+CraftingUI:tryToCraftItem+244: 83 38 00                       - cmp dword ptr [rax],00
+}"""
+
+[[cheat]]
+id = "fireplace-does-not-consume-fuel-infinite-fuel"
+name = "Fireplace Does not Consume Fuel (Infinite Fuel)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(noconsumefuel,Fireplace:consumeFuel)
+registerSymbol(noconsumefuel)
+
+
+[ENABLE]
+
+noconsumefuel:
+  db C3
+
+
+[DISABLE]
+
+noconsumefuel:
+  db 55
+
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: Fireplace:consumeFuel
+
+225DCD52519: 00 00                 - add [rax],al
+225DCD5251B: 00 00                 - add [rax],al
+225DCD5251D: 00 00                 - add [rax],al
+225DCD5251F: 00 01                 - add [rcx],al
+225DCD52521: 04 02                 - add al,02
+225DCD52523: 05 04 03 01 50        - add eax,50010304
+225DCD52528: 00 00                 - add [rax],al
+225DCD5252A: 00 00                 - add [rax],al
+225DCD5252C: 00 00                 - add [rax],al
+225DCD5252E: 00 00                 - add [rax],al
+// ---------- INJECTING HERE ----------
+Fireplace:consumeFuel: 55                    - push rbp
+// ---------- DONE INJECTING  ----------
+Fireplace:consumeFuel+1: 48 8B EC              - mov rbp,rsp
+Fireplace:consumeFuel+4: 48 81 EC E0 00 00 00  - sub rsp,000000E0
+Fireplace:consumeFuel+b: 48 89 75 E8           - mov [rbp-18],rsi
+Fireplace:consumeFuel+f: 48 89 7D F0           - mov [rbp-10],rdi
+Fireplace:consumeFuel+13: 4C 89 7D F8           - mov [rbp-08],r15
+Fireplace:consumeFuel+17: 48 8B F1              - mov rsi,rcx
+Fireplace:consumeFuel+1a: 33 FF                 - xor edi,edi
+Fireplace:consumeFuel+1c: 48 8B 96 C8 00 00 00  - mov rdx,[rsi+000000C8]
+Fireplace:consumeFuel+23: 48 8B CE              - mov rcx,rsi
+Fireplace:consumeFuel+26: 48 8B 06              - mov rax,[rsi]
+}"""
+
+[[cheat]]
+id = "inventorty-bag-big-stacks"
+name = "Inventorty Bag Big Stacks"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(Massivestacks,ItemSlotUI:updateStackSizeText,ItemSlotUI:updateStackSizeText+108,48 63 80 D4 00 00 00 85) // should be unique
+alloc(newmem,$100,Massivestacks)
+
+label(code)
+label(return)
+label(stacksread)
+registersymbol(stacksread)
+
+newmem:
+
+code:
+  mov [rax+000000D4],#250
+  readmem(Massivestacks,7)
+  jmp return
+
+stacksread:
+readmem(Massivestacks,7)
+
+Massivestacks:
+  jmp newmem
+  nop 2
+return:
+registersymbol(Massivestacks)
+
+[DISABLE]
+
+Massivestacks:
+  readmem(stacksread,7)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ItemSlotUI:updateStackSizeText+56
+
+ItemSlotUI:updateStackSizeText+25: 0F 84 BB 00 00 00              - je ItemSlotUI:updateStackSizeText+e6
+ItemSlotUI:updateStackSizeText+2b: 48 8B 46 18                    - mov rax,[rsi+18]
+ItemSlotUI:updateStackSizeText+2f: 0F B6 80 C9 00 00 00           - movzx eax,byte ptr [rax+000000C9]
+ItemSlotUI:updateStackSizeText+36: 85 C0                          - test eax,eax
+ItemSlotUI:updateStackSizeText+38: 0F 84 8C 00 00 00              - je ItemSlotUI:updateStackSizeText+ca
+ItemSlotUI:updateStackSizeText+3e: 48 8B 46 18                    - mov rax,[rsi+18]
+ItemSlotUI:updateStackSizeText+42: 48 63 80 D4 00 00 00           - movsxd  rax,dword ptr [rax+000000D4]
+ItemSlotUI:updateStackSizeText+49: 83 F8 01                       - cmp eax,01
+ItemSlotUI:updateStackSizeText+4c: 0F 84 59 00 00 00              - je ItemSlotUI:updateStackSizeText+ab
+ItemSlotUI:updateStackSizeText+52: 48 8B 46 18                    - mov rax,[rsi+18]
+// ---------- INJECTING HERE ----------
+ItemSlotUI:updateStackSizeText+56: 48 63 80 D4 00 00 00           - movsxd  rax,dword ptr [rax+000000D4]
+// ---------- DONE INJECTING  ----------
+ItemSlotUI:updateStackSizeText+5d: 85 C0                          - test eax,eax
+ItemSlotUI:updateStackSizeText+5f: 0F 84 46 00 00 00              - je ItemSlotUI:updateStackSizeText+ab
+ItemSlotUI:updateStackSizeText+65: 48 8B 46 48                    - mov rax,[rsi+48]
+ItemSlotUI:updateStackSizeText+69: 48 89 45 F0                    - mov [rbp-10],rax
+ItemSlotUI:updateStackSizeText+6d: 48 8B 4E 18                    - mov rcx,[rsi+18]
+ItemSlotUI:updateStackSizeText+71: 48 85 C9                       - test rcx,rcx
+ItemSlotUI:updateStackSizeText+74: 0F 84 90 00 00 00              - je ItemSlotUI:updateStackSizeText+10a
+ItemSlotUI:updateStackSizeText+7a: 48 81 C1 D4 00 00 00           - add rcx,000000D4
+ItemSlotUI:updateStackSizeText+81: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+ItemSlotUI:updateStackSizeText+86: 49 BB 80 22 DC D9 54 02 00 00  - mov r11,System:Int32:ToString
+}"""
+
+[[cheat]]
+id = "quic-slot-stacks"
+name = "Quic Slot Stacks"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(quickinventoryQuantity,ItemSlotUI:updateStackSizeText,ItemSlotUI:updateStackSizeText+108,48 63 80 ? ? ? ? 83 f8) // should be unique
+alloc(newmem,$100,quickinventoryQuantity)
+
+label(code)
+label(return)
+label(quickread)
+registersymbol(quickread)
+
+newmem:
+  mov dword ptr [rax+000000D4], #250
+code:
+  movsxd  rax,dword ptr [rax+000000D4]
+  jmp return
+
+ quickread:
+ readmem(quickinventoryQuantity,7)
+
+quickinventoryQuantity:
+  jmp newmem
+  nop 2
+return:
+registersymbol(quickinventoryQuantity)
+
+[DISABLE]
+
+quickinventoryQuantity:
+  readmem(quickread,7)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ItemSlotUI:updateStackSizeText+42
+
+ItemSlotUI:updateStackSizeText+15: 90                             - nop 
+ItemSlotUI:updateStackSizeText+16: 49 BB 30 C0 0B DC 5C 02 00 00  - mov r11,UnityEngine:Object:op_Inequality
+ItemSlotUI:updateStackSizeText+20: 41 FF D3                       - call r11
+ItemSlotUI:updateStackSizeText+23: 85 C0                          - test eax,eax
+ItemSlotUI:updateStackSizeText+25: 0F 84 BB 00 00 00              - je ItemSlotUI:updateStackSizeText+e6
+ItemSlotUI:updateStackSizeText+2b: 48 8B 46 18                    - mov rax,[rsi+18]
+ItemSlotUI:updateStackSizeText+2f: 0F B6 80 C9 00 00 00           - movzx eax,byte ptr [rax+000000C9]
+ItemSlotUI:updateStackSizeText+36: 85 C0                          - test eax,eax
+ItemSlotUI:updateStackSizeText+38: 0F 84 8C 00 00 00              - je ItemSlotUI:updateStackSizeText+ca
+ItemSlotUI:updateStackSizeText+3e: 48 8B 46 18                    - mov rax,[rsi+18]
+// ---------- INJECTING HERE ----------
+ItemSlotUI:updateStackSizeText+42: 48 63 80 D4 00 00 00           - movsxd  rax,dword ptr [rax+000000D4]
+// ---------- DONE INJECTING  ----------
+ItemSlotUI:updateStackSizeText+49: 83 F8 01                       - cmp eax,01
+ItemSlotUI:updateStackSizeText+4c: 0F 84 59 00 00 00              - je ItemSlotUI:updateStackSizeText+ab
+ItemSlotUI:updateStackSizeText+52: 48 8B 46 18                    - mov rax,[rsi+18]
+ItemSlotUI:updateStackSizeText+56: 48 63 80 D4 00 00 00           - movsxd  rax,dword ptr [rax+000000D4]
+ItemSlotUI:updateStackSizeText+5d: 85 C0                          - test eax,eax
+ItemSlotUI:updateStackSizeText+5f: 0F 84 46 00 00 00              - je ItemSlotUI:updateStackSizeText+ab
+ItemSlotUI:updateStackSizeText+65: 48 8B 46 48                    - mov rax,[rsi+48]
+ItemSlotUI:updateStackSizeText+69: 48 89 45 F0                    - mov [rbp-10],rax
+ItemSlotUI:updateStackSizeText+6d: 48 8B 4E 18                    - mov rcx,[rsi+18]
+ItemSlotUI:updateStackSizeText+71: 48 85 C9                       - test rcx,rcx
+}"""
+
+[[cheat]]
+id = "one-hit-kill-unarmed-damage-only"
+name = "One Hit Kill (Unarmed Damage Only)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(attackDamageOne,Artificer:rollForDamage,Artificer:rollForDamage+166,48 89 45 ?? f3 0f 10 86) // should be unique
+alloc(newmem,$100,attackDamageOne)
+registersymbol(attackDamageOne)
+
+label(code)
+label(return)
+label(attackdmgread)
+registersymbol(attackdmgread)
+label(massdmg)
+
+newmem:
+  readmem(attackDamageOne,4)
+  movss xmm0,[massdmg]
+  db F3 0F 11 86
+  readmem(attackDamageOne+8,4)
+
+code:
+  readmem(attackDamageOne+4,12)
+  jmp return
+
+attackdmgread:
+readmem(attackDamageOne,16)
+
+
+massdmg:
+dd (float)300
+
+attackDamageOne:
+  db FF 25 00 00 00 00 //jmp QWORD PTR  14 byte jump
+  dq newmem
+  nop 2
+return:
+
+[DISABLE]
+
+attackDamageOne:
+  readmem(attackdmgread,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Artificer:rollForDamage+ef
+
+Artificer:rollForDamage+b6: 48 8B 00                       - mov rax,[rax]
+Artificer:rollForDamage+b9: FF 90 08 02 00 00              - call qword ptr [rax+00000208]
+Artificer:rollForDamage+bf: E9 8E 00 00 00                 - jmp Artificer:rollForDamage+152
+Artificer:rollForDamage+c4: 48 8B 86 98 00 00 00           - mov rax,[rsi+00000098]
+Artificer:rollForDamage+cb: 48 63 50 18                    - movsxd  rdx,dword ptr [rax+18]
+Artificer:rollForDamage+cf: 48 B9 18 05 66 E3 0C 02 00 00  - mov rcx,0000020CE3660518
+Artificer:rollForDamage+d9: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+Artificer:rollForDamage+de: 49 BB 10 24 F2 31 0B 02 00 00  - mov r11,System:Object:__icall_wrapper_ves_icall_array_new_specific
+Artificer:rollForDamage+e8: 41 FF D3                       - call r11
+Artificer:rollForDamage+eb: 48 89 45 E8                    - mov [rbp-18],rax
+// ---------- INJECTING HERE ----------
+Artificer:rollForDamage+ef: 48 89 45 F0                    - mov [rbp-10],rax
+// ---------- DONE INJECTING  ----------
+Artificer:rollForDamage+f3: F3 0F 10 86 6C 02 00 00        - movss xmm0,[rsi+0000026C]
+Artificer:rollForDamage+fb: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Artificer:rollForDamage+ff: F3 0F 10 0D 79 00 00 00        - movss xmm1,[Artificer:rollForDamage+180]
+Artificer:rollForDamage+107: F3 0F 5A C9                    - cvtss2sd xmm1,xmm1
+Artificer:rollForDamage+10b: F2 0F 5E C1                    - divsd xmm0,xmm1
+Artificer:rollForDamage+10f: F3 0F 10 8E 6C 02 00 00        - movss xmm1,[rsi+0000026C]
+Artificer:rollForDamage+117: F3 0F 5A C9                    - cvtss2sd xmm1,xmm1
+Artificer:rollForDamage+11b: F2 0F 5A C9                    - cvtsd2ss xmm1,xmm1
+Artificer:rollForDamage+11f: F2 0F 5A C0                    - cvtsd2ss xmm0,xmm0
+Artificer:rollForDamage+123: 66 66 90                       - nop 3
+}"""
+
+[[cheat]]
+id = "never-fail-autopsy"
+name = "Never Fail Autopsy"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(nofaileautopsy,UICorpse:tryToRemove,UICorpse:tryToRemove+108,85 c0 7f ?? 49 8b cf) // should be unique
+registersymbol(nofaileautopsy)
+
+nofaileautopsy:
+ db 39 F0  //cmp eas, esi
+
+
+[DISABLE]
+
+nofaileautopsy:
+  db 85 C0
+
+unregistersymbol(nofaileautopsy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UICorpse:tryToRemove+be
+
+UICorpse:tryToRemove+93: 48 8B C8                       - mov rcx,rax
+UICorpse:tryToRemove+96: 83 38 00                       - cmp dword ptr [rax],00
+UICorpse:tryToRemove+99: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+UICorpse:tryToRemove+9e: 49 BB 00 CC D1 F3 9B 01 00 00  - mov r11,AutopsyTableUI:onPartRemoval
+UICorpse:tryToRemove+a8: 41 FF D3                       - call r11
+UICorpse:tryToRemove+ab: 49 63 47 28                    - movsxd  rax,dword ptr [r15+28]
+UICorpse:tryToRemove+af: FF C0                          - inc eax
+UICorpse:tryToRemove+b1: 41 89 47 28                    - mov [r15+28],eax
+UICorpse:tryToRemove+b5: E9 51 00 00 00                 - jmp UICorpse:tryToRemove+10b
+UICorpse:tryToRemove+ba: 49 63 47 34                    - movsxd  rax,dword ptr [r15+34]
+// ---------- INJECTING HERE ----------
+UICorpse:tryToRemove+be: 85 C0                          - test eax,eax
+// ---------- DONE INJECTING  ----------
+UICorpse:tryToRemove+c0: 7F 13                          - jg UICorpse:tryToRemove+d5
+UICorpse:tryToRemove+c2: 49 8B CF                       - mov rcx,r15
+UICorpse:tryToRemove+c5: 90                             - nop 
+UICorpse:tryToRemove+c6: 49 BB D0 7E D1 F3 9B 01 00 00  - mov r11,UICorpse:spoilTheCorpse
+UICorpse:tryToRemove+d0: 41 FF D3                       - call r11
+UICorpse:tryToRemove+d3: EB 36                          - jmp UICorpse:tryToRemove+10b
+UICorpse:tryToRemove+d5: 49 63 47 34                    - movsxd  rax,dword ptr [r15+34]
+UICorpse:tryToRemove+d9: FF C8                          - dec eax
+UICorpse:tryToRemove+db: 41 89 47 34                    - mov [r15+34],eax
+UICorpse:tryToRemove+df: 48 B8 F0 FE AF 65 9B 01 00 00  - mov rax,0000019B65AFFEF0
+}"""
+
+[[cheat]]
+id = "easy-solve-memory-card-minigame"
+name = "Easy Solve Memory Card Minigame"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(solvememorygame,MemoryMinigame:checkSolveCondition)
+registerSymbol(solvememorygame)
+define(spendpointscheckmemory,MemoryMinigame:spendPointsOnClick)
+registerSymbol(spendpointscheckmemory)
+
+[ENABLE]
+aobscanregion(memorycardsmatch,MemoryMinigame:checkIfCardsMatch,MemoryMinigame:checkIfCardsMatch+31b,85 C0 0f 84 ?? ?? ?? ?? 48 8b 46 ?? c6 40) // should be unique
+registersymbol(memorycardsmatch)
+
+memorycardsmatch:
+cmp eax,esi
+
+spendpointscheckmemory:
+db C3
+
+
+alloc(newmem,$100,solvememorygame)
+label(code)
+label(return)
+label(solvememread)
+registersymbol(solvememread)
+
+newmem:
+jmp "MemoryMinigame:solveMinigame"
+code:
+jmp return
+
+solvememread:
+readmem(solvememorygame,16)
+
+solvememorygame:
+  db FF 25 00 00 00 00 //jmp QWORD PTR  14 byte jump
+  dq newmem
+  nop 2
+return:
+
+
+[DISABLE]
+spendpointscheckmemory:
+  db 55
+memorycardsmatch:
+  db 84 c0
+
+solvememorygame:
+  readmem(solvememread,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: MemoryMinigame:checkSolveCondition
+
+19CD032FA69: 04 02           - add al,02
+19CD032FA6B: 05 04 03 01 50  - add eax,50010304
+19CD032FA70: 00 00           - add [rax],al
+19CD032FA72: 00 00           - add [rax],al
+19CD032FA74: 00 00           - add [rax],al
+19CD032FA76: 00 00           - add [rax],al
+19CD032FA78: 00 00           - add [rax],al
+19CD032FA7A: 00 00           - add [rax],al
+19CD032FA7C: 00 00           - add [rax],al
+19CD032FA7E: 00 00           - add [rax],al
+// ---------- INJECTING HERE ----------
+MemoryMinigame:checkSolveCondition: 55              - push rbp
+// ---------- DONE INJECTING  ----------
+MemoryMinigame:checkSolveCondition+1: 48 8B EC        - mov rbp,rsp
+MemoryMinigame:checkSolveCondition+4: 48 83 EC 50     - sub rsp,50
+MemoryMinigame:checkSolveCondition+8: 48 89 75 D0     - mov [rbp-30],rsi
+MemoryMinigame:checkSolveCondition+c: 48 89 7D D8     - mov [rbp-28],rdi
+MemoryMinigame:checkSolveCondition+10: 4C 89 65 E0     - mov [rbp-20],r12
+MemoryMinigame:checkSolveCondition+14: 4C 89 6D E8     - mov [rbp-18],r13
+MemoryMinigame:checkSolveCondition+18: 4C 89 75 F0     - mov [rbp-10],r14
+MemoryMinigame:checkSolveCondition+1c: 4C 89 7D F8     - mov [rbp-08],r15
+MemoryMinigame:checkSolveCondition+20: 48 8B F1        - mov rsi,rcx
+MemoryMinigame:checkSolveCondition+23: 45 33 FF        - xor r15d,r15d
+}"""
+
+[[cheat]]
+id = "easy-solve-lock-box-minigame"
+name = "Easy Solve Lock Box Minigame"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(enoughpointslockbox,ResearchMinigame:isThereEnoughPoints)
+registerSymbol(enoughpointslockbox)
+
+[ENABLE]
+ enoughpointslockbox:
+ db C3
+
+aobscanregion(enoughpointslockboxtwo,MastermindMinigame:dropSymbol,MastermindMinigame:dropSymbol+ab,85 c0 0f 84 ?? ?? ?? ?? 48 ?? ?? ?? 48 63 4f) // should be unique
+registersymbol(enoughpointslockboxtwo)
+
+enoughpointslockboxtwo:
+db 39 F0
+
+aobscanregion(checklokcombination,MastermindMinigame:dropSymbol,MastermindMinigame:dropSymbol+a0,85 c0 0f 84 ?? ?? ?? ?? 48 8b cf 48 8b 07 ff 50) // should be unique
+registersymbol(checklokcombination)
+
+checklokcombination:
+db 39 F8
+
+
+[DISABLE]
+enoughpointslockbox:
+  db 55
+enoughpointslockboxtwo:
+  db 85 C0
+checklokcombination:
+  db 85 C0
+unregistersymbol(enoughpointslockboxtwo)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: MastermindMinigame:dropSymbol+2b
+
+MastermindMinigame:dropSymbol+4: 48 83 EC 30        - sub rsp,30
+MastermindMinigame:dropSymbol+8: 48 89 7D F8        - mov [rbp-08],rdi
+MastermindMinigame:dropSymbol+c: 48 8B F9           - mov rdi,rcx
+MastermindMinigame:dropSymbol+f: 48 89 55 F0        - mov [rbp-10],rdx
+MastermindMinigame:dropSymbol+13: 0F B6 47 3C        - movzx eax,byte ptr [rdi+3C]
+MastermindMinigame:dropSymbol+17: 85 C0              - test eax,eax
+MastermindMinigame:dropSymbol+19: 0F 84 84 00 00 00  - je MastermindMinigame:dropSymbol+a3
+MastermindMinigame:dropSymbol+1f: 48 8B CF           - mov rcx,rdi
+MastermindMinigame:dropSymbol+22: 48 8B 07           - mov rax,[rdi]
+MastermindMinigame:dropSymbol+25: FF 90 80 00 00 00  - call qword ptr [rax+00000080]
+// ---------- INJECTING HERE ----------
+MastermindMinigame:dropSymbol+2b: 85 C0              - test eax,eax
+// ---------- DONE INJECTING  ----------
+MastermindMinigame:dropSymbol+2d: 0F 84 43 00 00 00  - je MastermindMinigame:dropSymbol+76
+MastermindMinigame:dropSymbol+33: 48 8B 47 60        - mov rax,[rdi+60]
+MastermindMinigame:dropSymbol+37: 48 63 4F 74        - movsxd  rcx,dword ptr [rdi+74]
+MastermindMinigame:dropSymbol+3b: 48 63 C9           - movsxd  rcx,ecx
+MastermindMinigame:dropSymbol+3e: 39 48 18           - cmp [rax+18],ecx
+MastermindMinigame:dropSymbol+41: 0F 86 66 00 00 00  - jbe MastermindMinigame:dropSymbol+ad
+MastermindMinigame:dropSymbol+47: 48 8D 44 88 20     - lea rax,[rax+rcx*4+20]
+MastermindMinigame:dropSymbol+4c: 48 63 4D F0        - movsxd  rcx,dword ptr [rbp-10]
+MastermindMinigame:dropSymbol+50: 89 08              - mov [rax],ecx
+MastermindMinigame:dropSymbol+52: 48 8B CF           - mov rcx,rdi
+}
+{
+// ORIGINAL CODE - INJECTION POINT: ResearchMinigame:isThereEnoughPoints
+
+19CD034A089: 04 02                 - add al,02
+19CD034A08B: 05 04 03 01 50        - add eax,50010304
+19CD034A090: 00 00                 - add [rax],al
+19CD034A092: 00 00                 - add [rax],al
+19CD034A094: 00 00                 - add [rax],al
+19CD034A096: 00 00                 - add [rax],al
+19CD034A098: 00 00                 - add [rax],al
+19CD034A09A: 00 00                 - add [rax],al
+19CD034A09C: 00 00                 - add [rax],al
+19CD034A09E: 00 00                 - add [rax],al
+// ---------- INJECTING HERE ----------
+ResearchMinigame:isThereEnoughPoints: 55                    - push rbp
+// ---------- DONE INJECTING  ----------
+ResearchMinigame:isThereEnoughPoints+1: 48 8B EC              - mov rbp,rsp
+ResearchMinigame:isThereEnoughPoints+4: 48 81 EC 80 00 00 00  - sub rsp,00000080
+ResearchMinigame:isThereEnoughPoints+b: 48 89 75 E8           - mov [rbp-18],rsi
+ResearchMinigame:isThereEnoughPoints+f: 48 89 7D F0           - mov [rbp-10],rdi
+ResearchMinigame:isThereEnoughPoints+13: 4C 89 7D F8           - mov [rbp-08],r15
+ResearchMinigame:isThereEnoughPoints+17: 48 8B F1              - mov rsi,rcx
+ResearchMinigame:isThereEnoughPoints+1a: 33 C0                 - xor eax,eax
+ResearchMinigame:isThereEnoughPoints+1c: 48 89 45 B8           - mov [rbp-48],rax
+ResearchMinigame:isThereEnoughPoints+20: 48 89 45 C0           - mov [rbp-40],rax
+ResearchMinigame:isThereEnoughPoints+24: 48 89 45 C8           - mov [rbp-38],rax
+}
+{
+// ORIGINAL CODE - INJECTION POINT: MastermindMinigame:dropSymbol+63
+
+MastermindMinigame:dropSymbol+3b: 48 63 C9                       - movsxd  rcx,ecx
+MastermindMinigame:dropSymbol+3e: 39 48 18                       - cmp [rax+18],ecx
+MastermindMinigame:dropSymbol+41: 0F 86 66 00 00 00              - jbe MastermindMinigame:dropSymbol+ad
+MastermindMinigame:dropSymbol+47: 48 8D 44 88 20                 - lea rax,[rax+rcx*4+20]
+MastermindMinigame:dropSymbol+4c: 48 63 4D F0                    - movsxd  rcx,dword ptr [rbp-10]
+MastermindMinigame:dropSymbol+50: 89 08                          - mov [rax],ecx
+MastermindMinigame:dropSymbol+52: 48 8B CF                       - mov rcx,rdi
+MastermindMinigame:dropSymbol+55: 90                             - nop
+MastermindMinigame:dropSymbol+56: 49 BB C0 3D 93 69 9B 01 00 00  - mov r11,MastermindMinigame:checkRightCombination
+MastermindMinigame:dropSymbol+60: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+MastermindMinigame:dropSymbol+63: 85 C0                          - test eax,eax
+// ---------- DONE INJECTING  ----------
+MastermindMinigame:dropSymbol+65: 0F 84 38 00 00 00              - je MastermindMinigame:dropSymbol+a3
+MastermindMinigame:dropSymbol+6b: 48 8B CF                       - mov rcx,rdi
+MastermindMinigame:dropSymbol+6e: 48 8B 07                       - mov rax,[rdi]
+MastermindMinigame:dropSymbol+71: FF 50 78                       - call qword ptr [rax+78]
+MastermindMinigame:dropSymbol+74: EB 2D                          - jmp MastermindMinigame:dropSymbol+a3
+MastermindMinigame:dropSymbol+76: 48 B8 F0 FE AF 65 9B 01 00 00  - mov rax,0000019B65AFFEF0
+MastermindMinigame:dropSymbol+80: 48 8B 00                       - mov rax,[rax]
+MastermindMinigame:dropSymbol+83: 48 8B C8                       - mov rcx,rax
+MastermindMinigame:dropSymbol+86: 48 BA 70 D3 1A CC 9C 01 00 00  - mov rdx,0000019CCC1AD370
+MastermindMinigame:dropSymbol+90: 83 38 00                       - cmp dword ptr [rax],00
+}"""
+
+[[cheat]]
+id = "easy-cauldron-minigame"
+name = "Easy Cauldron Minigame"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(caldronpointcheck,CauldronMinigame:dropSymbol,CauldronMinigame:dropSymbol+2d0,85 c0 0f 84 ?? ?? ?? ?? 48 b8 ?? ?? ?? ?? ?? ?? ?? ?? 48 8b 00 48 89 45) // should be unique
+registersymbol(caldronpointcheck)
+aobscanregion(caldruncheckresult,CauldronMinigame:dropSymbol,CauldronMinigame:dropSymbol+300,41 3B C6 0F) // should be unique
+registersymbol(caldruncheckresult)
+
+caldronpointcheck:
+db 39 F0
+
+caldruncheckresult:
+db 39 C0 90
+
+
+[DISABLE]
+
+caldronpointcheck:
+  db 85 C0
+
+caldruncheckresult:
+  db 41 3B C6
+
+unregistersymbol(caldronpointcheck)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: CauldronMinigame:dropSymbol+2e
+
+CauldronMinigame:dropSymbol+4: 48 83 EC 60                    - sub rsp,60
+CauldronMinigame:dropSymbol+8: 48 89 7D E8                    - mov [rbp-18],rdi
+CauldronMinigame:dropSymbol+c: 4C 89 75 F0                    - mov [rbp-10],r14
+CauldronMinigame:dropSymbol+10: 4C 89 7D F8                    - mov [rbp-08],r15
+CauldronMinigame:dropSymbol+14: 48 8B F9                       - mov rdi,rcx
+CauldronMinigame:dropSymbol+17: 48 89 55 C8                    - mov [rbp-38],rdx
+CauldronMinigame:dropSymbol+1b: C7 45 D8 00 00 00 00           - mov [rbp-28],00000000
+CauldronMinigame:dropSymbol+22: 48 8B CF                       - mov rcx,rdi
+CauldronMinigame:dropSymbol+25: 48 8B 07                       - mov rax,[rdi]
+CauldronMinigame:dropSymbol+28: FF 90 80 00 00 00              - call qword ptr [rax+00000080]
+// ---------- INJECTING HERE ----------
+CauldronMinigame:dropSymbol+2e: 85 C0                          - test eax,eax
+// ---------- DONE INJECTING  ----------
+CauldronMinigame:dropSymbol+30: 0F 84 6F 02 00 00              - je CauldronMinigame:dropSymbol+2a5
+CauldronMinigame:dropSymbol+36: 48 B8 98 FF AF 65 9B 01 00 00  - mov rax,0000019B65AFFF98
+CauldronMinigame:dropSymbol+40: 48 8B 00                       - mov rax,[rax]
+CauldronMinigame:dropSymbol+43: 48 89 45 C0                    - mov [rbp-40],rax
+CauldronMinigame:dropSymbol+47: B9 01 00 00 00                 - mov ecx,00000001
+CauldronMinigame:dropSymbol+4c: BA 05 00 00 00                 - mov edx,00000005
+CauldronMinigame:dropSymbol+51: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+CauldronMinigame:dropSymbol+56: 49 BB E0 B2 68 65 9B 01 00 00  - mov r11,R:i
+CauldronMinigame:dropSymbol+60: 41 FF D3                       - call r11
+CauldronMinigame:dropSymbol+63: 89 45 D8                       - mov [rbp-28],eax
+}
+{
+// ORIGINAL CODE - INJECTION POINT: CauldronMinigame:dropSymbol+27b
+
+CauldronMinigame:dropSymbol+250: 44 2B F1                       - sub r14d,ecx
+CauldronMinigame:dropSymbol+253: 49 8B C6                       - mov rax,r14
+CauldronMinigame:dropSymbol+256: 85 C0                          - test eax,eax
+CauldronMinigame:dropSymbol+258: 0F 8D 03 00 00 00              - jnl CauldronMinigame:dropSymbol+261
+CauldronMinigame:dropSymbol+25e: 45 33 F6                       - xor r14d,r14d
+CauldronMinigame:dropSymbol+261: 48 63 8F 84 00 00 00           - movsxd  rcx,dword ptr [rdi+00000084]
+CauldronMinigame:dropSymbol+268: 48 63 47 7C                    - movsxd  rax,dword ptr [rdi+7C]
+CauldronMinigame:dropSymbol+26c: 2B C8                          - sub ecx,eax
+CauldronMinigame:dropSymbol+26e: 49 BB 50 9A 2B CC 9C 01 00 00  - mov r11,UnityEngine:Mathf:Abs
+CauldronMinigame:dropSymbol+278: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+CauldronMinigame:dropSymbol+27b: 41 3B C6                       - cmp eax,r14d
+// ---------- DONE INJECTING  ----------
+CauldronMinigame:dropSymbol+27e: 0F 8F 4F 00 00 00              - jg CauldronMinigame:dropSymbol+2d3
+CauldronMinigame:dropSymbol+284: 48 8B 47 48                    - mov rax,[rdi+48]
+CauldronMinigame:dropSymbol+288: 48 8B C8                       - mov rcx,rax
+CauldronMinigame:dropSymbol+28b: 48 8B D7                       - mov rdx,rdi
+CauldronMinigame:dropSymbol+28e: 83 38 00                       - cmp dword ptr [rax],00
+CauldronMinigame:dropSymbol+291: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+CauldronMinigame:dropSymbol+296: 49 BB 50 D7 BA F3 9B 01 00 00  - mov r11,CauldronMinigameGauge:waitToSolveMinigame
+CauldronMinigame:dropSymbol+2a0: 41 FF D3                       - call r11
+CauldronMinigame:dropSymbol+2a3: EB 2E                          - jmp CauldronMinigame:dropSymbol+2d3
+CauldronMinigame:dropSymbol+2a5: 48 B8 F0 FE AF 65 9B 01 00 00  - mov rax,0000019B65AFFEF0
+}"""
+
+[[cheat]]
+id = "alchemical"
+name = "Alchemical"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = [
+    "+0x1a8",
+    "+0x18",
+    "+0x30",
+]
+
+[[cheat]]
+id = "survival"
+name = "Survival"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = [
+    "+0x1a8",
+    "+0x18",
+    "+0x48",
+]
+
+[[cheat]]
+id = "geomancy"
+name = "GeoMancy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = [
+    "+0x1a8",
+    "+0x18",
+    "+0x78",
+]
+
+[[cheat]]
+id = "divination"
+name = "Divination"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = [
+    "+0x1a8",
+    "+0x18",
+    "+0x60",
+]
+
+[[cheat]]
+id = "thaumaturgy1"
+name = "Thaumaturgy1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = [
+    "+0x1a8",
+    "+0x18",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "thaumaturgy2"
+name = "Thaumaturgy2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = [
+    "+0x1a8",
+    "+0x18",
+    "+0x90",
+]
+
+[[cheat]]
+id = "sorcery"
+name = "Sorcery"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = [
+    "+0x1a8",
+    "+0x18",
+    "+0xa8",
+]
+
+[[cheat]]
+id = "memory-game-check-if-has-points"
+name = "Memory Game Check if Has Points"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(spendpointscheckmemory,MemoryMinigame:spendPointsOnClick)
+registerSymbol(spendpointscheckmemory)
+
+[ENABLE]
+
+spendpointscheckmemory:
+db C3
+
+[DISABLE]
+
+spendpointscheckmemory:
+  db 55
+
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: MemoryMinigame:spendPointsOnClick
+
+20CE2B28489: 04 02                 - add al,02
+20CE2B2848B: 05 04 03 01 50        - add eax,50010304
+20CE2B28490: 00 00                 - add [rax],al
+20CE2B28492: 00 00                 - add [rax],al
+20CE2B28494: 00 00                 - add [rax],al
+20CE2B28496: 00 00                 - add [rax],al
+20CE2B28498: 00 00                 - add [rax],al
+20CE2B2849A: 00 00                 - add [rax],al
+20CE2B2849C: 00 00                 - add [rax],al
+20CE2B2849E: 00 00                 - add [rax],al
+// ---------- INJECTING HERE ----------
+MemoryMinigame:spendPointsOnClick: 55                    - push rbp
+// ---------- DONE INJECTING  ----------
+MemoryMinigame:spendPointsOnClick+1: 48 8B EC              - mov rbp,rsp
+MemoryMinigame:spendPointsOnClick+4: 48 81 EC C0 00 00 00  - sub rsp,000000C0
+MemoryMinigame:spendPointsOnClick+b: 48 89 75 D8           - mov [rbp-28],rsi
+MemoryMinigame:spendPointsOnClick+f: 48 89 7D E0           - mov [rbp-20],rdi
+MemoryMinigame:spendPointsOnClick+13: 4C 89 65 E8           - mov [rbp-18],r12
+MemoryMinigame:spendPointsOnClick+17: 4C 89 6D F0           - mov [rbp-10],r13
+MemoryMinigame:spendPointsOnClick+1b: 4C 89 7D F8           - mov [rbp-08],r15
+MemoryMinigame:spendPointsOnClick+1f: 48 8B F1              - mov rsi,rcx
+MemoryMinigame:spendPointsOnClick+22: 33 C0                 - xor eax,eax
+MemoryMinigame:spendPointsOnClick+24: 48 89 45 98           - mov [rbp-68],rax
+}"""
+
+[[cheat]]
+id = "cards-match"
+name = "Cards Match"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(memorycardsmatch,MemoryMinigame:checkIfCardsMatch,MemoryMinigame:checkIfCardsMatch+31b,85 C0 0f 84 ?? ?? ?? ?? 48 8b 46 ?? c6 40) // should be unique
+registersymbol(memorycardsmatch)
+
+memorycardsmatch:
+cmp eax,esi
+
+
+[DISABLE]
+
+memorycardsmatch:
+  db 84 c0
+
+unregistersymbol(memorycardsmatch)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: MemoryMinigame:checkIfCardsMatch+23d
+
+MemoryMinigame:checkIfCardsMatch+20e: 83 38 00                       - cmp dword ptr [rax],00
+MemoryMinigame:checkIfCardsMatch+211: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+MemoryMinigame:checkIfCardsMatch+216: 49 BB 80 7A B3 65 9B 01 00 00  - mov r11,UnityEngine:Object:get_name
+MemoryMinigame:checkIfCardsMatch+220: 41 FF D3                       - call r11
+MemoryMinigame:checkIfCardsMatch+223: 48 8B D0                       - mov rdx,rax
+MemoryMinigame:checkIfCardsMatch+226: 48 8B 4D F0                    - mov rcx,[rbp-10]
+MemoryMinigame:checkIfCardsMatch+22a: 48 8D 6D 00                    - lea rbp,[rbp+00]
+MemoryMinigame:checkIfCardsMatch+22e: 49 BB B0 70 D2 B4 99 01 00 00  - mov r11,System:String:op_Equality
+MemoryMinigame:checkIfCardsMatch+238: 41 FF D3                       - call r11
+MemoryMinigame:checkIfCardsMatch+23b: 85 C0                          - test eax,eax
+// ---------- INJECTING HERE ----------
+MemoryMinigame:checkIfCardsMatch+23d: 0F 84 6D 00 00 00              - je MemoryMinigame:checkIfCardsMatch+2b0
+// ---------- DONE INJECTING  ----------
+MemoryMinigame:checkIfCardsMatch+243: 48 8B 46 60                    - mov rax,[rsi+60]
+MemoryMinigame:checkIfCardsMatch+247: C6 40 38 01                    - mov byte ptr [rax+38],01
+MemoryMinigame:checkIfCardsMatch+24b: 48 8B 46 68                    - mov rax,[rsi+68]
+MemoryMinigame:checkIfCardsMatch+24f: C6 40 38 01                    - mov byte ptr [rax+38],01
+MemoryMinigame:checkIfCardsMatch+253: C7 86 88 00 00 00 00 00 00 00  - mov [rsi+00000088],00000000
+MemoryMinigame:checkIfCardsMatch+25d: 48 C7 46 60 00 00 00 00        - mov qword ptr [rsi+60],00000000
+MemoryMinigame:checkIfCardsMatch+265: 48 C7 46 68 00 00 00 00        - mov qword ptr [rsi+68],00000000
+MemoryMinigame:checkIfCardsMatch+26d: 48 B8 98 FF AF 65 9B 01 00 00  - mov rax,0000019B65AFFF98
+MemoryMinigame:checkIfCardsMatch+277: 48 8B 00                       - mov rax,[rax]
+MemoryMinigame:checkIfCardsMatch+27a: F3 0F 10 05 BE 00 00 00        - movss xmm0,[MemoryMinigame:checkIfCardsMatch+340]
+}"""
+
+[[cheat]]
+id = "enoughpointslockbox"
+name = "enoughpointslockbox"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(enoughpointslockbox,ResearchMinigame:isThereEnoughPoints)
+registerSymbol(enoughpointslockbox)
+
+[ENABLE]
+
+ enoughpointslockbox:
+ db C3
+
+[DISABLE]
+
+enoughpointslockbox:
+  db 55
+
+unregistersymbol(enoughpointslockbox)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ResearchMinigame:isThereEnoughPoints
+
+19CD034A089: 04 02                 - add al,02
+19CD034A08B: 05 04 03 01 50        - add eax,50010304
+19CD034A090: 00 00                 - add [rax],al
+19CD034A092: 00 00                 - add [rax],al
+19CD034A094: 00 00                 - add [rax],al
+19CD034A096: 00 00                 - add [rax],al
+19CD034A098: 00 00                 - add [rax],al
+19CD034A09A: 00 00                 - add [rax],al
+19CD034A09C: 00 00                 - add [rax],al
+19CD034A09E: 00 00                 - add [rax],al
+// ---------- INJECTING HERE ----------
+ResearchMinigame:isThereEnoughPoints: 55                    - push rbp
+// ---------- DONE INJECTING  ----------
+ResearchMinigame:isThereEnoughPoints+1: 48 8B EC              - mov rbp,rsp
+ResearchMinigame:isThereEnoughPoints+4: 48 81 EC 80 00 00 00  - sub rsp,00000080
+ResearchMinigame:isThereEnoughPoints+b: 48 89 75 E8           - mov [rbp-18],rsi
+ResearchMinigame:isThereEnoughPoints+f: 48 89 7D F0           - mov [rbp-10],rdi
+ResearchMinigame:isThereEnoughPoints+13: 4C 89 7D F8           - mov [rbp-08],r15
+ResearchMinigame:isThereEnoughPoints+17: 48 8B F1              - mov rsi,rcx
+ResearchMinigame:isThereEnoughPoints+1a: 33 C0                 - xor eax,eax
+ResearchMinigame:isThereEnoughPoints+1c: 48 89 45 B8           - mov [rbp-48],rax
+ResearchMinigame:isThereEnoughPoints+20: 48 89 45 C0           - mov [rbp-40],rax
+ResearchMinigame:isThereEnoughPoints+24: 48 89 45 C8           - mov [rbp-38],rax
+}"""
+
+[[cheat]]
+id = "check-combinaiton"
+name = "Check Combinaiton"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(checklokcombination,MastermindMinigame:dropSymbol,MastermindMinigame:dropSymbol+a0,85 c0 0f 84 ?? ?? ?? ?? 48 8b cf 48 8b 07 ff 50) // should be unique
+registersymbol(checklokcombination)
+
+checklokcombination:
+db 39 F8
+
+[DISABLE]
+
+checklokcombination:
+  db 85 C0
+
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: MastermindMinigame:dropSymbol+63
+
+MastermindMinigame:dropSymbol+3b: 48 63 C9                       - movsxd  rcx,ecx
+MastermindMinigame:dropSymbol+3e: 39 48 18                       - cmp [rax+18],ecx
+MastermindMinigame:dropSymbol+41: 0F 86 66 00 00 00              - jbe MastermindMinigame:dropSymbol+ad
+MastermindMinigame:dropSymbol+47: 48 8D 44 88 20                 - lea rax,[rax+rcx*4+20]
+MastermindMinigame:dropSymbol+4c: 48 63 4D F0                    - movsxd  rcx,dword ptr [rbp-10]
+MastermindMinigame:dropSymbol+50: 89 08                          - mov [rax],ecx
+MastermindMinigame:dropSymbol+52: 48 8B CF                       - mov rcx,rdi
+MastermindMinigame:dropSymbol+55: 90                             - nop 
+MastermindMinigame:dropSymbol+56: 49 BB C0 3D 93 69 9B 01 00 00  - mov r11,MastermindMinigame:checkRightCombination
+MastermindMinigame:dropSymbol+60: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+MastermindMinigame:dropSymbol+63: 85 C0                          - test eax,eax
+// ---------- DONE INJECTING  ----------
+MastermindMinigame:dropSymbol+65: 0F 84 38 00 00 00              - je MastermindMinigame:dropSymbol+a3
+MastermindMinigame:dropSymbol+6b: 48 8B CF                       - mov rcx,rdi
+MastermindMinigame:dropSymbol+6e: 48 8B 07                       - mov rax,[rdi]
+MastermindMinigame:dropSymbol+71: FF 50 78                       - call qword ptr [rax+78]
+MastermindMinigame:dropSymbol+74: EB 2D                          - jmp MastermindMinigame:dropSymbol+a3
+MastermindMinigame:dropSymbol+76: 48 B8 F0 FE AF 65 9B 01 00 00  - mov rax,0000019B65AFFEF0
+MastermindMinigame:dropSymbol+80: 48 8B 00                       - mov rax,[rax]
+MastermindMinigame:dropSymbol+83: 48 8B C8                       - mov rcx,rax
+MastermindMinigame:dropSymbol+86: 48 BA 70 D3 1A CC 9C 01 00 00  - mov rdx,0000019CCC1AD370
+MastermindMinigame:dropSymbol+90: 83 38 00                       - cmp dword ptr [rax],00
+}"""
+
+[[cheat]]
+id = "cauldron-check-results"
+name = "Cauldron Check Results"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(caldruncheckresult,CauldronMinigame:dropSymbol,CauldronMinigame:dropSymbol+300,41 3B C6 0F) // should be unique
+registersymbol(caldruncheckresult)
+
+caldruncheckresult:
+db 39 C0 90
+
+[DISABLE]
+
+caldruncheckresult:
+  db 41 3B C6
+
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: CauldronMinigame:dropSymbol+27b
+
+CauldronMinigame:dropSymbol+250: 44 2B F1                       - sub r14d,ecx
+CauldronMinigame:dropSymbol+253: 49 8B C6                       - mov rax,r14
+CauldronMinigame:dropSymbol+256: 85 C0                          - test eax,eax
+CauldronMinigame:dropSymbol+258: 0F 8D 03 00 00 00              - jnl CauldronMinigame:dropSymbol+261
+CauldronMinigame:dropSymbol+25e: 45 33 F6                       - xor r14d,r14d
+CauldronMinigame:dropSymbol+261: 48 63 8F 84 00 00 00           - movsxd  rcx,dword ptr [rdi+00000084]
+CauldronMinigame:dropSymbol+268: 48 63 47 7C                    - movsxd  rax,dword ptr [rdi+7C]
+CauldronMinigame:dropSymbol+26c: 2B C8                          - sub ecx,eax
+CauldronMinigame:dropSymbol+26e: 49 BB 50 9A 2B CC 9C 01 00 00  - mov r11,UnityEngine:Mathf:Abs
+CauldronMinigame:dropSymbol+278: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+CauldronMinigame:dropSymbol+27b: 41 3B C6                       - cmp eax,r14d
+// ---------- DONE INJECTING  ----------
+CauldronMinigame:dropSymbol+27e: 0F 8F 4F 00 00 00              - jg CauldronMinigame:dropSymbol+2d3
+CauldronMinigame:dropSymbol+284: 48 8B 47 48                    - mov rax,[rdi+48]
+CauldronMinigame:dropSymbol+288: 48 8B C8                       - mov rcx,rax
+CauldronMinigame:dropSymbol+28b: 48 8B D7                       - mov rdx,rdi
+CauldronMinigame:dropSymbol+28e: 83 38 00                       - cmp dword ptr [rax],00
+CauldronMinigame:dropSymbol+291: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+CauldronMinigame:dropSymbol+296: 49 BB 50 D7 BA F3 9B 01 00 00  - mov r11,CauldronMinigameGauge:waitToSolveMinigame
+CauldronMinigame:dropSymbol+2a0: 41 FF D3                       - call r11
+CauldronMinigame:dropSymbol+2a3: EB 2E                          - jmp CauldronMinigame:dropSymbol+2d3
+CauldronMinigame:dropSymbol+2a5: 48 B8 F0 FE AF 65 9B 01 00 00  - mov rax,0000019B65AFFEF0
+}"""
+
+[[cheat]]
+id = "artificer-base-don-t-touch"
+name = "Artificer Base (Don't Touch)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "artificer"
+hops = ["+0x0"]

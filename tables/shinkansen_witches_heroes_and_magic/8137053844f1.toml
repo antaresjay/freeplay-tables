@@ -1,0 +1,1197 @@
+[game]
+name = "Witches, Heroes and Magic"
+exe = "shinkansen_witches_heroes_and_magic.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2803"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "gameeventhandler-base-address-scan-initialization-activate-this-first"
+name = "GameEventHandler Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GameEventHandler_basepointer)
+registersymbol(GameEventHandler_update_enable)
+registersymbol(GameEventHandler_set_enable)
+registersymbol(GameEventHandler_healthset_enable)
+registersymbol(GameEventHandler_statsset_enable)
+registersymbol(GameEventHandler_goldset_enable)
+
+alloc(GameEventHandler_basepointer,4)
+alloc(GameEventHandler_update_enable,4)
+alloc(GameEventHandler_set_enable,4)
+alloc(GameEventHandler_healthset_enable,4)
+alloc(GameEventHandler_statsset_enable,4)
+alloc(GameEventHandler_goldset_enable,4)
+
+
+[DISABLE]
+unregistersymbol(GameEventHandler_basepointer)
+unregistersymbol(GameEventHandler_update_enable)
+unregistersymbol(GameEventHandler_set_enable)
+unregistersymbol(GameEventHandler_healthset_enable)
+unregistersymbol(GameEventHandler_statsset_enable)
+unregistersymbol(GameEventHandler_goldset_enable)
+
+dealloc(GameEventHandler_basepointer)
+dealloc(GameEventHandler_update_enable)
+dealloc(GameEventHandler_set_enable)
+dealloc(GameEventHandler_healthset_enable)
+dealloc(GameEventHandler_statsset_enable)
+dealloc(GameEventHandler_goldset_enable)"""
+
+[[cheat]]
+id = "gameeventhandler-base-address-scan-to-activate-load-game-to-update-play-level"
+name = "GameEventHandler Base Address Scan (To Activate: Load Game, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GameEventHandler_savedAOB)
+label(GameEventHandler_returnhere)
+label(GameEventHandler_originalcode)
+label(GameEventHandler_exit)
+
+label(GameEventHandler_update_exit)
+label(GameEventHandler_set_exit)
+label(GameEventHandler_healthset_exit)
+label(GameEventHandler_statsset_exit)
+label(GameEventHandler_goldset_exit)
+
+registersymbol(GameEventHandler_savedAOB)
+
+//04CBFA64 - 8B C8                 - mov ecx,eax
+//04CBFA66 - 39 09                 - cmp [ecx],ecx
+// OverSpells:Update+f0
+//04CBFA68 - 0FB6 40 6D            - movzx eax,byte ptr [eax+6D]
+//04CBFA6C - 85 C0                 - test eax,eax
+//04CBFA6E - 74 0C                 - je 04CBFA7C
+//04CBFA70 - 83 EC 0C              - sub esp,0C
+//04CBFA73 - 57                    - push edi
+aobscan(GameEventHandler_searchedAOB, 0F B6 40 6D 85 C0 74 0C)
+
+alloc(GameEventHandler_newmem, 2048)
+alloc(GameEventHandler_temp1, 4)
+alloc(GameEventHandler_temp2, 4)
+
+
+GameEventHandler_newmem:
+mov [GameEventHandler_temp1], ebx
+mov [GameEventHandler_temp2], ecx
+
+cmp dword ptr [GameEventHandler_update_enable], #0
+je GameEventHandler_update_exit
+mov [GameEventHandler_basepointer], eax
+GameEventHandler_update_exit:
+
+cmp dword ptr [GameEventHandler_set_enable], #0
+je GameEventHandler_set_exit
+GameEventHandler_set_exit:
+
+cmp dword ptr [GameEventHandler_healthset_enable], #0
+je GameEventHandler_healthset_exit
+cmp dword ptr [eax+3c], #0
+je GameEventHandler_healthset_exit
+mov ebx, [eax+3c]
+cmp dword ptr [ebx+28], #0
+je GameEventHandler_healthset_exit
+mov ebx, [ebx+28]
+fld [ebx+84]
+fstp [ebx+8c]
+GameEventHandler_healthset_exit:
+
+cmp dword ptr [GameEventHandler_statsset_enable], #0
+je GameEventHandler_statsset_exit
+cmp dword ptr [eax+3c], #0
+je GameEventHandler_statsset_exit
+mov ebx, [eax+3c]
+cmp dword ptr [ebx+28], #0
+je GameEventHandler_statsset_exit
+mov ebx, [ebx+28]
+mov [ebx+7c], (float)99999
+mov [ebx+88], (float)99999
+mov [ebx+9c], (float)99999
+mov [ebx+ac], (float)999
+mov [ebx+b4], (float)9
+mov [ebx+bc], (float)9
+mov [ebx+cc], (float)999
+mov [ebx+dc], #99
+GameEventHandler_statsset_exit:
+
+cmp dword ptr [GameEventHandler_goldset_enable], #0
+je GameEventHandler_goldset_exit
+cmp dword ptr [eax+54], #0
+je GameEventHandler_goldset_exit
+mov ebx, [eax+54]
+mov [ebx+80], #9999999
+GameEventHandler_goldset_exit:
+
+mov ebx, [GameEventHandler_temp1]
+mov ecx, [GameEventHandler_temp2]
+
+
+GameEventHandler_originalcode:
+db 0F B6 40 6D 85 C0
+//movzx eax,byte ptr [eax+6D]
+//test eax,eax
+
+
+GameEventHandler_exit:
+jmp GameEventHandler_returnhere
+
+
+GameEventHandler_searchedAOB:
+GameEventHandler_savedAOB:
+jmp GameEventHandler_newmem
+nop
+GameEventHandler_returnhere:
+
+
+[DISABLE]
+GameEventHandler_savedAOB:
+db 0F B6 40 6D 85 C0
+//movzx eax,byte ptr [eax+6D]
+//test eax,eax
+
+unregistersymbol(GameEventHandler_savedAOB)
+
+dealloc(GameEventHandler_newmem)
+dealloc(GameEventHandler_temp1)
+dealloc(GameEventHandler_temp2)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "base-stats-set-to-massive"
+name = "Base Stats Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_statsset_enable"
+hops = []
+
+[[cheat]]
+id = "gold-set-to-massive"
+name = "Gold Set to Massive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_goldset_enable"
+hops = []
+
+[[cheat]]
+id = "gameeventhandler-update-base-address"
+name = "GameEventHandler Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "questno"
+name = "questNo"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x68",
+]
+
+[[cheat]]
+id = "charlevel"
+name = "charLevel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "experience"
+name = "experience"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x70",
+]
+
+[[cheat]]
+id = "class"
+name = "Class"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:TANK",
+    "1:MAGE",
+    "2:HEALER",
+    "3:ARCHER",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x74",
+]
+
+[[cheat]]
+id = "creaturetype"
+name = "CreatureType"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:WITCH",
+    "1:WIZARD",
+    "2:GOLEM",
+    "3:NYMPH",
+    "4:ARCHER",
+    "5:KNIGHT",
+    "6:GHOUL",
+    "7:ZOMBIE",
+    "8:NECROMANCER",
+    "9:TREEENT",
+    "10:OGRE",
+    "11:DAEMON",
+    "12:SKELETONKNIGHT",
+    "13:DRAGONBEAST",
+    "14:WYVERN",
+    "15:MUMMY",
+    "16:CYCLOPS",
+    "17:MANTICORE",
+    "18:HORSE",
+    "19:BARGHEST",
+    "20:MANTICORA",
+    "21:VOODOO",
+    "22:UNICORN",
+    "23:DAD",
+    "24:MUM",
+    "25:LEAVESIZE",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x78",
+]
+
+[[cheat]]
+id = "baseleadership"
+name = "baseLeadership"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "leadership"
+name = "Leadership"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x80",
+]
+
+[[cheat]]
+id = "maxhealth"
+name = "MaxHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x84",
+]
+
+[[cheat]]
+id = "basehealth"
+name = "baseHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x88",
+]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "leadershipperunit"
+name = "leadershipPerUnit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x90",
+]
+
+[[cheat]]
+id = "totalleadership"
+name = "TotalLeadership"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x94",
+]
+
+[[cheat]]
+id = "summoningleadershipperunit"
+name = "SummoningLeadershipPerUnit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x98",
+]
+
+[[cheat]]
+id = "basesummoningleadership"
+name = "baseSummoningLeadership"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "totalsummoningleadership"
+name = "TotalSummoningLeadership"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xa0",
+]
+
+[[cheat]]
+id = "currentleadershipsummoned"
+name = "CurrentLeadershipSummoned"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xa4",
+]
+
+[[cheat]]
+id = "meleedamage"
+name = "meleeDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xa8",
+]
+
+[[cheat]]
+id = "basephysicaldamage"
+name = "basePhysicalDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xac",
+]
+
+[[cheat]]
+id = "totalphysicaldamage"
+name = "totalPhysicalDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xb0",
+]
+
+[[cheat]]
+id = "basephysicaldefence"
+name = "basePhysicalDefence"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xb4",
+]
+
+[[cheat]]
+id = "currentphysicaldefence"
+name = "currentPhysicalDefence"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xb8",
+]
+
+[[cheat]]
+id = "base1magicdefence"
+name = "base1MagicDefence"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xbc",
+]
+
+[[cheat]]
+id = "currentmagicdefence"
+name = "currentMagicDefence"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xc0",
+]
+
+[[cheat]]
+id = "units"
+name = "units"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xc4",
+]
+
+[[cheat]]
+id = "magicdamgeperunit"
+name = "magicDamgePerUnit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xc8",
+]
+
+[[cheat]]
+id = "basemagicdamge"
+name = "baseMagicDamge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xcc",
+]
+
+[[cheat]]
+id = "totalmagicdamage"
+name = "totalMagicDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xd0",
+]
+
+[[cheat]]
+id = "shield"
+name = "shield"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xd4",
+]
+
+[[cheat]]
+id = "maxshield"
+name = "MaxShield"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xd8",
+]
+
+[[cheat]]
+id = "maxnoofsummonedarmies"
+name = "MaxNoOfSummonedArmies"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xdc",
+]
+
+[[cheat]]
+id = "originalunits"
+name = "OriginalUnits"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xe0",
+]
+
+[[cheat]]
+id = "playedmonsterdeadsound"
+name = "PlayedMonsterDeadSound"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x28",
+    "+0xe4",
+]
+
+[[cheat]]
+id = "armyrotatecount"
+name = "armyRotateCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x3c",
+    "+0x44",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x54",
+    "+0x0",
+]
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x54",
+    "+0x80",
+]
+
+[[cheat]]
+id = "costofone"
+name = "costOfOne"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x54",
+    "+0x84",
+]
+
+[[cheat]]
+id = "available"
+name = "Available"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x54",
+    "+0x88",
+]
+
+[[cheat]]
+id = "numberbuying"
+name = "numberBuying"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x54",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "itemcounter"
+name = "itemCounter"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = [
+    "+0x54",
+    "+0x90",
+]
+
+[[cheat]]
+id = "demo"
+name = "Demo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "leftmousedown"
+name = "leftMouseDown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x6d"]
+
+[[cheat]]
+id = "rightmousedown"
+name = "rightMouseDown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x6e"]
+
+[[cheat]]
+id = "middlemousedown"
+name = "middleMouseDown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x6f"]
+
+[[cheat]]
+id = "loadedlevel"
+name = "LoadedLevel"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "fire2down"
+name = "Fire2Down"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "number"
+name = "number"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "ignorenextleftclick"
+name = "ignoreNextLeftClick"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "leftbuttonhandled"
+name = "LeftButtonHandled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameEventHandler_basepointer"
+hops = ["+0xa1"]

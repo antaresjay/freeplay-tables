@@ -1,0 +1,394 @@
+[game]
+name = "Alien: Isolation Codex"
+exe = "ai.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2801"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "health-access"
+name = "Health Access"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem, 512)
+aobscanmodule(healthAccess_aob, AI.exe, 8B 4C 24 18 ?? ?? 0F B7 86 3C 03 00 00 66 85 C0)
+registersymbol(healthAccess_aob)
+
+label(healthAccess)
+label(healthAccess_ret)
+label(healthAccess_orig)
+label(healthAccess_end)
+label(invisibility)
+label(invisibility_orig)
+
+label(health_amt)
+registersymbol(health_amt)
+label(health_add)
+registersymbol(health_add)
+label(en_healthAccess)
+registersymbol(en_healthAccess)
+label(en_invisibility)
+registersymbol(en_invisibility)
+
+healthAccess_aob+06:
+jmp healthAccess
+db 90 90 90 90 90
+healthAccess_ret:
+
+newmem:
+healthAccess:
+/*
+cmp [esi+10],'Char'
+jne healthAccess_end
+cmp [esi+14],'acte'
+jne healthAccess_end
+*/
+cmp [esi+2D8],0
+jne healthAccess_end
+cmp [esi+2E4],1
+jne healthAccess_end
+cmp [esi+310],1
+jne healthAccess_end
+cmp [esi+314],1
+jne healthAccess_end
+mov [health_add],esi
+cmp [en_healthAccess],1
+jne healthAccess_orig
+mov ax,word ptr [health_amt]
+mov [esi+0000033C],ax
+
+healthAccess_orig:
+movzx eax,word ptr [esi+0000033C] // 0F B7 86 3C 03 00 00
+
+invisibility:
+cmp [en_invisibility],1
+jne invisibility_orig
+test [en_invisibility],0
+jmp healthAccess_ret
+
+invisibility_orig:
+test ax,ax // 66 85 C0
+jmp healthAccess_ret
+
+healthAccess_end:
+movzx eax,word ptr [esi+0000033C] // 0F B7 86 3C 03 00 00
+jmp healthAccess_ret
+
+health_amt:
+dd #1000
+
+health_add:
+dd 0
+
+en_healthAccess:
+dd 0
+
+en_invisibility:
+dd 0
+
+[DISABLE]
+healthAccess_aob+06:
+db 0F B7 86 3C 03 00 00 // movzx eax,word ptr [esi+0000033C]
+db 66 85 C0 // test ax,ax
+
+unregistersymbol(healthAccess_aob)
+unregistersymbol(health_amt)
+unregistersymbol(health_add)
+unregistersymbol(en_healthAccess)
+unregistersymbol(en_invisibility)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "health-address"
+name = "Health Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "health_add"
+hops = ["+0x33c"]
+
+[[cheat]]
+id = "health-amount"
+name = "Health Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "health_amt"
+hops = []
+
+[[cheat]]
+id = "full-health-check-access"
+name = "Full Health Check (Access)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "en_healthAccess"
+hops = []
+
+[[cheat]]
+id = "invisibility-check"
+name = "Invisibility Check"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "en_invisibility"
+hops = []
+
+[[cheat]]
+id = "enable-full-health-access"
+name = "Enable Full Health (Access)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+en_healthAccess:
+dd 1
+
+[DISABLE]
+en_healthAccess:
+dd 0"""
+
+[[cheat]]
+id = "invisibility-to-alien-other-people"
+name = "Invisibility to Alien / Other People?"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+en_invisibility:
+dd 1
+
+[DISABLE]
+en_invisibility:
+dd 0"""
+
+[[cheat]]
+id = "no-item-decrease"
+name = "No Item Decrease"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem, 256)
+aobscanmodule(itemDec_aob, AI.exe, 8D 04 80 FF 4C 86 70 8D 0C 86 32 C0)
+registersymbol(itemDec_aob)
+
+label(returnhere)
+label(originalcode)
+
+label(itemDec_add)
+registersymbol(itemDec_add)
+label(en_itemDec)
+registersymbol(en_itemDec)
+
+itemDec_aob:
+jmp newmem
+db 90 90
+returnhere:
+
+newmem:
+lea eax,[eax+eax*4]
+push ebx
+lea ebx,[esi+eax*4+70]
+mov [itemDec_add],ebx
+pop ebx
+cmp [en_itemDec], 1
+jne originalcode
+inc [esi+eax*4+70]
+
+originalcode:
+dec [esi+eax*4+70]
+jmp returnhere
+
+itemDec_add:
+dd 0
+
+en_itemDec:
+dd 0
+
+[DISABLE]
+itemDec_aob:
+lea eax,[eax+eax*4] // 8D 04 80
+dec [esi+eax*4+70] // FF 4C 86 70
+
+unregistersymbol(healthAccess_aob)
+unregistersymbol(en_itemDec)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "last-used-item-address"
+name = "Last Used Item Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemDec_add"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "item-decrease-check"
+name = "Item Decrease Check"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "en_itemDec"
+hops = []
+
+[[cheat]]
+id = "enable-no-item-decrease"
+name = "Enable No Item Decrease"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+en_itemDec:
+dd 1
+
+[DISABLE]
+en_itemDec:
+dd 0"""
+
+[[cheat]]
+id = "alien-no-attack"
+name = "Alien No Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem, 128)
+aobscanmodule(alienIgnore_aob, AI.exe, 8B 4E 44 66 83 B9 3C 03 00 00 00)
+registersymbol(alienIgnore_aob)
+
+label(returnhere)
+label(originalcode)
+
+label(alienIgnore_add)
+registersymbol(alienIgnore_add)
+label(en_alienIgnore)
+registersymbol(en_alienIgnore)
+
+alienIgnore_aob+03:
+jmp newmem
+db 90 90 90
+returnhere:
+
+newmem:
+mov [alienIgnore_add],ecx
+/*
+cmp [ecx+10], 'Char'
+jne originalcode
+cmp [ecx+14], 'acte'
+jne originalcode
+*/
+cmp [ecx+2D8],0
+jne originalcode
+cmp [ecx+2E4],1
+jne originalcode
+cmp [ecx+310],1
+jne originalcode
+cmp [ecx+314],1
+jne originalcode
+cmp [en_alienIgnore],1
+jne originalcode
+cmp eax,eax
+jmp returnhere
+
+originalcode:
+cmp word ptr [ecx+0000033C],00 // 66 83 B9 3C 03 00 00 00
+jmp returnhere
+
+alienIgnore_add:
+dd 0
+
+en_alienIgnore:
+dd 1
+
+[DISABLE]
+alienIgnore_aob+03:
+cmp word ptr [ecx+0000033C],00 // 66 83 B9 3C 03 00 00 00
+
+unregistersymbol(alienIgnore_add)
+unregistersymbol(en_alienIgnore)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "alien-ignore-check"
+name = "Alien Ignore Check"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "en_alienIgnore"
+hops = []
+
+[[cheat]]
+id = "enable-alien-ignore"
+name = "Enable Alien Ignore"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+en_alienIgnore:
+dd 1
+
+[DISABLE]
+en_alienIgnore:
+dd 0"""

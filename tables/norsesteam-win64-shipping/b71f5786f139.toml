@@ -1,0 +1,1794 @@
+[game]
+name = "Norse: Oath of Blood"
+exe = "norsesteam-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by wajrak. Source: https://fearlessrevolution.com/viewtopic.php?t=38296"
+verified = []
+author = "wajrak"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlimited-movement-no-ap-drain"
+name = "Unlimited Movement (No AP drain)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,F3 0F 11 83 E0 04 00 00 48)
+alloc(newmem,$1000,INJECT)
+alloc(pPlayerAP, 8) // This will hold our stolen base address
+
+label(code)
+label(return)
+label(is_enemy)
+
+registersymbol(INJECT)
+registersymbol(pPlayerAP)
+
+newmem:
+  // --- 1. STEAL THE POINTER ---
+  // Save the base address (rbx) into our custom symbol
+  mov [pPlayerAP], rbx
+
+  // --- 2. FILTER & FREEZE ---
+  // Check the faction ID at offset +2C (0 = Enemy, >0 = Ally)
+  cmp dword ptr [rbx+2C], 0
+  je is_enemy  // If it's 0 (Enemy), jump to the normal AP drain
+
+  // IF ALLY:
+  // We skip the original instruction completely. The game thinks it spent AP,
+  // but it never actually saves the new lower number. (Infinite AP!)
+  jmp return
+
+is_enemy:
+code:
+  // Original instruction: Writes the reduced AP (xmm0) to memory
+  movss [rbx+000004E0],xmm0
+
+INJECT:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+INJECT:
+  db F3 0F 11 83 E0 04 00 00
+
+unregistersymbol(INJECT)
+unregistersymbol(pPlayerAP)
+dealloc(newmem)
+dealloc(pPlayerAP)"""
+
+[[cheat]]
+id = "action-points-can-be-changed-or-frozen"
+name = "Action Points (can be changed or frozen): "
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerAP"
+hops = ["+0x4e0"]
+
+[[cheat]]
+id = "unlimited-attacks-no-ap-drain"
+name = "Unlimited Attacks (No AP drain)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+// Scans for the attack/ability AP write instruction you found
+aobscanmodule(InfiniteAttackAP,NorseSteam-Win64-Shipping.exe,F3 41 0F 11 86 E0 04 00 00)
+alloc(newmem,$1000,InfiniteAttackAP)
+
+label(code)
+label(return)
+label(is_enemy)
+
+newmem:
+  // --- FILTER: IS THIS AN ENEMY? ---
+  // The base pointer in this function is held in 'r14'
+  cmp dword ptr [r14+2C], 0
+  je is_enemy  // If 0 (Enemy), jump to the normal AP drain
+
+  // --- ALLY LOGIC (INFINITE ATTACK AP) ---
+  // If it's your party, skip writing the reduced AP to memory!
+  jmp return
+
+is_enemy:
+code:
+  // --- ENEMY LOGIC (NORMAL BEHAVIOR) ---
+  movss [r14+000004E0],xmm0
+
+InfiniteAttackAP:
+  jmp newmem
+  nop 4 // Pads the rest of the 9-byte instruction
+return:
+registersymbol(InfiniteAttackAP)
+
+[DISABLE]
+
+InfiniteAttackAP:
+  db F3 41 0F 11 86 E0 04 00 00
+
+unregistersymbol(InfiniteAttackAP)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "max-momentum-after-1-kill-v2"
+name = "Max. Momentum (after 1 kill) V2"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,40 88 AB 80 00 00 00 41)
+alloc(newmem,$1000,INJECT)
+alloc(CustomMomentum, 4) // Memory for our table variable
+
+label(code)
+label(return)
+label(is_enemy)
+
+// Register the custom variable so the table can see it
+registersymbol(CustomMomentum)
+
+// Set default custom momentum to 20
+CustomMomentum:
+  dd (int)20
+
+newmem:
+  // --- 1. THE FACTION FILTER ---
+  // Check offset +2C from the base address (rbx).
+  // Enemies = 0. Allies = 1, 2, 3...
+  cmp dword ptr [rbx+2C], 0
+  je is_enemy  // If it's 0 (enemy), skip the cheat
+
+  // --- 2. ALLY LOGIC (CUSTOM MOMENTUM) ---
+  // Read our custom value from the table and push it into the bpl register
+  mov bpl, byte ptr [CustomMomentum]
+  jmp code
+
+is_enemy:
+  // --- 3. ENEMY LOGIC (NORMAL) ---
+  // We don't touch the bpl register, letting them use whatever momentum the game intended.
+
+code:
+  // Original instruction: write the momentum to memory
+  mov [rbx+00000080],bpl
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 2
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 40 88 AB 80 00 00 00
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+unregistersymbol(CustomMomentum)
+dealloc(CustomMomentum)"""
+
+[[cheat]]
+id = "momentum-gain"
+name = "Momentum Gain"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomMomentum"
+hops = []
+
+[[cheat]]
+id = "party-no-damage"
+name = "Party - No Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 0B 48 8B CE E8 F9) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+label(is_enemy)
+
+newmem:
+  // --- FILTER: IS THIS AN ENEMY? ---
+  // Check offset +2C from the health base address.
+  // We know Enemies = 0, while Player = 1, Party = 2, 3, etc.
+  cmp dword ptr [rbx+2C], 0
+  je is_enemy  // If it IS equal to 0, jump to normal enemy damage logic
+
+  // --- ALLY LOGIC (NO DAMAGE) ---
+  // If we reach this line, the ID was NOT 0 (so it's an ally).
+  // Compare incoming health (ecx) to current health ([rbx])
+  cmp ecx,[rbx]
+  jge code      // If healing (new health >= old health), allow it
+
+  // If taking damage, ignore it by overwriting ecx with current health
+  mov ecx,[rbx]
+  jmp code
+
+is_enemy:
+  // --- ENEMY LOGIC (NORMAL BEHAVIOR) ---
+  // Do nothing. The incoming damage in ecx will hit them.
+
+code:
+  mov [rbx],ecx   // Write the health
+  mov rcx,rsi
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 0B 48 8B CE
+
+unregistersymbol(INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "party-leader-no-damage"
+name = "Party Leader - No Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 0B 48 8B CE E8 F9) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+label(is_enemy)
+
+newmem:
+  // --- 1. THE FILTER ---
+  // Check offset +2C from the base address (rbx).
+  // If it equals 1, it's the player. If it's 0, it's an enemy.
+  cmp dword ptr [rbx+2C], 1
+  jne is_enemy  // If NOT 1 (enemy), jump straight to normal code
+
+  // --- 2. PLAYER LOGIC (NO DAMAGE) ---
+  // Compare incoming health (ecx) to current health ([rbx])
+  cmp ecx,[rbx]
+  jge code      // If new health >= current health (healing), allow the write
+
+  // If we reach here, new health is lower (taking damage).
+  // We overwrite the incoming damage with the current health.
+  mov ecx,[rbx]
+  jmp code
+
+is_enemy:
+  // --- 3. ENEMY LOGIC (NORMAL DAMAGE) ---
+  // We do absolutely nothing here. Let their health drop naturally.
+
+code:
+  mov [rbx],ecx   // Write the final health value to memory
+  mov rcx,rsi     // Original instruction
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 0B 48 8B CE
+
+unregistersymbol(INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "hp-freeze-party"
+name = "HP Freeze (Party)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 0B 48 8B CE E8 F9)
+alloc(newmem,$1000,INJECT)
+alloc(CustomHealth, 4) // Allocate 4 bytes for our custom health variable
+
+label(code)
+label(return)
+label(is_enemy)
+
+// Register the symbol so the Cheat Engine table can interact with it
+registersymbol(CustomHealth)
+
+// Set a default value of 15 (Decimal) when the script activates
+CustomHealth:
+  dd (int)15
+
+newmem:
+  // --- 1. THE FILTER ---
+  // Is this an enemy? (ID = 0)
+  cmp dword ptr [rbx+2C], 0
+  je is_enemy  // If it's an enemy, jump to normal logic
+
+  // --- 2. THE CUSTOM HEAL (ALLIES ONLY) ---
+  // Overwrite the incoming health value with whatever is in our table variable
+  mov ecx, [CustomHealth]
+  jmp code
+
+is_enemy:
+  // --- 3. ENEMY LOGIC ---
+  // We don't touch ecx, so they take normal damage.
+
+code:
+  mov [rbx],ecx   // Write the health
+  mov rcx,rsi     // Original instruction
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 0B 48 8B CE
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+unregistersymbol(CustomHealth)
+dealloc(CustomHealth)"""
+
+[[cheat]]
+id = "life-always-set-to"
+name = "Life always set to:"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomHealth"
+hops = []
+
+[[cheat]]
+id = "resources-skip-one-turn-until-correct-values-show"
+name = "Resources (skip one turn until correct values show)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6)
+alloc(newmem,$1000,INJECT)
+alloc(pLastResource, 8) // Allocates 8 bytes to store our stolen pointer
+
+label(code)
+label(return)
+
+registersymbol(INJECT)
+registersymbol(pLastResource)
+
+newmem:
+  // Steal the exact address of the resource currently being updated
+  mov [pLastResource], rax
+
+code:
+  // Original game instructions
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+
+[DISABLE]
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+unregistersymbol(pLastResource)
+dealloc(newmem)
+dealloc(pLastResource)"""
+
+[[cheat]]
+id = "plastresource"
+name = "pLastResource"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = []
+
+[[cheat]]
+id = "provisions"
+name = "Provisions"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "leather"
+name = "Leather"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "wadmal"
+name = "Wadmal"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "riches"
+name = "Riches"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "bogiron"
+name = "BogIron"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "wood"
+name = "Wood"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "hacksilver"
+name = "HackSilver"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "fiber"
+name = "Fiber"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "oil"
+name = "Oil"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "cheat"
+name = "?????????"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastResource"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "mega-bandage"
+name = "Mega Bandage"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 0B 48 8B CE E8 F9)
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+label(is_enemy) // New label to route enemies away from the cheat
+
+newmem:
+  // --- THE PLAYER CHECK ---
+  // We need to find an offset near the health address (rbx) that tells us who this is.
+  // For example, let's pretend [rbx+14] holds a "Team ID" where Player = 1 and Enemy = 2.
+  // (You will need to find the REAL offset and value to replace this)
+
+  cmp [rbx+14], 1  // Is this the player?
+  jne is_enemy     // If it's NOT equal to 1, jump to 'is_enemy' and skip the cheat
+
+  // --- THE CHEAT (PLAYER ONLY) ---
+  // If we didn't jump, it means this IS the player. Let's give them massive health.
+  mov ecx, #9999   // Replace 9999 with your desired max health value
+  jmp code         // Proceed to write the new health
+
+is_enemy:
+  // Let the enemy take damage/heal exactly as the game intended.
+  // We don't touch 'ecx' here.
+
+code:
+  mov [rbx],ecx    // Original code: writes the health value
+  mov rcx,rsi      // Original code
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 0B 48 8B CE
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+5EA9A0D
+
+NorseSteam-Win64-Shipping.exe+5EA99F5: 74 06                 - je NorseSteam-Win64-Shipping.exe+5EA99FD
+NorseSteam-Win64-Shipping.exe+5EA99F7: 33 FF                 - xor edi,edi
+NorseSteam-Win64-Shipping.exe+5EA99F9: 8B CF                 - mov ecx,edi
+NorseSteam-Win64-Shipping.exe+5EA99FB: EB 10                 - jmp NorseSteam-Win64-Shipping.exe+5EA9A0D
+NorseSteam-Win64-Shipping.exe+5EA99FD: 45 3B FD              - cmp r15d,r13d
+NorseSteam-Win64-Shipping.exe+5EA9A00: 41 0F 4C C7           - cmovl eax,r15d
+NorseSteam-Win64-Shipping.exe+5EA9A04: 33 FF                 - xor edi,edi
+NorseSteam-Win64-Shipping.exe+5EA9A06: 85 C0                 - test eax,eax
+NorseSteam-Win64-Shipping.exe+5EA9A08: 8B CF                 - mov ecx,edi
+NorseSteam-Win64-Shipping.exe+5EA9A0A: 0F 4F C8              - cmovg ecx,eax
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+5EA9A0D: 89 0B                 - mov [rbx],ecx
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+5EA9A0F: 48 8B CE              - mov rcx,rsi
+NorseSteam-Win64-Shipping.exe+5EA9A12: E8 F9 A0 14 00        - call NorseSteam-Win64-Shipping.exe+5FF3B10
+NorseSteam-Win64-Shipping.exe+5EA9A17: 48 85 C0              - test rax,rax
+NorseSteam-Win64-Shipping.exe+5EA9A1A: 74 16                 - je NorseSteam-Win64-Shipping.exe+5EA9A32
+NorseSteam-Win64-Shipping.exe+5EA9A1C: 44 8B 03              - mov r8d,[rbx]
+NorseSteam-Win64-Shipping.exe+5EA9A1F: 48 8D 88 70 01 00 00  - lea rcx,[rax+00000170]
+NorseSteam-Win64-Shipping.exe+5EA9A26: 48 8B 96 A0 00 00 00  - mov rdx,[rsi+000000A0]
+NorseSteam-Win64-Shipping.exe+5EA9A2D: E8 BE 0B CC FF        - call NorseSteam-Win64-Shipping.exe+5B6A5F0
+NorseSteam-Win64-Shipping.exe+5EA9A32: 48 8B 8E A0 00 00 00  - mov rcx,[rsi+000000A0]
+NorseSteam-Win64-Shipping.exe+5EA9A39: E8 82 B1 0B 00        - call NorseSteam-Win64-Shipping.exe+5F64BC0
+}"""
+
+[[cheat]]
+id = "enemy-taking-damage-one-of"
+name = "Enemy taking Damage (one of)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 0B 48 8B CE E8 F9) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rbx],ecx
+  mov rcx,rsi
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 0B 48 8B CE
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+5EA9A0D
+
+NorseSteam-Win64-Shipping.exe+5EA99F5: 74 06                 - je NorseSteam-Win64-Shipping.exe+5EA99FD
+NorseSteam-Win64-Shipping.exe+5EA99F7: 33 FF                 - xor edi,edi
+NorseSteam-Win64-Shipping.exe+5EA99F9: 8B CF                 - mov ecx,edi
+NorseSteam-Win64-Shipping.exe+5EA99FB: EB 10                 - jmp NorseSteam-Win64-Shipping.exe+5EA9A0D
+NorseSteam-Win64-Shipping.exe+5EA99FD: 45 3B FD              - cmp r15d,r13d
+NorseSteam-Win64-Shipping.exe+5EA9A00: 41 0F 4C C7           - cmovl eax,r15d
+NorseSteam-Win64-Shipping.exe+5EA9A04: 33 FF                 - xor edi,edi
+NorseSteam-Win64-Shipping.exe+5EA9A06: 85 C0                 - test eax,eax
+NorseSteam-Win64-Shipping.exe+5EA9A08: 8B CF                 - mov ecx,edi
+NorseSteam-Win64-Shipping.exe+5EA9A0A: 0F 4F C8              - cmovg ecx,eax
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+5EA9A0D: 89 0B                 - mov [rbx],ecx
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+5EA9A0F: 48 8B CE              - mov rcx,rsi
+NorseSteam-Win64-Shipping.exe+5EA9A12: E8 F9 A0 14 00        - call NorseSteam-Win64-Shipping.exe+5FF3B10
+NorseSteam-Win64-Shipping.exe+5EA9A17: 48 85 C0              - test rax,rax
+NorseSteam-Win64-Shipping.exe+5EA9A1A: 74 16                 - je NorseSteam-Win64-Shipping.exe+5EA9A32
+NorseSteam-Win64-Shipping.exe+5EA9A1C: 44 8B 03              - mov r8d,[rbx]
+NorseSteam-Win64-Shipping.exe+5EA9A1F: 48 8D 88 70 01 00 00  - lea rcx,[rax+00000170]
+NorseSteam-Win64-Shipping.exe+5EA9A26: 48 8B 96 A0 00 00 00  - mov rdx,[rsi+000000A0]
+NorseSteam-Win64-Shipping.exe+5EA9A2D: E8 BE 0B CC FF        - call NorseSteam-Win64-Shipping.exe+5B6A5F0
+NorseSteam-Win64-Shipping.exe+5EA9A32: 48 8B 8E A0 00 00 00  - mov rcx,[rsi+000000A0]
+NorseSteam-Win64-Shipping.exe+5EA9A39: E8 82 B1 0B 00        - call NorseSteam-Win64-Shipping.exe+5F64BC0
+}"""
+
+[[cheat]]
+id = "god-mode-ohk"
+name = "God Mode + OHK"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 0B 48 8B CE E8 F9)
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+label(is_enemy)
+
+newmem:
+  // --- 1. FACTION FILTER ---
+  // Check offset +2C from the health base address.
+  cmp dword ptr [rbx+2C], 0
+  je is_enemy  // If ID is 0, it's an enemy. Jump to OHK logic!
+
+  // --- 2. ALLY LOGIC (GOD MODE) ---
+  // If we didn't jump, it's an ally.
+  cmp ecx,[rbx]
+  jge code      // If healing, allow it normally
+  mov ecx,[rbx] // If taking damage, ignore it (keep current health)
+  jmp code
+
+is_enemy:
+  // --- 3. ENEMY LOGIC (ONE HIT KILL) ---
+  cmp ecx,[rbx]
+  jge code      // If the enemy is healing or spawning, let it happen naturally
+
+  // IF WE REACH HERE: The enemy is taking damage.
+  // Let's force their new health value to 0!
+  mov ecx, 0
+
+code:
+  mov [rbx],ecx   // Write the final health value to memory
+  mov rcx,rsi     // Original instruction
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 0B 48 8B CE
+
+unregistersymbol(INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-damage-global-including-enemies"
+name = "No damage (Global including enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 0B 48 8B CE E8 F9) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+  // 1. Compare the new incoming health (ecx) with current health ([rbx])
+  cmp ecx,[rbx]
+
+  // 2. If new health is Greater or Equal (healing or no change), jump to normal code
+  jge code
+
+  // 3. IF WE ARE HERE: The entity is taking damage.
+  // Let's force the new health to just equal the current health, ignoring the damage.
+  mov ecx,[rbx]
+
+code:
+  mov [rbx],ecx      // Writes the health (will be the old health if damage was taken)
+  mov rcx,rsi        // Original instruction
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 0B 48 8B CE
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+5EA9A0D
+
+NorseSteam-Win64-Shipping.exe+5EA99F5: 74 06                 - je NorseSteam-Win64-Shipping.exe+5EA99FD
+NorseSteam-Win64-Shipping.exe+5EA99F7: 33 FF                 - xor edi,edi
+NorseSteam-Win64-Shipping.exe+5EA99F9: 8B CF                 - mov ecx,edi
+NorseSteam-Win64-Shipping.exe+5EA99FB: EB 10                 - jmp NorseSteam-Win64-Shipping.exe+5EA9A0D
+NorseSteam-Win64-Shipping.exe+5EA99FD: 45 3B FD              - cmp r15d,r13d
+NorseSteam-Win64-Shipping.exe+5EA9A00: 41 0F 4C C7           - cmovl eax,r15d
+NorseSteam-Win64-Shipping.exe+5EA9A04: 33 FF                 - xor edi,edi
+NorseSteam-Win64-Shipping.exe+5EA9A06: 85 C0                 - test eax,eax
+NorseSteam-Win64-Shipping.exe+5EA9A08: 8B CF                 - mov ecx,edi
+NorseSteam-Win64-Shipping.exe+5EA9A0A: 0F 4F C8              - cmovg ecx,eax
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+5EA9A0D: 89 0B                 - mov [rbx],ecx
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+5EA9A0F: 48 8B CE              - mov rcx,rsi
+NorseSteam-Win64-Shipping.exe+5EA9A12: E8 F9 A0 14 00        - call NorseSteam-Win64-Shipping.exe+5FF3B10
+NorseSteam-Win64-Shipping.exe+5EA9A17: 48 85 C0              - test rax,rax
+NorseSteam-Win64-Shipping.exe+5EA9A1A: 74 16                 - je NorseSteam-Win64-Shipping.exe+5EA9A32
+NorseSteam-Win64-Shipping.exe+5EA9A1C: 44 8B 03              - mov r8d,[rbx]
+NorseSteam-Win64-Shipping.exe+5EA9A1F: 48 8D 88 70 01 00 00  - lea rcx,[rax+00000170]
+NorseSteam-Win64-Shipping.exe+5EA9A26: 48 8B 96 A0 00 00 00  - mov rdx,[rsi+000000A0]
+NorseSteam-Win64-Shipping.exe+5EA9A2D: E8 BE 0B CC FF        - call NorseSteam-Win64-Shipping.exe+5B6A5F0
+NorseSteam-Win64-Shipping.exe+5EA9A32: 48 8B 8E A0 00 00 00  - mov rcx,[rsi+000000A0]
+NorseSteam-Win64-Shipping.exe+5EA9A39: E8 82 B1 0B 00        - call NorseSteam-Win64-Shipping.exe+5F64BC0
+}"""
+
+[[cheat]]
+id = "max-momentum-after-1-kill-obsolete"
+name = "Max. Momentum (after 1 kill) (Obsolete)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-20
+  Author : wajra
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,40 88 AB 80 00 00 00 41)
+alloc(newmem,$1000,INJECT)
+alloc(CustomMomentum, 4) // Allocate 4 bytes of memory for our new variable
+
+label(code)
+label(return)
+
+// Register the symbol so the Cheat Engine table can see it
+registersymbol(CustomMomentum)
+
+// Set a default value of 20 (Decimal) when the script activates
+CustomMomentum:
+  dd (int)20
+
+newmem:
+  // Read the value from our custom variable into the bpl register.
+  // We use 'byte ptr' because bpl is an 8-bit (1 byte) register.
+  mov bpl, byte ptr [CustomMomentum]
+
+code:
+  // Original instruction writes the momentum
+  mov [rbx+00000080],bpl
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 2
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 40 88 AB 80 00 00 00
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+unregistersymbol(CustomMomentum)
+dealloc(CustomMomentum)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+6032920
+
+NorseSteam-Win64-Shipping.exe+60328FD: 0F B6 8B 80 00 00 00  - movzx ecx,byte ptr [rbx+00000080]
+NorseSteam-Win64-Shipping.exe+6032904: 03 CE                 - add ecx,esi
+NorseSteam-Win64-Shipping.exe+6032906: 0F B6 90 E1 0A 00 00  - movzx edx,byte ptr [rax+00000AE1]
+NorseSteam-Win64-Shipping.exe+603290D: 48 3B CA              - cmp rcx,rdx
+NorseSteam-Win64-Shipping.exe+6032910: 0F 42 D1              - cmovb edx,ecx
+NorseSteam-Win64-Shipping.exe+6032913: 33 FF                 - xor edi,edi
+NorseSteam-Win64-Shipping.exe+6032915: 48 85 D2              - test rdx,rdx
+NorseSteam-Win64-Shipping.exe+6032918: 0F B6 C2              - movzx eax,dl
+NorseSteam-Win64-Shipping.exe+603291B: 8B EF                 - mov ebp,edi
+NorseSteam-Win64-Shipping.exe+603291D: 0F 45 E8              - cmovne ebp,eax
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+6032920: 40 88 AB 80 00 00 00  - mov [rbx+00000080],bpl
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+6032927: 41 2A EE              - sub bpl,r14b
+NorseSteam-Win64-Shipping.exe+603292A: E8 C1 4C CC FF        - call NorseSteam-Win64-Shipping.exe+5CF75F0
+NorseSteam-Win64-Shipping.exe+603292F: 48 8B F0              - mov rsi,rax
+NorseSteam-Win64-Shipping.exe+6032932: 48 39 B8 10 01 00 00  - cmp [rax+00000110],rdi
+NorseSteam-Win64-Shipping.exe+6032939: 75 08                 - jne NorseSteam-Win64-Shipping.exe+6032943
+NorseSteam-Win64-Shipping.exe+603293B: 48 8B C8              - mov rcx,rax
+NorseSteam-Win64-Shipping.exe+603293E: E8 BD 1E 4D FB        - call NorseSteam-Win64-Shipping.exe+1504800
+NorseSteam-Win64-Shipping.exe+6032943: 48 8B 86 10 01 00 00  - mov rax,[rsi+00000110]
+NorseSteam-Win64-Shipping.exe+603294A: 44 8B FF              - mov r15d,edi
+NorseSteam-Win64-Shipping.exe+603294D: BE FF 00 00 00        - mov esi,000000FF
+}"""
+
+[[cheat]]
+id = "momentum-gain-2"
+name = "Momentum Gain"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomMomentum"
+hops = []
+
+[[cheat]]
+id = "wood-2"
+name = "wood"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-21
+  Author : wajra
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+60CBAD7
+
+NorseSteam-Win64-Shipping.exe+60CBAA1: 4C 8B BC 24 C0 00 00 00  - mov r15,[rsp+000000C0]
+NorseSteam-Win64-Shipping.exe+60CBAA9: 4C 8B A4 24 C8 00 00 00  - mov r12,[rsp+000000C8]
+NorseSteam-Win64-Shipping.exe+60CBAB1: 48 8B BC 24 D0 00 00 00  - mov rdi,[rsp+000000D0]
+NorseSteam-Win64-Shipping.exe+60CBAB9: 44 8B 00                 - mov r8d,[rax]
+NorseSteam-Win64-Shipping.exe+60CBABC: 48 8B 9C 24 08 01 00 00  - mov rbx,[rsp+00000108]
+NorseSteam-Win64-Shipping.exe+60CBAC4: 44 3B C6                 - cmp r8d,esi
+NorseSteam-Win64-Shipping.exe+60CBAC7: 74 18                    - je NorseSteam-Win64-Shipping.exe+60CBAE1
+NorseSteam-Win64-Shipping.exe+60CBAC9: 48 8B 4D 67              - mov rcx,[rbp+67]
+NorseSteam-Win64-Shipping.exe+60CBACD: 44 8B CE                 - mov r9d,esi
+NorseSteam-Win64-Shipping.exe+60CBAD0: 48 81 C1 00 09 00 00     - add rcx,00000900
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+60CBAD7: 89 30                    - mov [rax],esi
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+60CBAD9: 49 8B D6                 - mov rdx,r14
+NorseSteam-Win64-Shipping.exe+60CBADC: E8 4F 5D C4 FF           - call NorseSteam-Win64-Shipping.exe+5D11830
+NorseSteam-Win64-Shipping.exe+60CBAE1: B0 01                    - mov al,01
+NorseSteam-Win64-Shipping.exe+60CBAE3: 48 81 C4 D8 00 00 00     - add rsp,000000D8
+NorseSteam-Win64-Shipping.exe+60CBAEA: 41 5E                    - pop r14
+NorseSteam-Win64-Shipping.exe+60CBAEC: 41 5D                    - pop r13
+NorseSteam-Win64-Shipping.exe+60CBAEE: 5E                       - pop rsi
+NorseSteam-Win64-Shipping.exe+60CBAEF: 5D                       - pop rbp
+NorseSteam-Win64-Shipping.exe+60CBAF0: C3                       - ret 
+NorseSteam-Win64-Shipping.exe+60CBAF1: 32 C0                    - xor al,al
+}"""
+
+[[cheat]]
+id = "wadmal-2"
+name = "wadmal"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-21
+  Author : wajra
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+60CBAD7
+
+NorseSteam-Win64-Shipping.exe+60CBAA1: 4C 8B BC 24 C0 00 00 00  - mov r15,[rsp+000000C0]
+NorseSteam-Win64-Shipping.exe+60CBAA9: 4C 8B A4 24 C8 00 00 00  - mov r12,[rsp+000000C8]
+NorseSteam-Win64-Shipping.exe+60CBAB1: 48 8B BC 24 D0 00 00 00  - mov rdi,[rsp+000000D0]
+NorseSteam-Win64-Shipping.exe+60CBAB9: 44 8B 00                 - mov r8d,[rax]
+NorseSteam-Win64-Shipping.exe+60CBABC: 48 8B 9C 24 08 01 00 00  - mov rbx,[rsp+00000108]
+NorseSteam-Win64-Shipping.exe+60CBAC4: 44 3B C6                 - cmp r8d,esi
+NorseSteam-Win64-Shipping.exe+60CBAC7: 74 18                    - je NorseSteam-Win64-Shipping.exe+60CBAE1
+NorseSteam-Win64-Shipping.exe+60CBAC9: 48 8B 4D 67              - mov rcx,[rbp+67]
+NorseSteam-Win64-Shipping.exe+60CBACD: 44 8B CE                 - mov r9d,esi
+NorseSteam-Win64-Shipping.exe+60CBAD0: 48 81 C1 00 09 00 00     - add rcx,00000900
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+60CBAD7: 89 30                    - mov [rax],esi
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+60CBAD9: 49 8B D6                 - mov rdx,r14
+NorseSteam-Win64-Shipping.exe+60CBADC: E8 4F 5D C4 FF           - call NorseSteam-Win64-Shipping.exe+5D11830
+NorseSteam-Win64-Shipping.exe+60CBAE1: B0 01                    - mov al,01
+NorseSteam-Win64-Shipping.exe+60CBAE3: 48 81 C4 D8 00 00 00     - add rsp,000000D8
+NorseSteam-Win64-Shipping.exe+60CBAEA: 41 5E                    - pop r14
+NorseSteam-Win64-Shipping.exe+60CBAEC: 41 5D                    - pop r13
+NorseSteam-Win64-Shipping.exe+60CBAEE: 5E                       - pop rsi
+NorseSteam-Win64-Shipping.exe+60CBAEF: 5D                       - pop rbp
+NorseSteam-Win64-Shipping.exe+60CBAF0: C3                       - ret 
+NorseSteam-Win64-Shipping.exe+60CBAF1: 32 C0                    - xor al,al
+}"""
+
+[[cheat]]
+id = "provisions-2"
+name = "provisions"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-21
+  Author : wajra
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+60CBAD7
+
+NorseSteam-Win64-Shipping.exe+60CBAA1: 4C 8B BC 24 C0 00 00 00  - mov r15,[rsp+000000C0]
+NorseSteam-Win64-Shipping.exe+60CBAA9: 4C 8B A4 24 C8 00 00 00  - mov r12,[rsp+000000C8]
+NorseSteam-Win64-Shipping.exe+60CBAB1: 48 8B BC 24 D0 00 00 00  - mov rdi,[rsp+000000D0]
+NorseSteam-Win64-Shipping.exe+60CBAB9: 44 8B 00                 - mov r8d,[rax]
+NorseSteam-Win64-Shipping.exe+60CBABC: 48 8B 9C 24 08 01 00 00  - mov rbx,[rsp+00000108]
+NorseSteam-Win64-Shipping.exe+60CBAC4: 44 3B C6                 - cmp r8d,esi
+NorseSteam-Win64-Shipping.exe+60CBAC7: 74 18                    - je NorseSteam-Win64-Shipping.exe+60CBAE1
+NorseSteam-Win64-Shipping.exe+60CBAC9: 48 8B 4D 67              - mov rcx,[rbp+67]
+NorseSteam-Win64-Shipping.exe+60CBACD: 44 8B CE                 - mov r9d,esi
+NorseSteam-Win64-Shipping.exe+60CBAD0: 48 81 C1 00 09 00 00     - add rcx,00000900
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+60CBAD7: 89 30                    - mov [rax],esi
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+60CBAD9: 49 8B D6                 - mov rdx,r14
+NorseSteam-Win64-Shipping.exe+60CBADC: E8 4F 5D C4 FF           - call NorseSteam-Win64-Shipping.exe+5D11830
+NorseSteam-Win64-Shipping.exe+60CBAE1: B0 01                    - mov al,01
+NorseSteam-Win64-Shipping.exe+60CBAE3: 48 81 C4 D8 00 00 00     - add rsp,000000D8
+NorseSteam-Win64-Shipping.exe+60CBAEA: 41 5E                    - pop r14
+NorseSteam-Win64-Shipping.exe+60CBAEC: 41 5D                    - pop r13
+NorseSteam-Win64-Shipping.exe+60CBAEE: 5E                       - pop rsi
+NorseSteam-Win64-Shipping.exe+60CBAEF: 5D                       - pop rbp
+NorseSteam-Win64-Shipping.exe+60CBAF0: C3                       - ret 
+NorseSteam-Win64-Shipping.exe+60CBAF1: 32 C0                    - xor al,al
+}"""
+
+[[cheat]]
+id = "fiber-2"
+name = "fiber"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-21
+  Author : wajra
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+60CBAD7
+
+NorseSteam-Win64-Shipping.exe+60CBAA1: 4C 8B BC 24 C0 00 00 00  - mov r15,[rsp+000000C0]
+NorseSteam-Win64-Shipping.exe+60CBAA9: 4C 8B A4 24 C8 00 00 00  - mov r12,[rsp+000000C8]
+NorseSteam-Win64-Shipping.exe+60CBAB1: 48 8B BC 24 D0 00 00 00  - mov rdi,[rsp+000000D0]
+NorseSteam-Win64-Shipping.exe+60CBAB9: 44 8B 00                 - mov r8d,[rax]
+NorseSteam-Win64-Shipping.exe+60CBABC: 48 8B 9C 24 08 01 00 00  - mov rbx,[rsp+00000108]
+NorseSteam-Win64-Shipping.exe+60CBAC4: 44 3B C6                 - cmp r8d,esi
+NorseSteam-Win64-Shipping.exe+60CBAC7: 74 18                    - je NorseSteam-Win64-Shipping.exe+60CBAE1
+NorseSteam-Win64-Shipping.exe+60CBAC9: 48 8B 4D 67              - mov rcx,[rbp+67]
+NorseSteam-Win64-Shipping.exe+60CBACD: 44 8B CE                 - mov r9d,esi
+NorseSteam-Win64-Shipping.exe+60CBAD0: 48 81 C1 00 09 00 00     - add rcx,00000900
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+60CBAD7: 89 30                    - mov [rax],esi
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+60CBAD9: 49 8B D6                 - mov rdx,r14
+NorseSteam-Win64-Shipping.exe+60CBADC: E8 4F 5D C4 FF           - call NorseSteam-Win64-Shipping.exe+5D11830
+NorseSteam-Win64-Shipping.exe+60CBAE1: B0 01                    - mov al,01
+NorseSteam-Win64-Shipping.exe+60CBAE3: 48 81 C4 D8 00 00 00     - add rsp,000000D8
+NorseSteam-Win64-Shipping.exe+60CBAEA: 41 5E                    - pop r14
+NorseSteam-Win64-Shipping.exe+60CBAEC: 41 5D                    - pop r13
+NorseSteam-Win64-Shipping.exe+60CBAEE: 5E                       - pop rsi
+NorseSteam-Win64-Shipping.exe+60CBAEF: 5D                       - pop rbp
+NorseSteam-Win64-Shipping.exe+60CBAF0: C3                       - ret 
+NorseSteam-Win64-Shipping.exe+60CBAF1: 32 C0                    - xor al,al
+}"""
+
+[[cheat]]
+id = "bog-iron"
+name = "bog-iron"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-21
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+60CBAD7
+
+NorseSteam-Win64-Shipping.exe+60CBAA1: 4C 8B BC 24 C0 00 00 00  - mov r15,[rsp+000000C0]
+NorseSteam-Win64-Shipping.exe+60CBAA9: 4C 8B A4 24 C8 00 00 00  - mov r12,[rsp+000000C8]
+NorseSteam-Win64-Shipping.exe+60CBAB1: 48 8B BC 24 D0 00 00 00  - mov rdi,[rsp+000000D0]
+NorseSteam-Win64-Shipping.exe+60CBAB9: 44 8B 00                 - mov r8d,[rax]
+NorseSteam-Win64-Shipping.exe+60CBABC: 48 8B 9C 24 08 01 00 00  - mov rbx,[rsp+00000108]
+NorseSteam-Win64-Shipping.exe+60CBAC4: 44 3B C6                 - cmp r8d,esi
+NorseSteam-Win64-Shipping.exe+60CBAC7: 74 18                    - je NorseSteam-Win64-Shipping.exe+60CBAE1
+NorseSteam-Win64-Shipping.exe+60CBAC9: 48 8B 4D 67              - mov rcx,[rbp+67]
+NorseSteam-Win64-Shipping.exe+60CBACD: 44 8B CE                 - mov r9d,esi
+NorseSteam-Win64-Shipping.exe+60CBAD0: 48 81 C1 00 09 00 00     - add rcx,00000900
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+60CBAD7: 89 30                    - mov [rax],esi
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+60CBAD9: 49 8B D6                 - mov rdx,r14
+NorseSteam-Win64-Shipping.exe+60CBADC: E8 4F 5D C4 FF           - call NorseSteam-Win64-Shipping.exe+5D11830
+NorseSteam-Win64-Shipping.exe+60CBAE1: B0 01                    - mov al,01
+NorseSteam-Win64-Shipping.exe+60CBAE3: 48 81 C4 D8 00 00 00     - add rsp,000000D8
+NorseSteam-Win64-Shipping.exe+60CBAEA: 41 5E                    - pop r14
+NorseSteam-Win64-Shipping.exe+60CBAEC: 41 5D                    - pop r13
+NorseSteam-Win64-Shipping.exe+60CBAEE: 5E                       - pop rsi
+NorseSteam-Win64-Shipping.exe+60CBAEF: 5D                       - pop rbp
+NorseSteam-Win64-Shipping.exe+60CBAF0: C3                       - ret 
+NorseSteam-Win64-Shipping.exe+60CBAF1: 32 C0                    - xor al,al
+}"""
+
+[[cheat]]
+id = "rtest-do-not-use"
+name = "Rtest (do not use)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-21
+  Author : wajrak
+
+  Simplified Single-Resource Debugging Script
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+  // 1. Check for a SINGLE Resource ID
+  // Change the '2' below to whichever resource ID you are currently debugging
+  // 1 Provisions
+  // 2 Fiber
+  // 3 ????
+  // 4 ????
+  // 5 ????
+  // 6 Bog Iron
+  // 7 ????
+  // 8 ????
+  // 9 ????
+  // 10 ????
+  cmp dword ptr [rax+0C], 11
+  jne code
+
+  // 2. Set the desired amount directly in the instruction
+  // Change '100' to whatever value you want to test
+  mov esi, (int)444
+
+code:
+  // Original Instructions: Writes 'esi' into [rax]
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "resources-old-do-not-use"
+name = "Resources (old - do not use)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,89 30 49 8B D6) // should be unique
+alloc(newmem,$1000,INJECT)
+
+// 1. Allocate memory for the user's custom amounts
+alloc(CustomWood, 4)
+alloc(CustomWadmal, 4)
+alloc(CustomProvisions, 4)
+alloc(CustomFiber, 4)
+alloc(CustomBogIron, 4)
+
+label(code)
+label(return)
+label(check_wadmal)
+label(check_provisions)
+label(check_bogiron)
+label(check_fiber)
+
+// 2. Register symbols for the CE Table so they can be added to the address list
+registersymbol(CustomWood)
+registersymbol(CustomWadmal)
+registersymbol(CustomProvisions)
+registersymbol(CustomFiber)
+registersymbol(CustomBogIron)
+
+// 3. Set default values (100 for everything initially)
+CustomWood:
+  dd (int)100
+CustomWadmal:
+  dd (int)100
+CustomProvisions:
+  dd (int)100
+CustomFiber:
+  dd (int)100
+CustomBogIron:
+  dd (int)100
+
+newmem:
+  // --- THE RESOURCE ROUTER ---
+  // Offset +00 holds Quantity, Offset +0C holds the Resource ID
+  // 1 Provisions
+  // 2 Fiber
+  // 3 ????
+  // 4 ????
+  // 5 ????
+  // 6 Bog Iron
+  // 7 ????
+  // 8 ????
+  // 9 ????
+  // 10 ????
+  // Updated from dissector:
+  // 2 woodmal
+  // 2 fiber?
+  // 4 riches
+  // 1 provisions
+  // 6 bog iron
+  // 0 wood
+  // 7 leather
+
+  // Check Wood (Confirmed ID: 2)
+  cmp dword ptr [rax+0C], 2
+  jne check_wadmal
+  mov esi, [CustomWood]
+  jmp code
+
+check_wadmal:
+  // Check Wadmal (PLACEHOLDER ID: 3 - Adjust once found)
+  cmp dword ptr [rax+0C], 1
+  jne check_provisions
+  mov esi, [CustomWadmal]
+  jmp code
+
+check_provisions:
+  // Check Provisions (PLACEHOLDER ID: 4 - Adjust once found)
+  cmp dword ptr [rax+0C], 3
+  jne check_bogiron
+  mov esi, [CustomProvisions]
+  jmp code
+
+check_bogiron:
+  // Check Bog-Iron (Confirmed ID: 5)
+  cmp dword ptr [rax+0C], 5
+  jne check_fiber
+  mov esi, [CustomBogIron]
+  jmp code
+
+check_fiber:
+  // Check Fiber (Confirmed ID: 6*)
+  cmp dword ptr [rax+0C], 6
+  jne code                     // If none match, jump to normal execution
+  mov esi, [CustomFiber]
+
+code:
+  // Original Instructions: Writes 'esi' (custom or original amount) into [rax]
+  mov [rax],esi
+  mov rdx,r14
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 89 30 49 8B D6
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+unregistersymbol(CustomWood)
+dealloc(CustomWood)
+
+unregistersymbol(CustomWadmal)
+dealloc(CustomWadmal)
+
+unregistersymbol(CustomProvisions)
+dealloc(CustomProvisions)
+
+unregistersymbol(CustomFiber)
+dealloc(CustomFiber)
+
+unregistersymbol(CustomBogIron)
+dealloc(CustomBogIron)"""
+
+[[cheat]]
+id = "customwood"
+name = "CustomWood"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomWood"
+hops = []
+
+[[cheat]]
+id = "customfiber"
+name = "CustomFiber"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomFiber"
+hops = []
+
+[[cheat]]
+id = "custombogiron"
+name = "CustomBogIron"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomBogIron"
+hops = []
+
+[[cheat]]
+id = "customwadmal"
+name = "CustomWadmal"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomWadmal"
+hops = []
+
+[[cheat]]
+id = "customprovisions"
+name = "CustomProvisions"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomProvisions"
+hops = []
+
+[[cheat]]
+id = "pathfinding-hack-dont-use-always-7ap-for-travel"
+name = "Pathfinding hack (Dont use - Always 7AP for travel)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-02-22
+  Author : wajra
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,NorseSteam-Win64-Shipping.exe,2C 44 24 38 48 89 4B 20 48 8B 5C 24 30 89 07 48 83 C4 20) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+  // --- OUR CHEAT ---
+  // Overwrite the calculated AP in eax with 7
+  mov eax, (int)7
+
+code:
+  // Original instructions: write the AP (now forced to 7) and clean up the stack
+  mov [rdi],eax
+  add rsp,20
+  jmp return
+
+INJECT+0D:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+0D:
+  db 89 07 48 83 C4 20
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: NorseSteam-Win64-Shipping.exe+3D4B183
+
+NorseSteam-Win64-Shipping.exe+3D4B158: 48 89 83 88 00 00 00  - mov [rbx+00000088],rax
+NorseSteam-Win64-Shipping.exe+3D4B15F: E8 3C D6 8B FD        - call NorseSteam-Win64-Shipping.exe+16087A0
+NorseSteam-Win64-Shipping.exe+3D4B164: 48 8B 43 20           - mov rax,[rbx+20]
+NorseSteam-Win64-Shipping.exe+3D4B168: 33 C9                 - xor ecx,ecx
+NorseSteam-Win64-Shipping.exe+3D4B16A: 48 85 C0              - test rax,rax
+NorseSteam-Win64-Shipping.exe+3D4B16D: 0F 95 C1              - setne cl
+NorseSteam-Win64-Shipping.exe+3D4B170: 48 03 C8              - add rcx,rax
+NorseSteam-Win64-Shipping.exe+3D4B173: F2 48 0F 2C 44 24 38  - cvttsd2si rax,[rsp+38]
+NorseSteam-Win64-Shipping.exe+3D4B17A: 48 89 4B 20           - mov [rbx+20],rcx
+NorseSteam-Win64-Shipping.exe+3D4B17E: 48 8B 5C 24 30        - mov rbx,[rsp+30]
+// ---------- INJECTING HERE ----------
+NorseSteam-Win64-Shipping.exe+3D4B183: 89 07                 - mov [rdi],eax
+// ---------- DONE INJECTING  ----------
+NorseSteam-Win64-Shipping.exe+3D4B185: 48 83 C4 20           - add rsp,20
+NorseSteam-Win64-Shipping.exe+3D4B189: 5F                    - pop rdi
+NorseSteam-Win64-Shipping.exe+3D4B18A: C3                    - ret 
+NorseSteam-Win64-Shipping.exe+3D4B18B: CC                    - int 3 
+NorseSteam-Win64-Shipping.exe+3D4B18C: CC                    - int 3 
+NorseSteam-Win64-Shipping.exe+3D4B18D: CC                    - int 3 
+NorseSteam-Win64-Shipping.exe+3D4B18E: CC                    - int 3 
+NorseSteam-Win64-Shipping.exe+3D4B18F: CC                    - int 3 
+NorseSteam-Win64-Shipping.exe+3D4B190: 48 89 5C 24 08        - mov [rsp+08],rbx
+NorseSteam-Win64-Shipping.exe+3D4B195: 48 89 74 24 18        - mov [rsp+18],rsi
+}"""
+
+[[cheat]]
+id = "unlimited-ap-movement-only-old"
+name = "Unlimited AP (Movement Only OLD)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NorseSteam-Win64-Shipping.exe
+  Version:
+  Date   : 2026-02-20
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// Scans for the exact movss write and the cmp right below it to be safe
+aobscanmodule(InfiniteMove,NorseSteam-Win64-Shipping.exe,F3 0F 11 83 E0 04 00 00 48 83 B9 A8 00 00 00 00)
+registersymbol(InfiniteMove)
+
+// Replaces the 8-byte float write instruction with 8 NOPs (blank code)
+InfiniteMove:
+  db 90 90 90 90 90 90 90 90
+
+[DISABLE]
+// Restores the original code when you turn it off
+InfiniteMove:
+  db F3 0F 11 83 E0 04 00 00
+unregistersymbol(InfiniteMove)"""

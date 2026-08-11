@@ -1,0 +1,2241 @@
+[game]
+name = "Final Fantasy XIII +?"
+exe = "ffxiiiimg.exe"
+notes = "Converted from a Cheat Engine table by Cielos. Source: https://fearlessrevolution.com/viewtopic.php?t=191"
+verified = []
+author = "Cielos"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(gilReadAOB,8B 88 78 25 00 00 89)
+registersymbol(gilReadAOB)
+aobscan(battlePartyHPReadCallRetAOB,50 8B ** ** 8B 88 ** ** ** ** C1 E1 ** C1 F9 ** 51 8B ** ** E8 ** ** ** ** C7)
+registersymbol(battlePartyHPReadCallRetAOB)
+aobscan(CPReadOnMenuAccessAOB,8B 91 80 0C 00 00 89 55 F8)
+registersymbol(CPReadOnMenuAccessAOB)
+
+label(pGil)
+registersymbol(pGil)
+label(pParty)
+registersymbol(pParty)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(newmem2)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pGil],eax
+
+originalcode:
+mov ecx,[eax+00002578]
+
+exit:
+jmp returnhere
+
+///
+
+newmem2:
+mov edx,[ebp+78]
+pushfd
+cmp edx,0
+jl originalcode2
+cmp edx,5
+jg originalcode2
+mov [pParty+edx*4],ecx
+
+originalcode2:
+popfd
+mov edx,[ecx+00000C80]
+
+exit2:
+jmp returnhere2
+
+///
+pGil:
+dd 0
+pParty:
+///
+
+gilReadAOB: //"ffxiiiimg.exe"+76B6BE:
+jmp newmem
+nop
+returnhere:
+
+CPReadOnMenuAccessAOB: //"ffxiiiimg.exe"+76844E:
+jmp newmem2
+nop
+returnhere2:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+gilReadAOB: //"ffxiiiimg.exe"+76B6BE:
+db 8B 88 78 25 00 00
+//Alt: mov ecx,[eax+00002578]
+unregistersymbol(gilReadAOB)
+unregistersymbol(battlePartyHPReadCallRetAOB)
+CPReadOnMenuAccessAOB: //"ffxiiiimg.exe"+76844E:
+db 8B 91 80 0C 00 00
+//Alt: mov edx,[ecx+00000C80]
+unregistersymbol(CPReadOnMenuAccessAOB)
+
+unregistersymbol(pGil)
+unregistersymbol(pParty)"""
+
+[[cheat]]
+id = "battle-scripts"
+name = "[Battle Scripts]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(battleHPReadAOB,8B 80 90 02 00 00 8B E5)
+registersymbol(battleHPReadAOB)
+aobscan(battleHPCalAOB,89 45 FC 8B 4D E8 8B 55 FC 3B 91 ** ** ** ** 7D ** 8B ** ** 8B)
+registersymbol(battleHPCalAOB)
+
+label(bUndead)
+registersymbol(bUndead)
+label(bFullATB)
+registersymbol(bFullATB)
+label(pBPartyHP)
+registersymbol(pBPartyHP)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(pBPartyHPassign)
+label(setfullatb)
+
+label(newmem2)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+label(pBPartyChkLoop2)
+label(isParty2)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+//pushfd
+push ebx
+cmp [esp+c],battlePartyHPReadCallRetAOB
+jne originalcode
+
+pBPartyHPassign:
+mov ebx,[eax+270] //[esp+2c]
+shl ebx,18
+sar ebx,1c
+mov [pBPartyHP+ebx*4],eax
+cmp byte ptr [bFullATB],1 //all
+jl originalcode
+je setfullatb
+cmp byte ptr [bFullATB],2 //leader only
+jne originalcode
+test ebx,ebx
+jz setfullatb
+jmp originalcode
+
+setfullatb:
+mov ebx,[eax+2d0]
+mov [eax+2a0],ebx
+
+originalcode:
+pop ebx
+//popfd
+mov eax,[eax+00000290]
+
+exit:
+jmp returnhere
+
+///
+
+newmem2:
+cmp byte ptr [bUndead],1
+jne originalcode2
+xor ecx,ecx
+mov edx,[edx+270]
+shl edx,18
+sar edx,1c
+
+pBPartyChkLoop2:
+cmp ecx,edx
+je isParty2
+inc ecx
+cmp ecx,2
+jle pBPartyChkLoop2
+jmp originalcode2
+
+isParty2:
+cmp eax,1
+jge originalcode2
+mov eax,1
+jmp originalcode2
+
+originalcode2:
+mov [ebp-04],eax
+mov ecx,[ebp-18]
+
+exit2:
+jmp returnhere2
+
+///
+bUndead:
+db 0
+bFullATB:
+db 0
+pBPartyHP:
+///
+
+battleHPReadAOB: //"ffxiiiimg.exe"+6E323:
+jmp newmem
+nop
+returnhere:
+
+battleHPCalAOB: //"ffxiiiimg.exe"+6E71B:
+jmp newmem2
+nop
+returnhere2:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+battleHPReadAOB: //"ffxiiiimg.exe"+6E323:
+db 8B 80 90 02 00 00
+//Alt: mov eax,[eax+00000290]
+unregistersymbol(battleHPReadAOB)
+battleHPCalAOB: //"ffxiiiimg.exe"+6E71B:
+db 89 45 FC 8B 4D E8
+//Alt: mov [ebp-04],eax
+//Alt: mov ecx,[ebp-18]
+unregistersymbol(battleHPCalAOB)
+
+unregistersymbol(bUndead)
+unregistersymbol(bFullATB)
+unregistersymbol(pBPartyHP)"""
+
+[[cheat]]
+id = "undead"
+name = "Undead"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+bUndead:
+db 1
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+bUndead:
+db 0"""
+
+[[cheat]]
+id = "full-atb"
+name = "Full ATB"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+bFullATB:
+db 2
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+bFullATB:
+db 0"""
+
+[[cheat]]
+id = "disable"
+name = "Disable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 2
+choices = [
+    "2:Leader Only",
+    "1:Party",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bFullATB"
+hops = []
+
+[[cheat]]
+id = "6-atb-bars-activate-before-battle"
+name = "6 ATB Bars (activate before battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(readATBBarsBeforeBattleStartAOB,8B 84 8A B4 0D 00 00 89)
+registersymbol(readATBBarsBeforeBattleStartAOB)
+
+label(b6ATBLeaderOnly)
+registersymbol(b6ATBLeaderOnly)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(set6atbbars)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov eax,[edx+ecx*4+db4]
+cmp byte ptr [b6ATBLeaderOnly],1
+jne set6atbbars
+test esi,esi
+jnz originalcode
+
+set6atbbars:
+cmp ebx,1
+jne originalcode
+cmp ecx,3
+jne originalcode
+mov eax,#60
+
+originalcode:
+//mov eax,[edx+ecx*4+00000DB4]
+
+exit:
+jmp returnhere
+
+///
+b6ATBLeaderOnly:
+db 1
+///
+
+readATBBarsBeforeBattleStartAOB: //"ffxiiiimg.exe"+768088:
+jmp newmem
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+readATBBarsBeforeBattleStartAOB: //"ffxiiiimg.exe"+768088:
+db 8B 84 8A B4 0D 00 00
+//Alt: mov eax,[edx+ecx*4+00000DB4]
+unregistersymbol(readATBBarsBeforeBattleStartAOB)
+
+unregistersymbol(b6ATBLeaderOnly)"""
+
+[[cheat]]
+id = "apply-to"
+name = "Apply to"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Leader Only",
+    "0:Party",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "b6ATBLeaderOnly"
+hops = []
+
+[[cheat]]
+id = "full-tp"
+name = "Full TP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(TPWriteAOB,89 4A 6C 8B 4D E8)
+registersymbol(TPWriteAOB)
+
+label(pTP)
+registersymbol(pTP)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov ecx,#2100
+mov [pTP],edx
+
+originalcode:
+mov [edx+6C],ecx
+mov ecx,[ebp-18]
+
+exit:
+jmp returnhere
+
+///
+pTP:
+dd 0
+///
+
+TPWriteAOB: //"ffxiiiimg.exe"+762D46:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+TPWriteAOB: //"ffxiiiimg.exe"+762D46:
+db 89 4A 6C 8B 4D E8
+//Alt: mov [edx+6C],ecx
+//Alt: mov ecx,[ebp-18]
+unregistersymbol(TPWriteAOB)
+
+unregistersymbol(pTP)"""
+
+[[cheat]]
+id = "tp"
+name = "TP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTP"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "freeze-chain-bar"
+name = "Freeze Chain Bar"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(chainBarSubAOB,2B 4D 08 8B 55 F8 89 4A 18 8B 45 F8)
+registersymbol(chainBarSubAOB)
+
+alloc(newmem6,2048)
+label(returnhere6)
+label(originalcode6)
+label(exit6)
+
+newmem6: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [ebp+8],0
+
+originalcode6:
+sub ecx,[ebp+08]
+mov edx,[ebp-08]
+
+exit6:
+jmp returnhere6
+
+///
+
+chainBarSubAOB: //"ffxiiiimg.exe"+C319F:
+jmp newmem6
+nop
+returnhere6:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem6)
+chainBarSubAOB: //"ffxiiiimg.exe"+C319F:
+db 2B 4D 08 8B 55 F8
+//Alt: sub ecx,[ebp+08]
+//Alt: mov edx,[ebp-08]
+unregistersymbol(chainBarSubAOB)"""
+
+[[cheat]]
+id = "easy-full-chain"
+name = "Easy Full Chain"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(chainPercentChkFullAOB,8B 48 0C 89 4D E4 8B 55 E4 3B 55 F4)
+registersymbol(chainPercentChkFullAOB)
+aobscan(chainBarChkNotFullJmp,7C 0E 8B ** ** ** ** ** A1 ** ** ** ** 89)
+registersymbol(chainBarChkNotFullJmp)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov ecx,[ebp-4]
+cmp [eax+c],ecx
+jge originalcode
+mov [eax+c],ecx
+
+originalcode:
+mov ecx,[eax+0C]
+mov [ebp-1C],ecx
+
+exit:
+jmp returnhere
+
+///
+
+chainPercentChkFullAOB: //"ffxiiiimg.exe"+C348B:
+jmp newmem
+nop
+returnhere:
+
+chainBarChkNotFullJmp: //"ffxiiiimg.exe"+C2E3E:
+db 90 90
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+chainPercentChkFullAOB: //"ffxiiiimg.exe"+C348B:
+db 8B 48 0C 89 4D E4
+//Alt: mov ecx,[eax+0C]
+//Alt: mov [ebp-1C],ecx
+unregistersymbol(chainPercentChkFullAOB)
+chainBarChkNotFullJmp: //"ffxiiiimg.exe"+C2E3E:
+db 7C 0E
+//Alt: jnge chainBarChkNotFullJmp+10 //ffxiiiimg.exe+C2E4E
+unregistersymbol(chainBarChkNotFullJmp)"""
+
+[[cheat]]
+id = "cp-multiplier"
+name = "CP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(CPCalculateAfterBattleAOB,03 4D 08 8B 55 FC 89 8A ** ** ** ** 8B 45 FC)
+registersymbol(CPCalculateAfterBattleAOB)
+
+label(fCPMultiplier)
+registersymbol(fCPMultiplier)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+fild dword ptr [ebp+8]
+fmul dword ptr [fCPMultiplier]
+fistp dword ptr [ebp+8]
+//fist dword ptr [ebp+2c]
+//fist dword ptr [ebp+38]
+//fistp dword ptr [ebp+48]
+
+originalcode:
+add ecx,[ebp+08]
+mov edx,[ebp-04]
+
+exit:
+jmp returnhere
+
+///
+fCPMultiplier:
+dd (float)2.0
+///
+
+CPCalculateAfterBattleAOB: //"ffxiiiimg.exe"+76F100:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+CPCalculateAfterBattleAOB: //"ffxiiiimg.exe"+76F100:
+db 03 4D 08 8B 55 FC
+//Alt: add ecx,[ebp+08]
+//Alt: mov edx,[ebp-04]
+unregistersymbol(CPCalculateAfterBattleAOB)
+
+unregistersymbol(fCPMultiplier)"""
+
+[[cheat]]
+id = "x"
+name = "x?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCPMultiplier"
+hops = []
+
+[[cheat]]
+id = "camera-scripts"
+name = "[Camera Scripts]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(camDistReadAOB,F3 0F 11 45 FC F3 0F 10 45 0C F3 0F 59 45 08)
+registersymbol(camDistReadAOB)
+
+label(bCamDistMod)
+registersymbol(bCamDistMod)
+label(bOneZoom)
+registersymbol(bOneZoom)
+label(pCamInfo1)
+registersymbol(pCamInfo1)
+label(fStandCamDist)
+registersymbol(fStandCamDist)
+label(fMoveCamDist)
+registersymbol(fMoveCamDist)
+label(fCamDistInterval)
+registersymbol(fCamDistInterval)
+label(fCamDistMinThreshold)
+registersymbol(fCamDistMinThreshold)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(setmycamdist)
+label(addpressed)
+label(subtractpressed)
+label(endingmod)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pCamInfo1],eax
+
+cmp byte ptr [bCamDistMod],1
+jne originalcode
+
+pushad
+push 22 //Page Down
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+je addpressed
+
+pushad
+push 21 //Page Up
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+je subtractpressed
+
+setmycamdist:
+movss xmm0,[fStandCamDist+edx*4]
+comiss xmm0,[fCamDistMinThreshold] //[eax+edx*4+104]
+ja endingmod
+movss xmm0,[fCamDistMinThreshold] //[eax+edx*4+104]
+movss [fStandCamDist+edx*4],xmm0
+jmp endingmod
+
+addpressed:
+fld dword ptr [fStandCamDist+edx*4]
+fadd dword ptr [fCamDistInterval]
+fstp dword ptr [fStandCamDist+edx*4]
+jmp setmycamdist
+
+subtractpressed:
+fld dword ptr [fStandCamDist+edx*4]
+fsub dword ptr [fCamDistInterval]
+fstp dword ptr [fStandCamDist+edx*4]
+jmp setmycamdist
+
+endingmod:
+cmp byte ptr [bOneZoom],1
+jne originalcode
+push edx
+xor edx,1
+movss [fStandCamDist+edx*4],xmm0
+pop edx
+
+originalcode:
+movss [ebp-04],xmm0
+
+exit:
+jmp returnhere
+
+///
+bCamDistMod:
+db 0
+bOneZoom:
+db 0
+pCamInfo1:
+dd 0
+fStandCamDist:
+dd (float)2.25
+fMoveCamDist:
+dd (float)4.0625
+fCamDistInterval:
+dd (float)0.0625
+fCamDistMinThreshold:
+dd (float)0.875
+///
+
+camDistReadAOB: //"ffxiiiimg.exe"+22378E:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+camDistReadAOB: //"ffxiiiimg.exe"+22378E:
+db F3 0F 11 45 FC
+//Alt: movss [ebp-04],xmm0
+unregistersymbol(camDistReadAOB)
+
+unregistersymbol(bCamDistMod)
+unregistersymbol(bOneZoom)
+unregistersymbol(pCamInfo1)
+unregistersymbol(fStandCamDist)
+unregistersymbol(fMoveCamDist)
+unregistersymbol(fCamDistInterval)
+unregistersymbol(fCamDistMinThreshold)"""
+
+[[cheat]]
+id = "no-cam-helper"
+name = "No Cam Helper"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(horizontalCamAngleAutoFixAOB,F3 0F 11 00 8B 4D FC F3 0F 10 01)
+registersymbol(horizontalCamAngleAutoFixAOB)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+movss xmm0,[eax]
+movss [ebp+8],xmm0
+
+originalcode:
+movss [eax],xmm0
+mov ecx,[ebp-04]
+
+exit:
+jmp returnhere
+
+///
+
+horizontalCamAngleAutoFixAOB: //"ffxiiiimg.exe"+225441:
+jmp newmem
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+horizontalCamAngleAutoFixAOB: //"ffxiiiimg.exe"+225441:
+db F3 0F 11 00 8B 4D FC
+//Alt: movss [eax],xmm0
+//Alt: mov ecx,[ebp-04]
+unregistersymbol(horizontalCamAngleAutoFixAOB)"""
+
+[[cheat]]
+id = "cam-distance-mod-page-up-page-down-home"
+name = "Cam Distance Mod (Page Up/Page Down/Home)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(movDistanceReadAOB,F3 0F 10 84 01 ** ** ** ** F3 0F 11 84 24 E8 00 00 00)
+registersymbol(movDistanceReadAOB)
+
+alloc(newmem2,2048)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+movss xmm0,[fMoveCamDist]
+
+originalcode2:
+movss [esp+000000E8],xmm0
+
+exit2:
+jmp returnhere2
+
+///
+
+movDistanceReadAOB+9: //"ffxiiiimg.exe"+23503F:
+jmp newmem2
+nop
+nop
+nop
+nop
+returnhere2:
+
+bCamDistMod:
+db 1
+
+bOneZoom:
+db 0
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem2)
+movDistanceReadAOB+9: //"ffxiiiimg.exe"+23503F:
+db F3 0F 11 84 24 E8 00 00 00
+//Alt: movss [esp+000000E8],xmm0
+unregistersymbol(movDistanceReadAOB)
+bCamDistMod:
+db 0
+bOneZoom:
+db 0
+fStandCamDist:
+dd (float)2.25
+fMoveCamDist:
+dd (float)4.0625
+fCamDistInterval:
+dd (float)0.0625"""
+
+[[cheat]]
+id = "one-zoom"
+name = "One Zoom"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+bOneZoom:
+db 1
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+bOneZoom:
+db 0"""
+
+[[cheat]]
+id = "standing-cam-distance"
+name = "Standing Cam Distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fStandCamDist"
+hops = []
+
+[[cheat]]
+id = "moving-cam-distance"
+name = "Moving Cam Distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMoveCamDist"
+hops = []
+
+[[cheat]]
+id = "fcamdistinterval"
+name = "fCamDistInterval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCamDistInterval"
+hops = []
+
+[[cheat]]
+id = "fcamdistminthreshold"
+name = "fCamDistMinThreshold"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCamDistMinThreshold"
+hops = []
+
+[[cheat]]
+id = "cam-pan-mod"
+name = "Cam Pan Mod"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(camPanReadAOB,8B 45 EC F3 0F 10 02)
+registersymbol(camPanReadAOB)
+
+label(fMyCamPan)
+registersymbol(fMyCamPan)
+label(pCamPan)
+registersymbol(pCamPan)
+label(bCamKeyPressed)
+registersymbol(bCamKeyPressed)
+label(bCamPanCounter)
+registersymbol(bCamPanCounter)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(resetcamkey)
+label(setcentercam)
+label(setrightcam)
+label(setleftcam)
+label(setcampana)
+label(setcampanb)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov eax,[ebp-14]//
+movss xmm0,[edx]//
+mov [pCamPan],eax
+pushfd
+
+pushad
+push 'F'
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne resetcamkey
+cmp byte ptr [bCamKeyPressed],00
+jne originalcode
+mov byte ptr [bCamKeyPressed],01
+
+cmp byte ptr [bCamPanCounter],1
+je setcentercam
+cmp byte ptr [bCamPanCounter],2
+je setrightcam
+cmp byte ptr [bCamPanCounter],0
+je setleftcam
+jmp originalcode
+
+setcentercam:
+mov dword ptr [fMyCamPan],(float)0
+jmp setcampana
+
+setrightcam:
+mov dword ptr [fMyCamPan],(float)-1.0
+jmp setcampana
+
+setleftcam:
+mov dword ptr [fMyCamPan],(float)1.0
+jmp setcampana
+
+setcampana:
+inc byte ptr [bCamPanCounter]
+cmp byte ptr [bCamPanCounter],2
+jle setcampanb
+mov byte ptr [bCamPanCounter],0
+
+setcampanb:
+fld dword ptr [fMyCamPan]
+fstp dword ptr [eax+f4]
+jmp originalcode
+
+resetcamkey:
+mov byte ptr [bCamKeyPressed],00
+jmp setcampanb
+
+originalcode:
+popfd//
+//mov eax,[ebp-14]
+//movss xmm0,[edx]
+
+exit:
+jmp returnhere
+
+///
+fMyCamPan:
+dd (float)0
+pCamPan:
+dd 0
+bCamKeyPressed:
+db 1
+bCamPanCounter:
+db 2
+///
+
+camPanReadAOB: //"ffxiiiimg.exe"+2241BC:
+jmp newmem
+nop
+nop
+returnhere:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+camPanReadAOB: //"ffxiiiimg.exe"+2241BC:
+db 8B 45 EC F3 0F 10 02
+//Alt: mov eax,[ebp-14]
+//Alt: movss xmm0,[edx]
+unregistersymbol(camPanReadAOB)
+
+unregistersymbol(fMyCamPan)
+unregistersymbol(pCamPan)
+unregistersymbol(bCamKeyPressed)
+unregistersymbol(bCamPanCounter)"""
+
+[[cheat]]
+id = "bcamkeypressed"
+name = "bCamKeyPressed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bCamKeyPressed"
+hops = []
+
+[[cheat]]
+id = "bcampancounter"
+name = "bCamPanCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bCamPanCounter"
+hops = []
+
+[[cheat]]
+id = "cam-pan"
+name = "Cam Pan"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamPan"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "current-cam-distance"
+name = "Current Cam Distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamInfo1"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "current-cam-pan"
+name = "Current Cam Pan"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamInfo1"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "game-default-standing-cam-distance"
+name = "Game Default Standing Cam Distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamInfo1"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "game-default-moving-cam-distance"
+name = "Game Default Moving Cam Distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamInfo1"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "vertical-angle"
+name = "Vertical Angle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamInfo1"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "horizontal-angle"
+name = "Horizontal Angle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamInfo1"
+hops = ["+0x1e0"]
+
+[[cheat]]
+id = "fake-gil-ctrl"
+name = "Fake Gil (Ctrl)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+pushad
+push 11 //Ctrl
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+jne originalcode
+mov dword ptr [ebp-04],#100000000
+
+originalcode:
+mov eax,[ebp-04]
+mov esp,ebp
+
+exit:
+jmp returnhere
+
+///
+
+gilReadAOB+1a: //"ffxiiiimg.exe"+76B6D8:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+gilReadAOB+1a: //"ffxiiiimg.exe"+76B6D8:
+db 8B 45 FC 8B E5
+//Alt: mov eax,[ebp-04]
+//Alt: mov esp,ebp"""
+
+[[cheat]]
+id = "inf-item"
+name = "Inf. Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(setZeroItemQuantityAOB,77 ** 8B 45 FC C7 00)
+registersymbol(setZeroItemQuantityAOB)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [ebp+c],0
+//mov [ecx+10],1//
+jmp setZeroItemQuantityAOB+2f
+
+originalcode:
+mov eax,[ebp-04]
+mov [eax],00000000
+
+exit:
+jmp returnhere
+
+///
+
+setZeroItemQuantityAOB+2: //"ffxiiiimg.exe"+757C8C:
+jmp newmem
+nop
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+setZeroItemQuantityAOB+2: //"ffxiiiimg.exe"+757C8C:
+db 8B 45 FC C7 00 00 00 00 00
+//Alt: mov eax,[ebp-04]
+//Alt: mov [eax],00000000
+unregistersymbol(setZeroItemQuantityAOB)"""
+
+[[cheat]]
+id = "free-upgrade-should-be-used-together-with-inf-item"
+name = "Free Upgrade (should be used together with Inf. Item)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(itemQuantityCheckOnUpgradeAOB,8B 91 F8 00 00 00 89 55 E0 8B 45 FC)
+registersymbol(itemQuantityCheckOnUpgradeAOB)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov edx,[ebp-4] //[ecx+000000F8]
+add edx,#10
+mov [ebp-1c],edx
+mov eax,[ebp-24]
+mov [eax+d0],edx
+
+originalcode:
+mov edx,[ecx+000000F8]
+
+exit:
+jmp returnhere
+
+///
+
+itemQuantityCheckOnUpgradeAOB: //"ffxiiiimg.exe"+59D95D:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+itemQuantityCheckOnUpgradeAOB: //"ffxiiiimg.exe"+59D95D:
+db 8B 91 F8 00 00 00
+//Alt: mov edx,[ecx+000000F8]
+unregistersymbol(itemQuantityCheckOnUpgradeAOB)"""
+
+[[cheat]]
+id = "ignore-cp-use-only-inside-crystarium"
+name = "Ignore CP (use only inside Crystarium)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(CPCmpZero1AOB,83 B9 C0 44 00 00 00 0F 84)
+registersymbol(CPCmpZero1AOB)
+aobscan(CPCmpZero2AOB,83 B8 C0 44 00 00 00 75)
+registersymbol(CPCmpZero2AOB)
+aobscan(CPReadOnUse2AOB,8B 88 C0 44 00 00 2B)
+registersymbol(CPReadOnUse2AOB)
+aobscan(CPReadOnUse1AOB,8B 11 89 54 24 24 8B ** ** ** ** ** ** 8B)
+registersymbol(CPReadOnUse1AOB)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(newmem2)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+label(newmem11)
+label(returnhere11)
+label(originalcode11)
+label(exit11)
+
+label(newmem32)
+label(returnhere32)
+label(originalcode32)
+label(exit32)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp ecx,0
+
+originalcode:
+//cmp dword ptr [ecx+000044C0],00
+
+exit:
+jmp returnhere
+
+///
+
+newmem2:
+cmp eax,0
+
+originalcode2:
+//cmp dword ptr [eax+000044C0],00
+
+exit2:
+jmp returnhere2
+
+///
+
+newmem11:
+mov ecx,[eax+000044C0]
+test ecx,ecx
+jnz originalcode11
+//mov [esp+14],ecx
+mov ecx,#10001
+
+originalcode11:
+//mov ecx,[eax+000044C0]
+
+exit11:
+jmp returnhere11
+
+///
+
+newmem32:
+mov edx,[ecx]
+test edx,edx
+jnz originalcode32
+mov edx,#10001
+
+originalcode32:
+//mov edx,[ecx]
+mov [esp+24],edx
+
+exit32:
+jmp returnhere32
+
+///
+
+CPCmpZero1AOB: //"ffxiiiimg.exe"+57CFD1:
+jmp newmem
+nop
+nop
+returnhere:
+
+CPCmpZero2AOB: //"ffxiiiimg.exe"+57E6C5:
+jmp newmem2
+nop
+nop
+returnhere2:
+
+CPReadOnUse2AOB: //"ffxiiiimg.exe"+57D2AC:
+jmp newmem11
+nop
+returnhere11:
+
+CPReadOnUse1AOB: //"ffxiiiimg.exe"+57D217:
+jmp newmem32
+nop
+returnhere32:
+
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+CPCmpZero1AOB: //"ffxiiiimg.exe"+57CFD1:
+db 83 B9 C0 44 00 00 00
+//Alt: cmp dword ptr [ecx+000044C0],00
+unregistersymbol(CPCmpZero1AOB)
+CPCmpZero2AOB: //"ffxiiiimg.exe"+57E6C5:
+db 83 B8 C0 44 00 00 00
+//Alt: cmp dword ptr [eax+000044C0],00
+unregistersymbol(CPCmpZero2AOB)
+CPReadOnUse2AOB: //"ffxiiiimg.exe"+57D2AC:
+db 8B 88 C0 44 00 00
+//Alt: mov ecx,[eax+000044C0]
+unregistersymbol(CPReadOnUse2AOB)
+CPReadOnUse1AOB: //"ffxiiiimg.exe"+57D217:
+db 8B 11 89 54 24 24
+//Alt: mov edx,[ecx]
+//Alt: mov [esp+24],edx
+unregistersymbol(CPReadOnUse1AOB)"""
+
+[[cheat]]
+id = "walk-key-shift"
+name = "Walk Key (Shift)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(runPushAOB,6A 02 8B 4D 08 E8 ** ** ** ** EB 0A 6A 01 8B 4D 08 E8 ** ** ** ** C6)
+registersymbol(runPushAOB)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(shiftpressed)
+label(shiftnotpressd)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+pushad
+push 10 //Shift
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,1
+popad
+je shiftpressed
+jne shiftnotpressd
+
+shiftpressed:
+push 01
+jmp originalcode
+
+shiftnotpressd:
+push 02
+jmp originalcode
+
+originalcode:
+//push 02
+mov ecx,[ebp+08]
+
+exit:
+jmp returnhere
+
+///
+
+runPushAOB: //"ffxiiiimg.exe"+21A579:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+runPushAOB: //"ffxiiiimg.exe"+21A579:
+db 6A 02 8B 4D 08
+//Alt: push 02
+//Alt: mov ecx,[ebp+08]
+unregistersymbol(runPushAOB)"""
+
+[[cheat]]
+id = "gil"
+name = "Gil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGil"
+hops = ["+0x2578"]
+
+[[cheat]]
+id = "crystarium-tier"
+name = "Crystarium Tier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGil"
+hops = ["+0x258c"]
+
+[[cheat]]
+id = "atb-bars"
+name = "ATB Bars"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xdc0"]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc8c"]
+
+[[cheat]]
+id = "base"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc9c"]
+
+[[cheat]]
+id = "base-2"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "cp"
+name = "CP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc80"]
+
+[[cheat]]
+id = "accessory-slots"
+name = "Accessory Slots"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc7c"]
+
+[[cheat]]
+id = "atb-bars-2"
+name = "ATB Bars"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xdc0"]
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc8c"]
+
+[[cheat]]
+id = "base-3"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc9c"]
+
+[[cheat]]
+id = "base-4"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "cp-2"
+name = "CP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc80"]
+
+[[cheat]]
+id = "atb-bars-3"
+name = "ATB Bars"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xdc0"]
+
+[[cheat]]
+id = "hp-3"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc8c"]
+
+[[cheat]]
+id = "base-5"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc9c"]
+
+[[cheat]]
+id = "base-6"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "cp-3"
+name = "CP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc80"]
+
+[[cheat]]
+id = "atb-bars-4"
+name = "ATB Bars"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xdc0"]
+
+[[cheat]]
+id = "hp-4"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc8c"]
+
+[[cheat]]
+id = "base-7"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc9c"]
+
+[[cheat]]
+id = "base-8"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "cp-4"
+name = "CP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc80"]
+
+[[cheat]]
+id = "atb-bars-5"
+name = "ATB Bars"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xdc0"]
+
+[[cheat]]
+id = "hp-5"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc8c"]
+
+[[cheat]]
+id = "base-9"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc9c"]
+
+[[cheat]]
+id = "base-10"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "cp-5"
+name = "CP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc80"]
+
+[[cheat]]
+id = "atb-bars-6"
+name = "ATB Bars"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xdc0"]
+
+[[cheat]]
+id = "hp-6"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc8c"]
+
+[[cheat]]
+id = "base-11"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc9c"]
+
+[[cheat]]
+id = "base-12"
+name = "Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "cp-6"
+name = "CP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pParty"
+hops = ["+0xc80"]
+
+[[cheat]]
+id = "highlighted-item-pointers"
+name = "[Highlighted Item Pointers]"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(highlightedItemQuantityReadAOB,8B 42 10 89 41 10 8B 45 08)
+registersymbol(highlightedItemQuantityReadAOB)
+aobscan(highlightedAccessoryEXPReadAOB,8B 48 14 89 8D ** ** ** ** 8B 95 ** ** ** ** 89 55 EC)
+registersymbol(highlightedAccessoryEXPReadAOB)
+aobscan(highlightedWeaponEXPReadAOB,8B 48 14 89 8D ** ** ** ** 8B 95 ** ** ** ** 89 55 E8)
+registersymbol(highlightedWeaponEXPReadAOB)
+
+label(pHighlightedItemInfo1)
+registersymbol(pHighlightedItemInfo1)
+label(pHighlightedItemInfo2)
+registersymbol(pHighlightedItemInfo2)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(newmem2)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+label(newmem6)
+label(returnhere6)
+label(originalcode6)
+label(exit6)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pHighlightedItemInfo1],edx
+
+originalcode:
+mov eax,[edx+10]
+mov [ecx+10],eax
+
+exit:
+jmp returnhere
+
+///
+
+newmem2:
+mov [pHighlightedItemInfo2],eax
+
+originalcode2:
+mov ecx,[eax+14]
+mov [ebp-000000AC],ecx
+
+exit2:
+jmp returnhere2
+
+///
+
+newmem6: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pHighlightedItemInfo2],eax
+
+originalcode6:
+mov ecx,[eax+14]
+mov [ebp-000000B4],ecx
+
+exit6:
+jmp returnhere6
+
+///
+pHighlightedItemInfo1:
+dd 0
+pHighlightedItemInfo2:
+dd 0
+///
+
+highlightedItemQuantityReadAOB: //"ffxiiiimg.exe"+757ED5:
+jmp newmem
+nop
+returnhere:
+
+highlightedAccessoryEXPReadAOB: //"ffxiiiimg.exe"+6478C8:
+jmp newmem2
+nop
+nop
+nop
+nop
+returnhere2:
+
+highlightedWeaponEXPReadAOB: //"ffxiiiimg.exe"+6463E5:
+jmp newmem6
+nop
+nop
+nop
+nop
+returnhere6:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+highlightedItemQuantityReadAOB: //"ffxiiiimg.exe"+757ED5:
+db 8B 42 10 89 41 10
+//Alt: mov eax,[edx+10]
+//Alt: mov [ecx+10],eax
+unregistersymbol(highlightedItemQuantityReadAOB)
+highlightedAccessoryEXPReadAOB: //"ffxiiiimg.exe"+6478C8:
+db 8B 48 14 89 8D 54 FF FF FF
+//Alt: mov ecx,[eax+14]
+//Alt: mov [ebp-000000AC],ecx
+unregistersymbol(highlightedAccessoryEXPReadAOB)
+highlightedWeaponEXPReadAOB: //"ffxiiiimg.exe"+6463E5:
+db 8B 48 14 89 8D 4C FF FF FF
+//Alt: mov ecx,[eax+14]
+//Alt: mov [ebp-000000B4],ecx
+unregistersymbol(highlightedWeaponEXPReadAOB)
+
+unregistersymbol(pHighlightedItemInfo1)
+unregistersymbol(pHighlightedItemInfo2)"""
+
+[[cheat]]
+id = "quantity"
+name = "Quantity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHighlightedItemInfo1"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "equipped"
+name = "Equipped?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHighlightedItemInfo2"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "lv"
+name = "Lv."
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHighlightedItemInfo2"
+hops = ["+0x11"]
+
+[[cheat]]
+id = "cheat"
+name = "..."
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHighlightedItemInfo2"
+hops = ["+0x12"]
+
+[[cheat]]
+id = "mod"
+name = "Mod (+??)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHighlightedItemInfo2"
+hops = ["+0x18"]

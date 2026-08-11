@@ -1,0 +1,3134 @@
+[game]
+name = "Angel Flare"
+exe = "shinkansen_angel_flare.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=4253"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "plane-base-address-scan-initialization-activate-this-first"
+name = "Plane Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Plane_basepointer)
+registersymbol(Plane_update_enable)
+registersymbol(Plane_set_enable)
+registersymbol(Plane_healthset_enable)
+registersymbol(Plane_throttleset_enable)
+registersymbol(Plane_specialset_enable)
+
+alloc(Plane_basepointer, 8)
+alloc(Plane_update_enable, 4)
+alloc(Plane_set_enable, 4)
+alloc(Plane_healthset_enable, 4)
+alloc(Plane_throttleset_enable, 4)
+alloc(Plane_specialset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Plane_basepointer)
+unregistersymbol(Plane_update_enable)
+unregistersymbol(Plane_set_enable)
+unregistersymbol(Plane_healthset_enable)
+unregistersymbol(Plane_throttleset_enable)
+unregistersymbol(Plane_specialset_enable)
+
+dealloc(Plane_basepointer)
+dealloc(Plane_update_enable)
+dealloc(Plane_set_enable)
+dealloc(Plane_healthset_enable)
+dealloc(Plane_throttleset_enable)
+dealloc(Plane_specialset_enable)"""
+
+[[cheat]]
+id = "plane-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Plane Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Plane_savedAOB)
+label(Plane_returnhere)
+label(Plane_originalcode)
+label(Plane_exit)
+
+label(Plane_update_exit)
+label(Plane_set_exit)
+label(Plane_healthset_exit)
+label(Plane_throttleset_exit)
+label(Plane_specialset_exit)
+
+registersymbol(Plane_savedAOB)
+
+//85BFC269 - 48 89 45 B8           - mov [rbp-48],rax
+//85BFC26D - 89 45 AC              - mov [rbp-54],eax
+// Plane:Update+20
+//85BFC270 - 0FB6 86 88020000      - movzx eax,byte ptr [rsi+00000288]
+//85BFC277 - 85 C0                 - test eax,eax
+//85BFC279 - 74 0F                 - je 85BFC28A
+//85BFC27B - 0FB6 86 0C040000      - movzx eax,byte ptr [rsi+0000040C]
+//85BFC282 - 85 C0                 - test eax,eax
+aobscan(Plane_searchedAOB, 0F B6 86 88 02 00 00 85 C0 74 0F)
+
+alloc(Plane_newmem, 2048, Plane_searchedAOB)
+alloc(Plane_temp1, 8, Plane_searchedAOB)
+alloc(Plane_temp2, 8, Plane_searchedAOB)
+alloc(Plane_temp3, 8, Plane_searchedAOB)
+alloc(Plane_temp4, 8, Plane_searchedAOB)
+alloc(Plane_temp5, 8, Plane_searchedAOB)
+
+
+Plane_newmem:
+mov [Plane_temp1], rax
+mov [Plane_temp2], rbx
+mov [Plane_temp3], rcx
+mov [Plane_temp4], rdx
+
+cmp dword ptr [Plane_update_enable], #0
+je Plane_update_exit
+mov [Plane_basepointer], rsi
+Plane_update_exit:
+
+cmp dword ptr [Plane_set_enable], #0
+je Plane_set_exit
+Plane_set_exit:
+
+cmp dword ptr [Plane_healthset_enable], #0
+je Plane_healthset_exit
+fld [rsi+1ac]
+fstp [rsi+224]
+Plane_healthset_exit:
+
+cmp dword ptr [Plane_throttleset_enable], #0
+je Plane_throttleset_exit
+mov [rsi+42c], (float)0
+Plane_throttleset_exit:
+
+cmp dword ptr [Plane_specialset_enable], #0
+je Plane_specialset_exit
+mov rax, [rsi+38]
+test rax, rax
+je Plane_specialset_exit
+fld [rax+3c]
+fstp [rax+38]
+Plane_specialset_exit:
+
+mov rax, [Plane_temp1]
+mov rbx, [Plane_temp2]
+mov rcx, [Plane_temp3]
+mov rdx, [Plane_temp4]
+
+
+Plane_originalcode:
+db 0F B6 86 88 02 00 00
+//movzx eax,byte ptr [rsi+00000288]
+
+
+Plane_exit:
+jmp Plane_returnhere
+
+
+Plane_searchedAOB:
+Plane_savedAOB:
+jmp Plane_newmem
+nop
+nop
+Plane_returnhere:
+
+
+[DISABLE]
+Plane_savedAOB:
+db 0F B6 86 88 02 00 00
+//movzx eax,byte ptr [rsi+00000288]
+
+unregistersymbol(Plane_savedAOB)
+
+dealloc(Plane_newmem)
+dealloc(Plane_temp1)
+dealloc(Plane_temp2)
+dealloc(Plane_temp3)
+dealloc(Plane_temp4)
+dealloc(Plane_temp5)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "throttle-time-set-to-0"
+name = "Throttle Time Set to 0?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_throttleset_enable"
+hops = []
+
+[[cheat]]
+id = "special-set-to-max"
+name = "Special Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_specialset_enable"
+hops = []
+
+[[cheat]]
+id = "plane-update-base-address"
+name = "Plane Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = [
+    "+0x38",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = [
+    "+0x38",
+    "+0x34",
+]
+
+[[cheat]]
+id = "specialcharge"
+name = "specialCharge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = [
+    "+0x38",
+    "+0x38",
+]
+
+[[cheat]]
+id = "fullcharge"
+name = "fullCharge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = [
+    "+0x38",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "wingmandamagepercent"
+name = "wingmanDamagePercent"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "fire"
+name = "fire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "special"
+name = "special"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x175"]
+
+[[cheat]]
+id = "upgrade1"
+name = "upgrade1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x176"]
+
+[[cheat]]
+id = "upgrade2"
+name = "upgrade2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x177"]
+
+[[cheat]]
+id = "upgrade3"
+name = "upgrade3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "item"
+name = "item"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "lbroll"
+name = "LBroll"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x189"]
+
+[[cheat]]
+id = "rbroll"
+name = "rBroll"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x18a"]
+
+[[cheat]]
+id = "accelerating"
+name = "accelerating"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x18b"]
+
+[[cheat]]
+id = "decellerating"
+name = "decellerating"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x18c"]
+
+[[cheat]]
+id = "floormask"
+name = "floorMask"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "camraylength"
+name = "camRayLength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "playerindex"
+name = "playerIndex"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "bombdamage"
+name = "bombDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "techsensitivity"
+name = "TechSensitivity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "speed"
+name = "_speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "health"
+name = "_health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "damage"
+name = "_damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "healthregen"
+name = "_healthRegen"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "specregen"
+name = "_specRegen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "wings"
+name = "_wings"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "maximumspeed"
+name = "maximumSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "maximumhealth"
+name = "maximumHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "maximumdamage"
+name = "maximumDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "maximumtech"
+name = "maximumTech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1cc"]
+
+[[cheat]]
+id = "maximumspecial"
+name = "maximumSpecial"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "maximumwing"
+name = "maximumWing"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "speedbonus"
+name = "speedBonus"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1d8"]
+
+[[cheat]]
+id = "healthbonus"
+name = "healthBonus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1dc"]
+
+[[cheat]]
+id = "damagebonus"
+name = "damageBonus"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1e0"]
+
+[[cheat]]
+id = "healthregenbonus"
+name = "healthRegenBonus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1e4"]
+
+[[cheat]]
+id = "specregenbonus"
+name = "specRegenBonus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1e8"]
+
+[[cheat]]
+id = "wingsbonus"
+name = "wingsBonus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1ec"]
+
+[[cheat]]
+id = "speedmod"
+name = "speedMod"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1f0"]
+
+[[cheat]]
+id = "healthmod"
+name = "healthMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1f4"]
+
+[[cheat]]
+id = "damagemod"
+name = "damageMod"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "extraspeedpoints"
+name = "extraSpeedPoints"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x1fc"]
+
+[[cheat]]
+id = "extradamagepoints"
+name = "extraDamagePoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x200"]
+
+[[cheat]]
+id = "extraupgradechance"
+name = "extraUpgradeChance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x204"]
+
+[[cheat]]
+id = "rateoffiremod"
+name = "rateOfFireMod"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "shieldchance"
+name = "shieldChance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x20c"]
+
+[[cheat]]
+id = "wingmanhealthmod"
+name = "wingmanHealthMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x210"]
+
+[[cheat]]
+id = "totalwingmen"
+name = "totalWingmen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x214"]
+
+[[cheat]]
+id = "wingmanhealthboost"
+name = "wingmanHealthBoost"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x218"]
+
+[[cheat]]
+id = "wingmanchance"
+name = "wingmanChance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x21c"]
+
+[[cheat]]
+id = "tilt"
+name = "tilt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x220"]
+
+[[cheat]]
+id = "curhealth"
+name = "curHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x224"]
+
+[[cheat]]
+id = "healthregendelay"
+name = "healthRegenDelay"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x228"]
+
+[[cheat]]
+id = "healthregenrate"
+name = "healthRegenRate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x22c"]
+
+[[cheat]]
+id = "timelastdamaged"
+name = "timeLastDamaged"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x230"]
+
+[[cheat]]
+id = "shieldduration"
+name = "shieldDuration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x234"]
+
+[[cheat]]
+id = "movementbonus"
+name = "movementBonus"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x238"]
+
+[[cheat]]
+id = "verticalinput"
+name = "verticalInput"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x23c"]
+
+[[cheat]]
+id = "wingmanshield"
+name = "wingmanShield"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x240"]
+
+[[cheat]]
+id = "shieldenabled"
+name = "shieldEnabled"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x244"]
+
+[[cheat]]
+id = "isbaseweaponequipped"
+name = "isBaseWeaponEquipped"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x245"]
+
+[[cheat]]
+id = "selectedweapon"
+name = "selectedWeapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x248"]
+
+[[cheat]]
+id = "secondaryselectedweapon"
+name = "secondarySelectedWeapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x24c"]
+
+[[cheat]]
+id = "throttle"
+name = "throttle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x250"]
+
+[[cheat]]
+id = "strafeval"
+name = "strafeVal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x254"]
+
+[[cheat]]
+id = "isdecelerating"
+name = "isDecelerating"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x258"]
+
+[[cheat]]
+id = "xrot"
+name = "xRot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x25c"]
+
+[[cheat]]
+id = "accelerationsmooth"
+name = "accelerationSmooth"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x260"]
+
+[[cheat]]
+id = "decelerationsmooth"
+name = "decelerationSmooth"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x264"]
+
+[[cheat]]
+id = "rotationsmooth"
+name = "rotationSmooth"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x268"]
+
+[[cheat]]
+id = "mousemaxspeedrotation"
+name = "mouseMaxSpeedRotation"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x26c"]
+
+[[cheat]]
+id = "mouseminspeedrotation"
+name = "mouseMinSpeedRotation"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "minspeedturnmodifier"
+name = "minSpeedTurnModifier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x274"]
+
+[[cheat]]
+id = "maxspeedturnmodifier"
+name = "maxSpeedTurnModifier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x278"]
+
+[[cheat]]
+id = "combattime"
+name = "combatTime"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x27c"]
+
+[[cheat]]
+id = "isspecialactive"
+name = "isSpecialActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x288"]
+
+[[cheat]]
+id = "minecount"
+name = "mineCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x28c"]
+
+[[cheat]]
+id = "maxmines"
+name = "maxMines"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x290"]
+
+[[cheat]]
+id = "isflipping"
+name = "isFlipping"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x294"]
+
+[[cheat]]
+id = "ismouse"
+name = "isMouse"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x295"]
+
+[[cheat]]
+id = "canmouse"
+name = "canMouse"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x296"]
+
+[[cheat]]
+id = "specialactivated"
+name = "specialActivated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2a4"]
+
+[[cheat]]
+id = "acelhudval"
+name = "acelHudVal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2a8"]
+
+[[cheat]]
+id = "wingmanshieldmod"
+name = "wingmanShieldMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2ac"]
+
+[[cheat]]
+id = "hascontrol"
+name = "hasControl"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2b0"]
+
+[[cheat]]
+id = "ishud"
+name = "isHUD"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2b1"]
+
+[[cheat]]
+id = "hasspoken"
+name = "hasSpoken"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2b2"]
+
+[[cheat]]
+id = "hasstartedspoken"
+name = "hasStartedSpoken"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2b3"]
+
+[[cheat]]
+id = "hastutorialspoken"
+name = "hasTutorialSpoken"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2b4"]
+
+[[cheat]]
+id = "entrytime"
+name = "entryTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2b8"]
+
+[[cheat]]
+id = "entrycounter"
+name = "entryCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2bc"]
+
+[[cheat]]
+id = "angle"
+name = "_Angle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2c0"]
+
+[[cheat]]
+id = "period"
+name = "_Period"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2c4"]
+
+[[cheat]]
+id = "pivotaroundy"
+name = "pivotAroundY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2c8"]
+
+[[cheat]]
+id = "invertedfactor"
+name = "invertedFactor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2cc"]
+
+[[cheat]]
+id = "multi"
+name = "multi"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2d0"]
+
+[[cheat]]
+id = "isshooting"
+name = "isShooting"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2d4"]
+
+[[cheat]]
+id = "tempthrottle"
+name = "tempThrottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2d8"]
+
+[[cheat]]
+id = "cooldowntimer"
+name = "cooldownTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2dc"]
+
+[[cheat]]
+id = "slot1countdown"
+name = "slot1Countdown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2e0"]
+
+[[cheat]]
+id = "slot1cooldowntime"
+name = "slot1CooldownTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2e4"]
+
+[[cheat]]
+id = "slot2countdown"
+name = "slot2Countdown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2e8"]
+
+[[cheat]]
+id = "slot2cooldowntime"
+name = "slot2CooldownTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2ec"]
+
+[[cheat]]
+id = "slot3countdown"
+name = "slot3Countdown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2f0"]
+
+[[cheat]]
+id = "slot3cooldowntime"
+name = "slot3CooldownTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2f4"]
+
+[[cheat]]
+id = "slottedupgrade1used"
+name = "slottedUpgrade1Used"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2f8"]
+
+[[cheat]]
+id = "slottedupgrade2used"
+name = "slottedUpgrade2Used"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2f9"]
+
+[[cheat]]
+id = "slottedupgrade3used"
+name = "slottedUpgrade3Used"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x2fa"]
+
+[[cheat]]
+id = "enemyangle"
+name = "enemyAngle"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x308"]
+
+[[cheat]]
+id = "smartgunangle"
+name = "smartgunAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x30c"]
+
+[[cheat]]
+id = "isinvisible"
+name = "isInvisible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x310"]
+
+[[cheat]]
+id = "invisibletime"
+name = "invisibleTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x314"]
+
+[[cheat]]
+id = "invisiblecooldowntime"
+name = "invisibleCooldownTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x318"]
+
+[[cheat]]
+id = "flipcooldown"
+name = "flipCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x31c"]
+
+[[cheat]]
+id = "degreespersecond"
+name = "degreesPerSecond"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x320"]
+
+[[cheat]]
+id = "fliptime"
+name = "flipTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x324"]
+
+[[cheat]]
+id = "inbarrelroll"
+name = "inBarrelRoll"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x328"]
+
+[[cheat]]
+id = "barrelrollduration"
+name = "barrelRollDuration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x32c"]
+
+[[cheat]]
+id = "barrelrolldizzytime"
+name = "barrelRollDizzyTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x330"]
+
+[[cheat]]
+id = "dizzycooldowntime"
+name = "dizzyCooldownTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x334"]
+
+[[cheat]]
+id = "barrelrollcounter"
+name = "barrelRollCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x338"]
+
+[[cheat]]
+id = "sidewaysforce"
+name = "sidewaysForce"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x33c"]
+
+[[cheat]]
+id = "isdizzy"
+name = "isDizzy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x340"]
+
+[[cheat]]
+id = "canlaststand"
+name = "canLastStand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x341"]
+
+[[cheat]]
+id = "alreadydead"
+name = "alreadydead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x342"]
+
+[[cheat]]
+id = "gotkill"
+name = "gotKill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x343"]
+
+[[cheat]]
+id = "frozen"
+name = "frozen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x344"]
+
+[[cheat]]
+id = "laststandcooldown"
+name = "lastStandCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x348"]
+
+[[cheat]]
+id = "isjammed"
+name = "isJammed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x34c"]
+
+[[cheat]]
+id = "shouldrobfirewithspec"
+name = "shouldRobFireWithSpec"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x34d"]
+
+[[cheat]]
+id = "iscoolingdown"
+name = "isCoolingDown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x34e"]
+
+[[cheat]]
+id = "specialtime"
+name = "specialTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x350"]
+
+[[cheat]]
+id = "minecooldowntime"
+name = "mineCooldownTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x354"]
+
+[[cheat]]
+id = "flarecooldown"
+name = "flareCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x358"]
+
+[[cheat]]
+id = "flareaoe"
+name = "flareAOE"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x35c"]
+
+[[cheat]]
+id = "canflare"
+name = "canFlare"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x360"]
+
+[[cheat]]
+id = "flarepercent"
+name = "flarePercent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x364"]
+
+[[cheat]]
+id = "flaredistancebehind"
+name = "flareDistanceBehind"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x368"]
+
+[[cheat]]
+id = "flareexplosiondelay"
+name = "flareExplosionDelay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x36c"]
+
+[[cheat]]
+id = "hookcount"
+name = "hookCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x370"]
+
+[[cheat]]
+id = "maxhooks"
+name = "maxHooks"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x374"]
+
+[[cheat]]
+id = "hookcooldown"
+name = "hookCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x378"]
+
+[[cheat]]
+id = "hookspeed"
+name = "hookSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x37c"]
+
+[[cheat]]
+id = "afterburnersactive"
+name = "afterburnersActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x380"]
+
+[[cheat]]
+id = "afterburnerease"
+name = "afterBurnerEase"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x384"]
+
+[[cheat]]
+id = "afterburnertime"
+name = "afterburnerTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x388"]
+
+[[cheat]]
+id = "damagereduction"
+name = "damageReduction"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x38c"]
+
+[[cheat]]
+id = "wingmanspawnchecktime"
+name = "WingmanSpawnCheckTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x390"]
+
+[[cheat]]
+id = "hoverheightstrictness"
+name = "hoverHeightStrictness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x394"]
+
+[[cheat]]
+id = "forwardthrust"
+name = "forwardThrust"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x398"]
+
+[[cheat]]
+id = "backwardthrust"
+name = "backwardThrust"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x39c"]
+
+[[cheat]]
+id = "bankamount"
+name = "bankAmount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3a0"]
+
+[[cheat]]
+id = "bankspeed"
+name = "bankSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3a4"]
+
+[[cheat]]
+id = "turnspeed"
+name = "turnSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3b4"]
+
+[[cheat]]
+id = "mass"
+name = "mass"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3c4"]
+
+[[cheat]]
+id = "sqrdspeedthresholdfordrag"
+name = "sqrdSpeedThresholdForDrag"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3c8"]
+
+[[cheat]]
+id = "superdrag"
+name = "superDrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3cc"]
+
+[[cheat]]
+id = "fastdrag"
+name = "fastDrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3d0"]
+
+[[cheat]]
+id = "slowdrag"
+name = "slowDrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3d4"]
+
+[[cheat]]
+id = "sqrdangularspeedthresholdfordrag"
+name = "sqrdAngularSpeedThresholdForDrag"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3d8"]
+
+[[cheat]]
+id = "superadrag"
+name = "superADrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3dc"]
+
+[[cheat]]
+id = "fastadrag"
+name = "fastADrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3e0"]
+
+[[cheat]]
+id = "slowadrag"
+name = "slowADrag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3e4"]
+
+[[cheat]]
+id = "bank"
+name = "bank"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3e8"]
+
+[[cheat]]
+id = "thrust"
+name = "thrust"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3ec"]
+
+[[cheat]]
+id = "turn"
+name = "turn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3f0"]
+
+[[cheat]]
+id = "thethrust"
+name = "theThrust"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3f4"]
+
+[[cheat]]
+id = "maxthrust"
+name = "maxThrust"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3f8"]
+
+[[cheat]]
+id = "triggered"
+name = "triggered"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3fc"]
+
+[[cheat]]
+id = "triggered1"
+name = "triggered1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x3fd"]
+
+[[cheat]]
+id = "laserspeeddecreasepct"
+name = "laserSpeedDecreasePct"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x400"]
+
+[[cheat]]
+id = "laserdamagedecreasepct"
+name = "laserDamageDecreasePct"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x404"]
+
+[[cheat]]
+id = "laserdamagetakenincreasepct"
+name = "laserDamageTakenIncreasePct"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x408"]
+
+[[cheat]]
+id = "firewhileoverheated"
+name = "fireWhileOverheated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x40c"]
+
+[[cheat]]
+id = "secondfire"
+name = "secondFire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x40d"]
+
+[[cheat]]
+id = "maxthrottle"
+name = "maxThrottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x410"]
+
+[[cheat]]
+id = "minthrottle"
+name = "minThrottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x414"]
+
+[[cheat]]
+id = "basicthrottle"
+name = "basicThrottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x418"]
+
+[[cheat]]
+id = "aceleffectson"
+name = "acelEffectsOn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x41c"]
+
+[[cheat]]
+id = "accelmodifer"
+name = "accelModifer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x420"]
+
+[[cheat]]
+id = "throttlecooldownmodifier"
+name = "throttleCooldownModifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x424"]
+
+[[cheat]]
+id = "maxacceltime"
+name = "maxAccelTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x428"]
+
+[[cheat]]
+id = "currentthrottletime"
+name = "currentThrottleTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x42c"]
+
+[[cheat]]
+id = "aceloverheat"
+name = "acelOverheat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x430"]
+
+[[cheat]]
+id = "overheatedcooldownmodifier"
+name = "overheatedCooldownModifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x434"]
+
+[[cheat]]
+id = "turnmod"
+name = "turnMod"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x438"]
+
+[[cheat]]
+id = "storedrotation"
+name = "storedRotation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x43c"]
+
+[[cheat]]
+id = "barrelrollturningmod"
+name = "barrelRollTurningMod"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Plane_basepointer"
+hops = ["+0x44c"]

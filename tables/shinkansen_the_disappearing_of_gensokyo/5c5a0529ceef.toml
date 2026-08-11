@@ -1,0 +1,1425 @@
+[game]
+name = "永遠消失的幻想鄉 ～ The Disappearing of Gensokyo"
+exe = "shinkansen_the_disappearing_of_gensokyo.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=5949"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playersystem-base-address-scan-initialization-activate-this-first"
+name = "PlayerSystem Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerSystem_basepointer)
+registersymbol(PlayerSystem_update_enable)
+registersymbol(PlayerSystem_set_enable)
+registersymbol(PlayerSystem_hpset_enable)
+registersymbol(PlayerSystem_shieldset_enable)
+registersymbol(PlayerSystem_statsset_enable)
+registersymbol(PlayerSystem_bombset_enable)
+
+alloc(PlayerSystem_basepointer, 4)
+alloc(PlayerSystem_update_enable, 4)
+alloc(PlayerSystem_set_enable, 4)
+alloc(PlayerSystem_hpset_enable, 4)
+alloc(PlayerSystem_shieldset_enable, 4)
+alloc(PlayerSystem_statsset_enable, 4)
+alloc(PlayerSystem_bombset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayerSystem_basepointer)
+unregistersymbol(PlayerSystem_update_enable)
+unregistersymbol(PlayerSystem_set_enable)
+unregistersymbol(PlayerSystem_hpset_enable)
+unregistersymbol(PlayerSystem_shieldset_enable)
+unregistersymbol(PlayerSystem_statsset_enable)
+unregistersymbol(PlayerSystem_bombset_enable)
+
+dealloc(PlayerSystem_basepointer)
+dealloc(PlayerSystem_update_enable)
+dealloc(PlayerSystem_set_enable)
+dealloc(PlayerSystem_hpset_enable)
+dealloc(PlayerSystem_shieldset_enable)
+dealloc(PlayerSystem_statsset_enable)
+dealloc(PlayerSystem_bombset_enable)"""
+
+[[cheat]]
+id = "playersystem-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "PlayerSystem Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerSystem_savedAOB)
+label(PlayerSystem_returnhere)
+label(PlayerSystem_originalcode)
+label(PlayerSystem_exit)
+
+label(PlayerSystem_update_exit)
+label(PlayerSystem_set_exit)
+label(PlayerSystem_hpset_exit)
+label(PlayerSystem_shieldset_exit)
+label(PlayerSystem_statsset_exit)
+label(PlayerSystem_bombset_exit)
+
+registersymbol(PlayerSystem_savedAOB)
+
+//08784573 - 83 EC 18              - sub esp,18
+//08784576 - 8B 4D 08              - mov ecx,[ebp+08]
+// PlayerSystem:FixedUpdate+9
+//08784579 - 8B 41 30              - mov eax,[ecx+30]
+//0878457C - 89 45 F0              - mov [ebp-10],eax
+//0878457F - 89 45 EC              - mov [ebp-14],eax
+//08784582 - 8D 45 F4              - lea eax,[ebp-0C]
+//08784585 - 83 EC 08              - sub esp,08
+//08784588 - 51                    - push ecx
+//08784589 - 50                    - push eax
+//0878458A - E8 49000000           - call 087845D8
+//0878458F - 83 C4 0C              - add esp,0C
+aobscan(PlayerSystem_searchedAOB, 8B 41 30 89 45 F0 89 45 EC 8D 45 F4 83 EC 08 51 50)
+
+alloc(PlayerSystem_newmem, 2048, PlayerSystem_searchedAOB)
+alloc(PlayerSystem_temp1, 4, PlayerSystem_searchedAOB)
+alloc(PlayerSystem_temp2, 4, PlayerSystem_searchedAOB)
+alloc(PlayerSystem_temp3, 4, PlayerSystem_searchedAOB)
+alloc(PlayerSystem_temp4, 4, PlayerSystem_searchedAOB)
+alloc(PlayerSystem_temp5, 4, PlayerSystem_searchedAOB)
+
+
+PlayerSystem_newmem:
+mov [PlayerSystem_temp1], eax
+mov [PlayerSystem_temp2], ebx
+mov [PlayerSystem_temp3], ecx
+mov [PlayerSystem_temp4], edx
+
+cmp dword ptr [PlayerSystem_update_enable], #0
+je PlayerSystem_update_exit
+mov [PlayerSystem_basepointer], ecx
+PlayerSystem_update_exit:
+
+cmp dword ptr [PlayerSystem_set_enable], #0
+je PlayerSystem_set_exit
+PlayerSystem_set_exit:
+
+cmp dword ptr [PlayerSystem_hpset_enable], #0
+je PlayerSystem_hpset_exit
+mov ebx, [ecx+18]
+test ebx, ebx
+je PlayerSystem_hpset_exit
+fld [ebx+40]
+fstp [ebx+50]
+PlayerSystem_hpset_exit:
+
+cmp dword ptr [PlayerSystem_shieldset_enable], #0
+je PlayerSystem_shieldset_exit
+mov ebx, [ecx+18]
+test ebx, ebx
+je PlayerSystem_shieldset_exit
+fld [ebx+68]
+fstp [ebx+78]
+PlayerSystem_shieldset_exit:
+
+cmp dword ptr [PlayerSystem_statsset_enable], #0
+je PlayerSystem_statsset_exit
+mov ebx, [ecx+18]
+test ebx, ebx
+je PlayerSystem_statsset_exit
+mov [ebx+94], (float)9999
+mov [ebx+98], (float)9999
+mov [ebx+9c], (float)9999
+mov [ebx+b8], (float)9999
+mov [ebx+c0], (float)9999
+PlayerSystem_statsset_exit:
+
+cmp dword ptr [PlayerSystem_bombset_enable], #0
+je PlayerSystem_bombset_exit
+mov ebx, [ecx+44]
+mov [ecx+48], ebx,
+PlayerSystem_bombset_exit:
+
+mov eax, [PlayerSystem_temp1]
+mov ebx, [PlayerSystem_temp2]
+mov ecx, [PlayerSystem_temp3]
+mov edx, [PlayerSystem_temp4]
+
+
+PlayerSystem_originalcode:
+db 8B 41 30 89 45 F0
+//mov eax,[ecx+30]
+//mov [ebp-10],eax
+
+
+PlayerSystem_exit:
+jmp PlayerSystem_returnhere
+
+
+PlayerSystem_searchedAOB:
+PlayerSystem_savedAOB:
+jmp PlayerSystem_newmem
+nop
+PlayerSystem_returnhere:
+
+
+[DISABLE]
+PlayerSystem_savedAOB:
+db 8B 41 30 89 45 F0
+//mov eax,[ecx+30]
+//mov [ebp-10],eax
+
+unregistersymbol(PlayerSystem_savedAOB)
+
+dealloc(PlayerSystem_newmem)
+dealloc(PlayerSystem_temp1)
+dealloc(PlayerSystem_temp2)
+dealloc(PlayerSystem_temp3)
+dealloc(PlayerSystem_temp4)
+dealloc(PlayerSystem_temp5)"""
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "shield-set-to-max"
+name = "Shield Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_shieldset_enable"
+hops = []
+
+[[cheat]]
+id = "stats-set-to-massive"
+name = "Stats Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_statsset_enable"
+hops = []
+
+[[cheat]]
+id = "bombs-set-to-max"
+name = "Bombs Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_bombset_enable"
+hops = []
+
+[[cheat]]
+id = "playersystem-update-base-address"
+name = "PlayerSystem Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "maxhp"
+name = "maxHp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x40",
+]
+
+[[cheat]]
+id = "hpregenerationspeed"
+name = "hpRegenerationSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x44",
+]
+
+[[cheat]]
+id = "hprechargespeed"
+name = "hpRechargeSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x48",
+]
+
+[[cheat]]
+id = "hprechargetime"
+name = "hpRechargeTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "currenthp"
+name = "currentHp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x50",
+]
+
+[[cheat]]
+id = "hprechargetimer"
+name = "hpRechargeTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x54",
+]
+
+[[cheat]]
+id = "hprecharging"
+name = "hpRecharging"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x58",
+]
+
+[[cheat]]
+id = "maxdp"
+name = "maxDp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x68",
+]
+
+[[cheat]]
+id = "dpregenerationspeed"
+name = "dpRegenerationSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "dprechargespeed"
+name = "dpRechargeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x70",
+]
+
+[[cheat]]
+id = "dprechargetime"
+name = "dpRechargeTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x74",
+]
+
+[[cheat]]
+id = "currentdp"
+name = "currentDp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x78",
+]
+
+[[cheat]]
+id = "dprechargetimer"
+name = "dpRechargeTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "dprecharging"
+name = "dpRecharging"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x80",
+]
+
+[[cheat]]
+id = "minmaldpimpacteffectinterval"
+name = "minmalDpImpactEffectInterval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "minmaldpimpacteffectintervaltimer"
+name = "minmalDpImpactEffectIntervalTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x90",
+]
+
+[[cheat]]
+id = "meleedamagereduce"
+name = "meleeDamageReduce"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x94",
+]
+
+[[cheat]]
+id = "rangeddamagedreduce"
+name = "rangedDamagedReduce"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x98",
+]
+
+[[cheat]]
+id = "explosivedamagereduce"
+name = "explosiveDamageReduce"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "bisimmune"
+name = "bIsImmune"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xa4",
+]
+
+[[cheat]]
+id = "unitforce"
+name = "unitForce"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:CREEP1",
+    "1:PLAYER",
+    "2:NEUTRAL",
+    "3:CREEP2",
+    "4:PLAYERFRIENDLY",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xac",
+]
+
+[[cheat]]
+id = "enablekeeponground"
+name = "enableKeepOnGround"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xb4",
+]
+
+[[cheat]]
+id = "tempdisablekeeponground"
+name = "tempDisableKeepOnGround"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xb5",
+]
+
+[[cheat]]
+id = "unitadddamagemodifier"
+name = "unitAddDamageModifier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xb8",
+]
+
+[[cheat]]
+id = "unitgetdamagemodifier"
+name = "unitGetDamageModifier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xbc",
+]
+
+[[cheat]]
+id = "unitadddamagemodifierforskill"
+name = "unitAddDamageModifierForSkill"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xc0",
+]
+
+[[cheat]]
+id = "unitgetdamagemodifierforskill"
+name = "unitGetDamageModifierForSkill"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xc4",
+]
+
+[[cheat]]
+id = "init"
+name = "_init"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xd0",
+]
+
+[[cheat]]
+id = "isunitactive"
+name = "_isUnitActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xd1",
+]
+
+[[cheat]]
+id = "m-keepongroundintevalhight"
+name = "m_keepOnGroundIntevalHight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xd4",
+]
+
+[[cheat]]
+id = "m-keepongroundintevallow"
+name = "m_keepOnGroundIntevalLow"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xd8",
+]
+
+[[cheat]]
+id = "isinground"
+name = "_isInGround"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xdc",
+]
+
+[[cheat]]
+id = "keepgroundtimer"
+name = "_keepGroundTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = [
+    "+0x18",
+    "+0xe0",
+]
+
+[[cheat]]
+id = "maxbomb"
+name = "maxBomb"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "currentbomb"
+name = "currentBomb"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "bomb2pointratio"
+name = "Bomb2PointRatio"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "ammo2pointratio"
+name = "Ammo2PointRatio"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "pickupradius"
+name = "PickUpRadius"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "pickuplimitheight"
+name = "PickUpLimitHeight"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "enablecontrol"
+name = "enableControl"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "enableswitch"
+name = "enableSwitch"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x5d"]
+
+[[cheat]]
+id = "enablefire"
+name = "enableFire"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x5e"]
+
+[[cheat]]
+id = "enablemelee"
+name = "enableMelee"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x5f"]
+
+[[cheat]]
+id = "enablebomb"
+name = "enableBomb"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "enabledash"
+name = "enableDash"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x61"]
+
+[[cheat]]
+id = "missionitemcount"
+name = "missionItemCount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "piececount"
+name = "_pieceCount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "ispause"
+name = "_isPause"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerSystem_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "gamedata-base-address-scan-initialization-activate-this-first"
+name = "GameData Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GameData_basepointer)
+registersymbol(GameData_update_enable)
+registersymbol(GameData_set_enable)
+registersymbol(GameData_bluepointsset_enable)
+
+alloc(GameData_basepointer, 4)
+alloc(GameData_update_enable, 4)
+alloc(GameData_set_enable, 4)
+alloc(GameData_bluepointsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(GameData_basepointer)
+unregistersymbol(GameData_update_enable)
+unregistersymbol(GameData_set_enable)
+unregistersymbol(GameData_bluepointsset_enable)
+
+dealloc(GameData_basepointer)
+dealloc(GameData_update_enable)
+dealloc(GameData_set_enable)
+dealloc(GameData_bluepointsset_enable)"""
+
+[[cheat]]
+id = "gamedata-base-address-scan-to-activate-view-fortress-blue-points-to-update-view-fortress-blue-points"
+name = "GameData Base Address Scan (To Activate: View Fortress Blue Points, To Update: View Fortress Blue Points)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GameData_savedAOB)
+label(GameData_returnhere)
+label(GameData_originalcode)
+label(GameData_exit)
+
+label(GameData_update_exit)
+label(GameData_set_exit)
+label(GameData_bluepointsset_exit)
+
+registersymbol(GameData_savedAOB)
+
+//087E2953 - 83 EC 08              - sub esp,08
+//087E2956 - E8 8540B8FC           - call 053669E0
+// PS4:PlayerData:GetPoint+b
+//087E295B - 8B 40 30              - mov eax,[eax+30]
+//087E295E - 83 EC 04              - sub esp,04
+//087E2961 - 68 3F420F00           - push 000F423F
+//087E2966 - 6A 00                 - push 00
+//087E2968 - 50                    - push eax
+//087E2969 - E8 BAB4AAFC           - call 0528DE28
+//087E296E - 83 C4 10              - add esp,10
+//087E2971 - C9                    - leave
+//087E2972 - C3                    - ret
+aobscan(GameData_searchedAOB, 8B 40 30 83 EC 04 * * * * * 6A 00 50 * * * * * 83 C4 10 C9 C3)
+
+alloc(GameData_newmem, 2048, GameData_searchedAOB)
+alloc(GameData_temp1, 4, GameData_searchedAOB)
+alloc(GameData_temp2, 4, GameData_searchedAOB)
+alloc(GameData_temp3, 4, GameData_searchedAOB)
+alloc(GameData_temp4, 4, GameData_searchedAOB)
+alloc(GameData_temp5, 4, GameData_searchedAOB)
+
+
+GameData_newmem:
+mov [GameData_temp1], eax
+mov [GameData_temp2], ebx
+mov [GameData_temp3], ecx
+mov [GameData_temp4], edx
+
+cmp dword ptr [GameData_update_enable], #0
+je GameData_update_exit
+mov [GameData_basepointer], eax
+GameData_update_exit:
+
+cmp dword ptr [GameData_set_enable], #0
+je GameData_set_exit
+GameData_set_exit:
+
+cmp dword ptr [GameData_bluepointsset_enable], #0
+je GameData_bluepointsset_exit
+mov [eax+30], #999999
+GameData_bluepointsset_exit:
+
+mov eax, [GameData_temp1]
+mov ebx, [GameData_temp2]
+mov ecx, [GameData_temp3]
+mov edx, [GameData_temp4]
+
+
+GameData_originalcode:
+db 8B 40 30 83 EC 04
+//mov eax,[eax+30]
+//sub esp,04
+
+
+GameData_exit:
+jmp GameData_returnhere
+
+
+GameData_searchedAOB:
+GameData_savedAOB:
+jmp GameData_newmem
+nop
+GameData_returnhere:
+
+
+[DISABLE]
+GameData_savedAOB:
+db 8B 40 30 83 EC 04
+//mov eax,[eax+30]
+//sub esp,04
+
+unregistersymbol(GameData_savedAOB)
+
+dealloc(GameData_newmem)
+dealloc(GameData_temp1)
+dealloc(GameData_temp2)
+dealloc(GameData_temp3)
+dealloc(GameData_temp4)
+dealloc(GameData_temp5)"""
+
+[[cheat]]
+id = "blue-points-set-to-massive"
+name = "Blue Points Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_bluepointsset_enable"
+hops = []
+
+[[cheat]]
+id = "gamedata-update-base-address"
+name = "GameData Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "endtype"
+name = "endType"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "gametier"
+name = "gameTier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "gameprogress"
+name = "gameProgress"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "point"
+name = "point"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "unlockbasechcount"
+name = "unlockBaseChCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameData_basepointer"
+hops = ["+0x34"]

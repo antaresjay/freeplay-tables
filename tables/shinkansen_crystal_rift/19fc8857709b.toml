@@ -1,0 +1,2864 @@
+[game]
+name = "Crystal Rift"
+exe = "shinkansen_crystal_rift.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1805"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "gamestate-base-address-scan-initialization-activate-this-first"
+name = "GameState Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GameState_basepointer)
+registersymbol(GameState_update_enable)
+registersymbol(GameState_set_enable)
+registersymbol(GameState_lifesset_enable)
+registersymbol(GameState_swordset_enable)
+
+alloc(GameState_basepointer, 8)
+alloc(GameState_update_enable, 4)
+alloc(GameState_set_enable, 4)
+alloc(GameState_lifesset_enable, 4)
+alloc(GameState_swordset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(GameState_basepointer)
+unregistersymbol(GameState_update_enable)
+unregistersymbol(GameState_set_enable)
+unregistersymbol(GameState_lifesset_enable)
+unregistersymbol(GameState_swordset_enable)
+
+dealloc(GameState_basepointer)
+dealloc(GameState_update_enable)
+dealloc(GameState_set_enable)
+dealloc(GameState_lifesset_enable)
+dealloc(GameState_swordset_enable)"""
+
+[[cheat]]
+id = "gamestate-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "GameState Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GameState_savedAOB)
+label(GameState_returnhere)
+label(GameState_originalcode)
+label(GameState_exit)
+
+label(GameState_update_exit)
+label(GameState_set_exit)
+label(GameState_lifesset_exit)
+label(GameState_swordset_exit)
+
+registersymbol(GameState_savedAOB)
+
+//1925DE97 - 0F85 54000000         - jne 1925DEF1
+//1925DE9D - B8 B4FEDA02           - mov eax,02DAFEB4 : [(float)1066.0000]
+// <updatePlayedTime>c__IteratorD:MoveNext+52
+//1925DEA2 - F3 0F10 00            - movss xmm0,[rax]
+//1925DEA6 - F3 0F5A C0            - cvtss2sd xmm0,xmm0
+//1925DEAA - F3 0F10 0D CE000000   - movss xmm1,[1925DF80] : [(float)1.0000]
+//1925DEB2 - F3 0F5A C9            - cvtss2sd xmm1,xmm1
+//1925DEB6 - F2 0F58 C1            - addsd xmm0,xmm1
+//1925DEBA - B8 B4FEDA02           - mov eax,02DAFEB4 : [(float)1066.0000]
+//1925DEBF - F2 0F5A E8            - cvtsd2ss xmm5,xmm0
+aobscan(GameState_searchedAOB, F3 0F 10 00 F3 0F 5A C0 * * * * * * * * F3 0F 5A C9 F2 0F 58 C1)
+
+alloc(GameState_newmem, 2048, GameState_searchedAOB)
+alloc(GameState_temp1, 8, GameState_searchedAOB)
+alloc(GameState_temp2, 8, GameState_searchedAOB)
+
+
+GameState_newmem:
+mov [GameState_temp1], rbx
+mov [GameState_temp2], rdx
+
+movsxd rbx, [GameState_savedAOB-4]
+sub rbx, 54
+
+cmp dword ptr [GameState_update_enable], #0
+je GameState_update_exit
+mov [GameState_basepointer], rbx
+GameState_update_exit:
+
+cmp dword ptr [GameState_set_enable], #0
+je GameState_set_exit
+GameState_set_exit:
+
+cmp dword ptr [GameState_lifesset_enable], #0
+je GameState_lifesset_exit
+mov edx, [rbx+84]
+mov [rbx+80], edx
+GameState_lifesset_exit:
+
+cmp dword ptr [GameState_swordset_enable], #0
+je GameState_swordset_exit
+cmp qword ptr [rbx+70], #0
+je GameState_swordset_exit
+cmp dword ptr [rbx+70], #0
+je GameState_swordset_exit
+mov rdx, [rbx+70]
+mov [rdx+20], #1
+mov [rdx+21], #1
+mov [rdx+22], #1
+mov [rdx+23], #1
+mov [rdx+24], #1
+mov [rdx+25], #1
+mov [rdx+26], #1
+GameState_swordset_exit:
+
+mov rbx, [GameState_temp1]
+mov rdx, [GameState_temp2]
+
+
+GameState_originalcode:
+db F3 0F 10 00 F3 0F 5A C0
+//movss xmm0,[rax]
+//cvtss2sd xmm0,xmm0
+
+
+GameState_exit:
+jmp GameState_returnhere
+
+
+GameState_searchedAOB:
+GameState_savedAOB:
+jmp GameState_newmem
+nop
+nop
+nop
+GameState_returnhere:
+
+
+[DISABLE]
+GameState_savedAOB:
+db F3 0F 10 00 F3 0F 5A C0
+//movss xmm0,[rax]
+//cvtss2sd xmm0,xmm0
+
+unregistersymbol(GameState_savedAOB)
+
+dealloc(GameState_newmem)
+dealloc(GameState_temp1)
+dealloc(GameState_temp2)"""
+
+[[cheat]]
+id = "lifes-set-to-max"
+name = "Lifes Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_lifesset_enable"
+hops = []
+
+[[cheat]]
+id = "sword-set-to-all"
+name = "Sword Set to All?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_swordset_enable"
+hops = []
+
+[[cheat]]
+id = "gamestate-update-base-address"
+name = "GameState Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "level"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "editinglevel"
+name = "editingLevel"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "gamedifficulty"
+name = "GameDifficulty"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:EASY",
+    "1:NORMAL",
+    "2:HARD",
+    "3:KNIGHTMARE",
+    "4:PERMA_DEATH",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "dynamicmap"
+name = "DynamicMap"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "debugmode"
+name = "DebugMode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x25"]
+
+[[cheat]]
+id = "editmode"
+name = "EditMode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x26"]
+
+[[cheat]]
+id = "ghost"
+name = "Ghost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x27"]
+
+[[cheat]]
+id = "playersteps"
+name = "PlayerSteps"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "playercheckpoints"
+name = "PlayerCheckpoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "playerstartset"
+name = "PlayerStartSet"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "levelstarttype"
+name = "LevelStartType"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:START",
+    "1:STAIRS_UP",
+    "2:STAIRS_DOWN",
+    "3:LOAD",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "blockselectornumber"
+name = "BlockSelectorNumber"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "loadslot"
+name = "LoadSlot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "propertyselectornumber"
+name = "PropertySelectorNumber"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "playedtimegame"
+name = "PlayedTimeGame"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "playedtimelevel"
+name = "PlayedTimeLevel"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "playerstandingheight"
+name = "PlayerStandingHeight"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "worldscale"
+name = "WorldScale"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "worldscalebaseheight"
+name = "WorldScaleBaseHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "minimumswordmagnitude"
+name = "MinimumSwordMagnitude"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x0",
+]
+
+[[cheat]]
+id = "green"
+name = "Green"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x20",
+]
+
+[[cheat]]
+id = "red"
+name = "Red"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x21",
+]
+
+[[cheat]]
+id = "blue"
+name = "Blue"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x22",
+]
+
+[[cheat]]
+id = "orange"
+name = "Orange"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x23",
+]
+
+[[cheat]]
+id = "purple"
+name = "Purple"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x24",
+]
+
+[[cheat]]
+id = "white"
+name = "White"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x25",
+]
+
+[[cheat]]
+id = "yellow"
+name = "Yellow"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = [
+    "+0x70",
+    "+0x26",
+]
+
+[[cheat]]
+id = "playercurrentsword"
+name = "playerCurrentSword"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:GREEN",
+    "1:RED",
+    "2:BLUE",
+    "3:ORANGE",
+    "4:PURPLE",
+    "5:WHITE",
+    "6:YELLOW",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "enablefps"
+name = "EnableFPS"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "enablegamecontrols"
+name = "EnableGameControls"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x7d"]
+
+[[cheat]]
+id = "lifes"
+name = "Lifes"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "maxlifes"
+name = "MaxLifes"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameState_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "monsterbase-base-address-scan-initialization-activate-this-first"
+name = "MonsterBase Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(MonsterBase_basepointer)
+registersymbol(MonsterBase_update_enable)
+registersymbol(MonsterBase_set_enable)
+registersymbol(MonsterBase_immobileset_enable)
+registersymbol(MonsterBase_lifesset_enable)
+
+alloc(MonsterBase_basepointer, 8)
+alloc(MonsterBase_update_enable, 4)
+alloc(MonsterBase_set_enable, 4)
+alloc(MonsterBase_immobileset_enable, 4)
+alloc(MonsterBase_lifesset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(MonsterBase_basepointer)
+unregistersymbol(MonsterBase_update_enable)
+unregistersymbol(MonsterBase_set_enable)
+unregistersymbol(MonsterBase_immobileset_enable)
+unregistersymbol(MonsterBase_lifesset_enable)
+
+dealloc(MonsterBase_basepointer)
+dealloc(MonsterBase_update_enable)
+dealloc(MonsterBase_set_enable)
+dealloc(MonsterBase_immobileset_enable)
+dealloc(MonsterBase_lifesset_enable)"""
+
+[[cheat]]
+id = "monsterbase-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "MonsterBase Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(MonsterBase_savedAOB)
+label(MonsterBase_returnhere)
+label(MonsterBase_originalcode)
+label(MonsterBase_exit)
+
+label(MonsterBase_update_exit)
+label(MonsterBase_set_exit)
+label(MonsterBase_immobileset_exit)
+label(MonsterBase_lifesset_exit)
+
+registersymbol(MonsterBase_savedAOB)
+
+//192C5AE4 - 85 C0                 - test eax,eax
+//192C5AE6 - 0F85 5F010000         - jne 192C5C4B
+// MonsterBase:Update+1c
+//192C5AEC - F3 0F10 86 60010000   - movss xmm0,[rsi+00000160]
+//192C5AF4 - F3 0F5A C0            - cvtss2sd xmm0,xmm0
+//192C5AF8 - 66 0F57 C9            - xorpd xmm1,xmm1
+//192C5AFC - 66 0F2F C8            - comisd xmm1,xmm0
+//192C5B00 - 0F8A 45010000         - jp 192C5C4B
+aobscan(MonsterBase_searchedAOB, F3 0F 10 86 60 01 00 00 F3 0F 5A C0)
+
+alloc(MonsterBase_newmem, 2048, MonsterBase_searchedAOB)
+
+
+MonsterBase_newmem:
+cmp dword ptr [MonsterBase_update_enable], #0
+je MonsterBase_update_exit
+mov [MonsterBase_basepointer], rsi
+MonsterBase_update_exit:
+
+cmp dword ptr [MonsterBase_set_enable], #0
+je MonsterBase_set_exit
+MonsterBase_set_exit:
+
+cmp dword ptr [MonsterBase_immobileset_enable], #0
+je MonsterBase_immobileset_exit
+mov [rsi+f8], (float)0
+mov [rsi+fc], (float)0
+mov [rsi+108], (float)0
+mov [rsi+110], (float)0
+mov [rsi+138], (float)0
+MonsterBase_immobileset_exit:
+
+cmp dword ptr [MonsterBase_lifesset_enable], #0
+je MonsterBase_lifesset_exit
+mov [rsi+144], (float)0
+MonsterBase_lifesset_exit:
+
+
+MonsterBase_originalcode:
+db F3 0F 10 86 60 01 00 00
+//movss xmm0,[rsi+00000160]
+
+
+MonsterBase_exit:
+jmp MonsterBase_returnhere
+
+
+MonsterBase_searchedAOB:
+MonsterBase_savedAOB:
+jmp MonsterBase_newmem
+nop
+nop
+nop
+MonsterBase_returnhere:
+
+
+[DISABLE]
+MonsterBase_savedAOB:
+db F3 0F 10 86 60 01 00 00
+//movss xmm0,[rsi+00000160]
+
+unregistersymbol(MonsterBase_savedAOB)
+
+dealloc(MonsterBase_newmem)"""
+
+[[cheat]]
+id = "monsters-set-to-immobile"
+name = "Monsters Set to Immobile?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_immobileset_enable"
+hops = []
+
+[[cheat]]
+id = "monsters-lifes-set-to-0"
+name = "Monsters Lifes Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_lifesset_enable"
+hops = []
+
+[[cheat]]
+id = "monsterbase-update-base-address"
+name = "MonsterBase Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "monsterradardistance"
+name = "monsterRadarDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "monstermaxdistance"
+name = "monsterMaxDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "monsterminfireballattackdistance"
+name = "monsterMinFireballAttackDistance"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "monsterishidden"
+name = "monsterIsHidden"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "monsterradarfront"
+name = "monsterRadarFront"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xd5"]
+
+[[cheat]]
+id = "monsterradarback"
+name = "monsterRadarBack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xd6"]
+
+[[cheat]]
+id = "monsterradarleft"
+name = "monsterRadarLeft"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xd7"]
+
+[[cheat]]
+id = "monsterradarright"
+name = "monsterRadarRight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "monsterneedssurroundingspace"
+name = "monsterNeedsSurroundingSpace"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xd9"]
+
+[[cheat]]
+id = "monsterradarisnarrow"
+name = "monsterRadarIsNarrow"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xda"]
+
+[[cheat]]
+id = "monsterishunter"
+name = "monsterIsHunter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xdb"]
+
+[[cheat]]
+id = "monstercanbehiddenvisible"
+name = "monsterCanBeHiddenVisible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "monstercanwalkdiagonaly"
+name = "monsterCanWalkDiagonaly"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xdd"]
+
+[[cheat]]
+id = "monsterhasspecialattack"
+name = "monsterHasSpecialAttack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xde"]
+
+[[cheat]]
+id = "monsterhasfootstepevents"
+name = "monsterhasFootstepEvents"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "monsterhugsleftwall"
+name = "monsterHugsLeftWall"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xe5"]
+
+[[cheat]]
+id = "monsterwalkthroughdoors"
+name = "monsterWalkThroughDoors"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xe6"]
+
+[[cheat]]
+id = "monsterhasfireballattack"
+name = "monsterHasFireballAttack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xe7"]
+
+[[cheat]]
+id = "monsterfireballdelay"
+name = "monsterFireballDelay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "monstercanstrafe"
+name = "monsterCanStrafe"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "monsterspawnsonforwardblock"
+name = "monsterSpawnsOnForwardBlock"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xf1"]
+
+[[cheat]]
+id = "monsterimmunetopoison"
+name = "monsterImmuneToPoison"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xf2"]
+
+[[cheat]]
+id = "monsterimmunetofire"
+name = "monsterImmuneToFire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xf3"]
+
+[[cheat]]
+id = "monsterimmunetoice"
+name = "monsterImmuneToIce"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "monstermonstermovespeed"
+name = "monsterMonsterMoveSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "monstermonsterhuntmovespeed"
+name = "monsterMonsterHuntMoveSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "monstermonsterfallspeed"
+name = "monsterMonsterFallSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "monstermovecooldown"
+name = "monsterMoveCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "monsterattackspeed"
+name = "monsterAttackSpeed"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "monsterattackcooldown"
+name = "monsterAttackCooldown"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "monsterspecialspeed"
+name = "monsterSpecialSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "monsterspecialcooldown"
+name = "monsterSpecialCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x114"]
+
+[[cheat]]
+id = "monsterrangecooldown"
+name = "monsterRangeCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "monsterrangemovecooldown"
+name = "monsterRangeMoveCooldown"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "monsterhuntcooldown"
+name = "monsterHuntCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "monsterlasthunttime"
+name = "monsterLastHuntTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x124"]
+
+[[cheat]]
+id = "monsterlasthuntcooldown"
+name = "monsterLastHuntCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "monsterhitcooldown"
+name = "monsterHitCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x12c"]
+
+[[cheat]]
+id = "monsterdeathlength"
+name = "monsterDeathLength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "monsterchangedirectionpercent"
+name = "monsterChangeDirectionPercent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "monsterturnspeed"
+name = "monsterTurnSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "monsterturncooldown"
+name = "monsterTurnCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x13c"]
+
+[[cheat]]
+id = "monsterstartlifes"
+name = "monsterStartLifes"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x140"]
+
+[[cheat]]
+id = "monsterlifes"
+name = "monsterLifes"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x144"]
+
+[[cheat]]
+id = "monsterattackstarthitnormalizedtime"
+name = "monsterAttackStartHitNormalizedTime"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "monsterattackendhitnormalizedtime"
+name = "monsterAttackEndHitNormalizedTime"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x14c"]
+
+[[cheat]]
+id = "hasparticlesmokeeffect"
+name = "hasParticleSmokeEffect"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "hasparticlespawneffect"
+name = "hasParticleSpawnEffect"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x151"]
+
+[[cheat]]
+id = "hasparticlehiteffect"
+name = "hasParticleHitEffect"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x152"]
+
+[[cheat]]
+id = "hasparticleblockeffect"
+name = "hasParticleBlockEffect"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x153"]
+
+[[cheat]]
+id = "hasparticleattackeffect"
+name = "hasParticleAttackEffect"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "hasparticledeatheffect"
+name = "hasParticleDeathEffect"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x155"]
+
+[[cheat]]
+id = "monsterspawncamprange"
+name = "monsterSpawnCampRange"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "monstercurrentspeedmultiplier"
+name = "monsterCurrentSpeedMultiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x15c"]
+
+[[cheat]]
+id = "monstertargetspeedmultipliertimer"
+name = "monsterTargetSpeedMultiplierTimer"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "oldspeedmultiplier"
+name = "oldSpeedMultiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x164"]
+
+[[cheat]]
+id = "monsterturnspeedtomovespeedratio"
+name = "monsterTurnSpeedToMoveSpeedRatio"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x16c"]
+
+[[cheat]]
+id = "monsteranimationtotranslationspeedratio"
+name = "monsterAnimationToTranslationSpeedRatio"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x170"]
+
+[[cheat]]
+id = "monstermovetimer"
+name = "monsterMoveTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "monsterturntimer"
+name = "monsterTurnTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "monsterattacktimer"
+name = "monsterAttackTimer"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x17c"]
+
+[[cheat]]
+id = "monsterspecialtimer"
+name = "monsterSpecialTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "monsterrangeattacktimer"
+name = "monsterRangeAttackTimer"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x184"]
+
+[[cheat]]
+id = "monsterhuntcooldowntimer"
+name = "monsterHuntCooldownTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "monsterhitcooldowntimer"
+name = "monsterHitCooldownTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x18c"]
+
+[[cheat]]
+id = "moveval"
+name = "moveVal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "rotationval"
+name = "rotationVal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "monstercan-always-turn-first"
+name = "monsterCan_ALWAYS_TURN_FIRST"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "monstercan-hidden"
+name = "monsterCan_HIDDEN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x199"]
+
+[[cheat]]
+id = "monstercan-hidden-visible"
+name = "monsterCan_HIDDEN_VISIBLE"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x19a"]
+
+[[cheat]]
+id = "monstercan-spawn"
+name = "monsterCan_SPAWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x19b"]
+
+[[cheat]]
+id = "monstercan-idle"
+name = "monsterCan_IDLE"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x19c"]
+
+[[cheat]]
+id = "monstercan-fall-from-roof"
+name = "monsterCan_FALL_FROM_ROOF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x19d"]
+
+[[cheat]]
+id = "monstercan-fall-down-pit"
+name = "monsterCan_FALL_DOWN_PIT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x19e"]
+
+[[cheat]]
+id = "monstercan-crush"
+name = "monsterCan_CRUSH"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x19f"]
+
+[[cheat]]
+id = "monstercan-attack-forwards"
+name = "monsterCan_ATTACK_FORWARDS"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "monstercan-attack-left"
+name = "monsterCan_ATTACK_LEFT"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a1"]
+
+[[cheat]]
+id = "monstercan-attack-right"
+name = "monsterCan_ATTACK_RIGHT"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a2"]
+
+[[cheat]]
+id = "monstercan-attack-backwards"
+name = "monsterCan_ATTACK_BACKWARDS"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a3"]
+
+[[cheat]]
+id = "monstercan-special-forwards"
+name = "monsterCan_SPECIAL_FORWARDS"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "monstercan-special-left"
+name = "monsterCan_SPECIAL_LEFT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a5"]
+
+[[cheat]]
+id = "monstercan-special-right"
+name = "monsterCan_SPECIAL_RIGHT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a6"]
+
+[[cheat]]
+id = "monstercan-special-backwards"
+name = "monsterCan_SPECIAL_BACKWARDS"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a7"]
+
+[[cheat]]
+id = "monstercan-block-front"
+name = "monsterCan_BLOCK_FRONT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "monstercan-block-left"
+name = "monsterCan_BLOCK_LEFT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1a9"]
+
+[[cheat]]
+id = "monstercan-block-right"
+name = "monsterCan_BLOCK_RIGHT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1aa"]
+
+[[cheat]]
+id = "monstercan-block-back"
+name = "monsterCan_BLOCK_BACK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1ab"]
+
+[[cheat]]
+id = "monstercan-block-all"
+name = "monsterCan_BLOCK_ALL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "monstercan-hit-front"
+name = "monsterCan_HIT_FRONT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1ad"]
+
+[[cheat]]
+id = "monstercan-hit-left"
+name = "monsterCan_HIT_LEFT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1ae"]
+
+[[cheat]]
+id = "monstercan-hit-right"
+name = "monsterCan_HIT_RIGHT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1af"]
+
+[[cheat]]
+id = "monstercan-hit-back"
+name = "monsterCan_HIT_BACK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "monstercan-hit-death"
+name = "monsterCan_HIT_DEATH"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b1"]
+
+[[cheat]]
+id = "monstercan-move-forwards"
+name = "monsterCan_MOVE_FORWARDS"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b2"]
+
+[[cheat]]
+id = "monstercan-move-backwards"
+name = "monsterCan_MOVE_BACKWARDS"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b3"]
+
+[[cheat]]
+id = "monstercan-move-turn-left"
+name = "monsterCan_MOVE_TURN_LEFT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "monstercan-move-turn-right"
+name = "monsterCan_MOVE_TURN_RIGHT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b5"]
+
+[[cheat]]
+id = "monstercan-move-turn-backwards"
+name = "monsterCan_MOVE_TURN_BACKWARDS"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b6"]
+
+[[cheat]]
+id = "monstercan-turn-left"
+name = "monsterCan_TURN_LEFT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b7"]
+
+[[cheat]]
+id = "monstercan-turn-right"
+name = "monsterCan_TURN_RIGHT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "monstercan-turn-around-left"
+name = "monsterCan_TURN_AROUND_LEFT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1b9"]
+
+[[cheat]]
+id = "monstercan-turn-around-right"
+name = "monsterCan_TURN_AROUND_RIGHT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1ba"]
+
+[[cheat]]
+id = "monstercan-move-strafe-left"
+name = "monsterCan_MOVE_STRAFE_LEFT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1bb"]
+
+[[cheat]]
+id = "monstercan-move-strafe-right"
+name = "monsterCan_MOVE_STRAFE_RIGHT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "monsterhasbeenhit"
+name = "monsterHasBeenHit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1bd"]
+
+[[cheat]]
+id = "removeoccupiedfired"
+name = "removeOccupiedFired"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1be"]
+
+[[cheat]]
+id = "animationlength-spawn"
+name = "animationLength_SPAWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "spawninfront"
+name = "spawnInFront"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "isstuck"
+name = "isStuck"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MonsterBase_basepointer"
+hops = ["+0x1c5"]

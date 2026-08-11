@@ -1,0 +1,235 @@
+[game]
+name = "Megabonk Demo"
+exe = "megabonk demo.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=34087"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+Assets.Scripts.Inventory__Items__Pickups.PlayerHealth.Damage:
+db C3
+//Send@FearlessRevolution|Sintrix
+[DISABLE]
+Assets.Scripts.Inventory__Items__Pickups.PlayerHealth.Damage:
+db 48 89 5C 24 10"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Assets.Scripts.Actors.Enemies.Enemy.CanMove
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+aobscanmodule(ehp,GameAssembly.dll,* EB FF CC CC CC 40 53 48 83 EC 20 80 3D * * * * 00 48 8B D9 75 1F)
+alloc(newmem,$1000,ehp)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+84],(float)1
+jmp code
+
+code:
+  push rbx
+  sub rsp,20
+  jmp return
+
+ehp+06:
+  jmp newmem
+  nop
+return:
+registersymbol(ehp)
+
+[DISABLE]
+
+ehp+06:
+  db 40 53 48 83 EC 20
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-weapon-cooldown-enable-script-pause-game-resume"
+name = "No Weapon Cooldown (Enable Script -> Pause Game -> Resume)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,WeaponData.GetLevel)
+define(bytes,40 53 48 83 EC 20)
+
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+//WeaponData.GetLevel
+assert(address,bytes)
+alloc(newmem,$1000,WeaponData.GetLevel)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+48],(float)-1
+mov [rcx+74],(float)-1
+
+code:
+  push rbx
+  sub rsp,20
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "fox-only-max-luck-on-level-up"
+name = "Fox Only: Max Luck On Level Up"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,GameAssembly.dll+2B506F)
+define(bytes,48 8B 4B 58 48 85 C9)
+
+[ENABLE]
+//GameManager_PlayerInventory_passiveAbility
+//PlayerInventory.PhysicsTick x PlayerInventory.Update
+//Send@FearlessRevolution|Sintrix
+assert(address,bytes)
+alloc(newmem,$1000,GameAssembly.dll+2B506F)
+label(code return)
+
+newmem:
+
+code:
+  mov rcx,[rbx+58]
+  mov [rcx+18],(float)999999999 //passiveAbility
+  test rcx,rcx
+  jmp return
+
+address:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-banish-skip-refresh"
+name = "Infinite Banish/Skip/Refresh"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,LevelupScreen.Update)
+define(bytes,40 53 48 83 EC 20)
+
+[ENABLE]
+//LevelupScreen.Update
+//Send@FearlessRevolution|Sintrix
+assert(address,bytes)
+alloc(newmem,$1000,LevelupScreen.Update)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+9C],#99
+mov [rcx+A0],#99
+mov [rcx+A4],#99
+
+code:
+  push rbx
+  sub rsp,20
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "grab-player-data"
+name = "Grab Player Data"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Assets.Scripts.Actors.Player.MyPlayer.Update
+//Send@FearlessRevolution|Sintrix
+
+[ENABLE]
+
+aobscanmodule(playerdata,GameAssembly.dll,48 8B 49 78 33 D2 E9 *)
+alloc(newmem,$1000,playerdata)
+registersymbol(p_ptr)
+label(code return p_ptr)
+
+newmem:
+mov [p_ptr],rcx
+
+code:
+  mov rcx,[rcx+78]
+  xor edx,edx
+  jmp return
+
+p_ptr:
+dq 0
+
+playerdata:
+  jmp newmem
+  nop
+return:
+registersymbol(playerdata)
+
+[DISABLE]
+
+playerdata:
+  db 48 8B 49 78 33 D2
+
+unregistersymbol(*)
+dealloc(*)"""

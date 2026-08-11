@@ -1,0 +1,1322 @@
+[game]
+name = "Tales of Berseria Remastered"
+exe = "remastered_game.exe"
+notes = "Converted from a Cheat Engine table by wajrak. Source: https://fearlessrevolution.com/viewtopic.php?t=38387"
+verified = []
+author = "wajrak"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "gald"
+name = "Gald"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version: 
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// Scan for the exact Gald writing instruction
+aobscanmodule(GaldHook, TLSampleViewerTO12.dll, 89 10 4C 8B 4B 10 41 8B 09)
+alloc(newmem, $1000, GaldHook)
+
+// 1. Allocate our Cheat Engine Variables
+alloc(pGald, 8)
+alloc(bMaxGald, 4)
+alloc(bEnableMultiplier, 4)
+alloc(iMultiplier, 4)
+
+// 2. Register them for the user interface
+registersymbol(GaldHook)
+registersymbol(pGald)
+registersymbol(bMaxGald)
+registersymbol(bEnableMultiplier)
+registersymbol(iMultiplier)
+
+// 3. Set default values (0 = off, 1 = on)
+bMaxGald:
+  dd 0
+bEnableMultiplier:
+  dd 0
+iMultiplier:
+  dd 2 // Default to a 2x multiplier
+
+label(check_mult)
+label(calculate_delta)
+label(cap_check)
+label(write_code)
+label(return)
+
+newmem:
+  // --- POINTER STEALER ---
+  mov [pGald], rax
+
+  // --- MAX GALD CHECK ---
+  cmp dword ptr [bMaxGald], 1
+  jne check_mult
+  mov edx, 3B9AC9FF // If enabled, force Gald to 999,999,999
+  jmp write_code
+
+check_mult:
+  // --- MULTIPLIER CHECK ---
+  cmp dword ptr [bEnableMultiplier], 1
+  jne write_code
+
+calculate_delta:
+  // --- THE DELTA CALCULATOR ---
+  mov r10d, [rax]      // r10d = Old Gald balance
+  mov r11d, edx        // r11d = New incoming Gald balance
+  sub r11d, r10d       // r11d = Delta (New minus Old)
+
+  cmp r11d, 0          // Did we actually gain money?
+  jle write_code       // If it's 0 or negative (spending money), skip the multiplier
+
+  // We gained money. Let's multiply the gain.
+  imul r11d, [iMultiplier]
+  add r10d, r11d       // Add the multiplied gain to the old balance
+  mov edx, r10d        // Move our calculated total back into EDX for the final write
+
+cap_check:
+  // --- OVERFLOW PREVENTION ---
+  cmp edx, 3B9AC9FF
+  jle write_code
+  mov edx, 3B9AC9FF    // Cap it so we don't crash the game
+
+write_code:
+  // --- ORIGINAL INSTRUCTION ---
+  mov [rax], edx
+  mov r9, [rbx+10]
+  jmp return
+
+GaldHook:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+GaldHook:
+  db 89 10 4C 8B 4B 10
+
+unregistersymbol(GaldHook)
+unregistersymbol(pGald)
+unregistersymbol(bMaxGald)
+unregistersymbol(bEnableMultiplier)
+unregistersymbol(iMultiplier)
+
+dealloc(newmem)
+dealloc(pGald)
+dealloc(bMaxGald)
+dealloc(bEnableMultiplier)
+dealloc(iMultiplier)"""
+
+[[cheat]]
+id = "gald-2"
+name = "Gald"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGald"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "maxgald"
+name = "MaxGald"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bMaxGald"
+hops = []
+
+[[cheat]]
+id = "enablemultiplier"
+name = "EnableMultiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bEnableMultiplier"
+hops = []
+
+[[cheat]]
+id = "set-multiplier"
+name = "Set Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMultiplier"
+hops = []
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(DamageHook, TLSampleViewerTO12.dll, 41 89 48 0C C3)
+alloc(newmem, $1000, DamageHook)
+
+alloc(bGodMode, 4)
+alloc(bOneHitKill, 4)
+alloc(pPlayer, 8) // Allocate memory to hold our master player pointer
+
+registersymbol(DamageHook)
+registersymbol(bGodMode)
+registersymbol(bOneHitKill)
+registersymbol(pPlayer) // Register the pointer for the CE table
+
+bGodMode:
+  dd 1
+bOneHitKill:
+  dd 0
+
+label(check_enemy)
+label(code)
+
+newmem:
+  // --- FACTION FILTER ---
+  cmp dword ptr [r8+1F8], 1
+  jne check_enemy
+
+  // --- PLAYER LOGIC ---
+  // We know it's the player, so we steal the base pointer right now
+  mov [pPlayer], r8
+
+  cmp dword ptr [bGodMode], 1
+  jne code
+  ret
+
+check_enemy:
+  // --- ENEMY LOGIC ---
+  cmp dword ptr [bOneHitKill], 1
+  jne code
+  mov ecx, 1
+
+code:
+  // --- ORIGINAL INSTRUCTION ---
+  mov [r8+0C], ecx
+  ret
+
+DamageHook:
+  jmp newmem
+
+[DISABLE]
+DamageHook:
+  db 41 89 48 0C C3
+
+unregistersymbol(DamageHook)
+unregistersymbol(bGodMode)
+unregistersymbol(bOneHitKill)
+unregistersymbol(pPlayer)
+
+dealloc(newmem)
+dealloc(bGodMode)
+dealloc(bOneHitKill)
+dealloc(pPlayer)"""
+
+[[cheat]]
+id = "godmode"
+name = "GodMode"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bGodMode"
+hops = []
+
+[[cheat]]
+id = "onehitkill"
+name = "OneHitKill"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bOneHitKill"
+hops = []
+
+[[cheat]]
+id = "current-exp"
+name = "Current EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "soul-gauge-current"
+name = "Soul Gauge Current"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "attack"
+name = "Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "defense"
+name = "Defense"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "focus"
+name = "Focus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "arte-attack"
+name = "Arte Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "arte-defense"
+name = "Arte Defense "
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "sg-max"
+name = "SG Max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "sg"
+name = "SG"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// Scan for the 10-byte signature, hooking exactly on the 5-byte movss instruction
+aobscanmodule(SGHook, TLSampleViewerTO12.dll, F3 0F 11 49 10 0F 28 74 24 50)
+alloc(newmem, $1000, SGHook)
+
+alloc(bInfSG, 4)
+registersymbol(SGHook)
+registersymbol(bInfSG)
+
+// Default (0 = off, 1 = on)
+bInfSG:
+  dd 1
+
+label(code)
+label(return)
+
+newmem:
+  // --- FACTION FILTER ---
+  // Is this entity the player?
+  cmp dword ptr [rcx+1F8], 1
+  jne code // If not, jump to normal code
+
+  // --- CHEAT TOGGLE CHECK ---
+  cmp dword ptr [bInfSG], 1
+  jne code
+
+  // --- SMART GAUGE LOGIC ---
+  // Compare the new incoming SG value (xmm1) to your current SG value ([rcx+10])
+  comiss xmm1, [rcx+10]
+  // If the new value is ABOVE or EQUAL to current (regenerating), allow the write
+  jae code
+
+  // If we reach this line, you are spending SG.
+  // We bypass the write entirely so your gauge doesn't drop.
+  jmp return
+
+code:
+  // --- ORIGINAL INSTRUCTION ---
+  movss [rcx+10], xmm1
+  jmp return
+
+// Our target is exactly 5 bytes (F3 0F 11 49 10), perfect for a JMP!
+SGHook:
+  jmp newmem
+return:
+
+[DISABLE]
+SGHook:
+  db F3 0F 11 49 10
+
+unregistersymbol(SGHook)
+unregistersymbol(bInfSG)
+dealloc(newmem)
+dealloc(bInfSG)"""
+
+[[cheat]]
+id = "binfsg"
+name = "bInfSG"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInfSG"
+hops = []
+
+[[cheat]]
+id = "exp"
+name = "EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+
+[ENABLE]
+// We scan for the register restorer and our target write
+aobscanmodule(ExpHook, TLSampleViewerTO12.dll, 48 8B B4 24 18 01 00 00 44 89 78 1C 49 8B 06)
+alloc(newmem, $1000, ExpHook)
+
+alloc(bExpMult, 4)
+alloc(iExpMult, 4)
+alloc(bMaxExp, 4)
+
+registersymbol(ExpHook)
+registersymbol(bExpMult)
+registersymbol(iExpMult)
+registersymbol(bMaxExp)
+
+// Defaults
+bExpMult:
+  dd 1
+iExpMult:
+  dd 2 // Default 5x Multiplier
+bMaxExp:
+  dd 0
+
+label(check_mult)
+label(calc_delta)
+label(cap_check)
+label(write_code)
+label(return)
+
+newmem:
+  // --- MAX EXP CHECK ---
+  cmp dword ptr [bMaxExp], 1
+  jne check_mult
+  mov r15d, 05F5E0FF // If on, force EXP to 99,999,999
+  jmp write_code
+
+check_mult:
+  // --- MULTIPLIER CHECK ---
+  cmp dword ptr [bExpMult], 1
+  jne write_code
+
+calc_delta:
+  // --- DELTA CALCULATOR ---
+  mov r10d, [rax+1C] // Grab your old EXP
+  mov r11d, r15d     // Grab the new incoming EXP total
+  sub r11d, r10d     // Calculate the gain (New - Old)
+
+  cmp r11d, 0        // Safety check: Did we actually gain EXP?
+  jle write_code
+
+  imul r11d, [iExpMult] // Multiply the gain
+  add r10d, r11d        // Add multiplied gain back to old EXP
+  mov r15d, r10d        // Move it back into r15d for the engine
+
+cap_check:
+  // --- PREVENT OVERFLOW ---
+  cmp r15d, 05F5E0FF
+  jle write_code
+  mov r15d, 05F5E0FF
+
+write_code:
+  // --- ORIGINAL INSTRUCTIONS ---
+  mov [rax+1C],r15d
+  mov rax,[r14]
+  jmp return
+
+// We hook exactly 8 bytes after the start of our signature
+ExpHook+8:
+  jmp newmem
+  nop // Padding to round out the 7 bytes we ate
+  nop
+return:
+
+[DISABLE]
+ExpHook+8:
+  db 44 89 78 1C 49 8B 06
+
+unregistersymbol(ExpHook)
+unregistersymbol(bExpMult)
+unregistersymbol(iExpMult)
+unregistersymbol(bMaxExp)
+
+dealloc(newmem)
+dealloc(bExpMult)
+dealloc(iExpMult)
+dealloc(bMaxExp)"""
+
+[[cheat]]
+id = "multiplier-on-off"
+name = "Multiplier ON/OFF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bExpMult"
+hops = []
+
+[[cheat]]
+id = "set-multiplier-2"
+name = "Set Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iExpMult"
+hops = []
+
+[[cheat]]
+id = "max-exp"
+name = "Max Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bMaxExp"
+hops = []
+
+[[cheat]]
+id = "play-time"
+name = "Play Time"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// Scan for the playtime write and the next instruction to ensure stability
+aobscanmodule(PlaytimeHook, TLSampleViewerTO12.dll, 48 89 8A 60 0D 00 00 48 8B 55 10)
+alloc(newmem, $1000, PlaytimeHook)
+
+// Allocate our UI toggles and the Pointer Stealer
+alloc(bFreezeTimer, 4)
+alloc(bResetTimer, 4)
+alloc(pPlaytimeBase, 8)
+
+registersymbol(PlaytimeHook)
+registersymbol(bFreezeTimer)
+registersymbol(bResetTimer)
+registersymbol(pPlaytimeBase)
+
+// Set defaults to off
+bFreezeTimer:
+  dd 0
+bResetTimer:
+  dd 0
+
+label(check_freeze)
+label(code)
+label(return)
+
+newmem:
+  // --- POINTER STEALER ---
+  // Save the master save data structure base
+  mov [pPlaytimeBase], rdx
+
+  // --- FORCE ZERO CHECK ---
+  cmp dword ptr [bResetTimer], 1
+  jne check_freeze
+  mov rcx, 0 // Overwrite the incoming frame count with 0
+  jmp code
+
+check_freeze:
+  // --- FREEZE CHECK ---
+  cmp dword ptr [bFreezeTimer], 1
+  jne code
+  // If we are freezing, we just return directly to the game without executing the write
+  jmp return
+
+code:
+  // --- ORIGINAL INSTRUCTION ---
+  mov [rdx+00000D60], rcx
+  jmp return
+
+// We hook exactly on the 7-byte mov instruction
+PlaytimeHook:
+  jmp newmem
+  nop // Pad out the remaining 2 bytes we ate
+  nop
+return:
+
+[DISABLE]
+PlaytimeHook:
+  db 48 89 8A 60 0D 00 00
+
+unregistersymbol(PlaytimeHook)
+unregistersymbol(bFreezeTimer)
+unregistersymbol(bResetTimer)
+unregistersymbol(pPlaytimeBase)
+
+dealloc(newmem)
+dealloc(bFreezeTimer)
+dealloc(bResetTimer)
+dealloc(pPlaytimeBase)"""
+
+[[cheat]]
+id = "current-playtime-frames"
+name = "Current Playtime (Frames)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlaytimeBase"
+hops = ["+0xd60"]
+
+[[cheat]]
+id = "freeze-timer"
+name = "Freeze Timer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bFreezeTimer"
+hops = []
+
+[[cheat]]
+id = "reset-timer"
+name = "Reset Timer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bResetTimer"
+hops = []
+
+[[cheat]]
+id = "inventory"
+name = "Inventory"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(ItemHook, TLSampleViewerTO12.dll, 45 89 04 8A 48 8D 3C 8D 00 00 00 00)
+alloc(newmem, $1000, ItemHook)
+
+alloc(bInfItems, 4)
+alloc(pLastItem, 8) // Memory for our new pointer
+
+registersymbol(ItemHook)
+registersymbol(bInfItems)
+registersymbol(pLastItem)
+
+bInfItems:
+  dd 1
+
+label(code)
+label(return)
+
+newmem:
+  // --- THE POINTER STEALER ---
+  // The devs left the base in r10 and the index in rcx.
+  // We temporarily save rax so we don't destroy the old quantity value
+  push rax
+  // Calculate the exact memory address of the item and save it
+  lea rax, [r10+rcx*4]
+  mov [pLastItem], rax
+  // Restore rax so the rest of our script works properly
+  pop rax
+
+  // --- CHEAT CHECK ---
+  cmp dword ptr [bInfItems], 1
+  jne code
+
+  // --- INFINITE LOGIC ---
+  cmp r8d, eax
+  jae code
+  mov r8d, eax
+
+code:
+  // --- ORIGINAL INSTRUCTIONS ---
+  mov [r10+rcx*4], r8d
+  lea rdi, [rcx*4+00000000]
+  jmp return
+
+ItemHook:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+ItemHook:
+  db 45 89 04 8A 48 8D 3C 8D 00 00 00 00
+
+unregistersymbol(ItemHook)
+unregistersymbol(bInfItems)
+unregistersymbol(pLastItem)
+
+dealloc(newmem)
+dealloc(bInfItems)
+dealloc(pLastItem)"""
+
+[[cheat]]
+id = "infinite-items"
+name = "Infinite Items"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInfItems"
+hops = []
+
+[[cheat]]
+id = "last-item-quantity-discard-or-use-to-refresh"
+name = "Last Item quantity (discard or use to refresh)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastItem"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "store-discount-level"
+name = "Store Discount Level"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// Scan for the stable 11-byte block
+aobscanmodule(StoreExpHook, TLSampleViewerTO12.dll, 41 BA 01 00 00 00 45 8B CA 89 10)
+alloc(newmem, $1000, StoreExpHook)
+alloc(pStore, 8)
+
+label(code)
+label(return)
+
+registersymbol(StoreExpHook)
+registersymbol(pStore)
+
+newmem:
+  // Steal the base pointer
+  mov [pStore], rax
+
+code:
+  // Execute the exact 5 bytes we replaced
+  mov r9d, r10d
+  mov [rax], edx
+  jmp return
+
+// We inject our jump exactly 6 bytes after the start of our AOB signature
+// landing perfectly on '45 8B CA'
+StoreExpHook+6:
+  jmp newmem
+return:
+
+[DISABLE]
+StoreExpHook+6:
+  db 45 8B CA 89 10
+
+unregistersymbol(StoreExpHook)
+unregistersymbol(pStore)
+dealloc(newmem)
+dealloc(pStore)"""
+
+[[cheat]]
+id = "pstore"
+name = "pStore"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStore"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "katz-spirits"
+name = "Katz Spirits "
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+
+[ENABLE]
+// Scan for the cap check and the 6-byte write instruction right after it
+aobscanmodule(KatzHook, TLSampleViewerTO12.dll, 41 3B C7 41 0F 4F C7 89 81 20 09 00 00)
+alloc(newmem, $1000, KatzHook)
+
+alloc(pKatzBase, 8)
+alloc(bMaxKatz, 4)
+alloc(bKatzMult, 4)
+alloc(iKatzMult, 4)
+
+registersymbol(KatzHook)
+registersymbol(pKatzBase)
+registersymbol(bMaxKatz)
+registersymbol(bKatzMult)
+registersymbol(iKatzMult)
+
+bMaxKatz:
+  dd 0
+bKatzMult:
+  dd 0
+iKatzMult:
+  dd 5 // Default 5x multiplier
+
+label(check_mult)
+label(calc_delta)
+label(cap_check)
+label(write_code)
+label(return)
+
+newmem:
+  // --- POINTER STEALER ---
+  mov [pKatzBase], rcx
+
+  // --- MAX CHECK ---
+  cmp dword ptr [bMaxKatz], 1
+  jne check_mult
+  // If enabled, force our custom 9999 cap
+  mov eax, #9999
+  jmp write_code
+
+check_mult:
+  // --- MULTIPLIER CHECK ---
+  cmp dword ptr [bKatzMult], 1
+  jne write_code
+
+calc_delta:
+  // --- THE DELTA CALCULATOR ---
+  mov r10d, [rcx+00000920]
+  mov r11d, eax
+  sub r11d, r10d
+
+  cmp r11d, 0
+  jle write_code
+
+  imul r11d, [iKatzMult]
+  add r10d, r11d
+  mov eax, r10d
+
+cap_check:
+  // --- CUSTOM OVERFLOW PREVENTION ---
+  // Clamp it at 9999 so the multiplier doesn't blow past our custom cap
+  cmp eax, #9999
+  jle write_code
+  mov eax, #9999
+
+write_code:
+  // --- ORIGINAL INSTRUCTION ---
+  mov [rcx+00000920], eax
+  jmp return
+
+KatzHook+7:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+KatzHook+7:
+  db 89 81 20 09 00 00
+
+unregistersymbol(KatzHook)
+unregistersymbol(pKatzBase)
+unregistersymbol(bMaxKatz)
+unregistersymbol(bKatzMult)
+unregistersymbol(iKatzMult)
+
+dealloc(newmem)
+dealloc(pKatzBase)
+dealloc(bMaxKatz)
+dealloc(bKatzMult)
+dealloc(iKatzMult)"""
+
+[[cheat]]
+id = "pointer"
+name = "Pointer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pKatzBase"
+hops = ["+0x920"]
+
+[[cheat]]
+id = "set-to-9999"
+name = "Set to 9999"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bMaxKatz"
+hops = []
+
+[[cheat]]
+id = "soul-multiplier-toggle"
+name = "Soul multiplier toggle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bKatzMult"
+hops = []
+
+[[cheat]]
+id = "multiplier"
+name = "Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "iKatzMult"
+hops = []
+
+[[cheat]]
+id = "artes-usage"
+name = "Artes Usage"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Tales of Berseria Remastered_Game.exe
+  Version:
+  Date   : 2026-02-27
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+
+[ENABLE]
+// Scan for the exact 8-byte write instruction and the mov right after it
+aobscanmodule(ArteHook, TLSampleViewerTO12.dll, 66 41 89 80 08 0B 00 00 4D 8B 09)
+alloc(newmem, $1000, ArteHook)
+
+alloc(bMaxArte, 4)
+alloc(bArteMult, 4)
+alloc(iArteMult, 4)
+
+registersymbol(ArteHook)
+registersymbol(bMaxArte)
+registersymbol(bArteMult)
+registersymbol(iArteMult)
+
+bMaxArte:
+  dd 0
+bArteMult:
+  dd 1
+iArteMult:
+  dd 10 // Default 10x multiplier (You get 10 uses per 1 actual use)
+
+label(check_mult)
+label(calc_delta)
+label(skip_mult)
+label(code)
+label(return)
+
+newmem:
+  // --- INSTANT MAX CHECK ---
+  cmp dword ptr [bMaxArte], 1
+  jne check_mult
+  mov ax, #9999 // Force to 9999 instantly
+  jmp code
+
+check_mult:
+  // --- MULTIPLIER CHECK ---
+  cmp dword ptr [bArteMult], 1
+  jne code
+
+calc_delta:
+  // Save registers we are about to use for math
+  push rcx
+  push rbx
+
+  // Old value is still sitting in [r8+00000B08]
+  // New value is in ax
+  movzx ecx, word ptr [r8+00000B08]
+  movzx ebx, ax
+
+  sub ebx, ecx // Calculate the gain (New - Old)
+  cmp ebx, 0
+  jle skip_mult // If no gain, skip math
+
+  imul ebx, [iArteMult] // Multiply the gain
+  add ecx, ebx          // Add multiplied gain back to the old value
+  mov ax, cx            // Move our new supercharged value back into ax
+
+  // Safety Cap Check (Don't let the multiplier blow past 9999)
+  cmp ax, #9999
+  jle skip_mult
+  mov ax, #9999
+
+skip_mult:
+  // Restore our registers
+  pop rbx
+  pop rcx
+
+code:
+  // --- ORIGINAL INSTRUCTION ---
+  mov [r8+00000B08], ax
+  jmp return
+
+// We hook exactly 8 bytes
+ArteHook:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+ArteHook:
+  db 66 41 89 80 08 0B 00 00
+
+unregistersymbol(ArteHook)
+unregistersymbol(bMaxArte)
+unregistersymbol(bArteMult)
+unregistersymbol(iArteMult)
+
+dealloc(newmem)
+dealloc(bMaxArte)
+dealloc(bArteMult)
+dealloc(iArteMult)"""
+
+[[cheat]]
+id = "max-artes"
+name = "Max Artes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "bMaxArte"
+hops = []
+
+[[cheat]]
+id = "artes-usage-multiplier-toggle"
+name = "Artes Usage Multiplier Toggle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bArteMult"
+hops = []
+
+[[cheat]]
+id = "artes-multiplier"
+name = "Artes Multiplier:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iArteMult"
+hops = []

@@ -1,0 +1,2895 @@
+[game]
+name = "Tembo The Badass Elephant"
+exe = "shinkansen_tembo_the_badass_elephant.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1753"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "gamecontrol-base-address-scan-initialization-activate-this-first"
+name = "GameControl Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GameControl_basepointer)
+registersymbol(GameControl_update_enable)
+registersymbol(GameControl_set_enable)
+registersymbol(GameControl_waterset_enable)
+registersymbol(GameControl_jumpset_enable)
+registersymbol(GameControl_jumpset_value)
+registersymbol(GameControl_invulnerableset_enable)
+registersymbol(GameControl_hpset_enable)
+registersymbol(GameControl_timeset_enable)
+
+alloc(GameControl_basepointer, 4)
+alloc(GameControl_update_enable, 4)
+alloc(GameControl_set_enable, 4)
+alloc(GameControl_waterset_enable, 4)
+alloc(GameControl_jumpset_enable, 4)
+alloc(GameControl_jumpset_value, 4)
+alloc(GameControl_invulnerableset_enable, 4)
+alloc(GameControl_hpset_enable, 4)
+alloc(GameControl_timeset_enable, 4)
+
+GameControl_jumpset_value:
+dd #36
+
+
+[DISABLE]
+unregistersymbol(GameControl_basepointer)
+unregistersymbol(GameControl_update_enable)
+unregistersymbol(GameControl_set_enable)
+unregistersymbol(GameControl_waterset_enable)
+unregistersymbol(GameControl_jumpset_enable)
+unregistersymbol(GameControl_jumpset_value)
+unregistersymbol(GameControl_invulnerableset_enable)
+unregistersymbol(GameControl_hpset_enable)
+unregistersymbol(GameControl_timeset_enable)
+
+dealloc(GameControl_basepointer)
+dealloc(GameControl_update_enable)
+dealloc(GameControl_set_enable)
+dealloc(GameControl_waterset_enable)
+dealloc(GameControl_jumpset_enable)
+dealloc(GameControl_jumpset_value)
+dealloc(GameControl_invulnerableset_enable)
+dealloc(GameControl_hpset_enable)
+dealloc(GameControl_timeset_enable)"""
+
+[[cheat]]
+id = "gamecontrol-base-address-scan-to-activate-load-game-to-update-play-level"
+name = "GameControl Base Address Scan (To Activate: Load Game, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GameControl_savedAOB)
+label(GameControl_returnhere)
+label(GameControl_originalcode)
+label(GameControl_exit)
+
+label(GameControl_update_exit)
+label(GameControl_set_exit)
+label(GameControl_waterset_exit)
+label(GameControl_invulnerableset_exit)
+label(GameControl_hpset_exit)
+label(GameControl_jumpset_exit)
+label(GameControl_timeset_exit)
+
+registersymbol(GameControl_savedAOB)
+
+//0462AB04 - 83 EC 14              - sub esp,14
+//0462AB07 - 8B 7D 08              - mov edi,[ebp+08]
+// GameControl:UpdateGame+f
+//0462AB0A - 0FB6 87 B4000000      - movzx eax,byte ptr [edi+000000B4]
+//0462AB11 - 85 C0                 - test eax,eax
+//0462AB13 - 0F85 D3000000         - jne 0462ABEC
+//0462AB19 - 8B 47 58              - mov eax,[edi+58]
+//0462AB1C - 83 EC 0C              - sub esp,0C
+//0462AB1F - 50                    - push eax
+aobscan(GameControl_searchedAOB, 0F B6 87 B4 00 00 00 85 C0 * * * * * * 8B 47 58)
+
+alloc(GameControl_newmem, 2048)
+alloc(GameControl_temp1, 4)
+alloc(GameControl_temp2, 4)
+
+
+GameControl_newmem:
+mov [GameControl_temp1], ebx
+mov [GameControl_temp2], ecx
+
+cmp dword ptr [GameControl_update_enable], #0
+je GameControl_update_exit
+mov [GameControl_basepointer], edi
+GameControl_update_exit:
+
+cmp dword ptr [GameControl_set_enable], #0
+je GameControl_set_exit
+GameControl_set_exit:
+
+cmp dword ptr [GameControl_waterset_enable], #0
+je GameControl_waterset_exit
+cmp dword ptr [edi+20], #0
+je GameControl_waterset_exit
+mov ebx, [edi+20]
+mov [ebx+2ac], #9999
+GameControl_waterset_exit:
+
+cmp dword ptr [GameControl_jumpset_enable], #0
+je GameControl_jumpset_exit
+cmp dword ptr [edi+24], #0
+je GameControl_jumpset_exit
+mov ebx, [edi+24]
+fild [GameControl_jumpset_value]
+fstp [ebx+148]
+GameControl_jumpset_exit:
+
+cmp dword ptr [GameControl_invulnerableset_enable], #0
+je GameControl_invulnerableset_exit
+cmp dword ptr [edi+24], #0
+je GameControl_invulnerableset_exit
+mov ebx, [edi+24]
+mov [ebx+188], (float)999
+GameControl_invulnerableset_exit:
+
+cmp dword ptr [GameControl_hpset_enable], #0
+je GameControl_hpset_exit
+cmp dword ptr [edi+24], #0
+je GameControl_hpset_exit
+mov ebx, [edi+24]
+mov cl, [ebx+1c5]
+mov [ebx+1c4], cl
+GameControl_hpset_exit:
+
+cmp dword ptr [GameControl_timeset_enable], #0
+je GameControl_timeset_exit
+cmp dword ptr [edi+74], #0
+je GameControl_timeset_exit
+mov ebx, [edi+74]
+cmp dword ptr [ebx+1c], #0
+je GameControl_timeset_exit
+mov ebx, [ebx+1c]
+mov [ebx+38], #0
+mov [ebx+3c], #0
+GameControl_timeset_exit:
+
+mov ebx, [GameControl_temp1]
+mov ecx, [GameControl_temp2]
+
+
+GameControl_originalcode:
+db 0F B6 87 B4 00 00 00
+//movzx eax,byte ptr [edi+000000B4]
+
+
+GameControl_exit:
+jmp GameControl_returnhere
+
+
+GameControl_searchedAOB:
+GameControl_savedAOB:
+jmp GameControl_newmem
+nop
+nop
+GameControl_returnhere:
+
+
+[DISABLE]
+GameControl_savedAOB:
+db 0F B6 87 B4 00 00 00
+//movzx eax,byte ptr [edi+000000B4]
+
+unregistersymbol(GameControl_savedAOB)
+
+dealloc(GameControl_newmem)
+dealloc(GameControl_temp1)
+dealloc(GameControl_temp2)"""
+
+[[cheat]]
+id = "water-set-to-max"
+name = "Water Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_waterset_enable"
+hops = []
+
+[[cheat]]
+id = "jump-set-to-jump-value"
+name = "Jump Set to Jump Value?"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_jumpset_enable"
+hops = []
+
+[[cheat]]
+id = "jump-value"
+name = "Jump Value"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_jumpset_value"
+hops = []
+
+[[cheat]]
+id = "invulnerable-time-set-to-massive"
+name = "Invulnerable Time Set to Massive?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_invulnerableset_enable"
+hops = []
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "level-time-set-to-0"
+name = "Level Time Set to 0?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_timeset_enable"
+hops = []
+
+[[cheat]]
+id = "gamecontrol-update-base-address"
+name = "GameControl Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x0",
+]
+
+[[cheat]]
+id = "no-input-time"
+name = "NO_INPUT_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x238",
+]
+
+[[cheat]]
+id = "centrifugal-force"
+name = "CENTRIFUGAL_FORCE"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x23c",
+]
+
+[[cheat]]
+id = "tangential-force-coe"
+name = "TANGENTIAL_FORCE_COE"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x240",
+]
+
+[[cheat]]
+id = "skid-wait-time"
+name = "SKID_WAIT_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x244",
+]
+
+[[cheat]]
+id = "skid-max-time"
+name = "SKID_MAX_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x248",
+]
+
+[[cheat]]
+id = "slide-skid-max-time"
+name = "SLIDE_SKID_MAX_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x24c",
+]
+
+[[cheat]]
+id = "buttstom-movable-frame"
+name = "BUTTSTOM_MOVABLE_FRAME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x250",
+]
+
+[[cheat]]
+id = "buttstomp-stun-radius"
+name = "BUTTSTOMP_STUN_RADIUS"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x254",
+]
+
+[[cheat]]
+id = "tire-rejump-attack-distance"
+name = "TIRE_REJUMP_ATTACK_DISTANCE"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x258",
+]
+
+[[cheat]]
+id = "dash-to-headbutt-time"
+name = "DASH_TO_HEADBUTT_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x25c",
+]
+
+[[cheat]]
+id = "headbutt-acceptable-time"
+name = "HEADBUTT_ACCEPTABLE_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x260",
+]
+
+[[cheat]]
+id = "dash-jump-decelerate-rate"
+name = "DASH_JUMP_DECELERATE_RATE"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x264",
+]
+
+[[cheat]]
+id = "combo-wait-time"
+name = "COMBO_WAIT_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x268",
+]
+
+[[cheat]]
+id = "dash-turn-time"
+name = "DASH_TURN_TIME"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x26c",
+]
+
+[[cheat]]
+id = "noinputtime"
+name = "noInputTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x274",
+]
+
+[[cheat]]
+id = "angularvelocityz"
+name = "angularVelocityZ"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x278",
+]
+
+[[cheat]]
+id = "oldleverx"
+name = "oldLeverX"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x27c",
+]
+
+[[cheat]]
+id = "damagestoptime"
+name = "damageStopTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x280",
+]
+
+[[cheat]]
+id = "swingdistance"
+name = "swingDistance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x284",
+]
+
+[[cheat]]
+id = "springdistance"
+name = "springDistance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x288",
+]
+
+[[cheat]]
+id = "headbutttimer"
+name = "headButtTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x28c",
+]
+
+[[cheat]]
+id = "damagepausetimer"
+name = "damagePauseTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x290",
+]
+
+[[cheat]]
+id = "dashtimer"
+name = "dashTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x294",
+]
+
+[[cheat]]
+id = "hostageitemtimer"
+name = "hostageItemTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x298",
+]
+
+[[cheat]]
+id = "oldslopeslippositionx"
+name = "oldSlopeSlipPositionX"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x29c",
+]
+
+[[cheat]]
+id = "oldslopeslippositiony"
+name = "oldSlopeSlipPositionY"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2a0",
+]
+
+[[cheat]]
+id = "invulnerableflashtime"
+name = "invulnerableFlashTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2a4",
+]
+
+[[cheat]]
+id = "dashcount"
+name = "dashCount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2a8",
+]
+
+[[cheat]]
+id = "wateramount"
+name = "waterAmount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2ac",
+]
+
+[[cheat]]
+id = "requestfall"
+name = "requestFall"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2b1",
+]
+
+[[cheat]]
+id = "requestflip"
+name = "requestFlip"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2b2",
+]
+
+[[cheat]]
+id = "effectwatermode"
+name = "effectWaterMode"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2b3",
+]
+
+[[cheat]]
+id = "invulnerableflash"
+name = "invulnerableFlash"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2b4",
+]
+
+[[cheat]]
+id = "stopdash"
+name = "stopDash"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x20",
+    "+0x2b5",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x0",
+]
+
+[[cheat]]
+id = "jumplevercoefficient"
+name = "jumpLeverCoefficient"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x140",
+]
+
+[[cheat]]
+id = "rolljumplevercoefficient"
+name = "rollJumpLeverCoefficient"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x144",
+]
+
+[[cheat]]
+id = "jumpcoefficientymin"
+name = "jumpCoefficientYMin"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x148",
+]
+
+[[cheat]]
+id = "jumpcoefficientyaccel"
+name = "jumpCoefficientYAccel"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x14c",
+]
+
+[[cheat]]
+id = "down-velocity-x"
+name = "DOWN_VELOCITY_X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x150",
+]
+
+[[cheat]]
+id = "down-velocity-y"
+name = "DOWN_VELOCITY_Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x154",
+]
+
+[[cheat]]
+id = "down-velocity-z"
+name = "DOWN_VELOCITY_Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x158",
+]
+
+[[cheat]]
+id = "damage-invulnerable-time"
+name = "DAMAGE_INVULNERABLE_TIME"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x15c",
+]
+
+[[cheat]]
+id = "adjusthpmax"
+name = "adjustHpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x160",
+]
+
+[[cheat]]
+id = "throughchararolling"
+name = "throughCharaRolling"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x164",
+]
+
+[[cheat]]
+id = "throughcharabuttstomp"
+name = "throughCharaButtstomp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x165",
+]
+
+[[cheat]]
+id = "noturnscaleminus1"
+name = "noTurnScaleMinus1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x166",
+]
+
+[[cheat]]
+id = "hitgroundy"
+name = "hitGroundY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x17c",
+]
+
+[[cheat]]
+id = "leverx"
+name = "leverX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x180",
+]
+
+[[cheat]]
+id = "levery"
+name = "leverY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x184",
+]
+
+[[cheat]]
+id = "invulnerabletime"
+name = "invulnerableTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x188",
+]
+
+[[cheat]]
+id = "changeableframe"
+name = "changeableFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x18c",
+]
+
+[[cheat]]
+id = "collisionbeginframe"
+name = "collisionBeginFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x190",
+]
+
+[[cheat]]
+id = "collisionendframe"
+name = "collisionEndFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x194",
+]
+
+[[cheat]]
+id = "runningtime"
+name = "runningTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x198",
+]
+
+[[cheat]]
+id = "jumptime"
+name = "jumpTime"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x19c",
+]
+
+[[cheat]]
+id = "actiontime"
+name = "actionTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1a0",
+]
+
+[[cheat]]
+id = "jumpbeginpositiony"
+name = "jumpBeginPositionY"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1a4",
+]
+
+[[cheat]]
+id = "jumptoppositiony"
+name = "jumpTopPositionY"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1a8",
+]
+
+[[cheat]]
+id = "waittimer"
+name = "waitTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1ac",
+]
+
+[[cheat]]
+id = "movedistancex"
+name = "moveDistanceX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1b0",
+]
+
+[[cheat]]
+id = "squatmovedistancex"
+name = "squatMoveDistanceX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1b4",
+]
+
+[[cheat]]
+id = "slidedistancex"
+name = "slideDistanceX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1b8",
+]
+
+[[cheat]]
+id = "fadetimer"
+name = "fadeTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1bc",
+]
+
+[[cheat]]
+id = "obstacklemask"
+name = "obstackleMask"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1c0",
+]
+
+[[cheat]]
+id = "hp"
+name = "hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1c4",
+]
+
+[[cheat]]
+id = "hpmax"
+name = "hpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1c5",
+]
+
+[[cheat]]
+id = "requestturn"
+name = "requestTurn"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1d6",
+]
+
+[[cheat]]
+id = "iscollisionsizechanged"
+name = "isCollisionSizeChanged"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1d7",
+]
+
+[[cheat]]
+id = "stopwalking"
+name = "stopWalking"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1d8",
+]
+
+[[cheat]]
+id = "stopwalkingback"
+name = "stopWalkingBack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1d9",
+]
+
+[[cheat]]
+id = "nooptionalanime"
+name = "noOptionalAnime"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1da",
+]
+
+[[cheat]]
+id = "isflyingenemy"
+name = "isFlyingEnemy"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1db",
+]
+
+[[cheat]]
+id = "isdashenemy"
+name = "isDashEnemy"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1dc",
+]
+
+[[cheat]]
+id = "isbiglegenemy"
+name = "isBigLegEnemy"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1dd",
+]
+
+[[cheat]]
+id = "isupperweakenemy"
+name = "isUpperWeakEnemy"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1de",
+]
+
+[[cheat]]
+id = "iseeeetrooper"
+name = "isEeeeTrooper"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1df",
+]
+
+[[cheat]]
+id = "issentrytypeenemy"
+name = "isSentryTypeEnemy"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1e0",
+]
+
+[[cheat]]
+id = "ischeckfall"
+name = "isCheckFall"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1e1",
+]
+
+[[cheat]]
+id = "zerovelocity"
+name = "zeroVelocity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x24",
+    "+0x1e2",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x1c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "phantompoint"
+name = "phantomPoint"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x1c",
+    "+0x30",
+]
+
+[[cheat]]
+id = "phantompointcheckpoint"
+name = "phantomPointCheckPoint"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x1c",
+    "+0x34",
+]
+
+[[cheat]]
+id = "gametime"
+name = "gameTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x1c",
+    "+0x38",
+]
+
+[[cheat]]
+id = "scenevirgin"
+name = "sceneVirgin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x1c",
+    "+0x40",
+]
+
+[[cheat]]
+id = "initializeongamestart"
+name = "initializeOnGameStart"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x1c",
+    "+0x42",
+]
+
+[[cheat]]
+id = "isinitializeend-k-backingfield"
+name = "<isInitializeEnd>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x1c",
+    "+0x43",
+]
+
+[[cheat]]
+id = "isgamestart"
+name = "_isGameStart"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "isgamepause"
+name = "_isGamePause"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x2d",
+]
+
+[[cheat]]
+id = "pauselasttimescale"
+name = "pauseLastTimeScale"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x34",
+]
+
+[[cheat]]
+id = "isusegamepad"
+name = "isUseGamePad"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x38",
+]
+
+[[cheat]]
+id = "installprogress"
+name = "installProgress"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "isinitializeend-k-backingfield-2"
+name = "<isInitializeEnd>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x40",
+]
+
+[[cheat]]
+id = "currentsavedataindex-k-backingfield"
+name = "<currentSaveDataIndex>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = [
+    "+0x74",
+    "+0x44",
+]
+
+[[cheat]]
+id = "applicationpausestatus"
+name = "applicationPauseStatus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "cutresultevent"
+name = "cutResultEvent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x79"]
+
+[[cheat]]
+id = "waittimer-2"
+name = "waitTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "pausetime"
+name = "pauseTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "scalex"
+name = "scaleX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "scaley"
+name = "scaleY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "pasttime"
+name = "pastTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "farclip"
+name = "farClip"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "combotimer"
+name = "comboTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "gamesetuptwaitframemax"
+name = "gameSetuptWaitFrameMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "gamesetuptwaitframe"
+name = "gameSetuptWaitFrame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "combopeanutcounter"
+name = "comboPeanutCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "combocounter"
+name = "comboCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "phatomidcounter"
+name = "phatomIdCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "pauseinitialized"
+name = "pauseInitialized"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xad"]
+
+[[cheat]]
+id = "isgamecleark-backingfield"
+name = "isGameCleark__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xae"]
+
+[[cheat]]
+id = "loadpauserequest"
+name = "loadPauseRequest"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xaf"]
+
+[[cheat]]
+id = "introvibrationstep"
+name = "introVibrationStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "disablepause-k-backingfield"
+name = "<disablePause>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "isgameclear-k-backingfield"
+name = "<isGameClear>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameControl_basepointer"
+hops = ["+0xb5"]
+
+[[cheat]]
+id = "peanutgaugecontroller-base-address-scan-initialization-activate-this-first"
+name = "PeanutGaugeController Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PeanutGaugeController_basepointer)
+registersymbol(PeanutGaugeController_update_enable)
+registersymbol(PeanutGaugeController_set_enable)
+registersymbol(PeanutGaugeController_continueset_enable)
+registersymbol(PeanutGaugeController_timeset_enable)
+
+alloc(PeanutGaugeController_basepointer, 4)
+alloc(PeanutGaugeController_update_enable, 4)
+alloc(PeanutGaugeController_set_enable, 4)
+alloc(PeanutGaugeController_continueset_enable, 4)
+alloc(PeanutGaugeController_timeset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PeanutGaugeController_basepointer)
+unregistersymbol(PeanutGaugeController_update_enable)
+unregistersymbol(PeanutGaugeController_set_enable)
+unregistersymbol(PeanutGaugeController_continueset_enable)
+unregistersymbol(PeanutGaugeController_timeset_enable)
+
+dealloc(PeanutGaugeController_basepointer)
+dealloc(PeanutGaugeController_update_enable)
+dealloc(PeanutGaugeController_set_enable)
+dealloc(PeanutGaugeController_continueset_enable)
+dealloc(PeanutGaugeController_timeset_enable)"""
+
+[[cheat]]
+id = "peanutgaugecontroller-base-address-scan-to-activate-load-game-to-update-play-level"
+name = "PeanutGaugeController Base Address Scan (To Activate: Load Game, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PeanutGaugeController_savedAOB)
+label(PeanutGaugeController_returnhere)
+label(PeanutGaugeController_originalcode)
+label(PeanutGaugeController_exit)
+
+label(PeanutGaugeController_update_exit)
+label(PeanutGaugeController_set_exit)
+label(PeanutGaugeController_continueset_exit)
+label(PeanutGaugeController_timeset_exit)
+
+registersymbol(PeanutGaugeController_savedAOB)
+
+//04604BE6 - E8 3D60F9FF           - call 0459AC28
+//04604BEE - 8B 47 3C              - mov eax,[edi+3C]
+// PeanutGaugeController:Update+21
+//04604BF1 - 8B 4F 34              - mov ecx,[edi+34]
+//04604BF4 - 8B 49 3C              - mov ecx,[ecx+3C]
+//04604BF7 - 3B C1                 - cmp eax,ecx
+//04604BF9 - 0F84 E8010000         - je 04604DE7
+//04604BFF - 8B 47 20              - mov eax,[edi+20]
+//04604C02 - 8D 4D DC              - lea ecx,[ebp-24]
+//04604C05 - 83 EC 04              - sub esp,04
+aobscan(PeanutGaugeController_searchedAOB, 8B 4F 34 8B 49 3C 3B C1 * * * * * * 8B 47 20)
+
+alloc(PeanutGaugeController_newmem, 2048)
+
+
+PeanutGaugeController_newmem:
+cmp dword ptr [PeanutGaugeController_update_enable], #0
+je PeanutGaugeController_update_exit
+mov [PeanutGaugeController_basepointer], edi
+PeanutGaugeController_update_exit:
+
+cmp dword ptr [PeanutGaugeController_set_enable], #0
+je PeanutGaugeController_set_exit
+PeanutGaugeController_set_exit:
+
+cmp dword ptr [PeanutGaugeController_continueset_enable], #0
+je PeanutGaugeController_continueset_exit
+cmp dword ptr [edi+34], #0
+je PeanutGaugeController_continueset_exit
+mov ecx, [edi+34]
+mov [ecx+40], #99
+PeanutGaugeController_continueset_exit:
+
+cmp dword ptr [PeanutGaugeController_timeset_enable], #0
+je PeanutGaugeController_timeset_exit
+cmp dword ptr [edi+34], #0
+je PeanutGaugeController_timeset_exit
+mov ecx, [edi+34]
+mov [ecx+48], #0
+mov [ecx+4c], #0
+PeanutGaugeController_timeset_exit:
+
+
+PeanutGaugeController_originalcode:
+db 8B 4F 34 8B 49 3C
+//mov ecx,[edi+34]
+//mov ecx,[ecx+3C]
+
+
+PeanutGaugeController_exit:
+jmp PeanutGaugeController_returnhere
+
+
+PeanutGaugeController_searchedAOB:
+PeanutGaugeController_savedAOB:
+jmp PeanutGaugeController_newmem
+nop
+PeanutGaugeController_returnhere:
+
+
+[DISABLE]
+PeanutGaugeController_savedAOB:
+db 8B 4F 34 8B 49 3C
+//mov ecx,[edi+34]
+//mov ecx,[ecx+3C]
+
+unregistersymbol(PeanutGaugeController_savedAOB)
+
+dealloc(PeanutGaugeController_newmem)"""
+
+[[cheat]]
+id = "continue-set-to-massive"
+name = "Continue Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_continueset_enable"
+hops = []
+
+[[cheat]]
+id = "play-time-set-to-0"
+name = "Play Time Set to 0?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_timeset_enable"
+hops = []
+
+[[cheat]]
+id = "peanutgaugecontroller-update-base-address"
+name = "PeanutGaugeController Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x0",
+]
+
+[[cheat]]
+id = "peanutscount"
+name = "peanutsCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x30",
+]
+
+[[cheat]]
+id = "openzonenum"
+name = "openZoneNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x34",
+]
+
+[[cheat]]
+id = "selectablezonenum"
+name = "selectableZoneNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x38",
+]
+
+[[cheat]]
+id = "peanutcounter"
+name = "peanutCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "continuecount"
+name = "continueCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x40",
+]
+
+[[cheat]]
+id = "endallphantompointevent"
+name = "endAllPhantomPointEvent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x44",
+]
+
+[[cheat]]
+id = "endallhostageevent"
+name = "endAllHostageEvent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x45",
+]
+
+[[cheat]]
+id = "playtime"
+name = "playTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x48",
+]
+
+[[cheat]]
+id = "iscleartutorial"
+name = "isClearTutorial"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = [
+    "+0x34",
+    "+0x50",
+]
+
+[[cheat]]
+id = "count"
+name = "count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "isdispcounter"
+name = "isDispCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "disptime"
+name = "dispTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "countchangetimer"
+name = "countChangeTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "waitcontinuecountup-k-backingfield"
+name = "<waitContinueCountUp>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PeanutGaugeController_basepointer"
+hops = ["+0x4c"]

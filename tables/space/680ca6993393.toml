@@ -1,0 +1,103 @@
+[game]
+name = "Jump Space - Infinite Ammo & Infinite Items [CE Table] (Beginner / Learning)"
+exe = "space.exe"
+notes = "Converted from a Cheat Engine table by yuqin2024. Source: https://fearlessrevolution.com/viewtopic.php?t=38960"
+verified = []
+author = "yuqin2024"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-ammo-all-guns"
+name = "无限子弹Infinite Ammo (all guns)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Jump Space.exe
+  Date   : 2026-04-10
+  Author : ChatGPT
+}
+
+[ENABLE]
+
+aobscanmodule(ammo_INJECT,GameAssembly.dll,89 7E 58 0F 85)
+alloc(newmem,$1000,ammo_INJECT)
+
+label(return)
+label(skipwrite)
+
+newmem:
+  pushfq                  // 保存原始标志位（给原来的 jne 用）
+  mov eax,[rsi+58]        // 旧弹数
+  cmp edi,eax             // 新值 vs 旧值
+  jl skipwrite            // 新值更小 = 扣弹，跳过写入
+  mov [rsi+58],edi        // 非扣弹时正常写入（换弹/初始化）
+
+skipwrite:
+  popfq                   // 恢复原始标志位
+  jne GameAssembly.dll+5176858
+  jmp return
+
+ammo_INJECT:
+  jmp newmem
+  nop 4
+
+return:
+registersymbol(ammo_INJECT)
+
+[DISABLE]
+
+ammo_INJECT:
+  db 89 7E 58 0F 85 94 01 00 00
+
+unregistersymbol(ammo_INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-items-grenades-rocket-launcher-etc"
+name = "无限道具Infinite Items (grenades, rocket launcher, etc.)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(item_INJECT,GameAssembly.dll,F3 0F 11 76 58 0F 85)
+alloc(newmem,$1000,item_INJECT)
+
+label(return)
+label(skipwrite)
+
+newmem:
+  movss xmm0,[rsi+58]     // 旧值
+  comiss xmm6,xmm0        // 比较 新值 vs 旧值
+  jb skipwrite            // 新值更小 → 扣次数 → 跳过写入
+
+  movss [rsi+58],xmm6     // 正常写入（补充/初始化）
+  jne GameAssembly.dll+51B5F1F
+  jmp return
+
+skipwrite:
+  jmp GameAssembly.dll+51B5F1F
+
+item_INJECT:
+  jmp newmem
+  nop 4
+
+return:
+registersymbol(item_INJECT)
+
+[DISABLE]
+
+item_INJECT:
+  db F3 0F 11 76 58 0F 85
+
+unregistersymbol(item_INJECT)
+dealloc(newmem)"""

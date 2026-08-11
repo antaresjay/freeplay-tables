@@ -1,0 +1,517 @@
+[game]
+name = "Guacamelee: Health, Money, Floating"
+exe = "guac.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2174"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "readme-double-click-on-script"
+name = "README:  double click on <script> ---------> "
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Cheat Table for Guacamelee. Tested with version:
+
+  Game:    Guacamelee Gold Edition
+  Version: Rev. 80034
+  Author:  gwodus (gwodusx@xsmail.com)
+  Date:    2014-05-01
+
+  Activate 'Guacamelee Trainer' which enables further cheat functions:
+
+  * Health: Skips part of the damage code. So health is not reduced
+    and certain objects don't have any effect (thorns, flying bones).
+  * Floating: Press X in game to float up. There are also two addresses
+    X-Pos and Y-Pos which can be used to set the player's  coordinates
+    manually.
+  * Money: This is only a static address. So it might not work in
+    other game versions. But it's easy to find. Just scan for a
+    4-byte int value.
+
+  Notes:
+     The 'Health'- and 'Floating'-cheats are based on AoB scans.
+     So they should work in other game versions too.
+
+     There is a challenge in El Infierno where you die upon a single
+     hit. So I am skipping part of the damage code instead of just
+     overwriting the health value, which would have been easier.
+
+     I created a couple structures in 'Dissect data/structures':
+
+     * structWorld:
+         Is pointed to from static address Guac.exe+763040. I don't know
+         if it's really a world object. I just gave it that name in lieu
+         of better knowledge. structWorld+$14 points to structPlayer.
+     * structPlayer:
+         Contains data about the player (health). structPlayer+$78 points
+         to structFigure
+     * structFigure:
+         Contains data about the players screen object. The 2D coordinates
+         are stored at structFigure+$34/$38
+}
+
+[ENABLE]
+[DISABLE]"""
+
+[[cheat]]
+id = "guacamelee-trainer"
+name = "Guacamelee Trainer "
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Guacamelee Gold Edition
+  Version: Rev. 80034
+  Author:  gwodus (gwodusx@xsmail.com)
+  Date:    2014-05-01
+
+  There is a point inside a loop at address loop_m which
+  contains a pointer to some interesting structures.
+  We store a couple pointers here for other scripts
+}
+
+[ENABLE]
+aobscan(loop_m,8B 41 14 56 57)
+//label(loop_m)
+
+alloc(mem_m,1048)
+label(returnhere)
+label(originalcode)
+label(exit_m)
+label(clear1)
+label(clear2)
+label(clear3)
+
+label(code_m)
+label(pWorld)
+label(pPlayer)
+label(pFigure)
+
+registersymbol(loop_m)
+registersymbol(code_m)
+registersymbol(pWorld)
+registersymbol(pPlayer)
+registersymbol(pFigure)
+
+// -------------------------------------------------------------------
+// variable block
+// -------------------------------------------------------------------
+
+mem_m: //this is allocated memory, you have read,write,execute access
+
+// ptr to structWorld
+// (not sure if really world, but contains pointer to structPlayer)
+pWorld:
+dd 0
+
+// ptr to structPlayer (contains health, etc.)
+pPlayer:
+dd 0
+
+// ptr to structFigure (contains player coordinates)
+pFigure:
+dd 0
+
+// -------------------------------------------------------------------
+// injected code
+// -------------------------------------------------------------------
+
+code_m:
+mov eax, ecx           // ecx contains ptr to structWorld
+test eax, eax
+jz clear1
+mov [pWorld], eax
+mov eax,[eax+14]       // structWorld+14 contains ptr to structPlayer
+test eax, eax
+jz clear2
+mov [pPlayer], eax
+mov eax,[eax+78]       // structPlayer+78 contains ptr to structFigure
+test eax, eax
+jz clear3
+mov [pFigure], eax
+jmp originalcode
+
+clear1:
+mov [pWorld], 0
+clear2:
+mov [pPlayer], 0
+clear3:
+mov [pFigure], 0
+
+originalcode:
+mov eax,[ecx+14]
+push esi
+push edi
+
+exit_m:
+jmp returnhere
+
+// -------------------------------------------------------------------
+// Code Inject Point
+// -------------------------------------------------------------------
+
+//Guac.exe+31C910:
+loop_m:
+jmp code_m
+returnhere:
+
+
+[DISABLE]
+//Guac.exe+31C910:
+loop_m:
+//Guac.exe+31C910 - 8B 41 14              - mov eax,[ecx+14]
+//Guac.exe+31C913 - 56                    - push esi
+//Guac.exe+31C914 - 57                    - push edi
+//Guac.exe+31C915 - 85 C0                 - test eax,eax
+db 8B 41 14 56 57
+
+unregistersymbol(loop_m)
+unregistersymbol(code_m)
+unregistersymbol(pWorld)
+unregistersymbol(pPlayer)
+unregistersymbol(pFigure)
+
+dealloc(mem_m)"""
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Guacamelee Gold Edition
+  Version: Rev. 80034
+  Author:  gwodus (gwodusx@xsmail.com)
+  Date:    2014-05-01
+}
+
+[ENABLE]
+aobscan(origcode_h,56 57 8B 7C 24 28 D9 87 B0 01 00 00)
+alloc(mem_h,2048)
+
+label(code_h)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+registersymbol(origcode_h)
+registersymbol(code_h)
+
+mem_h:
+code_h:
+// check if this is the player
+push eax
+mov eax, [esp+24]
+cmp eax, [pPlayer]
+pop eax
+jne originalcode
+
+// return from current subroutine
+// so all the 'damage' code will be skipped
+add esp,18
+ret
+
+originalcode:
+push esi
+push edi
+mov edi,[esp+28]
+
+exit:
+jmp returnhere
+
+//"Guac.exe"+2BF406:
+origcode_h:
+jmp mem_h
+nop
+returnhere:
+
+[DISABLE]
+//"Guac.exe"+2BF406:
+origcode_h:
+//Guac.exe+2BF406 - 56                    - push esi
+//Guac.exe+2BF407 - 57                    - push edi
+//Guac.exe+2BF408 - 8B 7C 24 28           - mov edi,[esp+28]
+//Guac.exe+2BF40C - D9 87 B0010000        - fld dword ptr [edi+000001B0]
+db 56 57 8B 7C 24 28
+
+unregistersymbol(origcode_h)
+unregistersymbol(code_h)
+
+dealloc(mem_h)"""
+
+[[cheat]]
+id = "floating-press-x-to-fly-up"
+name = "Floating (Press X to fly up)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Guacamelee Gold Edition
+  Version: Rev. 80034
+  Author:  gwodus (gwodusx@xsmail.com)
+  Date:    2014-05-01
+}
+
+[ENABLE]
+aobscan(origcode_f,8B CE D9 5C 24 40 D9 46 4C)
+
+alloc(mem_f,2048)
+label(code_f)
+label(ypos_f)
+label(enabled_f)
+label(keypressed_f)
+label(jumpstep_f)
+
+label(returnhere)
+label(exit)
+label(keyDown)
+label(endcheat)
+label(checkKeyPressed)
+
+registersymbol(origcode_f)
+registersymbol(mem_f)
+registersymbol(code_f)
+registersymbol(ypos_f)
+registersymbol(enabled_f)
+
+// -------------------------------------------------------------------
+// variable block
+// -------------------------------------------------------------------
+
+mem_f: //this is allocated memory, you have read,write,execute access
+
+enabled_f:
+dd 01
+ypos_f:
+dd 00
+keypressed_f:
+dd 00
+jumpstep_f:
+dd (float)0.4
+
+// -------------------------------------------------------------------
+// cheat code
+// -------------------------------------------------------------------
+
+code_f:
+mov ecx,esi               // Original code
+fstp dword ptr [esp+40]   // Original code
+
+// check if this is the player's figure
+cmp esi, [pFigure]
+jne exit
+
+call checkKeyPressed
+
+push eax
+cmp [enabled_f], 0x1
+jne endcheat
+
+cmp [keypressed_f], 0
+jne keyDown
+
+mov eax, [esi+38]
+mov [ypos_f], eax
+jmp endcheat
+
+keyDown:
+mov eax, [ypos_f]
+mov [esi+38], eax
+
+// add a value to y-pos
+sub esp,10                // allocate 16bytes for original xmm0 register
+movdqu [esp],xmm0         // save xmm0 (128 bit register, so 16 bytes)
+
+movss xmm0,[esi+38]       // write the float value into xmm0 (note that the upper bits of xmm0 will get erased by doing this, which is why we use movdqu to save it and not movss)
+addss xmm0,[jumpstep_f]   // increase xmm0 with the float constant
+movss [esi+38],xmm0       // write the result of the calculation to esi+38
+
+movdqu xmm0,[esp]         // restore with original
+add esp,10                // free local variable space
+
+mov eax, [esi+38]
+mov [ypos_f], eax
+
+endcheat:
+pop eax
+
+exit:
+jmp returnhere
+
+// -------------------------------------------------------------------
+// subroutine checkKeyPressed
+// -------------------------------------------------------------------
+
+checkKeyPressed:
+
+// save everything
+pushad
+pushfd
+
+mov [keypressed_f], 0
+//virtual key codes
+push 'X'
+call GetAsyncKeyState
+shr ax,#15 //bit 15 is 1 if it is CURRENTLY down
+mov [keypressed_f], ax
+
+popfd
+popad
+
+ret
+
+// -------------------------------------------------------------------
+// Code Inject Point
+// -------------------------------------------------------------------
+
+//"Guac.exe"+4793FB:
+origcode_f:
+jmp code_f
+nop
+returnhere:
+
+
+[DISABLE]
+//"Guac.exe"+4793FB:
+origcode_f:
+//Guac.exe+4793FB - 8B CE                 - mov ecx,esi
+//Guac.exe+4793FD - D9 5C 24 40           - fstp dword ptr [esp+40]
+//Guac.exe+479401 - D9 46 4C              - fld dword ptr [esi+4C]
+db 8B CE D9 5C 24 40
+
+unregistersymbol(origcode_f)
+unregistersymbol(mem_f)
+unregistersymbol(code_f)
+unregistersymbol(ypos_f)
+unregistersymbol(enabled_f)
+
+dealloc(mem_f)"""
+
+[[cheat]]
+id = "enabled"
+name = "Enabled"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enabled_f"
+hops = []
+
+[[cheat]]
+id = "pworld"
+name = "pWorld"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pWorld"
+hops = []
+
+[[cheat]]
+id = "pplayer"
+name = "pPlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = []
+
+[[cheat]]
+id = "pfigure"
+name = "pFigure"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pFigure"
+hops = []
+
+[[cheat]]
+id = "money-static"
+name = "Money (!!static!!)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Guac.exe"
+offset = "0x7635c0"
+hops = []
+
+[[cheat]]
+id = "structfigure-xpos"
+name = "structFigure.XPos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "Guac.exe"
+offset = "0x763040"
+hops = [
+    "+0x14",
+    "+0x78",
+    "+0x34",
+]
+
+[[cheat]]
+id = "structfigure-ypos"
+name = "structFigure.YPos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "Guac.exe"
+offset = "0x763040"
+hops = [
+    "+0x14",
+    "+0x78",
+    "+0x38",
+]

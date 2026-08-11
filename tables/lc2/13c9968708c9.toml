@@ -1,0 +1,344 @@
+[game]
+name = "LARA CROFT AND THE TEMPLE OF OSIRIS"
+exe = "lc2.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3369"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "undead"
+name = "Undead"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(hpReadPreSubAOB,F3 0F 10 40 18 F3 0F 58 C1 0F 57 C9 0F 2F C1)
+registersymbol(hpReadPreSubAOB)
+
+label(pHero)
+registersymbol(pHero)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(ishero)
+label(isenemy)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+//cmp ecx,edx
+cmp [esp+14],0 //zero if attack not from hero's main attack //can't spot bomb attack by hero, i.e. hero damaged by hero's own bomb won't be considered a hero damaged
+jne isenemy
+
+ishero:
+mov [pHero],eax
+xorps xmm1,xmm1//
+comiss xmm0,xmm1//
+ja originalcode
+mov dword ptr [eax+18],(float)1.0
+movss xmm0,[eax+18]
+movss [ebp-14],xmm1
+jmp originalcode
+
+isenemy:
+cmp [edx],1 //1 should be hero
+je ishero
+jmp originalcode
+
+originalcode:
+xorps xmm1,xmm1
+comiss xmm0,xmm1
+
+exit:
+jmp returnhere
+
+///
+pHero:
+dd 0
+///
+
+hpReadPreSubAOB+9: //"LC2.exe"+1D1EB4:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+hpReadPreSubAOB+9: //"LC2.exe"+1D1EB4:
+db 0F 57 C9 0F 2F C1
+//Alt: xorps xmm1,xmm1
+//Alt: comiss xmm0,xmm1
+unregistersymbol(hpReadPreSubAOB)
+
+unregistersymbol(pHero)"""
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "inf-ammo"
+name = "Inf. Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(ammoSubAOB,0F B7 00 2B 45 0C)
+registersymbol(ammoSubAOB)
+aobscan(ammoChkZeroPreFireAOB,66 3B C8 1B F6)
+registersymbol(ammoChkZeroPreFireAOB)
+
+label(pAmmo)
+registersymbol(pAmmo)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(iszero)
+
+label(newmem2)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov [pAmmo],eax
+cmp word ptr [eax],0
+je iszero
+movzx edi,word ptr [eax]
+sub edi,[ebp+c]
+cmp edi,1
+jge originalcode
+mov edi,[ebp+c]
+add [eax],di
+//fild word ptr [eax]
+//fiadd dword ptr [ebp+c]
+//fistp word ptr [eax]
+jmp originalcode
+
+iszero:
+mov edi,[ebp+c]
+add [eax],di
+add [eax],di
+
+originalcode:
+xor edi,edi
+movzx eax,word ptr [eax]
+sub eax,[ebp+0C]
+
+exit:
+jmp returnhere
+
+///
+
+newmem2:
+mov esi,1
+jmp exit2
+
+originalcode2:
+cmp cx,ax
+sbb esi,esi
+neg esi
+
+exit2:
+jmp returnhere2
+nop
+nop
+
+///
+pAmmo:
+dd 0
+///
+
+ammoSubAOB: //"LC2.exe"+4A7940:
+jmp newmem
+nop
+returnhere:
+
+ammoChkZeroPreFireAOB: //"LC2.exe"+45299A:
+jmp newmem2
+returnhere2:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+ammoSubAOB: //"LC2.exe"+4A7940:
+db 0F B7 00 2B 45 0C
+//Alt: movzx eax,word ptr [eax]
+//Alt: sub eax,[ebp+0C]
+unregistersymbol(ammoSubAOB)
+ammoChkZeroPreFireAOB: //"LC2.exe"+45299A:
+db 66 3B C8 1B F6 F7 DE
+//Alt: cmp cx,ax
+//Alt: sbb esi,esi
+//Alt: neg esi
+unregistersymbol(ammoChkZeroPreFireAOB)
+
+unregistersymbol(pAmmo)"""
+
+[[cheat]]
+id = "ammo"
+name = "Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAmmo"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "get-gems-quantity"
+name = "Get Gems Quantity"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(pGems)
+registersymbol(pGems)
+
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [esp],0
+jne originalcode
+mov [pGems],eax
+
+originalcode:
+mov eax,[eax]
+mov esp,ebp
+pop ebp
+
+exit:
+jmp returnhere
+
+///
+pGems:
+dd 0
+///
+
+"LC2.exe"+640908:
+jmp newmem
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+"LC2.exe"+640908:
+db 8B 00 8B E5 5D
+//Alt: mov eax,[eax]
+//Alt: mov esp,ebp
+//Alt: pop ebp
+
+unregistersymbol(pGems)"""
+
+[[cheat]]
+id = "gems"
+name = "Gems"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGems"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "auto-assemble-script"
+name = "Auto Assemble script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(ammoChkZeroPreFireAOB,66 3B C8 1B F6)
+registersymbol(ammoChkZeroPreFireAOB)
+
+alloc(newmem2,2048)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+//place your code here
+mov esi,1
+jmp exit2
+
+originalcode2:
+cmp cx,ax
+sbb esi,esi
+neg esi
+
+exit2:
+jmp returnhere2
+nop
+nop
+
+///
+
+ammoChkZeroPreFireAOB: //"LC2.exe"+45299A:
+jmp newmem2
+returnhere2:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem2)
+ammoChkZeroPreFireAOB: //"LC2.exe"+45299A:
+db 66 3B C8 1B F6 F7 DE
+//Alt: cmp cx,ax
+//Alt: sbb esi,esi
+//Alt: neg esi
+unregistersymbol(ammoChkZeroPreFireAOB)"""

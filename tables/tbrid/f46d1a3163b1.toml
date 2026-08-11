@@ -1,0 +1,2389 @@
+[game]
+name = "Tactics brid (bugfixes, cheats, and a mod)"
+exe = "tbrid.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3975"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "bugfix-remove-windows-and-directx-version-checks"
+name = "Bugfix: Remove windows and directx version checks"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(WindowsVersionCheck,33 C0 55 68 01 13 40 00)
+aobscan(DXVersionCheck,FF FF FF 33 C0 33 D2 33 C9)
+registersymbol(WindowsVersionCheck)
+registersymbol(DXVersionCheck)
+
+WindowsVersionCheck-6:
+mov eax,15
+retn
+
+DXVersionCheck-6:
+mov eax,700
+retn
+
+[DISABLE]
+unregistersymbol(WindowsVersionCheck)
+unregistersymbol(DXVersionCheck)
+
+WindowsVersionCheck-6:
+push ebp
+mov ebp,esp
+push 0
+push ebx
+
+DXVersionCheck-6:
+push ebp
+mov ebp,esp
+add esp,FFFFFF74"""
+
+[[cheat]]
+id = "bugfix-can-get-kisuka-s-end-after-dueling-her"
+name = "Bugfix: Can get Kisuka's end after dueling her"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(KiskaEndPatch,8B F2 89 45 FC 40)
+registersymbol(KiskaEndPatch)
+
+KiskaEndPatch+9:
+db 7e           //jlE SHORT TBRID.exe+333C8
+
+
+[DISABLE]
+unregistersymbol(KiskaEndPatch)
+KiskaEndPatch+9:
+db 7C           //jl SHORT TBRID.exe+333C8"""
+
+[[cheat]]
+id = "alternate-leveling-system"
+name = "Alternate leveling system"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+define(SPEED_DIVISOR,#1000)         //you get +1 movement point every SPEED_DIVISOR xp
+define(WEAPON_SKILL_DIVISOR,#50)    //you get +1 damage point every WEAPON_SKILL_DIVISOR xp
+define(HP_DIVISOR,#100)          //you get +1 hitpoint every HP_DIVISOR xp
+
+alloc(CodeBuffer,2048)
+label(GetDrivingSkill)
+label(GetDrivingSkill_NotLookingForPM1)
+label(GetDrivingSkill_NotLookingForPM2)
+label(GetDrivingSkill_Error)
+label(GetDrivingSkill_Exit)
+label(GetSpeedBonus)
+label(GetShortRangeSkill)
+label(GetMedRangeSkill)
+label(GetLongRangeSkill)
+label(GainXP)
+label(GainXP_NotInAPM1)
+label(GainXP_NotInAPM2)
+label(GainXP_UpdateWeaponXp)
+label(GainXP_GotAGrenade)
+label(GainXP_NoShortRangeWeapon)
+label(GainXP_NoMedRangeWeapon)
+label(GainXP_Exit)
+label(GetTotalXp)
+label(GetTotalXp_BadGuys)
+label(GetTotalXpEcxForm)
+label(GetTotalXpEdxForm)
+label(GetTotalXpEaxForm)
+
+
+TBRID.MainformFinalize+5A8:
+jmp GetDrivingSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+580:
+jmp GetSpeedBonus
+
+////////////////////////////////////////
+TBRID.MainformFinalize+5E0:
+jmp GetShortRangeSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+608:
+jmp GetMedRangeSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+630:
+jmp GetLongRangeSkill
+
+////////////////////////////////////////
+TBRID.MainformFinalize+514:
+jmp GainXP
+
+//////////////////////////////////////// medals
+TBRID.ChkosversionFinalize+FAD:
+mov al,byte [ecx+TBRID.frbBattleField+E73C]  //read medal count
+
+TBRID.ChkosversionFinalize+C15:
+mov dl,byte [ecx+TBRID.frbBattleField+E73C]
+
+TBRID.ChkosversionFinalize+C41:
+mov byte [ecx+TBRID.frbBattleField+E73C],dl  //write medal count
+
+TBRID.exe+24DB8:
+MOV dl,byte [ECX+TBRID.exe+E3CB4]
+
+TBRID.exe+333DE:
+MOV dl,byte [EBX+TBRID.exe+E3CB4]               //hohoho, the part that determines which end you get (using the medals)
+
+////////////////////////////////////////
+TBRID.MainformFinalize+2814:
+lea eax,[eax+TBRID.exe+E3CB4]           //give a pointer to the PlayerData to GetTotalXp
+jmp GetTotalXp
+
+TBRID.exe+32F8A:
+call GetTotalXpEcxForm
+nop
+
+TBRID.exe+333FC:
+call GetTotalXpEdxForm
+nop
+
+TBRID.exe+24E05 :
+call GetTotalXpEaxForm
+nop
+
+////////////////////////////////////////
+
+
+CodeBuffer:
+//when entering this function eax=&PlayerData and edx=1 PM1,2 for PM2, 3 for PM3
+GetDrivingSkill:
+//vanilla PlayerData format
+//mov ebx, dword [eax]      //ebx= medal count
+//mov ecx, dword [eax+04]    //ecx= xp
+//mov esi, dword [eax+0C]    //edx= current level
+
+//new PlayerData format:
+//ebx 0:7              medal count
+//ebx 8:21             short range xp
+//ebx 22:31 + ecx 0:3  med range xp
+//ecx 4:17             long range xp
+//ecx 18:31            PM01 xp
+//esi 0:13             PM02 xp
+//esi 14:27            PM03 xp
+cmp edx, 1
+jne short GetDrivingSkill_NotLookingForPM1
+  mov ax, word [eax+4]
+  shr eax,#18
+  and eax,3FFF         //only take 14 bits
+  jmp short GetDrivingSkill_Exit
+GetDrivingSkill_NotLookingForPM1:
+cmp edx, 2
+jne short GetDrivingSkill_NotLookingForPM2
+  mov ax, word [eax+C]   //medal count
+  and eax,3FFF           //only take 14 bits
+  jmp short GetDrivingSkill_Exit
+GetDrivingSkill_NotLookingForPM2:
+cmp edx, 3
+jne short GetDrivingSkill_Error
+  mov eax, dword [eax+C]   //xp
+  shr eax,#14              //thash part of the PM2 xp
+  and eax,3FFF             //only take 14 bits
+  jmp short GetDrivingSkill_Exit
+GetDrivingSkill_Error:
+xor eax,eax
+GetDrivingSkill_Exit:
+xor edx,edx
+push ecx
+mov ecx,HP_DIVISOR         //mech hp bonus = chassis xp/100
+div ecx
+pop ecx
+retn
+
+///////////////////////////////////////////////
+//when entering this function eax=&PlayerData
+GetShortRangeSkill://damage bonus is now weapon xp/50
+push ecx         //save ecx, may not be needed
+
+mov eax,dword [eax+1]
+and eax,3FFF              //now eax=short range xp
+//now lets' do eax=eax/50
+xor edx,edx
+mov ecx,WEAPON_SKILL_DIVISOR
+div ecx
+
+pop ecx
+retn
+
+
+///////////////////////////////////////////////
+//when entering this function eax=&PlayerData
+GetMedRangeSkill://damage bonus is now weapon xp/50 =
+push ecx         //save ecx, may not be needed
+
+mov eax,dword [eax+2]
+shr eax,6
+and eax, 3FFF        //now eax=med range xp
+xor edx,edx
+mov ecx,WEAPON_SKILL_DIVISOR
+div ecx
+
+pop ecx
+retn
+
+///////////////////////////////////////////////
+//when entering this function eax=&PlayerData
+GetLongRangeSkill://mech skill bonus is now mech xp/100 =
+push ecx         //save ecx, may not be needed
+
+mov eax,dword [eax+4]
+shr eax,4
+and eax, 3FFF            //now eax=long range xp
+xor edx,edx
+mov ecx,WEAPON_SKILL_DIVISOR
+div ecx
+
+pop ecx
+retn
+
+///////////////////////////////////////////////
+GetTotalXp:
+cmp eax,TBRID.exe+e3cc4
+jb GetTotalXp_BadGuys
+cmp eax,TBRID.exe+E3D44
+ja GetTotalXp_BadGuys
+  push edx
+  push ecx         //save ecx, may not be needed
+  mov edx,dword [eax+4]
+  shr edx,#18               //now edx=pm01 xp
+  mov ecx,dword [eax+C]
+  and ecx, 3FFF            //now ecx=pm02 xp
+  add edx,ecx              //now edx=pm01+pm02 xp
+  mov ecx,dword [eax+C]
+  shr ecx,E
+  and ecx, 3FFF            //now ecx=pm03 xp
+  add edx,ecx              //now edx=pm01+pm02+pm03 xp
+  mov eax,edx
+  pop ecx
+  pop edx
+retn
+GetTotalXp_BadGuys:
+xor eax,eax
+retn
+
+GetTotalXpEcxForm:
+lea eax, [ecx+TBRID.exe+e3cb4]
+call GetTotalXp
+ret
+
+GetTotalXpEdxForm:
+push eax
+lea eax, [edx+TBRID.exe+e3cb4]
+call GetTotalXp
+mov ecx, eax
+pop eax
+ret
+
+GetTotalXpEaxForm:
+push eax
+lea eax, [edx+TBRID.exe+e3cb4]
+call GetTotalXp
+mov edx, eax
+pop eax
+ret
+///////////////////////////////////////////////
+//when entering this function eax=&PlayerData
+GetSpeedBonus:   //speed bonus is now total xp/1000 = (PM01 + PM02 + PM03) xp/1000
+push ecx         //save ecx, may not be needed
+call GetTotalXp
+//now lets' do eax=TotalXp/1000
+xor edx,edx
+mov ecx,SPEED_DIVISOR
+div ecx
+pop ecx
+retn
+
+///////////////////////////////////////////////
+GainXP:    //updates your xp and level and returns 1 if you gained a level
+//when entering this function eax=&PlayerData, edx = new xp, ecx=xp increment (with mod)
+//First find which character we're handling
+push ecx
+push edi
+push ebx
+
+mov edi,ecx                  //edi=xp income
+mov ecx,eax
+sub ecx,TBRID.exe+E3CC4      //medal count for player 0 (Ryounosuke)
+shr ecx,4                    //divide edx by the size of the Playerdata structure so now edx=player index (0 based)
+cmp ecx,8                    //player index>8 means it's an enemy
+ja GainXP_Exit
+imul ecx,ecx,74              //0x74=size in byte of a PlayerMech structure
+mov ebx,dword [TBRID.exe+E0AF4+ecx] //reads what mech you're on
+cmp ebx,1
+jne short GainXP_NotInAPM1
+  mov ebx, dword [eax+4]
+  shr ebx,#18                //got pm1 xp
+  add ebx,edi                //increase pm1 xp
+  shl ebx,#18
+  and dword [eax+4],3FFFF    //clear stored pm1 xp
+  or dword [eax+4],ebx
+  jmp GainXP_UpdateWeaponXp
+GainXP_NotInAPM1:
+cmp ebx,2
+jne short GainXP_NotInAPM2
+  mov ebx, dword [eax+C]
+  and ebx, 3FFF              //got pm2 xp
+  add ebx,edi                //increase pm2 xp
+  and dword [eax+C],FFFFC000 //clear stored pm2 xp
+  or dword [eax+C],ebx
+  jmp GainXP_UpdateWeaponXp
+GainXP_NotInAPM2:
+cmp ebx,3
+jne short GainXP_UpdateWeaponXp    //a bug
+  mov ebx, dword [eax+C]
+  shr ebx,#14
+  and ebx, 3FFF              //got pm3 xp
+  add ebx,edi                //increase pm3 xp
+  shl ebx,#14
+  and dword [eax+C],FFFC000 //clear stored pm3 xp
+  or dword [eax+C],ebx
+GainXP_UpdateWeaponXp:
+mov bl,byte [ecx+TBRID.exe+E0AF8] //bl=primary weapon
+mov bh,byte [ecx+TBRID.exe+E0AFC] //bh=secondary weapon
+sub bl,1
+sub bh,1                             //if your weapon was 0 (no weapon) bl and bh are now = FF
+//search for grenades (item id: 1)
+push ecx
+push edi
+push eax
+lea edi,[TBRID.exe+E0b08+ecx]
+mov eax,1
+mov ecx,4
+db F2 AF //REPNE SCAS DWORD PTR ES:[EDI]
+pop eax
+pop edi
+pop ecx
+  je short GainXP_GotAGrenade //jump if the repne found a grenade
+cmp bl,2              //otherwise check if prim/sec weapons are weapon id 1 or 2
+setb dl               //unsigned comparison, so no weapon=-1=FF is bigger than 3, so dl=0
+cmp bh,2
+setb dh
+test dx,dx                          //here dx is non zero if weapon-3<3
+je short GainXP_NoShortRangeWeapon  //weapon IDs: 1=submachine gun, 2=shotgun
+  GainXP_GotAGrenade:
+  mov dx, word [eax+1]
+  and edx, 3FFF              //got short range xp
+  add edx,edi                //increase pm3 xp
+  and word [eax+1],C000      //clear stored pm3 xp
+  or word [eax+1],dx
+GainXP_NoShortRangeWeapon:
+sub bl,2
+sub bh,2
+cmp bl,2
+setb dl
+cmp bh,2
+setb dh                   //here dx is non zero if 0<=weapon-3<2
+test dx,dx                //which means we carry a medium range weapon
+je short GainXP_NoMedRangeWeapon  //weapon IDs: 3=rockets 4=missile, 5=sniper
+  mov edx, dword [eax+2]
+  shr edx,6
+  and edx, 3FFF              //got med range xp
+  add edx,edi                //increase med range xp
+  shl edx,6
+  and dword [eax+2],FFF0003F //clear stored med range xp
+  or dword [eax+2],edx
+GainXP_NoMedRangeWeapon:     //weapon IDs: 6=144mm gun, 7=200mm gun, 8=long range missile, 9=long range rockets
+sub bl,3
+sub bh,3
+cmp bl,4
+setb dl
+cmp bh,4
+setb dh                   //here dx is non zero if 0<=weapon-4-2<5
+test dx,dx                //which means we carry a long range weapon
+je short GainXP_Exit
+  mov edx, dword [eax+4]
+  shr edx,4
+  and edx, 3FFF              //got long range xp
+  add edx,edi                //increase long range xp
+  shl edx,4
+  and dword [eax+4],FFFC000F //clear stored long range xp
+  or dword [eax+4],edx
+GainXP_Exit:
+pop ebx
+pop edi
+pop ecx
+retn
+
+
+[DISABLE]
+dealloc(CodeBuffer)
+
+TBRID.MainformFinalize+5A8:
+push esi
+mov ecx,[eax+0C]
+mov esi,edx
+
+TBRID.MainformFinalize+580:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+5E0:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+608:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+630:
+mov edx,[eax+0C]
+test edx,edx
+
+TBRID.MainformFinalize+514:
+push ebx
+test edx,edx
+mov ecx,[eax+0C]
+
+TBRID.ChkosversionFinalize+FAD:
+mov eax,[ecx+TBRID.frbBattleField+E73C]
+
+TBRID.ChkosversionFinalize+C15:
+mov edx,[ecx+TBRID.frbBattleField+E73C]
+
+TBRID.ChkosversionFinalize+C41:
+mov [ecx+TBRID.frbBattleField+E73C],edx
+
+TBRID.MainformFinalize+2814:
+mov edx,[eax+TBRID.frbBattleField+E740]
+mov eax,edx
+ret
+nop
+nop
+
+TBRID.exe+32F8A:
+mov eax,[ecx+TBRID.frbBattleField+E740]
+
+TBRID.exe+333DE:
+MOV EDX,DWORD [EBX+4E3CB4]
+
+TBRID.exe+333FC:
+MOV ECX,DWORD PTR DS:[EDX+4E3CB8]
+
+TBRID.exe+24E05 :
+MOV EDX,DWORD [EAX+TBRID.exe+E3CB8]
+
+TBRID.exe+24DB8:
+MOV EDX,DWORD [ECX+TBRID.exe+E3CB4]"""
+
+[[cheat]]
+id = "mech"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe0af4"
+hops = []
+
+[[cheat]]
+id = "primary-weapon"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe0af8"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe0afc"
+hops = []
+
+[[cheat]]
+id = "item-1"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb590"
+hops = []
+
+[[cheat]]
+id = "item-2"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb594"
+hops = []
+
+[[cheat]]
+id = "item-3"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb598"
+hops = []
+
+[[cheat]]
+id = "item-4"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb59c"
+hops = []
+
+[[cheat]]
+id = "move-points"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xba70"
+hops = []
+
+[[cheat]]
+id = "position-x"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbb18"
+hops = []
+
+[[cheat]]
+id = "position-y"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbb1c"
+hops = []
+
+[[cheat]]
+id = "medals"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3cc4"
+hops = []
+
+[[cheat]]
+id = "xp"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3cc8"
+hops = []
+
+[[cheat]]
+id = "xp-gained-in-this-level"
+name = "Xp gained in this level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3ccc"
+hops = []
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3cd0"
+hops = []
+
+[[cheat]]
+id = "mech-2"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb5f0"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-2"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb5f4"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-2"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb5f8"
+hops = []
+
+[[cheat]]
+id = "item-1-2"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb604"
+hops = []
+
+[[cheat]]
+id = "item-2-2"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb608"
+hops = []
+
+[[cheat]]
+id = "item-3-2"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb60c"
+hops = []
+
+[[cheat]]
+id = "item-4-2"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb610"
+hops = []
+
+[[cheat]]
+id = "move-points-2"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbae4"
+hops = []
+
+[[cheat]]
+id = "position-x-2"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbaa4"
+hops = []
+
+[[cheat]]
+id = "position-y-2"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbaa8"
+hops = []
+
+[[cheat]]
+id = "medals-2"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3cd4"
+hops = []
+
+[[cheat]]
+id = "xp-2"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3cd8"
+hops = []
+
+[[cheat]]
+id = "xp-gained-in-this-level-2"
+name = "Xp gained in this level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3cdc"
+hops = []
+
+[[cheat]]
+id = "mech-3"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb664"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-3"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb668"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-3"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb66c"
+hops = []
+
+[[cheat]]
+id = "item-1-3"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb678"
+hops = []
+
+[[cheat]]
+id = "item-2-3"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb67c"
+hops = []
+
+[[cheat]]
+id = "item-3-3"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb680"
+hops = []
+
+[[cheat]]
+id = "item-4-3"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb684"
+hops = []
+
+[[cheat]]
+id = "medals-3"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe76c"
+hops = []
+
+[[cheat]]
+id = "xp-3"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe770"
+hops = []
+
+[[cheat]]
+id = "xp-gained-in-this-level-3"
+name = "Xp gained in this level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe774"
+hops = []
+
+[[cheat]]
+id = "level-2"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe778"
+hops = []
+
+[[cheat]]
+id = "move-points-3"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbb58"
+hops = []
+
+[[cheat]]
+id = "position-x-3"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbb8c"
+hops = []
+
+[[cheat]]
+id = "position-y-3"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbb90"
+hops = []
+
+[[cheat]]
+id = "mech-4"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb6d8"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-4"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb6dc"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-4"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb6e0"
+hops = []
+
+[[cheat]]
+id = "item-1-4"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb6ec"
+hops = []
+
+[[cheat]]
+id = "item-2-4"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb6f0"
+hops = []
+
+[[cheat]]
+id = "item-3-4"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb6f4"
+hops = []
+
+[[cheat]]
+id = "item-4-4"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb6f8"
+hops = []
+
+[[cheat]]
+id = "medals-4"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe77c"
+hops = []
+
+[[cheat]]
+id = "level-3"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe788"
+hops = []
+
+[[cheat]]
+id = "xp-gained-in-this-level-4"
+name = "Xp gained in this level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe784"
+hops = []
+
+[[cheat]]
+id = "xp-4"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe780"
+hops = []
+
+[[cheat]]
+id = "move-points-4"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbbcc"
+hops = []
+
+[[cheat]]
+id = "position-x-4"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbc00"
+hops = []
+
+[[cheat]]
+id = "position-y-4"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbc04"
+hops = []
+
+[[cheat]]
+id = "mech-5"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb74c"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-5"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb750"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-5"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb754"
+hops = []
+
+[[cheat]]
+id = "item-1-5"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb760"
+hops = []
+
+[[cheat]]
+id = "item-2-5"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb764"
+hops = []
+
+[[cheat]]
+id = "item-3-5"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb768"
+hops = []
+
+[[cheat]]
+id = "item-4-5"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb76c"
+hops = []
+
+[[cheat]]
+id = "medals-5"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe78c"
+hops = []
+
+[[cheat]]
+id = "xp-5"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe790"
+hops = []
+
+[[cheat]]
+id = "xp-gained-in-this-level-5"
+name = "Xp gained in this level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe794"
+hops = []
+
+[[cheat]]
+id = "level-4"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe798"
+hops = []
+
+[[cheat]]
+id = "move-points-5"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbc40"
+hops = []
+
+[[cheat]]
+id = "position-x-5"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbc74"
+hops = []
+
+[[cheat]]
+id = "position-y-5"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbc78"
+hops = []
+
+[[cheat]]
+id = "mech-6"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb7c0"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-6"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb7c4"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-6"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb7c8"
+hops = []
+
+[[cheat]]
+id = "item-1-6"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb7d4"
+hops = []
+
+[[cheat]]
+id = "item-2-6"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb7d8"
+hops = []
+
+[[cheat]]
+id = "item-3-6"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb7dc"
+hops = []
+
+[[cheat]]
+id = "item-4-6"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb7e0"
+hops = []
+
+[[cheat]]
+id = "medals-6"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe79c"
+hops = []
+
+[[cheat]]
+id = "xp-6"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7a0"
+hops = []
+
+[[cheat]]
+id = "xp-gained-in-this-level-6"
+name = "Xp gained in this level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7a4"
+hops = []
+
+[[cheat]]
+id = "level-5"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7a8"
+hops = []
+
+[[cheat]]
+id = "move-points-6"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbcb4"
+hops = []
+
+[[cheat]]
+id = "position-x-6"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbce8"
+hops = []
+
+[[cheat]]
+id = "position-y-6"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbcec"
+hops = []
+
+[[cheat]]
+id = "mech-7"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb834"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-7"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb838"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-7"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb83c"
+hops = []
+
+[[cheat]]
+id = "item-1-7"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb848"
+hops = []
+
+[[cheat]]
+id = "item-2-7"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb84c"
+hops = []
+
+[[cheat]]
+id = "item-3-7"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb850"
+hops = []
+
+[[cheat]]
+id = "item-4-7"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb854"
+hops = []
+
+[[cheat]]
+id = "medals-7"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7ac"
+hops = []
+
+[[cheat]]
+id = "xp-7"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7b0"
+hops = []
+
+[[cheat]]
+id = "xp-gained-in-this-level-7"
+name = "Xp gained in this level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7b4"
+hops = []
+
+[[cheat]]
+id = "level-6"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7b8"
+hops = []
+
+[[cheat]]
+id = "move-points-7"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbd28"
+hops = []
+
+[[cheat]]
+id = "position-x-7"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbd5c"
+hops = []
+
+[[cheat]]
+id = "position-y-7"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbd60"
+hops = []
+
+[[cheat]]
+id = "mech-8"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb8a8"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-8"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb8ac"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-8"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb8b0"
+hops = []
+
+[[cheat]]
+id = "item-1-8"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb8bc"
+hops = []
+
+[[cheat]]
+id = "item-2-8"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb8c0"
+hops = []
+
+[[cheat]]
+id = "item-3-8"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb8c4"
+hops = []
+
+[[cheat]]
+id = "item-4-8"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb8c8"
+hops = []
+
+[[cheat]]
+id = "medals-8"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7bc"
+hops = []
+
+[[cheat]]
+id = "xp-8"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7b0"
+hops = []
+
+[[cheat]]
+id = "position-x-8"
+name = "Position X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbdd0"
+hops = []
+
+[[cheat]]
+id = "position-y-8"
+name = "Position Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbdd4"
+hops = []
+
+[[cheat]]
+id = "move-points-8"
+name = "Move points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xbd9c"
+hops = []
+
+[[cheat]]
+id = "mech-9"
+name = "Mech"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb91c"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-9"
+name = "Primary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb920"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-9"
+name = "Secondary weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb924"
+hops = []
+
+[[cheat]]
+id = "item-1-9"
+name = "Item 1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb930"
+hops = []
+
+[[cheat]]
+id = "item-2-9"
+name = "Item 2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb934"
+hops = []
+
+[[cheat]]
+id = "item-3-9"
+name = "Item 3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb938"
+hops = []
+
+[[cheat]]
+id = "item-4-9"
+name = "Item 4"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xb93c"
+hops = []
+
+[[cheat]]
+id = "medals-9"
+name = "Medals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7cc"
+hops = []
+
+[[cheat]]
+id = "xp-9"
+name = "Xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.frbBattleField"
+offset = "0xe7d0"
+hops = []
+
+[[cheat]]
+id = "flag-k-said-kiska-you-have-a-gf"
+name = "Flag K (said Kiska you have a GF)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "TBRID.exe"
+offset = "0xe3e28"
+hops = []
+
+[[cheat]]
+id = "unlock-all-cgs"
+name = "Unlock all CGs"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+TBRID.exe+E4162:
+//"01" 300 times
+db 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+
+[disable]"""
+
+[[cheat]]
+id = "hotkeys-for-save-load-menu-useless"
+name = "Hotkeys for save/load menu (useless)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(NewMem,1024)
+//company went bankrupt there won't be patches anymore
+label(OpenSaveLoadMenu)
+label(OpenSaveLoadMenu_TestSaveMenu)
+label(OpenSaveLoadMenu_Exit)
+label(OpenSaveLoadMenu_Return)
+
+label(OpenLoadMenu)
+label(OpenSaveMenu)
+registersymbol(OpenSaveMenu)
+registersymbol(OpenLoadMenu)
+
+TBRID.exe+980B:
+jmp OpenSaveLoadMenu
+nop
+OpenSaveLoadMenu_Return:
+
+
+
+
+NewMem:
+OpenSaveLoadMenu:
+  cmp byte [OpenLoadMenu],1
+  jne short OpenSaveLoadMenu_TestSaveMenu
+    mov byte [OpenLoadMenu],0
+    pushad
+    MOV EAX,DWORD PTR DS:[TBRID.exe+D5154]
+    MOV EAX,DWORD PTR DS:[EAX]
+    CALL TBRID.exe+35D04
+    popad
+    jmp short OpenSaveLoadMenu_Exit
+  OpenSaveLoadMenu_TestSaveMenu:
+  cmp byte [OpenSaveMenu],1
+  jne short OpenSaveLoadMenu_Exit
+    mov byte [OpenSaveMenu],0
+    pushad
+    MOV EAX,DWORD PTR DS:[TBRID.exe+D5154]
+    MOV EAX,DWORD PTR DS:[EAX]
+    CALL TBRID.exe+358FC
+    popad
+  OpenSaveLoadMenu_Exit:
+  push 00
+  push 00
+  push 33
+jmp OpenSaveLoadMenu_Return
+
+OpenLoadMenu:
+db 0
+OpenSaveMenu:
+db 0
+
+
+
+
+ 
+ 
+[DISABLE]
+dealloc(NewMem)
+unregistersymbol(OpenLoadMenu)
+unregistersymbol(OpenSaveMenu)
+TBRID.exe+980B:
+push 00
+push 00
+push 33"""
+
+[[cheat]]
+id = "open-load-menu-hotkey-f5"
+name = "Open load menu (hotkey F5)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OpenLoadMenu"
+hops = []
+
+[[cheat]]
+id = "open-save-menu-hotkey-f6"
+name = "Open save menu (hotkey F6)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OpenSaveMenu"
+hops = []

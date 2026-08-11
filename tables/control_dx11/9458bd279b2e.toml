@@ -1,0 +1,695 @@
+[game]
+name = "Control Ultimate Edition Steam 1.13 DX 11"
+exe = "control_dx11.exe"
+notes = "Converted from a Cheat Engine table by jjcho849. Source: https://fearlessrevolution.com/viewtopic.php?t=14782"
+verified = []
+author = "jjcho849"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "money-ability-points-hook"
+name = "Money/Ability Points Hook"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(MONEY,Control_DX11.exe,48 8B 5F 40 40 32 ED) // should be unique
+alloc(newmem,$1000,MONEY)
+alloc(find_money,10)
+
+label(code)
+label(return)
+
+find_money:
+dd 0
+
+newmem:
+mov [find_money],rdi
+jmp code
+
+code:
+  mov rbx,[rdi+40]
+  xor bpl,bpl
+  jmp return
+
+MONEY:
+  jmp newmem
+  nop 2
+return:
+registersymbol(MONEY find_money)
+
+[DISABLE]
+
+MONEY:
+  db 48 8B 5F 40 40 32 ED
+
+unregistersymbol(MONEY find_money)
+dealloc(newmem)
+dealloc(find_money)
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX11.exe.text+5F382D
+
+Control_DX11.exe.text+5F37F5: C6 87 C0 02 00 00 00           - mov byte ptr [rdi+000002C0],00
+Control_DX11.exe.text+5F37FC: 48 8B 86 10 01 00 00           - mov rax,[rsi+00000110]
+Control_DX11.exe.text+5F3803: 8B 96 F0 00 00 00              - mov edx,[rsi+000000F0]
+Control_DX11.exe.text+5F3809: 48 8B 8E 00 01 00 00           - mov rcx,[rsi+00000100]
+Control_DX11.exe.text+5F3810: 44 8B 40 20                    - mov r8d,[rax+20]
+Control_DX11.exe.text+5F3814: E8 E7 72 01 00                 - call Control_DX11.exe.text+60AB00
+Control_DX11.exe.text+5F3819: 48 8B 05 40 1B C4 00           - mov rax,[Control_DX11.exe.data+360]
+Control_DX11.exe.text+5F3820: 48 8B 78 30                    - mov rdi,[rax+30]
+Control_DX11.exe.text+5F3824: 48 85 FF                       - test rdi,rdi
+Control_DX11.exe.text+5F3827: 0F 84 17 01 00 00              - je Control_DX11.exe.text+5F3944
+// ---------- INJECTING HERE ----------
+Control_DX11.exe.text+5F382D: 48 8B 5F 40                    - mov rbx,[rdi+40]
+// ---------- DONE INJECTING  ----------
+Control_DX11.exe.text+5F3831: 40 32 ED                       - xor bpl,bpl
+Control_DX11.exe.text+5F3834: 4C 8B 96 F0 02 00 00           - mov r10,[rsi+000002F0]
+Control_DX11.exe.text+5F383B: 49 3B DA                       - cmp rbx,r10
+Control_DX11.exe.text+5F383E: 74 18                          - je Control_DX11.exe.text+5F3858
+Control_DX11.exe.text+5F3840: 40 0F 92 C5                    - setb bpl
+Control_DX11.exe.text+5F3844: 48 89 9E F0 02 00 00           - mov [rsi+000002F0],rbx
+Control_DX11.exe.text+5F384B: C7 86 EC 02 00 00 00 00 00 00  - mov [rsi+000002EC],00000000
+Control_DX11.exe.text+5F3855: 4C 8B D3                       - mov r10,rbx
+Control_DX11.exe.text+5F3858: 0F B6 96 EB 02 00 00           - movzx edx,byte ptr [rsi+000002EB]
+Control_DX11.exe.text+5F385F: 4C 39 96 F8 02 00 00           - cmp [rsi+000002F8],r10
+}"""
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "find_money"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "ability-points"
+name = "Ability Points"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "find_money"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "god-mode-hook"
+name = "God Mode Hook"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GOD,Control_DX11.exe,44 0F 28 C9 F3 41 0F 5C F1) // should be unique
+alloc(newmem,$1000,GOD)
+alloc(infhealth,8)
+alloc(instakill,8)
+
+label(code)
+label(return)
+label(herohealth)
+label(kills)
+
+infhealth:
+dd 0
+
+instakill:
+dd 0
+
+newmem:
+cmp [rbx+AC],(float)15
+jne kills
+jmp herohealth
+
+kills:
+cmp [instakill],#1
+jne code
+mov [rbx+64],0
+jmp code
+
+herohealth:
+cmp [infhealth],1
+jne code
+mov [rbx+64],(float)1
+movaps xmm9,xmm9
+subss xmm6,xmm9
+jmp return
+
+code:
+  movaps xmm9,xmm1
+  subss xmm6,xmm9
+  jmp return
+
+GOD:
+  jmp newmem
+  nop 4
+return:
+registersymbol(GOD infhealth instakill)
+
+[DISABLE]
+
+GOD:
+  db 44 0F 28 C9 F3 41 0F 5C F1
+
+unregistersymbol(GOD infhealth instakill)
+dealloc(newmem)
+dealloc(infhealth)
+dealloc(instakill)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX11.exe.text+32179D
+
+Control_DX11.exe.text+321771: 0F 29 70 E8                 - movaps [rax-18],xmm6
+Control_DX11.exe.text+321775: 40 32 ED                    - xor bpl,bpl
+Control_DX11.exe.text+321778: 0F 29 78 D8                 - movaps [rax-28],xmm7
+Control_DX11.exe.text+32177C: 0F 28 F0                    - movaps xmm6,xmm0
+Control_DX11.exe.text+32177F: 44 0F 29 40 C8              - movaps [rax-38],xmm8
+Control_DX11.exe.text+321784: 45 0F B6 F1                 - movzx r14d,r9l
+Control_DX11.exe.text+321788: F3 44 0F 10 05 B7 35 BF 00  - movss xmm8,[Control_DX11.exe.rdata+17DD48]
+Control_DX11.exe.text+321791: 41 0F B6 F0                 - movzx esi,r8l
+Control_DX11.exe.text+321795: 44 0F 29 48 B8              - movaps [rax-48],xmm9
+Control_DX11.exe.text+32179A: 48 8B D9                    - mov rbx,rcx
+// ---------- INJECTING HERE ----------
+Control_DX11.exe.text+32179D: 44 0F 28 C9                 - movaps xmm9,xmm1
+// ---------- DONE INJECTING  ----------
+Control_DX11.exe.text+3217A1: F3 41 0F 5C F1              - subss xmm6,xmm9
+Control_DX11.exe.text+3217A6: 44 0F 2F C6                 - comiss xmm8,xmm6
+Control_DX11.exe.text+3217AA: 72 1A                       - jb Control_DX11.exe.text+3217C6
+Control_DX11.exe.text+3217AC: 41 0F 2F C0                 - comiss xmm0,xmm8
+Control_DX11.exe.text+3217B0: 72 14                       - jb Control_DX11.exe.text+3217C6
+Control_DX11.exe.text+3217B2: 48 8B 49 30                 - mov rcx,[rcx+30]
+Control_DX11.exe.text+3217B6: 48 85 C9                    - test rcx,rcx
+Control_DX11.exe.text+3217B9: 75 06                       - jne Control_DX11.exe.text+3217C1
+Control_DX11.exe.text+3217BB: 48 39 4B 38                 - cmp [rbx+38],rcx
+Control_DX11.exe.text+3217BF: 74 05                       - je Control_DX11.exe.text+3217C6
+}"""
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+infhealth:
+db 1
+
+ 
+ 
+[DISABLE]
+infhealth:
+db 0"""
+
+[[cheat]]
+id = "one-hit-kills"
+name = "One Hit Kills"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+instakill:
+db 1
+ 
+ 
+[DISABLE]
+instakill:
+db 0"""
+
+[[cheat]]
+id = "infinite-ammo"
+name = "Infinite Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(AMMO,Control_DX11.exe,F3 0F 11 99 A8 01 00 00 48) // should be unique
+alloc(newmem,$1000,AMMO)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rcx+000001A8],(float)36
+  jmp return
+
+AMMO:
+  jmp newmem
+  nop 3
+return:
+registersymbol(AMMO)
+
+[DISABLE]
+
+AMMO:
+  db F3 0F 11 99 A8 01 00 00
+
+unregistersymbol(AMMO)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX11.exe.text+3B45F4
+
+Control_DX11.exe.text+3B45C0: 0F 57 05 29 2B B6 00     - xorps xmm0,[Control_DX11.exe.rdata+1800F0]
+Control_DX11.exe.text+3B45C7: 0F 57 C9                 - xorps xmm1,xmm1
+Control_DX11.exe.text+3B45CA: F3 0F 58 81 A8 01 00 00  - addss xmm0,[rcx+000001A8]
+Control_DX11.exe.text+3B45D2: F3 0F 10 D8              - movss xmm3,xmm0
+Control_DX11.exe.text+3B45D6: F3 0F 10 81 B0 01 00 00  - movss xmm0,[rcx+000001B0]
+Control_DX11.exe.text+3B45DE: 0F 57 05 0B 2B B6 00     - xorps xmm0,[Control_DX11.exe.rdata+1800F0]
+Control_DX11.exe.text+3B45E5: F3 0F 10 C8              - movss xmm1,xmm0
+Control_DX11.exe.text+3B45E9: 0F 28 C2                 - movaps xmm0,xmm2
+Control_DX11.exe.text+3B45EC: F3 0F 5F D9              - maxss xmm3,xmm1
+Control_DX11.exe.text+3B45F0: F3 0F 5D DA              - minss xmm3,xmm2
+// ---------- INJECTING HERE ----------
+Control_DX11.exe.text+3B45F4: F3 0F 11 99 A8 01 00 00  - movss [rcx+000001A8],xmm3
+// ---------- DONE INJECTING  ----------
+Control_DX11.exe.text+3B45FC: 48 81 C1 D0 00 00 00     - add rcx,000000D0
+Control_DX11.exe.text+3B4603: 48 8D 15 8E 6D F1 00     - lea rdx,[7FF73E3AC398]
+Control_DX11.exe.text+3B460A: 45 33 C0                 - xor r8d,r8d
+Control_DX11.exe.text+3B460D: FF 15 85 79 9E 00        - call qword ptr [Control_DX11.exe.rdata+4F98]
+Control_DX11.exe.text+3B4613: 48 8B 43 28              - mov rax,[rbx+28]
+Control_DX11.exe.text+3B4617: 48 8D 54 24 40           - lea rdx,[rsp+40]
+Control_DX11.exe.text+3B461C: 48 8B 1D 5D 1F EE 00     - mov rbx,[7FF73E377580]
+Control_DX11.exe.text+3B4623: 48 8B 48 18              - mov rcx,[rax+18]
+Control_DX11.exe.text+3B4627: 48 89 4C 24 40           - mov [rsp+40],rcx
+Control_DX11.exe.text+3B462C: E8 9F 8D D8 FF           - call Control_DX11.exe.text+13D3D0
+}"""
+
+[[cheat]]
+id = "infinite-materials-jukebox-tokens"
+name = "Infinite Materials/Jukebox Tokens"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(MATERIAL,Control_DX11.exe,8B 40 40 EB 05 B8 01 00 00 00 89) // should be unique
+alloc(newmem,$1000,MATERIAL)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rax+40],#999
+  mov eax,[rax+40]
+  jmp return
+
+MATERIAL:
+  jmp newmem
+return:
+registersymbol(MATERIAL)
+
+[DISABLE]
+
+MATERIAL:
+  db 8B 40 40 EB 05
+
+unregistersymbol(MATERIAL)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX11.exe.text+3B8406
+
+Control_DX11.exe.text+3B83DE: F3 0F 10 40 50     - movss xmm0,[rax+50]
+Control_DX11.exe.text+3B83E3: 48 8B 40 38        - mov rax,[rax+38]
+Control_DX11.exe.text+3B83E7: F3 0F 5E 40 10     - divss xmm0,[rax+10]
+Control_DX11.exe.text+3B83EC: F3 0F 11 45 B4     - movss [rbp-4C],xmm0
+Control_DX11.exe.text+3B83F1: E8 3A 07 DC FF     - call Control_DX11.exe.text+178B30
+Control_DX11.exe.text+3B83F6: 8B D0              - mov edx,eax
+Control_DX11.exe.text+3B83F8: 48 8B CE           - mov rcx,rsi
+Control_DX11.exe.text+3B83FB: FF 15 BF 5B 9E 00  - call qword ptr [Control_DX11.exe.rdata+6FC0]
+Control_DX11.exe.text+3B8401: 48 85 C0           - test rax,rax
+Control_DX11.exe.text+3B8404: 74 05              - je Control_DX11.exe.text+3B840B
+// ---------- INJECTING HERE ----------
+Control_DX11.exe.text+3B8406: 8B 40 40           - mov eax,[rax+40]
+// ---------- DONE INJECTING  ----------
+Control_DX11.exe.text+3B8409: EB 05              - jmp Control_DX11.exe.text+3B8410
+Control_DX11.exe.text+3B840B: B8 01 00 00 00     - mov eax,00000001
+Control_DX11.exe.text+3B8410: 89 45 C0           - mov [rbp-40],eax
+Control_DX11.exe.text+3B8413: 8B 44 24 2C        - mov eax,[rsp+2C]
+Control_DX11.exe.text+3B8417: 25 FF FF FF 3F     - and eax,3FFFFFFF
+Control_DX11.exe.text+3B841C: 8B 4C 24 28        - mov ecx,[rsp+28]
+Control_DX11.exe.text+3B8420: 3B C8              - cmp ecx,eax
+Control_DX11.exe.text+3B8422: 75 25              - jne Control_DX11.exe.text+3B8449
+Control_DX11.exe.text+3B8424: 48 8D 0C 49        - lea rcx,[rcx+rcx*2]
+Control_DX11.exe.text+3B8428: 48 C1 E1 04        - shl rcx,04
+}"""
+
+[[cheat]]
+id = "infinite-energy"
+name = "Infinite Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ENERGY,Control_DX11.exe,F3 0F 11 41 40 48) // should be unique
+alloc(newmem,$1000,ENERGY)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rcx+40],(float)1
+  jmp return
+
+ENERGY:
+  jmp newmem
+return:
+registersymbol(ENERGY)
+
+[DISABLE]
+
+ENERGY:
+  db F3 0F 11 41 40
+
+unregistersymbol(ENERGY)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX11.exe.text+F0765
+
+Control_DX11.exe.text+F073B: 0F 28 C4                 - movaps xmm0,xmm4
+Control_DX11.exe.text+F073E: 48 89 5C 24 40           - mov [rsp+40],rbx
+Control_DX11.exe.text+F0743: F3 0F 58 C1              - addss xmm0,xmm1
+Control_DX11.exe.text+F0747: 0F 29 74 24 20           - movaps [rsp+20],xmm6
+Control_DX11.exe.text+F074C: F3 0F 10 B1 28 01 00 00  - movss xmm6,[rcx+00000128]
+Control_DX11.exe.text+F0754: 0F 2E E0                 - ucomiss xmm4,xmm0
+Control_DX11.exe.text+F0757: 7A 02                    - jp Control_DX11.exe.text+F075B
+Control_DX11.exe.text+F0759: 74 25                    - je Control_DX11.exe.text+F0780
+Control_DX11.exe.text+F075B: 48 8B 05 3E D8 CA 00     - mov rax,[Control_DX11.exe.rdata+6FA0]
+Control_DX11.exe.text+F0762: 0F 28 E0                 - movaps xmm4,xmm0
+// ---------- INJECTING HERE ----------
+Control_DX11.exe.text+F0765: F3 0F 11 41 40           - movss [rcx+40],xmm0
+// ---------- DONE INJECTING  ----------
+Control_DX11.exe.text+F076A: 48 8B 08                 - mov rcx,[rax]
+Control_DX11.exe.text+F076D: 48 85 C9                 - test rcx,rcx
+Control_DX11.exe.text+F0770: 74 0E                    - je Control_DX11.exe.text+F0780
+Control_DX11.exe.text+F0772: 48 8D 57 40              - lea rdx,[rdi+40]
+Control_DX11.exe.text+F0776: E8 B5 8E F7 FF           - call Control_DX11.exe.text+69630
+Control_DX11.exe.text+F077B: F3 0F 10 67 40           - movss xmm4,[rdi+40]
+Control_DX11.exe.text+F0780: F3 0F 10 1D C0 45 E2 00  - movss xmm3,[Control_DX11.exe.rdata+17DD48]
+Control_DX11.exe.text+F0788: 0F 28 C6                 - movaps xmm0,xmm6
+Control_DX11.exe.text+F078B: 48 8B 47 38              - mov rax,[rdi+38]
+Control_DX11.exe.text+F078F: 0F 28 D0                 - movaps xmm2,xmm0
+}"""
+
+[[cheat]]
+id = "infinite-grenades-for-surge-while-aiming"
+name = "Infinite Grenades For Surge While Aiming"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(SURGE,Control_DX11.exe,8B 81 B0 00 00 00 39) // should be unique
+alloc(newmem,$1000,SURGE)
+
+label(code)
+label(return)
+
+newmem:
+cmp [rcx+000000B0],0
+je code
+mov [rcx+000000B0],1
+jmp code
+
+code:
+  mov eax,[rcx+000000B0]
+  jmp return
+
+SURGE:
+  jmp newmem
+  nop
+return:
+registersymbol(SURGE)
+
+[DISABLE]
+
+SURGE:
+  db 8B 81 B0 00 00 00
+
+unregistersymbol(SURGE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX11.exe.text+612A8E
+
+Control_DX11.exe.text+612A64: 4C 8D 05 45 B8 84 00  - lea r8,[Control_DX11.exe.rdata+C72B0]
+Control_DX11.exe.text+612A6B: 89 43 58              - mov [rbx+58],eax
+Control_DX11.exe.text+612A6E: 48 8D 54 24 30        - lea rdx,[rsp+30]
+Control_DX11.exe.text+612A73: 48 8B CF              - mov rcx,rdi
+Control_DX11.exe.text+612A76: FF 15 1C 46 78 00     - call qword ptr [Control_DX11.exe.rdata+98]
+Control_DX11.exe.text+612A7C: 48 8B C8              - mov rcx,rax
+Control_DX11.exe.text+612A7F: FF 15 1B 46 78 00     - call qword ptr [Control_DX11.exe.rdata+A0]
+Control_DX11.exe.text+612A85: 48 8B 4B 40           - mov rcx,[rbx+40]
+Control_DX11.exe.text+612A89: 48 85 C9              - test rcx,rcx
+Control_DX11.exe.text+612A8C: 74 5B                 - je Control_DX11.exe.text+612AE9
+// ---------- INJECTING HERE ----------
+Control_DX11.exe.text+612A8E: 8B 81 B0 00 00 00     - mov eax,[rcx+000000B0]
+// ---------- DONE INJECTING  ----------
+Control_DX11.exe.text+612A94: 39 43 68              - cmp [rbx+68],eax
+Control_DX11.exe.text+612A97: 74 25                 - je Control_DX11.exe.text+612ABE
+Control_DX11.exe.text+612A99: 4C 8D 05 D0 B7 84 00  - lea r8,[Control_DX11.exe.rdata+C7270]
+Control_DX11.exe.text+612AA0: 89 43 68              - mov [rbx+68],eax
+Control_DX11.exe.text+612AA3: 48 8D 54 24 30        - lea rdx,[rsp+30]
+Control_DX11.exe.text+612AA8: 48 8B CF              - mov rcx,rdi
+Control_DX11.exe.text+612AAB: FF 15 E7 45 78 00     - call qword ptr [Control_DX11.exe.rdata+98]
+Control_DX11.exe.text+612AB1: 48 8B C8              - mov rcx,rax
+Control_DX11.exe.text+612AB4: FF 15 E6 45 78 00     - call qword ptr [Control_DX11.exe.rdata+A0]
+Control_DX11.exe.text+612ABA: 48 8B 4B 40           - mov rcx,[rbx+40]
+}"""
+
+[[cheat]]
+id = "player-coordinates-hook"
+name = "Player Coordinates Hook"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(COORDS,PhysX3CharacterKinematic_x64.dll,0F 10 87 F8 01 00 00 0F) // should be unique
+alloc(newmem,$1000,COORDS)
+alloc(find_coords,10)
+
+label(code)
+label(return)
+
+find_coords:
+dd 0
+
+newmem:
+mov [find_coords],rdi
+jmp code
+
+code:
+  movups xmm0,[rdi+000001F8]
+  jmp return
+
+COORDS:
+  jmp newmem
+  nop 2
+return:
+registersymbol(COORDS find_coords)
+
+[DISABLE]
+
+COORDS:
+  db 0F 10 87 F8 01 00 00
+
+unregistersymbol(COORDS find_coords)
+dealloc(newmem)
+dealloc(find_coords)
+
+{
+// ORIGINAL CODE - INJECTION POINT: PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+777D
+
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7747: C7 84 24 A0 00 00 00 C0 9F 00 00  - mov [rsp+000000A0],00009FC0
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7752: 48 8D 4C 24 50                    - lea rcx,[rsp+50]
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7757: 49 8B F0                          - mov rsi,r8
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+775A: 48 8B EA                          - mov rbp,rdx
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+775D: 0F AE 94 24 A0 00 00 00           - ldmxcsr [rsp+000000A0]
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7765: E8 26 EC 00 00                    - call PhysX3CharacterKinematic_x64.physx::shdfnd::Foundation::setReportAllocationNames+2910
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+776A: 83 BF 70 02 00 00 01              - cmp dword ptr [rdi+00000270],01
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7771: 48 8D 4F 08                       - lea rcx,[rdi+08]
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7775: 4C 8B CE                          - mov r9,rsi
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7778: 4C 8D 44 24 50                    - lea r8,[rsp+50]
+// ---------- INJECTING HERE ----------
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+777D: 0F 10 87 F8 01 00 00              - movups xmm0,[rdi+000001F8]
+// ---------- DONE INJECTING  ----------
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7784: 0F 94 C0                          - sete al
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7787: 48 8B D5                          - mov rdx,rbp
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+778A: F3 0F 10 97 68 02 00 00           - movss xmm2,[rdi+00000268]
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+7792: F2 0F 10 8F 08 02 00 00           - movsd xmm1,[rdi+00000208]
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+779A: 88 44 24 40                       - mov [rsp+40],al
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+779E: 48 8B 84 24 D0 00 00 00           - mov rax,[rsp+000000D0]
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+77A6: 0F 11 44 24 58                    - movups [rsp+58],xmm0
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+77AB: 48 89 44 24 38                    - mov [rsp+38],rax
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+77B0: F3 0F 10 87 6C 02 00 00           - movss xmm0,[rdi+0000026C]
+PhysX3CharacterKinematic_x64.physx::shdfnd::Allocator::`default constructor closure'+77B8: 48 8B 84 24 C8 00 00 00           - mov rax,[rsp+000000C8]
+}"""
+
+[[cheat]]
+id = "xpos"
+name = "Xpos"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "find_coords"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "ypos"
+name = "Ypos"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "find_coords"
+hops = ["+0x200"]
+
+[[cheat]]
+id = "zpos"
+name = "Zpos"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "find_coords"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "jukebox-expedition-time-hook"
+name = "Jukebox Expedition Time Hook"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(JUKETIME,Control_DX11.exe,F3 0F 11 80 98 00 00 00 40) // should be unique
+alloc(newmem,$1000,JUKETIME)
+alloc(find_time,10)
+
+label(code)
+label(return)
+
+find_time:
+dd 0
+
+newmem:
+
+code:
+  movss [rax+00000098],xmm0
+  mov [find_time],rax
+  jmp return
+
+JUKETIME:
+  jmp newmem
+  nop 3
+return:
+registersymbol(JUKETIME find_time)
+
+[DISABLE]
+
+JUKETIME:
+  db F3 0F 11 80 98 00 00 00
+
+unregistersymbol(JUKETIME find_time)
+dealloc(newmem)
+dealloc(find_time)
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX11.exe.text+1C7439
+
+Control_DX11.exe.text+1C740D: 33 C9                    - xor ecx,ecx
+Control_DX11.exe.text+1C740F: 48 8B 05 02 6C BD 00     - mov rax,[Control_DX11.exe.rdata+7018]
+Control_DX11.exe.text+1C7416: 48 8B 0C 01              - mov rcx,[rcx+rax]
+Control_DX11.exe.text+1C741A: 48 8B 43 08              - mov rax,[rbx+08]
+Control_DX11.exe.text+1C741E: 80 B8 9C 00 00 00 00     - cmp byte ptr [rax+0000009C],00
+Control_DX11.exe.text+1C7425: 75 1A                    - jne Control_DX11.exe.text+1C7441
+Control_DX11.exe.text+1C7427: F3 0F 10 80 98 00 00 00  - movss xmm0,[rax+00000098]
+Control_DX11.exe.text+1C742F: 0F 2F C6                 - comiss xmm0,xmm6
+Control_DX11.exe.text+1C7432: 76 0D                    - jna Control_DX11.exe.text+1C7441
+Control_DX11.exe.text+1C7434: F3 0F 5C 41 20           - subss xmm0,[rcx+20]
+// ---------- INJECTING HERE ----------
+Control_DX11.exe.text+1C7439: F3 0F 11 80 98 00 00 00  - movss [rax+00000098],xmm0
+// ---------- DONE INJECTING  ----------
+Control_DX11.exe.text+1C7441: 40 84 FF                 - test dil,dil
+Control_DX11.exe.text+1C7444: 48 8B 7C 24 40           - mov rdi,[rsp+40]
+Control_DX11.exe.text+1C7449: 75 25                    - jne Control_DX11.exe.text+1C7470
+Control_DX11.exe.text+1C744B: 66 0F 6E 05 9D 35 0E 01  - movd xmm0,[7FF7023BB9F0]
+Control_DX11.exe.text+1C7453: 48 8B 4B 08              - mov rcx,[rbx+08]
+Control_DX11.exe.text+1C7457: 0F 5B C0                 - cvtdq2ps xmm0,xmm0
+Control_DX11.exe.text+1C745A: 0F 2F 81 98 00 00 00     - comiss xmm0,[rcx+00000098]
+Control_DX11.exe.text+1C7461: 72 0D                    - jb Control_DX11.exe.text+1C7470
+Control_DX11.exe.text+1C7463: 48 8D 15 36 45 C2 00     - lea rdx,[Control_DX11.exe.rdata+549A0]
+Control_DX11.exe.text+1C746A: FF 15 98 1F BD 00        - call qword ptr [Control_DX11.exe.rdata+2408]
+}"""
+
+[[cheat]]
+id = "time-in-seconds"
+name = "Time In Seconds"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "find_time"
+hops = ["+0x98"]

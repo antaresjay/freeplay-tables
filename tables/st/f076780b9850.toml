@@ -1,0 +1,284 @@
+[game]
+name = "Star Trek 2013 (FLT Release + AOB Scan [for hopefully any])"
+exe = "st.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4046"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(InfiniteHealth,64)
+label(HealthRet)
+label(NotPlayer)
+
+InfiniteHealth: //[esi+28] == max health
+cmp [esi+f0],1//[esi+24],0
+jne NotPlayer
+
+movss xmm0,[esi+28] //max health
+
+NotPlayer:
+movq [esi],xmm0
+mov ecx,[edx+08]
+jmp HealthRet
+
+ST.exe+1b8a1e:
+jmp InfiniteHealth
+db 90 90
+HealthRet:
+ 
+[disable]
+
+ST.exe+1b8a1e:
+db 66 0f d6 06 8b 4a 08
+//movq [esi],xmm0
+//mov ecx,[edx+08]
+
+dealloc(InfiniteHealth)"""
+
+[[cheat]]
+id = "infinite-oxygen"
+name = "Infinite Oxygen"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(InfiniteOxygen,64)
+label(FullOxygen)
+
+InfiniteOxygen:
+movss xmm0,[FullOxygen]
+movss [esi+24a0],xmm0
+jmp ST.exe+5450f5
+
+FullOxygen:
+dd (float)60.0
+
+ST.exe+5450ed:
+jmp InfiniteOxygen
+db 90 90 90
+
+[disable]
+
+ST.exe+5450ed:
+db f3 0f 11 86 a0 24 00 00
+
+dealloc(InfiniteOxygen)"""
+
+[[cheat]]
+id = "infinite-ammo-no-reload"
+name = "Infinite Ammo + No Reload"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(AmmoNoReload,64)
+label(AmmoRet)
+
+AmmoNoReload:
+mov eax,(float)99
+mov [esi+c88],eax
+jmp AmmoRet
+
+ST.exe+80cf5f:
+jmp AmmoNoReload
+nop
+AmmoRet:
+
+[disable]
+
+ST.exe+80cf5f:
+db 89 86 88 0c 00 00
+//mov [esi+c88],eax
+
+dealloc(AmmoNoReload)"""
+
+[[cheat]]
+id = "never-overheat-phaser"
+name = "Never Overheat Phaser"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(NeverOverheatPhaser,64)
+label(PhaserRet)
+
+NeverOverheatPhaser:
+xorps xmm0,xmm0
+movss [esi+f10],xmm0
+jmp PhaserRet
+
+ST.exe+7aa1c3:
+jmp NeverOverheatPhaser
+db 90 90 90
+PhaserRet:
+
+[disable]
+
+ST.exe+7aa1c3:
+db f3 0f 11 86 10 0f 00 00
+//movss [esi+f10],xmm0
+
+dealloc(NeverOverheatPhaser)"""
+
+[[cheat]]
+id = "infinite-health-aobscan"
+name = "Infinite Health AOBScan"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(InfiniteHealth,64)
+aobscan(HealthAddress,66 0f d6 06 8b 4a 08 89 44 24 ? 89 4e)
+label(HealthAddy)
+label(NotPlayer)
+registersymbol(HealthAddy)
+
+InfiniteHealth: //[esi] == current health; [esi+28] == max health
+cmp [esi+f0],1//alternatives: [esi+4],0; [esi+24],0; [esi+4c],0; [esi+68],0
+jne NotPlayer
+
+movss xmm0,[esi+28] //max health
+
+NotPlayer:
+movq [esi],xmm0
+mov ecx,[edx+8]
+jmp HealthAddress+7
+
+HealthAddress:
+HealthAddy:
+jmp InfiniteHealth
+db 90 90
+ 
+[disable]
+
+HealthAddy:
+db 66 0f d6 06 8b 4a 08
+//movq [esi],xmm0
+//mov ecx,[edx+8]
+
+dealloc(InfiniteHealth)
+unregistersymbol(HealthAddy)"""
+
+[[cheat]]
+id = "infinite-oxygen-aobscan"
+name = "Infinite Oxygen AOBScan"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(InfiniteOxygen,64)
+aobscan(OxygenAddress,f3 0f 11 86 a0 24 00 00 5f 5e 5b 8b 8c 24)
+label(OxygenAddy)
+label(FullOxygen)
+registersymbol(OxygenAddy)
+
+InfiniteOxygen:
+movss xmm0,[FullOxygen]
+movss [esi+24a0],xmm0
+jmp OxygenAddress+8
+
+FullOxygen:
+dd (float)60.0
+
+OxygenAddress:
+OxygenAddy:
+jmp InfiniteOxygen
+db 90 90 90
+
+[disable]
+
+OxygenAddy:
+db f3 0f 11 86 a0 24 00 00
+
+dealloc(InfiniteOxygen)
+unregistersymbol(OxygenAddy)"""
+
+[[cheat]]
+id = "infinite-ammo-no-reload-aobscan"
+name = "Infinite Ammo + No Reload AOBScan"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(AmmoNoReload,64)
+aobscan(AmmoAddress,89 86 88 0c 00 00 8b 86 ? ? ? ? 83 c8 01 89 86 ? ? ? ? 83 e0 fe 74 ? b9 01 00 00 00 66 89 08 5e)
+label(AmmoAddy)
+registersymbol(AmmoAddy)
+
+AmmoNoReload:
+mov eax,(float)99 //99 value will have all guns set at max in clip upon firing
+mov [esi+c88],eax
+jmp AmmoAddress+6
+
+AmmoAddress:
+AmmoAddy:
+jmp AmmoNoReload
+nop
+ 
+[disable]
+
+AmmoAddy:
+db 89 86 88 0c 00 00
+//mov [esi+c88],eax
+
+dealloc(AmmoNoReload)
+unregistersymbol(AmmoAddy)"""
+
+[[cheat]]
+id = "never-overheat-phaser-aobscan"
+name = "Never Overheat Phaser AOBScan"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(NeverOverheatPhaser,64)
+aobscan(OverheatAddress,f3 0f 11 86 10 0f 00 00 5e 59 c2 04 00 8b 44 24)
+label(OverheatAddy)
+registersymbol(OverheatAddy)
+
+NeverOverheatPhaser:
+xorps xmm0,xmm0
+movss [esi+f10],xmm0
+jmp OverheatAddress+8
+
+OverheatAddress:
+OverheatAddy:
+jmp NeverOverheatPhaser
+db 90 90 90
+
+[disable]
+
+OverheatAddy:
+db f3 0f 11 86 10 0f 00 00
+//movss [esi+f10],xmm0
+
+dealloc(NeverOverheatPhaser)
+unregistersymbol(OverheatAddy)"""

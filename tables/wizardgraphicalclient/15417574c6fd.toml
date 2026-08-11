@@ -1,0 +1,517 @@
+[game]
+name = "Wizard101 by lynith updated 4 29 22"
+exe = "wizardgraphicalclient.exe"
+notes = "Converted from a Cheat Engine table by fattius. Source: https://fearlessrevolution.com/viewtopic.php?t=20179"
+verified = []
+author = "fattius"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "runspeed"
+name = "#runspeed#"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(speedcode,WizardGraphicalClient.exe,66 0f 6e c1 0f 5b c0 f3 0f 59 05 xx xx xx xx f3 0f 58 c2)
+registersymbol(speedcode)
+alloc(speedcodecave,256,speedcode)
+alloc(pSpeed,256)
+alloc(speed40,256)
+registersymbol(speed40)
+registersymbol(pSpeed)
+label(end)
+label(createpointer)
+
+////SPEED
+speedcodecave:
+movd xmm0,ecx
+cvtdq2ps xmm0,xmm0
+cmp r12,81                     //if r12=81 player speed is handled
+je createpointer
+jmp end
+
+createpointer:                 //static speed change applies after mapchange
+cmp [pSpeed],ebx               //check pointer
+je end
+mov dword ptr ds:[pSpeed],ebx  //create pointer
+mov [ebx+c0],#40               //set speed 40
+cmp [speed40],#1               //40/350 switch
+je end
+mov [ebx+c0],#350              //set speed 350
+jmp end
+
+speedcode:
+jmp speedcodecave
+nop
+nop
+
+end:
+[DISABLE]
+speedcode:
+db 66 0f 6e c1 0f 5b c0
+dealloc(*)
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "runspeed-40"
+name = "runspeed 40%"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 500
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSpeed"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "350-after-map-change"
+name = "350% after map change"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "speed40"
+hops = []
+
+[[cheat]]
+id = "xyz-questhelper"
+name = "#XYZ/Questhelper#"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(xyz,WizardGraphicalClient.exe,F2 41 0F 11 40 58 8B 42 08 41 89 40 60 41 C6 80 88 00 00 00 01 F2 0F 10 02 F2 0F 11 81 A8 00 00 00)
+registersymbol(xyz)
+aobscanmodule(questhelper,WizardGraphicalClient.exe,f2 44 0f 11 00 44 89 60 08 48 8b 45 48)
+registersymbol(questhelper)
+alloc(questhelpercave,256,questhelper)
+alloc(xyzcave,256,xyz)
+alloc(help,256,questhelper)
+registersymbol(help)
+alloc(pCoords,256)
+registersymbol(pCoords)
+alloc(questXY,256)
+alloc(questZ,256)
+registersymbol(questXY)
+registersymbol(questZ)
+alloc(saveload,256)
+registersymbol(saveload)
+alloc(slot,256)
+registersymbol(slot)
+alloc(slot0xy,256)
+registersymbol(slot0xy)
+define(slot0z,slot0xy+8)
+registersymbol(slot0z)
+define(slot1xy,slot0z+8)
+registersymbol(slot1xy)
+define(slot1z,slot1xy+8)
+registersymbol(slot1z)
+define(slot2xy,slot1z+8)
+registersymbol(slot2xy)
+define(slot2z,slot2xy+8)
+registersymbol(slot2z)
+define(slot3xy,slot2z+8)
+registersymbol(slot3xy)
+define(slot3z,slot3xy+8)
+registersymbol(slot3z)
+label(loadpos)
+label(savepos)
+label(createpointer)
+label(end)
+label(save2)
+label(save3)
+label(save4)
+label(load2)
+label(load3)
+label(load4)
+
+////QUESTHELPER
+questhelpercave:
+movsd [rax],xmm8         // X,Y coords (from selected quest)
+mov [rax+08],r12d        // Z coord           "
+cmp [help],1             // port to arrow?
+jne questhelper+09       // jne end
+push rax
+mov rax,[pCoords]        //change register to player Coords addr.
+add rax,58
+movq [questXY],xmm8      //port x,y
+fld qword ptr [questXY]
+fstp qword ptr [rax]
+add rax,8
+mov [questZ],r12d        //port z
+fld dword ptr [questZ]
+fstp dword ptr [rax]
+pop rax
+mov [help],0             //teleport switch off
+jmp questhelper+09       //jmp end (back to questhelper code)
+
+questhelper:
+jmp questhelpercave
+nop 4
+
+////COORDS / SAVELOAD
+xyzcave:
+movsd [r8+58],xmm0     //xy
+mov eax,[rdx+08]
+mov [r8+60],eax        //z
+cmp r12,81             //if r12=81 player coords are handled
+je createpointer
+jmp end
+
+createpointer:
+mov qword ptr ds:[pCoords],r8 //create pointer
+cmp [saveload],#1             //save position?
+je savepos
+cmp [saveload],#2             //load position?
+je loadpos
+jmp end
+
+loadpos:                      //load slot
+mov [saveload],#0             //reset switch
+cmp [slot],0
+jne load2
+cmp [slot0xy],0
+je end
+movsd xmm0,[slot0xy]
+movsd [r8+58],xmm0
+mov eax,[slot0z]
+mov [r8+60],eax
+jmp end
+load2:
+cmp [slot],1
+jne load3
+cmp [slot1xy],0
+je end
+movsd xmm0,[slot1xy]
+movsd [r8+58],xmm0
+mov eax,[slot1z]
+mov [r8+60],eax
+jmp end
+load3:
+cmp [slot],2
+jne load4
+cmp [slot2xy],0
+je end
+movsd xmm0,[slot2xy]
+movsd [r8+58],xmm0
+mov eax,[slot2z]
+mov [r8+60],eax
+jmp end
+load4:
+cmp [slot],3
+jne end
+cmp [slot3xy],0
+je end
+movsd xmm0,[slot3xy]
+movsd [r8+58],xmm0
+mov eax,[slot3z]
+mov [r8+60],eax
+jmp end
+
+savepos:                      //save slot
+mov [saveload],#0             //reset switch
+cmp [slot],3
+jne save2
+movsd [slot3xy],xmm0
+mov [slot3z],eax
+jmp end
+save2:
+cmp [slot],2
+jne save3
+movsd [slot2xy],xmm0
+mov [slot2z],eax
+jmp end
+save3:
+cmp [slot],1
+jne save4
+movsd [slot1xy],xmm0
+mov [slot1z],eax
+jmp end
+save4:
+movsd [slot0xy],xmm0
+mov [slot0z],eax
+jmp end
+
+xyz:
+jmp xyzcave
+nop 8
+
+end:
+[DISABLE]
+questhelper:
+db f2 44 0f 11 00 44 89 60 08 48 8b 45 48
+xyz:
+db f2 41 0f 11 40 58 8b 42 08 41 89 40 60 41 c6 80 88 00 00 00 01
+dealloc(*)
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "x"
+name = "X            ###"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -2515.51123
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCoords"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "y-o-o"
+name = "Y            (o o)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -1246.671753
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCoords"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "z-ooo-ooo"
+name = "Z    ooO--(_)--Ooo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -119.3351746
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCoords"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "teleport-to-quest-arrow-position"
+name = "Teleport to quest arrow position"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "help"
+hops = []
+
+[[cheat]]
+id = "load-position"
+name = "load position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "saveload"
+hops = []
+
+[[cheat]]
+id = "slot0xy"
+name = "slot0xy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -3259.275146
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot0xy"
+hops = []
+
+[[cheat]]
+id = "slot0z"
+name = "slot0z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -118.403244
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot0z"
+hops = []
+
+[[cheat]]
+id = "slot1xy"
+name = "slot1xy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot1xy"
+hops = []
+
+[[cheat]]
+id = "slot1z"
+name = "slot1z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot1z"
+hops = []
+
+[[cheat]]
+id = "slot2xy"
+name = "slot2xy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot2xy"
+hops = []
+
+[[cheat]]
+id = "slot2z"
+name = "slot2z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot2z"
+hops = []
+
+[[cheat]]
+id = "slot3xy"
+name = "slot3xy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot3xy"
+hops = []
+
+[[cheat]]
+id = "slot3z"
+name = "slot3z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "slot3z"
+hops = []
+
+[[cheat]]
+id = "cam-wrapper-browser"
+name = "#Cam,Wrapper,Browser#"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//CAM
+////175 425 normal min/max zoom
+aobscanmodule(smooth,WizardGraphicalClient.exe,76 08 f3 0f 11 8b 2c 01 00 00 0f 28 74 24 70)
+registersymbol(smooth)
+aobscanmodule(zoomout,WizardGraphicalClient.exe,0f 2f c1 76 14 xx xx xx xx xx xx xx xx xx xx xx xx xx xx 48 0f 47 c1 eb 07)
+registersymbol(zoomout)
+aobscanmodule(pitch,WizardGraphicalClient.exe,F3 0F 11 43 78 F3 0F 10 9B 80 00 00 00 F3 0F 10 53 7C F3 0F 10)
+registersymbol(pitch)
+//PACKETS
+aobscanmodule(wrapper,WizardGraphicalClient.exe,48 8B xx 41 xx 41 xx 41 xx 48 83 EC xx 48 C7 40 B8 xx xx xx xx 48 89 xx xx 48 89 xx xx 48 89 xx xx 4C 8B)
+registersymbol(wrapper)
+//NonPaying
+aobscanmodule(nonpaying,WizardGraphicalClient.exe,83 bb 40 1d 02 00 00 75 12 48 8b 05 xx xx xx xx 80 78 18 00 75 05)
+registersymbol(nonpaying)
+alloc(paying,256,nonpaying)
+registersymbol(paying)
+
+paying:
+mov [rbx+0021d40],01
+cmp [rbx+0021d40],00
+ret
+nonpaying:
+call paying
+nop
+nop
+
+smooth:
+db 90 90
+zoomout-25:
+db 90 90 90 90 90 90 90 90
+zoomout+3:
+db 90 90
+pitch:
+db 90 90 90 90 90
+[DISABLE]
+nonpaying:
+db 83 bb 40 1d 02 00 00 75 12 48 8b 05 a2 54 0d 02 80 78 18 00 75 05
+smooth:
+db 76 08
+zoomout-25:
+db f3 0f 5e 05 78 e5 fc 00
+zoomout+3:
+db 76 14
+pitch:
+db F3 0F 11 43 78
+unregistersymbol(*)
+dealloc(*)"""

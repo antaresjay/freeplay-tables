@@ -1,0 +1,829 @@
+[game]
+name = "Lost Skies"
+exe = "lostskies.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=34688"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "disable-enemy-ai"
+name = "Disable Enemy AI"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+WildSkies.AI.Attacks.EnemyGrapple.Update:
+db C3
+WildSkies.AI.Attacks.EnemyGrapple.TryFireAtTarget:
+db C3
+WildSkies.AI.Attacks.EnemyGrapplePlayerSide.HitTarget:
+db C3
+WildSkies.AI.Attacks.EnemyGrapplePlayerSide.Update:
+db C3
+AIProjectile.FireProjectile:
+db C3
+AIProjectile.FireProjectile:
+db C3
+AIProjectile.TryDamageObject:
+db C3
+AIShipTracking.SetPlayerTarget:
+db C3
+AIShipTracking.Update:
+db C3
+AISkyEncounter.OnDetected:
+db C3
+AISkyEncounter.AssignTargetShip:
+db C3
+
+[DISABLE]
+AITurretLaser.get_CanSeeTarget:
+db 0F B6 41 50
+WildSkies.AI.Attacks.EnemyGrapplePlayerSide.HitTarget:
+db 48 89 5C 24 20
+WildSkies.AI.Attacks.EnemyGrapple.Update:
+db 40 53
+WildSkies.AI.Attacks.EnemyGrapple.TryFireAtTarget:
+db 48 8B C4
+WildSkies.AI.Attacks.EnemyGrapplePlayerSide.Update:
+db 48 89 5C 24 08
+AIProjectile.FireProjectile:
+db F2 0F 10 02
+AIProjectile.FireProjectile:
+db 48 89 5C 24 08
+AIProjectile.TryDamageObject:
+db 48 89 5C 24 20
+AIShipTracking.SetPlayerTarget:
+db 48 89 5C 24 18
+AIShipTracking.Update:
+db 48 89 5C 24 08
+AISkyEncounter.OnDetected:
+db 40 53
+AISkyEncounter.AssignTargetShip:
+db 48 89 91 B8 00 00 00"""
+
+[[cheat]]
+id = "grab-ship-data"
+name = "→ Grab Ship Data"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+define(address,WildSkies.Ship.ShipCore.OnShipControlUpdate)
+define(bytes,0F 10 02 8B 42 18)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,WildSkies.Ship.ShipCore.OnShipControlUpdate)
+registersymbol(gShipCore)
+label(code return gShipCore)
+
+newmem:
+mov [gShipCore],rcx
+
+code:
+  movups xmm0,[rdx]
+  mov eax,[rdx+18]
+  jmp return
+
+gShipCore:
+dw
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+//Send@FearlessRevolution|Sintrix
+dealloc(*)
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "invincible"
+name = "→ Invincible"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//Send@FearlessRevolution|Sintrix
+
+aobscanmodule(iFlag,GameAssembly.dll,48 85 D2 74 5A F3)
+alloc(newmem,$1000,iFlag)
+registersymbol(iOn)
+label(code return iOn)
+
+newmem:
+cmp [iOn],1
+jne @f
+mov [rdx+100],1
+
+@@:
+cmp [iOn],1
+je code
+mov [rdx+100],0
+jmp code
+
+code:
+  test rdx,rdx
+  je GameAssembly.dll+190502D
+  jmp return
+
+iOn:
+dd 0
+
+iFlag:
+  jmp newmem
+return:
+registersymbol(iFlag)
+
+[DISABLE]
+
+iFlag:
+  db 48 85 D2 74 5A
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "toggle-on-off"
+name = "Toggle On/Off"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+iOn:
+dd 1
+
+[DISABLE]
+iOn:
+dd 0"""
+
+[[cheat]]
+id = "ship-ignore-damage"
+name = "Ship: Ignore Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+WildSkies.Ship.ShipPart.ApplyDamage:
+db C3
+
+[DISABLE]
+WildSkies.Ship.ShipPart.ApplyDamage:
+db 48 89 5C 24 18"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+define(address,WildSkies.AI.AIEntityHealth.Damage)
+define(bytes,48 89 5C 24 10)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,WildSkies.AI.AIEntityHealth.Damage)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+2C],(float)0
+mov [rcx+F8],0
+code:
+  mov [rsp+10],rbx
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+//Send@FearlessRevolution|Sintrix
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-stamina"
+name = "→ Infinite Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,PlayerStaminaController.LateUpdate)
+define(bytes,40 53 48 83 EC 40)
+
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+
+assert(address,bytes)
+alloc(newmem,$1000,PlayerStaminaController.LateUpdate)
+registersymbol(iStam)
+label(code return iStam)
+
+newmem:
+cmp [iStam],1
+jne @f
+mov [rcx+82],1
+
+@@:
+cmp [iStam],1
+je code
+mov [rcx+82],0
+jmp code
+
+code:
+  push rbx
+  sub rsp,40
+  jmp return
+
+iStam:
+dd 0
+
+address:
+  jmp newmem
+  nop
+return:
+//Send@FearlessRevolution|Sintrix
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "toggle-on-off-2"
+name = "Toggle On/Off"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+iStam:
+dd 1
+
+[DISABLE]
+iStam:
+dd 0"""
+
+[[cheat]]
+id = "fast-skill-level-up"
+name = "Fast Skill Level Up"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(FastSkillLvl,GameAssembly.dll,F3 0F 58 73 18 48)
+alloc(newmem,$1000,FastSkillLvl)
+//Send@Sintrix|FearlessRevolution
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mulss xmm6,[Fast]
+  addss xmm6,[rbx+18]
+  jmp return
+
+Fast:
+dd (float)9999
+
+FastSkillLvl:
+  jmp newmem
+return:
+registersymbol(FastSkillLvl)
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+FastSkillLvl:
+  db F3 0F 58 73 18 //PlayerSkillHandler.AddSkillExp
+//Send@Sintrix|FearlessRevolution
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "max-item-count-on-click"
+name = "Max Item Count On Click"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+aobscanmodule(GetStackCount,GameAssembly.dll,8B 40 40 48 83 C4 28 C3 E8 86 01)
+alloc(newmem,$1000,GetStackCount)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rax+40],#999
+  mov eax,[rax+40]
+  add rsp,28
+  jmp return
+
+GetStackCount:
+  jmp newmem
+  nop 2
+return:
+registersymbol(GetStackCount)
+//Send@FearlessRevolution|Sintrix
+[DISABLE]
+
+GetStackCount:
+  db 8B 40 40 48 83 C4 28 //Player.Inventory.InventoryItem.get_StackCount
+
+unregistersymbol(*)
+dealloc(*)
+//Send@FearlessRevolution|Sintrix"""
+
+[[cheat]]
+id = "free-crafting"
+name = "→ Free Crafting"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,CraftingService.get_FreeCrafting)
+define(bytes,0F B6 41 58 C3)
+
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+assert(address,bytes)
+alloc(newmem,$1000,CraftingService.get_FreeCrafting)
+registersymbol(iCraft)
+label(code return iCraft)
+
+newmem:
+cmp [iCraft],1
+jne @f
+mov [rcx+58],1
+
+@@:
+cmp [iCraft],1
+je code
+mov [rcx+58],0
+jmp code
+
+code:
+  movzx eax,byte ptr [rcx+58]
+  ret 
+  jmp return
+
+iCraft:
+dd 0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+//Send@FearlessRevolution|Sintrix
+
+dealloc(*)"""
+
+[[cheat]]
+id = "toggle-on-off-3"
+name = "Toggle On/Off"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+iCraft:
+dd 1
+
+[DISABLE]
+iCraft:
+dd 0"""
+
+[[cheat]]
+id = "free-building"
+name = "Free Building"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,WildSkies.Gameplay.Building.CraftingToolController.Update)
+define(bytes,40 53 48 83 EC 50)
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,WildSkies.Gameplay.Building.CraftingToolController.Update)
+
+label(code)
+label(return)
+
+newmem:
+push rcx
+mov rcx,[rcx+18]
+mov [rcx+D0],1
+pop rcx
+//Send@FearlessRevolution|Sintrix
+code:
+  push rbx
+  sub rsp,50
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+//Send@FearlessRevolution|Sintrix
+[DISABLE]
+
+address:
+  db bytes
+////WildSkies.Gameplay.Building.CraftingToolController.HasResourceInInventory
+dealloc(*)"""
+
+[[cheat]]
+id = "crafting-station-instant-craft"
+name = "Crafting Station: Instant Craft"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CraftStationFinish,GameAssembly.dll,F3 0F 10 77 34 33 C9 E8 7D)
+alloc(newmem,$1000,CraftStationFinish)
+//Send@FearlessRevolution|Sintrix
+label(code)
+label(return)
+
+newmem:
+mov [rdi+38],1
+
+code:
+  movss xmm6,[rdi+34]
+  jmp return
+//Send@FearlessRevolution|Sintrix
+CraftStationFinish:
+  jmp newmem
+return:
+registersymbol(CraftStationFinish)
+
+[DISABLE]
+
+CraftStationFinish:
+  db F3 0F 10 77 34
+//CraftingStationInventory.Update
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-ammo"
+name = "Infinite Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(infAmmoFlag,GameAssembly.dll,38 9F 10 01 00 00)
+alloc(newmem,$1000,infAmmoFlag)
+//Send@FearlessRevolution|Sintrix
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rdi+00000110],1
+  jmp return
+
+infAmmoFlag:
+  jmp newmem
+  nop
+return:
+registersymbol(infAmmoFlag)
+
+[DISABLE]
+//Send@FearlessRevolution|Sintrix
+infAmmoFlag:
+  db 38 9F 10 01 00 00
+//EquipmentController.OnShoot
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-spread"
+name = "No Spread"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+Utilities.Weapons.WeaponBase.UpdateBulletSpread:
+db C3
+
+[DISABLE]
+Utilities.Weapons.WeaponBase.UpdateBulletSpread:
+db 40 53"""
+
+[[cheat]]
+id = "no-recoil"
+name = "→ No Recoil"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,EquipmentController.OnShoot)
+define(bytes,40 57 48 81 EC B0 00 00 00)
+
+[ENABLE]
+
+//Send@FearlessRevolution|Sintrix
+
+assert(address,bytes)
+alloc(newmem,$1000,EquipmentController.OnShoot)
+registersymbol(rOn)
+label(code return rOn)
+
+newmem:
+cmp [rOn],1
+jne @f
+mov [rcx+120],1
+
+@@:
+cmp [rOn],1
+je code
+mov [rcx+120],0
+
+code:
+  push rdi
+  sub rsp,000000B0
+  jmp return
+
+rOn:
+dd 0
+
+address:
+  jmp newmem
+  nop 4
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+//Send@FearlessRevolution|Sintrix
+dealloc(*)"""
+
+[[cheat]]
+id = "toggle-on-off-4"
+name = "Toggle On/Off"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+rOn:
+dd 1
+
+[DISABLE]
+rOn:
+dd 0"""
+
+[[cheat]]
+id = "instant-reload"
+name = "Instant Reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(reloadTime,GameAssembly.dll,F3 0F 11 87 9C 00 00 00 48 85)
+alloc(newmem,$1000,reloadTime)
+//Send@FearlessRevolution|Sintrix
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss xmm0,[rld]
+  movss [rdi+0000009C],xmm0
+  jmp return
+
+rld:
+dd (float)1.5
+
+reloadTime:
+  jmp newmem
+  nop 3
+return:
+registersymbol(reloadTime)
+
+[DISABLE]
+
+reloadTime:
+  db F3 0F 11 87 9C 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "weapon-edit"
+name = "→ Weapon Edit"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,WildSkies.Weapon.WeaponProfile.get_HasBurst)
+define(bytes,83 79 64 00 0F 9F C0)
+
+[ENABLE]
+//send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,WildSkies.Weapon.WeaponProfile.get_HasBurst)
+registersymbol(WeaponEdit)
+label(code return WeaponEdit)
+
+newmem:
+mov [WeaponEdit],rcx
+
+code:
+  cmp dword ptr [rcx+64],00
+  setg al
+  jmp return
+
+WeaponEdit:
+dw
+
+address:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "movement-speed"
+name = "→ Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(movespeed,GameAssembly.dll,F3 0F 10 97 FC 02 00 00)
+alloc(newmem,$1000,movespeed)
+registersymbol(SetSpeed)
+label(code return SetSpeed)
+
+newmem:
+
+code:
+  movss xmm2,[rdi+000002FC]
+  mulss xmm2,[SetSpeed]
+  jmp return
+
+SetSpeed:
+dd (float)2
+
+movespeed:
+  jmp newmem
+  nop 3
+return:
+registersymbol(movespeed)
+
+[DISABLE]
+
+movespeed:
+  db F3 0F 10 97 FC 02 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-movement-speed"
+name = "Set Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetSpeed"
+hops = []
+
+[[cheat]]
+id = "jump-height-modifier"
+name = "→ Jump Height Modifier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+aobscanmodule(jumpForce,GameAssembly.dll,F3 0F 10 8B 94 01 00 00 F2)
+alloc(newmem,$1000,jumpForce)
+registersymbol(setjump)
+label(code return setjump)
+
+newmem:
+
+code:
+  movss xmm1,[setjump]
+  jmp return
+
+setjump:
+dd (float)26
+//Send@FearlessRevolution|Sintrix
+jumpForce:
+  jmp newmem
+  nop 3
+return:
+registersymbol(jumpForce)
+
+[DISABLE]
+
+jumpForce:
+  db F3 0F 10 8B 94 01 00 00
+//Send@FearlessRevolution|Sintrix
+unregistersymbol(*)
+dealloc(*)bol(*)
+dealloc(*)
+//Bossa.Dynamika.Character.DynamikaCharacter.Jump"""
+
+[[cheat]]
+id = "set-jump-force-base-26"
+name = "Set Jump Force (Base: 26)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "setjump"
+hops = []

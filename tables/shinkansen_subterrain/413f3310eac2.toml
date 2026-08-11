@@ -1,0 +1,3165 @@
+[game]
+name = "Subterrain"
+exe = "shinkansen_subterrain.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1933"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "gamestats-base-address-scan-initialization-activate-this-first"
+name = "GameStats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GameStats_basepointer)
+registersymbol(GameStats_update_enable)
+registersymbol(GameStats_set_enable)
+registersymbol(GameStats_hpset_enable)
+registersymbol(GameStats_statusset_enable)
+registersymbol(GameStats_weightset_enable)
+registersymbol(GameStats_statsset_enable)
+
+alloc(GameStats_basepointer, 4)
+alloc(GameStats_update_enable, 4)
+alloc(GameStats_set_enable, 4)
+alloc(GameStats_hpset_enable, 4)
+alloc(GameStats_statusset_enable, 4)
+alloc(GameStats_weightset_enable, 4)
+alloc(GameStats_statsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(GameStats_basepointer)
+unregistersymbol(GameStats_update_enable)
+unregistersymbol(GameStats_set_enable)
+unregistersymbol(GameStats_hpset_enable)
+unregistersymbol(GameStats_statusset_enable)
+unregistersymbol(GameStats_weightset_enable)
+unregistersymbol(GameStats_statsset_enable)
+
+dealloc(GameStats_basepointer)
+dealloc(GameStats_update_enable)
+dealloc(GameStats_set_enable)
+dealloc(GameStats_hpset_enable)
+dealloc(GameStats_statusset_enable)
+dealloc(GameStats_weightset_enable)
+dealloc(GameStats_statsset_enable)"""
+
+[[cheat]]
+id = "gamestats-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "GameStats Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GameStats_savedAOB)
+label(GameStats_returnhere)
+label(GameStats_originalcode)
+label(GameStats_exit)
+
+label(GameStats_update_exit)
+label(GameStats_set_exit)
+label(GameStats_hpset_exit)
+label(GameStats_statusset_exit)
+label(GameStats_weightset_exit)
+label(GameStats_statsset_exit)
+
+registersymbol(GameStats_savedAOB)
+
+//14DA671C - 83 EC 04              - sub esp,04
+//14DA671F - 8B 7D 08              - mov edi,[ebp+08]
+// GameStats:Update+a
+//14DA6722 - 0FB6 87 19010000      - movzx eax,byte ptr [edi+00000119]
+//14DA6729 - 85 C0                 - test eax,eax
+//14DA672B - 0F84 5D010000         - je 14DA688E
+//14DA6731 - 8B 47 24              - mov eax,[edi+24]
+aobscan(GameStats_searchedAOB, 0F B6 87 19 01 00 00 85 C0)
+
+alloc(GameStats_newmem, 2048, GameStats_searchedAOB)
+alloc(GameStats_temp1, 4, GameStats_searchedAOB)
+
+
+GameStats_newmem:
+mov [GameStats_temp1], ebx
+
+cmp dword ptr [GameStats_update_enable], #0
+je GameStats_update_exit
+mov [GameStats_basepointer], edi
+GameStats_update_exit:
+
+cmp dword ptr [GameStats_set_enable], #0
+je GameStats_set_exit
+GameStats_set_exit:
+
+cmp dword ptr [GameStats_hpset_enable], #0
+je GameStats_hpset_exit
+fld [edi+38]
+fstp [edi+34]
+GameStats_hpset_exit:
+
+cmp dword ptr [GameStats_statusset_enable], #0
+je GameStats_statusset_exit
+mov [edi+40], (float)0
+mov [edi+4c], (float)0
+mov [edi+58], (float)0
+mov [edi+60], (float)1
+mov [edi+64], (float)0
+mov [edi+6c], (float)0
+mov [edi+74], (float)0
+mov [edi+78], (float)0
+mov [edi+80], (float)1
+mov [edi+88], (float)1
+mov [edi+94], (float)0
+mov [edi+9c], (float)0
+mov [edi+a4], (float)0
+fld [edi+dc]
+fstp [edi+d4]
+GameStats_statusset_exit:
+
+cmp dword ptr [GameStats_weightset_enable], #0
+je GameStats_weightset_exit
+mov [edi+ec], (float)0
+GameStats_weightset_exit:
+
+cmp dword ptr [GameStats_statsset_enable], #0
+je GameStats_statsset_exit
+mov [edi+b4], (float)2
+mov [edi+b8], (float)99
+mov [edi+bc], (float)99
+mov [edi+c0], (float)99
+mov [edi+f0], (float)9999
+GameStats_statsset_exit:
+
+mov ebx, [GameStats_temp1]
+
+
+GameStats_originalcode:
+db 0F B6 87 19 01 00 00
+//movzx eax,byte ptr [edi+00000119]
+
+
+GameStats_exit:
+jmp GameStats_returnhere
+
+
+GameStats_searchedAOB:
+GameStats_savedAOB:
+jmp GameStats_newmem
+nop
+nop
+GameStats_returnhere:
+
+
+[DISABLE]
+GameStats_savedAOB:
+db 0F B6 87 19 01 00 00
+//movzx eax,byte ptr [edi+00000119]
+
+unregistersymbol(GameStats_savedAOB)
+
+dealloc(GameStats_newmem)
+dealloc(GameStats_temp1)"""
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "status-set-to-optimal"
+name = "Status Set to Optimal?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_statusset_enable"
+hops = []
+
+[[cheat]]
+id = "carried-weight-set-to-0"
+name = "Carried Weight Set to 0?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_weightset_enable"
+hops = []
+
+[[cheat]]
+id = "stats-set-to-massive"
+name = "Stats Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_statsset_enable"
+hops = []
+
+[[cheat]]
+id = "gamestats-update-base-address"
+name = "GameStats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x24",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x24",
+    "+0x54",
+    "+0x0",
+]
+
+[[cheat]]
+id = "stats"
+name = "stats"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x24",
+    "+0x54",
+    "+0x10",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x10",
+    "+0x0",
+]
+
+[[cheat]]
+id = "isruntimegenerated"
+name = "isRunTimeGenerated"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x10",
+    "+0x44",
+]
+
+[[cheat]]
+id = "containerlevel"
+name = "containerLevel"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x10",
+    "+0x48",
+]
+
+[[cheat]]
+id = "isopenedbefore"
+name = "isOpenedBefore"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "isempty"
+name = "isEmpty"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x10",
+    "+0x4d",
+]
+
+[[cheat]]
+id = "ispaused"
+name = "isPaused"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x34",
+]
+
+[[cheat]]
+id = "isloading"
+name = "isLoading"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x35",
+]
+
+[[cheat]]
+id = "isinventory"
+name = "isInventory"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x36",
+]
+
+[[cheat]]
+id = "isevent"
+name = "isEvent"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x37",
+]
+
+[[cheat]]
+id = "isgameover"
+name = "isGameOver"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x38",
+]
+
+[[cheat]]
+id = "isviewfixed"
+name = "isViewFixed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x39",
+]
+
+[[cheat]]
+id = "isclosetowall"
+name = "isCloseToWall"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x3a",
+]
+
+[[cheat]]
+id = "ishopstep"
+name = "isHopStep"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x3b",
+]
+
+[[cheat]]
+id = "isperfectaim"
+name = "isPerfectAim"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "isdrag"
+name = "isDrag"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x3d",
+]
+
+[[cheat]]
+id = "isattack"
+name = "isAttack"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x3e",
+]
+
+[[cheat]]
+id = "isitemuse"
+name = "isItemUse"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x3f",
+]
+
+[[cheat]]
+id = "isinvisible"
+name = "isInvisible"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x40",
+]
+
+[[cheat]]
+id = "istravel"
+name = "isTravel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x41",
+]
+
+[[cheat]]
+id = "istubescene"
+name = "isTubeScene"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x42",
+]
+
+[[cheat]]
+id = "isrested"
+name = "isRested"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x43",
+]
+
+[[cheat]]
+id = "issleeping"
+name = "isSleeping"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x44",
+]
+
+[[cheat]]
+id = "issitting"
+name = "isSitting"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x45",
+]
+
+[[cheat]]
+id = "issprint"
+name = "isSprint"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x46",
+]
+
+[[cheat]]
+id = "isblock"
+name = "isBlock"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x47",
+]
+
+[[cheat]]
+id = "isgatherpower"
+name = "isGatherPower"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x48",
+]
+
+[[cheat]]
+id = "isinvasionfight"
+name = "isInvasionFight"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x49",
+]
+
+[[cheat]]
+id = "isoverburden"
+name = "isOverburden"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x4a",
+]
+
+[[cheat]]
+id = "isagilitylimit"
+name = "isAgilityLimit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x4b",
+]
+
+[[cheat]]
+id = "isprobe"
+name = "isProbe"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "hopstepcooldowntick"
+name = "hopStepCooldownTick"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = [
+    "+0x30",
+    "+0x50",
+]
+
+[[cheat]]
+id = "hp"
+name = "hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "hp-max"
+name = "hp_max"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "staminaincreaserate"
+name = "staminaIncreaseRate"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "thirst"
+name = "thirst"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "thirst-rate"
+name = "thirst_rate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "thirst-staminadecreaserate"
+name = "thirst_StaminaDecreaseRate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "hunger"
+name = "hunger"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "hunger-rate"
+name = "hunger_rate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "hunger-staminadecreaserate"
+name = "hunger_StaminaDecreaseRate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "contamination"
+name = "contamination"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "immune"
+name = "immune"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "bodycondition"
+name = "bodyCondition"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "blood"
+name = "blood"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "blood-rate"
+name = "blood_rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "infection"
+name = "infection"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "infectionrate"
+name = "infectionRate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "bleeding"
+name = "bleeding"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "sleepiness"
+name = "sleepiness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "sleepiness-rate"
+name = "sleepiness_rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "oxygen"
+name = "oxygen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "oxygentank-max"
+name = "oxygenTank_Max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "temperature"
+name = "temperature"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "temperature-rate"
+name = "temperature_rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "temperature-helper-cold"
+name = "temperature_helper_cold"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "fracture"
+name = "fracture"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "fracture-rate"
+name = "fracture_rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "bladder"
+name = "bladder"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "bladder-rate"
+name = "bladder_rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "dump"
+name = "dump"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "dump-rate"
+name = "dump_rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "shield-physical"
+name = "shield_Physical"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "shield-infection"
+name = "shield_Infection"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "mobility"
+name = "mobility"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "nightvision"
+name = "nightVision"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "perception"
+name = "perception"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "musclemax"
+name = "musclemax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "isflu"
+name = "isFlu"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "isinfection"
+name = "isInfection"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xc5"]
+
+[[cheat]]
+id = "isinfectionimmune"
+name = "isInfectionImmune"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xc6"]
+
+[[cheat]]
+id = "resttimescale"
+name = "restTimeScale"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "traveltimescale"
+name = "travelTimeScale"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "timemultiplier"
+name = "timeMultiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "stamina"
+name = "stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "stamina-rate"
+name = "stamina_rate"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "stamina-max"
+name = "stamina_max"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "stamina-use-multiplier"
+name = "stamina_use_multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "battery"
+name = "battery"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "credit"
+name = "credit"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "weight"
+name = "weight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "weight-max"
+name = "weight_max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "isflashlighton"
+name = "isFlashLightOn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "ispermdeath"
+name = "isPermDeath"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "isstarted"
+name = "isStarted"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x119"]
+
+[[cheat]]
+id = "currentlevelindex"
+name = "currentLevelIndex"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "isduringtutorial"
+name = "isDuringTutorial"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "numberofmobskilled"
+name = "numberOfMobsKilled"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStats_basepointer"
+hops = ["+0x124"]
+
+[[cheat]]
+id = "invctrl-base-address-scan-initialization-activate-this-first"
+name = "InvCtrl Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(InvCtrl_basepointer)
+registersymbol(InvCtrl_update_enable)
+registersymbol(InvCtrl_set_enable)
+registersymbol(InvCtrl_capacityset_enable)
+registersymbol(InvCtrl_maxweightset_enable)
+
+alloc(InvCtrl_basepointer, 4)
+alloc(InvCtrl_update_enable, 4)
+alloc(InvCtrl_set_enable, 4)
+alloc(InvCtrl_capacityset_enable, 4)
+alloc(InvCtrl_maxweightset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(InvCtrl_basepointer)
+unregistersymbol(InvCtrl_update_enable)
+unregistersymbol(InvCtrl_set_enable)
+unregistersymbol(InvCtrl_capacityset_enable)
+unregistersymbol(InvCtrl_maxweightset_enable)
+
+dealloc(InvCtrl_basepointer)
+dealloc(InvCtrl_update_enable)
+dealloc(InvCtrl_set_enable)
+dealloc(InvCtrl_capacityset_enable)
+dealloc(InvCtrl_maxweightset_enable)"""
+
+[[cheat]]
+id = "invctrl-base-address-scan-to-activate-view-inventory-to-update-view-inventory"
+name = "InvCtrl Base Address Scan (To Activate: View Inventory, To Update: View Inventory)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(InvCtrl_savedAOB)
+label(InvCtrl_returnhere)
+label(InvCtrl_originalcode)
+label(InvCtrl_exit)
+
+label(InvCtrl_update_exit)
+label(InvCtrl_set_exit)
+label(InvCtrl_capacityset_exit)
+label(InvCtrl_maxweightset_exit)
+
+registersymbol(InvCtrl_savedAOB)
+
+//125394DC - 83 EC 14              - sub esp,14
+//125394DF - 8B 7D 08              - mov edi,[ebp+08]
+// InvCtrl:UpdateSlot+a
+//125394E2 - D9 47 44              - fld dword ptr [edi+44]
+//125394E5 - DD 5D F0              - fstp qword ptr [ebp-10]
+//125394E8 - 8B 47 28              - mov eax,[edi+28]
+//125394EB - 83 EC 0C              - sub esp,0C
+//125394EE - 50                    - push eax
+//125394EF - 39 00                 - cmp [eax],eax
+aobscan(InvCtrl_searchedAOB, C6 40 54 01 8B 40 28 83 EC 0C)
+
+alloc(InvCtrl_newmem, 2048, InvCtrl_searchedAOB)
+
+
+InvCtrl_newmem:
+cmp dword ptr [InvCtrl_update_enable], #0
+je InvCtrl_update_exit
+mov [InvCtrl_basepointer], eax
+InvCtrl_update_exit:
+
+cmp dword ptr [InvCtrl_set_enable], #0
+je InvCtrl_set_exit
+InvCtrl_set_exit:
+
+cmp dword ptr [InvCtrl_capacityset_enable], #0
+je InvCtrl_capacityset_exit
+mov [eax+40], #100
+InvCtrl_capacityset_exit:
+
+cmp dword ptr [InvCtrl_maxweightset_enable], #0
+je InvCtrl_maxweightset_exit
+mov [eax+44], (float)99999
+InvCtrl_maxweightset_exit:
+
+
+InvCtrl_originalcode:
+db C6 40 54 01 8B 40 28
+//mov byte ptr [eax+54],01
+//mov eax,[eax+28]
+
+
+InvCtrl_exit:
+jmp InvCtrl_returnhere
+
+
+InvCtrl_searchedAOB:
+InvCtrl_savedAOB:
+jmp InvCtrl_newmem
+nop
+nop
+InvCtrl_returnhere:
+
+
+[DISABLE]
+InvCtrl_savedAOB:
+db C6 40 54 01 8B 40 28
+//mov byte ptr [eax+54],01
+//mov eax,[eax+28]
+
+unregistersymbol(InvCtrl_savedAOB)
+
+dealloc(InvCtrl_newmem)
+dealloc(InvCtrl_temp1)"""
+
+[[cheat]]
+id = "max-weight-set-to-massive"
+name = "Max Weight Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_maxweightset_enable"
+hops = []
+
+[[cheat]]
+id = "invctrl-update-base-address"
+name = "InvCtrl Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ismove"
+name = "isMove"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "capacity"
+name = "capacity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "maxweight"
+name = "maxWeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "isfocus"
+name = "isFocus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "currenttabnumber"
+name = "currentTabNumber"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InvCtrl_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "itemcontainer-base-address-scan-initialization-activate-this-first"
+name = "ItemContainer Base Address Scan Initialization (Activate This First)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(ItemContainer_basepointer)
+registersymbol(ItemContainer_update_enable)
+registersymbol(ItemContainer_set_enable)
+registersymbol(ItemContainer_countset_enable)
+registersymbol(ItemContainer_durabilityset_enable)
+registersymbol(ItemContainer_weightset_enable)
+registersymbol(ItemContainer_powerset_enable)
+
+alloc(ItemContainer_basepointer, 4)
+alloc(ItemContainer_update_enable, 4)
+alloc(ItemContainer_set_enable, 4)
+alloc(ItemContainer_countset_enable, 4)
+alloc(ItemContainer_durabilityset_enable, 4)
+alloc(ItemContainer_weightset_enable, 4)
+alloc(ItemContainer_powerset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(ItemContainer_basepointer)
+unregistersymbol(ItemContainer_update_enable)
+unregistersymbol(ItemContainer_set_enable)
+unregistersymbol(ItemContainer_countset_enable)
+unregistersymbol(ItemContainer_durabilityset_enable)
+unregistersymbol(ItemContainer_weightset_enable)
+unregistersymbol(ItemContainer_powerset_enable)
+
+dealloc(ItemContainer_basepointer)
+dealloc(ItemContainer_update_enable)
+dealloc(ItemContainer_set_enable)
+dealloc(ItemContainer_countset_enable)
+dealloc(ItemContainer_durabilityset_enable)
+dealloc(ItemContainer_weightset_enable)
+dealloc(ItemContainer_powerset_enable)"""
+
+[[cheat]]
+id = "itemcontainer-base-address-scan-to-activate-mouseover-inventory-item-to-update-mouseover-inventory-item"
+name = "ItemContainer Base Address Scan (To Activate: Mouseover Inventory Item, To Update: Mouseover Inventory Item)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(ItemContainer_savedAOB)
+label(ItemContainer_returnhere)
+label(ItemContainer_originalcode)
+label(ItemContainer_exit)
+
+label(ItemContainer_update_exit)
+label(ItemContainer_set_exit)
+label(ItemContainer_countset_exit)
+label(ItemContainer_durabilityset_exit)
+label(ItemContainer_weightset_exit)
+label(ItemContainer_powerset_exit)
+
+registersymbol(ItemContainer_savedAOB)
+
+//049D4091 - 8B 7D 08              - mov edi,[ebp+08]
+//049D4094 - BB C0EF4800           - mov ebx,0048EFC0 : [04491D1C]
+// ItemContainer:GetItemName+11
+//049D4099 - D9 47 28              - fld dword ptr [edi+28]
+//049D409C - D9EE                  - fldz
+//049D409E - DFF1                  - fcomip st(0),st(1)
+//049D40A0 - DDD8                  - fstp st(0)
+//049D40A2 - 0F82 70000000         - jb 049D4118
+//049D40A8 - 83 EC 0C              - sub esp,0C
+//049D40AB - 57                    - push edi
+//049D40AC - E8 C7000000           - call 049D4178
+aobscan(ItemContainer_searchedAOB, D9 47 28 D9 EE DF F1 DD D8 * * * * * * 83 EC 0C 57)
+
+alloc(ItemContainer_newmem, 2048, ItemContainer_searchedAOB)
+alloc(ItemContainer_temp1, 4, ItemContainer_searchedAOB)
+
+
+ItemContainer_newmem:
+mov [ItemContainer_temp1], ebx
+
+cmp dword ptr [ItemContainer_update_enable], #0
+je ItemContainer_update_exit
+mov [ItemContainer_basepointer], edi
+ItemContainer_update_exit:
+
+cmp dword ptr [ItemContainer_set_enable], #0
+je ItemContainer_set_exit
+ItemContainer_set_exit:
+
+cmp dword ptr [ItemContainer_countset_enable], #0
+je ItemContainer_countset_exit
+cmp dword ptr [edi+8], #0
+je ItemContainer_countset_exit
+mov ebx, [edi+8]
+mov ebx, [ebx+58]
+mov [edi+1c], ebx
+ItemContainer_countset_exit:
+
+cmp dword ptr [ItemContainer_durabilityset_enable], #0
+je ItemContainer_durabilityset_exit
+cmp dword ptr [edi+8], #0
+je ItemContainer_durabilityset_exit
+mov ebx, [edi+8]
+fld [ebx+68]
+fstp [edi+28]
+ItemContainer_durabilityset_exit:
+
+cmp dword ptr [ItemContainer_weightset_enable], #0
+je ItemContainer_weightset_exit
+cmp dword ptr [edi+8], #0
+je ItemContainer_weightset_exit
+mov ebx, [edi+8]
+mov [ebx+64], #0
+ItemContainer_weightset_exit:
+
+cmp dword ptr [ItemContainer_powerset_enable], #0
+je ItemContainer_powerset_exit
+cmp dword ptr [edi+8], #0
+je ItemContainer_powerset_exit
+mov ebx, [edi+8]
+cmp dword ptr [ebx+54], #9
+jne ItemContainer_powerset_exit
+fld [ebx+6c]
+fstp [edi+20]
+ItemContainer_powerset_exit:
+
+mov ebx, [ItemContainer_temp1]
+
+
+ItemContainer_originalcode:
+db D9 47 28 D9 EE
+//fld dword ptr [edi+28]
+//fldz
+
+
+ItemContainer_exit:
+jmp ItemContainer_returnhere
+
+
+ItemContainer_searchedAOB:
+ItemContainer_savedAOB:
+jmp ItemContainer_newmem
+ItemContainer_returnhere:
+
+
+[DISABLE]
+ItemContainer_savedAOB:
+db D9 47 28 D9 EE
+//fld dword ptr [edi+28]
+//fldz
+
+unregistersymbol(ItemContainer_savedAOB)
+
+dealloc(ItemContainer_newmem)
+dealloc(ItemContainer_temp1)"""
+
+[[cheat]]
+id = "item-quantity-set-to-max"
+name = "Item Quantity Set to Max?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_countset_enable"
+hops = []
+
+[[cheat]]
+id = "item-durability-set-to-max"
+name = "Item Durability Set to Max?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_durabilityset_enable"
+hops = []
+
+[[cheat]]
+id = "item-weight-set-to-0"
+name = "Item Weight Set to 0?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_weightset_enable"
+hops = []
+
+[[cheat]]
+id = "power-packs-set-to-max"
+name = "Power Packs Set to Max?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_powerset_enable"
+hops = []
+
+[[cheat]]
+id = "itemcontainer-update-base-address"
+name = "ItemContainer Update Base Address?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "id"
+name = "ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x50",
+]
+
+[[cheat]]
+id = "category"
+name = "category"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Default",
+    "1:Wearable",
+    "2:Weapon",
+    "3:Medic",
+    "4:Food",
+    "5:Drink",
+    "6:Usable",
+    "7:Misc",
+    "8:Key",
+    "9:Powerpack",
+    "10:FlashLight",
+    "11:Basic_material",
+    "12:Parts",
+    "13:UsableInstant",
+    "14:Log",
+    "15:Bag",
+    "16:Throw",
+    "17:OxygenTank",
+    "18:TemperatureTank",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x54",
+]
+
+[[cheat]]
+id = "maxstackable"
+name = "maxStackable"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x58",
+]
+
+[[cheat]]
+id = "mingenerated"
+name = "minGenerated"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "maxgenerated"
+name = "maxGenerated"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x60",
+]
+
+[[cheat]]
+id = "weight-2"
+name = "weight"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x64",
+]
+
+[[cheat]]
+id = "durability"
+name = "durability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x68",
+]
+
+[[cheat]]
+id = "general"
+name = "general"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "initialized"
+name = "initialized"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x70",
+]
+
+[[cheat]]
+id = "securitylevel"
+name = "securityLevel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Level1",
+    "1:Level2",
+    "2:Level3",
+    "3:Level4",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x74",
+]
+
+[[cheat]]
+id = "extracttype"
+name = "extractType"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:TechRecycle",
+    "1:TechRefine",
+    "2:BioRecycle",
+    "3:BioRefine",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x78",
+]
+
+[[cheat]]
+id = "creationtime"
+name = "creationTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = [
+    "+0x8",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "id-2"
+name = "ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "count"
+name = "count"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "value"
+name = "value"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "general-2"
+name = "general"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "durability-2"
+name = "durability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "isequiped"
+name = "isEquiped"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "islocked"
+name = "isLocked"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x2d"]
+
+[[cheat]]
+id = "weaponcooldown"
+name = "weaponCooldown"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemContainer_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "mappowermanager-base-address-scan-initialization-activate-this-first"
+name = "MapPowerManager Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(MapPowerManager_basepointer)
+registersymbol(MapPowerManager_update_enable)
+registersymbol(MapPowerManager_set_enable)
+registersymbol(MapPowerManager_capacityset_enable)
+registersymbol(MapPowerManager_maxweightset_enable)
+
+alloc(MapPowerManager_basepointer, 4)
+alloc(MapPowerManager_update_enable, 4)
+alloc(MapPowerManager_set_enable, 4)
+alloc(MapPowerManager_capacityset_enable, 4)
+alloc(MapPowerManager_maxweightset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(MapPowerManager_basepointer)
+unregistersymbol(MapPowerManager_update_enable)
+unregistersymbol(MapPowerManager_set_enable)
+unregistersymbol(MapPowerManager_capacityset_enable)
+unregistersymbol(MapPowerManager_maxweightset_enable)
+
+dealloc(MapPowerManager_basepointer)
+dealloc(MapPowerManager_update_enable)
+dealloc(MapPowerManager_set_enable)
+dealloc(MapPowerManager_capacityset_enable)
+dealloc(MapPowerManager_maxweightset_enable)"""
+
+[[cheat]]
+id = "mappowermanager-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "MapPowerManager Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(MapPowerManager_savedAOB)
+label(MapPowerManager_returnhere)
+label(MapPowerManager_originalcode)
+label(MapPowerManager_exit)
+
+label(MapPowerManager_update_exit)
+label(MapPowerManager_set_exit)
+label(MapPowerManager_negativeset_entry)
+label(MapPowerManager_zeroset_entry)
+
+registersymbol(MapPowerManager_savedAOB)
+
+//12392210 - C7 45 D8 00000000     - mov [ebp-28],00000000
+//12392217 - 8B 05 04984103        - mov eax,[03419804] : [033FC1E0]
+// MapPowerManager:Calculate_PowerStats+25
+//1239221D - D9 40 50              - fld dword ptr [eax+50]
+//12392220 - D9 5D D0              - fstp dword ptr [ebp-30]
+//12392223 - 8B 47 10              - mov eax,[edi+10]
+//12392226 - 83 EC 0C              - sub esp,0C
+//12392229 - 50                    - push eax
+//1239222A - 39 00                 - cmp [eax],eax
+aobscan(MapPowerManager_searchedAOB, D9 40 50 D9 5D D0 8B 47 10)
+
+alloc(MapPowerManager_newmem, 2048, MapPowerManager_searchedAOB)
+alloc(MapPowerManager_temp1, 4, MapPowerManager_searchedAOB)
+alloc(MapPowerManager_temp2, 4, MapPowerManager_searchedAOB)
+
+
+MapPowerManager_newmem:
+mov [MapPowerManager_temp1], ebx
+
+cmp dword ptr [MapPowerManager_update_enable], #0
+je MapPowerManager_update_exit
+mov [MapPowerManager_basepointer], edi
+MapPowerManager_update_exit:
+
+cmp dword ptr [MapPowerManager_set_enable], #0
+je MapPowerManager_set_exit
+cmp dword ptr [edi+10], #0
+je MapPowerManager_set_exit
+mov ebx, [edi+10]
+fld [edi+24]
+mov [MapPowerManager_temp2], (float)40000
+fld [MapPowerManager_temp2]
+fcomi ST(0), ST(1)
+fstp ST(0)
+fstp ST(0)
+ja MapPowerManager_negativeset_entry
+
+MapPowerManager_zeroset_entry:
+mov [ebx+20], (float)0
+jmp MapPowerManager_set_exit
+
+MapPowerManager_negativeset_entry:
+mov [ebx+20], (float)-100
+
+MapPowerManager_set_exit:
+
+mov ebx, [MapPowerManager_temp1]
+
+
+MapPowerManager_originalcode:
+db D9 40 50 D9 5D D0
+//fld dword ptr [eax+50]
+//fstp dword ptr [ebp-30]
+
+
+MapPowerManager_exit:
+jmp MapPowerManager_returnhere
+
+
+MapPowerManager_searchedAOB:
+MapPowerManager_savedAOB:
+jmp MapPowerManager_newmem
+nop
+MapPowerManager_returnhere:
+
+
+[DISABLE]
+MapPowerManager_savedAOB:
+db D9 40 50 D9 5D D0
+//fld dword ptr [eax+50]
+//fstp dword ptr [ebp-30]
+
+unregistersymbol(MapPowerManager_savedAOB)
+
+dealloc(MapPowerManager_newmem)
+dealloc(MapPowerManager_temp1)
+dealloc(MapPowerManager_temp2)"""
+
+[[cheat]]
+id = "capacity-set-to-increase-to-40000"
+name = "Capacity Set to Increase to 40000?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_set_enable"
+hops = []
+
+[[cheat]]
+id = "mappowermanager-update-base-address"
+name = "MapPowerManager Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-9"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-10"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = [
+    "+0x10",
+    "+0x0",
+]
+
+[[cheat]]
+id = "degradationrate"
+name = "degradationRate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = [
+    "+0x10",
+    "+0x20",
+]
+
+[[cheat]]
+id = "alivecores"
+name = "aliveCores"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = [
+    "+0x10",
+    "+0x24",
+]
+
+[[cheat]]
+id = "averagehp"
+name = "averageHP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = [
+    "+0x10",
+    "+0x28",
+]
+
+[[cheat]]
+id = "totalhp"
+name = "totalHP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = [
+    "+0x10",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "generatorcapacity"
+name = "generatorCapacity"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "generatoroverheat"
+name = "generatorOverheat"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "generatorusage"
+name = "generatorUsage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "generatorsurplus"
+name = "generatorSurplus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "overheatchance"
+name = "overHeatChance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "isoverheat"
+name = "isOverHeat"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "triggerblackout"
+name = "triggerBlackOut"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x41"]
+
+[[cheat]]
+id = "overheatchecktick"
+name = "overHeatCheckTick"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "isoverheatwarningshown"
+name = "isOverHeatWarningShown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MapPowerManager_basepointer"
+hops = ["+0x48"]

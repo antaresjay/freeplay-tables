@@ -1,0 +1,641 @@
+[game]
+name = "Section 8: Prejudice"
+exe = "s9-win32-f.exe"
+notes = "Converted from a Cheat Engine table by vesperpallens. Source: https://fearlessrevolution.com/viewtopic.php?t=31566"
+verified = []
+author = "vesperpallens"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "kill-xlive-anticheat"
+name = "Kill xlive AntiCheat"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : S9-Win32-F.exe
+  Version:
+  Date   : 2024-09-28
+  Author : vesperpallens
+}
+
+[ENABLE]
+aobscanmodule(DebuggerBypass,KERNELBASE.dll,64 A1 30 00 00 00 0F)
+aobscanmodule(Xlivekill,xlive.dll,74 0A B8 0E 00 07 80 E9 F2)
+aobscanmodule(KillXLIVE,xlive.dll,4B FF 45 FC 85 DB 77 D5)
+alloc(newmem,$100)
+label(code return)
+registersymbol(DebuggerBypass KillXLIVE)
+
+newmem:
+
+code:
+  mov eax,fs:[00000030]
+  mov byte ptr [eax+02],00
+  jmp return
+
+DebuggerBypass:
+  jmp newmem
+  nop
+return:
+
+Xlivekill:
+  db EB 0A
+
+KillXLIVE+06:
+  db 90 90
+
+[DISABLE]
+DebuggerBypass:
+  db 64 A1 30 00 00 00
+
+Xlivekill:
+  db 74 0A
+
+KillXLIVE+06:
+  db 77 D5
+
+unregistersymbol(DebuggerBypass KillXLIVE)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "godmod-team-godmod-one-hit-kill"
+name = "GodMod / Team GodMod / One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : S9-Win32-F.exe
+  Version: 
+  Date   : 2024-09-28
+  Author : vesperpallens
+}
+
+[ENABLE]
+
+aobscanmodule(ReadHealthAddress,S9-Win32-F.exe,DB 81 04 03 00 00)
+aobscanmodule(OneHitKill1,S9-Win32-F.exe,F3 0F 2A 81 04 03 00 00 F3)
+alloc(ReaderInject,$512)
+alloc(PlayerHAddress,$4)
+alloc(PlayerBase,4)
+alloc(PlayerTeamPtr,4)
+alloc(OneHitKillSwitch,$1)
+alloc(GodModSwitcher,$1)
+alloc(newmem_GM,$512)
+alloc(PtrEn,4)
+label(OriginalReaderCode returnReaderCode code_GM return_GM EmergencyCode_GM EnemyOrPlayer2 GodModOn Player_GodModOn Killit)
+registersymbol(PlayerHAddress PlayerBase PlayerTeamPtr OneHitKillSwitch GodModSwitcher OneHitKill1 PtrEn ReadHealthAddress)
+
+PtrEn:
+  dd 0
+
+ReaderInject:
+  push eax
+  push ebx
+  mov eax, ecx
+  mov [PlayerBase],ecx
+  add eax, 304
+  mov dword ptr [PlayerHAddress], eax
+
+  mov ebx,ecx
+  mov ebx,[ebx+EC]
+  mov ebx,[ebx+204]
+  mov ebx,[ebx+80]
+  mov [PlayerTeamPtr], ebx
+
+  pop ebx
+  pop eax
+
+OriginalReaderCode:
+  fild dword ptr [ecx+00000304]
+  jmp returnReaderCode
+
+ReadHealthAddress:
+  jmp ReaderInject
+  nop
+returnReaderCode:
+
+newmem_GM:
+  push edx
+  mov edx,ecx
+  mov edx,[edx+EC]
+   test edx,edx
+   jz EmergencyCode_GM
+  mov edx,[edx+204]
+   test edx,edx
+   jz EmergencyCode_GM
+  mov edx,[edx+80]
+   test edx,edx
+   jz EmergencyCode_GM
+  mov [PtrEn],edx
+  mov edx,[PlayerTeamPtr]
+
+EnemyOrPlayer2:
+  cmp [PtrEn],edx
+  pop edx
+  je GodModOn
+
+  cmp byte ptr [OneHitKillSwitch],00
+  je code_GM
+  jmp Killit
+
+Killit:
+  mov [ecx+00000304], (int)0
+  cvtsi2ss xmm0,[ecx+00000304]
+  jmp return_GM
+
+GodModOn:
+  cmp byte ptr [GodModSwitcher],00
+  je Player_GodModOn
+
+  push edx
+  mov edx,[ecx+0000030C]
+  mov [ecx+00000304], edx
+  cvtsi2ss xmm0,[ecx+00000304]
+  pop edx
+  jmp return_GM
+
+Player_GodModOn:
+  cmp dword ptr [PlayerBase], ecx
+  jne code_GM
+  push edx
+  mov edx,[ecx+0000030C]
+  mov [ecx+00000304], edx
+  cvtsi2ss xmm0,[ecx+00000304]
+  pop edx
+  jmp return_GM
+
+code_GM:
+  cvtsi2ss xmm0,[ecx+00000304]
+  jmp return_GM
+
+EmergencyCode_GM:
+  pop edx
+  cvtsi2ss xmm0,[ecx+00000304]
+  jmp return_GM
+
+OneHitKill1:
+  jmp newmem_GM
+  nop 3
+return_GM:
+
+[DISABLE]
+ReadHealthAddress:
+  db DB 81 04 03 00 00
+
+OneHitKill1:
+  db F3 0F 2A 81 04 03 00 00
+
+unregistersymbol(ReadHealthAddress PlayerBase PlayerTeamPtr PlayerHAddress OneHitKillSwitch GodModSwitcher OneHitKill1 PtrEn)
+dealloc(ReaderInject PlayerHAddress PlayerBase PlayerTeamPtr OneHitKillSwitch GodModSwitcher newmem_GM PtrEn)"""
+
+[[cheat]]
+id = "inf-equipment-ammo-shields-easy-shields"
+name = "Inf Equipment / Ammo / Shields / Easy Shields"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : S9-Win32-F.exe
+  Version:
+  Date   : 2024-09-28
+  Author : vesperpallens
+}
+
+[ENABLE]
+
+aobscanmodule(InventoryReader,S9-Win32-F.exe,8B 16 57 8B CE 85 C0 74 08 8B 82 7C 04 00 00 EB 06 8B 82 84 04 00 00 FF D0 D9 5C 24 0C F6 86 6C 05 00 00 08 74 17 F3 0F 10 05 84 A7 B0 01 F3 0F 11 44 24 0C D9 44 24 0C 5F 5E C2 04 00 8B 86 74 03 00 00 3B F8 7C 24 85 FF 75 04 85 C0 74 1C 68 00 07 B1 01 68 3B 02 00 00 68 70 0B B1 01 68 44 0B B1 01 E8 F0)
+aobscanmodule(InfAmmoEquipShield,S9-Win32-F.exe,F3 0F 11 84 81 7C 03 00 00)
+alloc(newmem_Inventory,$100)
+alloc(PlayerInventoryBase,$4)
+alloc(PlayerInventoryFaction,$4)
+alloc(newmem,$1024)
+alloc(AMMO_VALUE,4)
+alloc(JETPACK_VALUE,4)
+alloc(DEPLETE_VALUE,4)
+alloc(SHIELD,4)
+alloc(OVERDRIVE_VALUE,4)
+alloc(EQUIPMENT_VALUE,4)
+alloc(ShieldSwitch,$1)
+alloc(Ptr,4)
+registersymbol(PlayerInventoryBase PlayerInventoryFaction AMMO_VALUE JETPACK_VALUE DEPLETE_VALUE SHIELD OVERDRIVE_VALUE EQUIPMENT_VALUE Ptr ShieldSwitch InventoryReader InfAmmoEquipShield)
+label(code_Inventory return_Inventory Emergency_Exit code return EnemyOrPlayer IndexPlayer IndexEnemy ExceptionCode P_Shield P_Jetpack P_OverDrive P_Ammo P_Equipment En_Shield)
+
+AMMO_VALUE:
+  dd (float)5.0
+EQUIPMENT_VALUE:
+  dd (float)3.0
+DEPLETE_VALUE:
+  dd (float)0.0
+JETPACK_VALUE:
+  dd (float)200.0
+OVERDRIVE_VALUE:
+  dd (float)150.0
+SHIELD:
+  dd (float)750.0
+Ptr:
+  dd 0
+
+newmem_Inventory:
+  mov [PlayerInventoryBase],esi
+   push ebx
+  mov ebx, esi
+   test ebx,ebx
+   jz Emergency_Exit
+  mov ebx,[ebx+9C]
+   test ebx,ebx
+   jz Emergency_Exit
+  mov ebx,[ebx+204]
+   test ebx,ebx
+   jz Emergency_Exit
+  mov ebx,[ebx+80]
+   test ebx,ebx
+   jz Emergency_Exit
+  mov ebx,[ebx+284]
+   test ebx,ebx
+   jz Emergency_Exit
+  mov [PlayerInventoryFaction],ebx
+   pop ebx
+
+code_Inventory:
+  mov edx,[esi]
+  push edi
+  mov ecx,esi
+  jmp return_Inventory
+
+Emergency_Exit:
+  mov ebx,00000111
+  mov [PlayerInventoryFaction],ebx
+   pop ebx
+  mov edx,[esi]
+  push edi
+  mov ecx,esi
+  jmp return_Inventory
+
+InventoryReader:
+  jmp newmem_Inventory
+return_Inventory:
+
+newmem:
+  push edx
+  mov edx,ecx
+  mov edx,[edx+9C]
+   test edx,edx
+   jz ExceptionCode
+  mov edx,[edx+204]
+   test edx,edx
+   jz ExceptionCode
+  mov edx,[edx+80]
+   test edx,edx
+   jz ExceptionCode
+  mov edx,[edx+284]
+   test edx,edx
+   jz ExceptionCode
+  mov [Ptr],edx
+
+EnemyOrPlayer:
+ cmp dword ptr [PlayerInventoryFaction],00000111
+ je ExceptionCode
+
+ cmp dword ptr [PlayerInventoryFaction],edx
+ pop edx
+ je IndexPlayer
+ jne IndexEnemy
+ jmp code
+
+IndexPlayer:
+  cmp eax,0C
+  je P_Shield
+  cmp eax,00
+  je P_Jetpack
+  cmp eax,03
+  je P_Jetpack
+  cmp eax,06
+  je P_OverDrive
+  cmp eax,09
+  je P_OverDrive
+  cmp eax,18
+  je P_Ammo
+  cmp eax,12
+  je P_Ammo
+  cmp eax,1B
+  je P_Equipment
+  cmp eax,1E
+  je P_Equipment
+  jmp code
+
+P_Shield:
+  cmp byte ptr [ShieldSwitch],00
+  je code
+  movss xmm0, [SHIELD]
+  jmp code
+
+P_Jetpack:
+  movss xmm0, [JETPACK_VALUE]
+  jmp code
+
+P_OverDrive:
+  movss xmm0, [OVERDRIVE_VALUE]
+  jmp code
+
+P_Ammo:
+  movss xmm0, [AMMO_VALUE]
+  jmp code
+
+P_Equipment:
+  movss xmm0, [EQUIPMENT_VALUE]
+  jmp code
+
+IndexEnemy:
+  cmp eax,09
+  je En_Shield
+  cmp eax,0C
+  je En_Shield
+  cmp eax,06
+  je En_Shield
+  cmp eax,03
+  je En_Shield
+  jmp code
+
+En_Shield:
+  cmp byte ptr [ShieldSwitch],00
+  je code
+  movss xmm0, [DEPLETE_VALUE]
+  jmp code
+
+code:
+  movss [ecx+eax*4+0000037C],xmm0
+  jmp return
+
+ExceptionCode:
+  pop edx
+  movss [ecx+eax*4+0000037C],xmm0
+  jmp return
+
+InfAmmoEquipShield:
+  jmp newmem
+  nop 4
+return:
+
+[DISABLE]
+InventoryReader:
+  db 8B 16 57 8B CE
+
+InfAmmoEquipShield:
+  db F3 0F 11 84 81 7C 03 00 00
+
+unregistersymbol(InventoryReader PlayerInventoryBase PlayerInventoryFaction InfAmmoEquipShield AMMO_VALUE JETPACK_VALUE DEPLETE_VALUE SHIELD OVERDRIVE_VALUE EQUIPMENT_VALUE)
+dealloc(newmem_Inventory newmem PlayerInventoryBase PlayerInventoryFaction Ptr ShieldSwitch Ptr ShieldSwitch AMMO_VALUE JETPACK_VALUE DEPLETE_VALUE SHIELD OVERDRIVE_VALUE EQUIPMENT_VALUE)"""
+
+[[cheat]]
+id = "perfect-accuracy"
+name = "Perfect Accuracy"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : S9-Win32-F.exe
+  Version:
+  Date   : 2024-09-28
+  Author : vesperpallens
+}
+
+[ENABLE]
+aobscanmodule(ActiveWeaponBase,S9-Win32-F.exe,D9 81 48 03 00 00)
+aobscanmodule(Accuracy1,S9-Win32-F.exe,F3 0F 11 81 48 03 00 00)
+aobscanmodule(Accuracy2,S9-Win32-F.exe,F3 0F 11 86 48 03 00 00)
+aobscanmodule(Accuracy_3,S9-Win32-F.exe,F3 0F 11 96 48 03 00 00)
+alloc(newmem_ActiveWeaponBase,$100)
+alloc(P_WeaponBase,$4)
+alloc(newmem1,100)
+alloc(newmem2,$100)
+alloc(newmem_3,$100)
+label(code_ActiveWeaponBase return_ActiveWeaponBase code1 return1 code2 return2 code_3 return_3)
+registersymbol(P_WeaponBase ActiveWeaponBase Accuracy1 Accuracy2 Accuracy_3)
+
+newmem_ActiveWeaponBase:
+
+code_ActiveWeaponBase:
+  fld dword ptr [ecx+00000348]
+  mov [P_WeaponBase],ecx
+  jmp return_ActiveWeaponBase
+
+ActiveWeaponBase:
+  jmp newmem_ActiveWeaponBase
+  nop
+return_ActiveWeaponBase:
+
+newmem1:
+  cmp [P_WeaponBase],ecx
+  jne code1
+  xorps xmm0, xmm0
+  movss [ecx+00000348],xmm0
+  jmp return1
+
+code1:
+  movss [ecx+00000348],xmm0
+  jmp return1
+
+Accuracy1:
+  jmp newmem1
+  nop 3
+return1:
+
+newmem2:
+  cmp [P_WeaponBase],esi
+  jne code2
+  xorps xmm0, xmm0
+  movss [esi+00000348],xmm0
+  jmp return2
+
+code2:
+  movss [esi+00000348],xmm0
+  jmp return2
+
+Accuracy2:
+  jmp newmem2
+  nop 3
+return2:
+
+newmem_3:
+  cmp [P_WeaponBase],esi
+  jne code_3
+  xorps xmm2,xmm2
+  movss [esi+00000348],xmm2
+  jmp return_3
+
+code_3:
+  movss [esi+00000348],xmm2
+  jmp return_3
+
+Accuracy_3:
+  jmp newmem_3
+  nop 3
+return_3:
+
+[DISABLE]
+ActiveWeaponBase:
+  db D9 81 48 03 00 00
+
+unregistersymbol(ActiveWeaponBase)
+dealloc(newmem_ActiveWeaponBase)
+dealloc(P_WeaponBase)
+unregistersymbol(Accuracy1)
+dealloc(newmem1)
+unregistersymbol(Accuracy2)
+dealloc(newmem2)
+unregistersymbol(Accuracy_3)
+dealloc(newmem_3)
+
+Accuracy1:
+  db F3 0F 11 81 48 03 00 00
+
+Accuracy2:
+  db F3 0F 11 86 48 03 00 00
+
+Accuracy_3:
+  db F3 0F 11 96 48 03 00 00"""
+
+[[cheat]]
+id = "requisition-points"
+name = "Requisition points"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : S9-Win32-F.exe
+  Version:
+  Date   : 2024-09-28
+  Author : vesperpallens
+}
+
+[ENABLE]
+
+aobscanmodule(RequisitionPoints,S9-Win32-F.exe,8B 87 68 03 00 00 89 86)
+alloc(newmem,$100)
+alloc(ReqPoints,4)
+define(FullReqPoints,(int)500)
+label(code return)
+registersymbol(RequisitionPoints ReqPoints)
+
+newmem:
+  push ebx
+  lea ebx, [edi+00000368]
+  mov [ReqPoints],ebx
+  pop ebx
+  mov [edi+00000368],FullReqPoints
+
+code:
+  mov eax,[edi+00000368]
+  jmp return
+
+RequisitionPoints:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+RequisitionPoints:
+  db 8B 87 68 03 00 00
+
+unregistersymbol(RequisitionPoints ReqPoints)
+dealloc(newmem ReqPoints)"""
+
+[[cheat]]
+id = "victory-points"
+name = "Victory Points"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : S9-Win32-F.exe
+  Version:
+  Date   : 2024-09-28
+  Author : vesperpallens
+}
+
+[ENABLE]
+aobscanmodule(INJECT1,S9-Win32-F.exe,27 F3 0F 10 80 8C 02 00 00)
+aobscanmodule(ArmPoitns,S9-Win32-F.exe,1E F3 0F 10 80 8C 02 00 00)
+alloc(newmem,$100)
+alloc(Section8Points,4)
+alloc(newmem_2,$100)
+alloc(ArmPoints,4)
+label(code return code_2 return_2)
+registersymbol(ArmPoints Section8Points INJECT1 ArmPoitns)
+
+newmem:
+code:
+  push ecx
+  lea ecx,[eax+0000028C]
+  mov [Section8Points],ecx
+  pop ecx
+  movss xmm0,[eax+0000028C]
+  jmp return
+
+INJECT1+01:
+  jmp newmem
+  nop 3
+return:
+
+newmem_2:
+code_2:
+  push ecx
+  lea ecx,[eax+0000028C]
+  mov [ArmPoints],ecx
+  pop ecx
+  movss xmm0,[eax+0000028C]
+  jmp return_2
+
+ArmPoitns+01:
+  jmp newmem_2
+  nop 3
+return_2:
+
+[DISABLE]
+INJECT1+01:
+  db F3 0F 10 80 8C 02 00 00
+ArmPoitns+01:
+  db F3 0F 10 80 8C 02 00 00
+
+unregistersymbol(INJECT1 ArmPoitns ArmPoints Section8Points)
+dealloc(newmem Section8Points newmem_2 ArmPoints)"""
+
+[[cheat]]
+id = "section-8-points"
+name = "Section 8 Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Section8Points"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "arm-points"
+name = "Arm Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArmPoints"
+hops = ["+0x0"]

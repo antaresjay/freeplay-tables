@@ -1,0 +1,2010 @@
+[game]
+name = "A.I. Space Corps"
+exe = "shinkansen_a.i._space_corps.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2107"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "creature-base-address-scan-initialization-activate-this-first"
+name = "Creature Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Creature_basepointer)
+registersymbol(Creature_update_enable)
+registersymbol(Creature_set_enable)
+registersymbol(Creature_healthset_enable)
+registersymbol(Creature_ammoset_enable)
+registersymbol(Creature_weaponset_enable)
+
+alloc(Creature_basepointer, 4)
+alloc(Creature_update_enable, 4)
+alloc(Creature_set_enable, 4)
+alloc(Creature_healthset_enable, 4)
+alloc(Creature_ammoset_enable, 4)
+alloc(Creature_weaponset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Creature_basepointer)
+unregistersymbol(Creature_update_enable)
+unregistersymbol(Creature_set_enable)
+unregistersymbol(Creature_healthset_enable)
+unregistersymbol(Creature_ammoset_enable)
+unregistersymbol(Creature_weaponset_enable)
+
+dealloc(Creature_basepointer)
+dealloc(Creature_update_enable)
+dealloc(Creature_set_enable)
+dealloc(Creature_healthset_enable)
+dealloc(Creature_ammoset_enable)
+dealloc(Creature_weaponset_enable)"""
+
+[[cheat]]
+id = "creature-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Creature Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Creature_savedAOB)
+label(Creature_returnhere)
+label(Creature_originalcode)
+label(Creature_exit)
+
+label(Creature_update_exit)
+label(Creature_set_exit)
+label(Creature_healthset_exit)
+label(Creature_ammoset_exit)
+label(Creature_weaponset_exit)
+
+registersymbol(Creature_savedAOB)
+
+//04BFCF13 - 0F84 4E010000         - je 04BFD067
+//04BFCF19 - E8 C23CFDFF           - call 04BD0BE0
+// Creature:Update+c6
+//04BFCF1E - D9 87 F0000000        - fld dword ptr [edi+000000F0]
+//04BFCF24 - DEE9                  - fsubp st(1),st(0)
+//04BFCF26 - D9 87 EC000000        - fld dword ptr [edi+000000EC]
+//04BFCF2C - DFF1                  - fcomip st(0),st(1)
+//04BFCF2E - DDD8                  - fstp st(0)
+aobscan(Creature_searchedAOB, C7 85 E0 FE FF FF 00 00 00 00 D9 87 E8 00 00 00)
+
+alloc(Creature_newmem, 2048, Creature_searchedAOB)
+alloc(Creature_temp1, 4, Creature_searchedAOB)
+alloc(Creature_temp2, 4, Creature_searchedAOB)
+
+
+Creature_newmem:
+mov [Creature_temp1], ebx
+mov [Creature_temp2], ecx
+
+cmp dword ptr [edi+78], #0
+jne Creature_weaponset_exit
+
+cmp dword ptr [Creature_update_enable], #0
+je Creature_update_exit
+mov [Creature_basepointer], edi
+Creature_update_exit:
+
+cmp dword ptr [Creature_set_enable], #0
+je Creature_set_exit
+Creature_set_exit:
+
+cmp dword ptr [Creature_healthset_enable], #0
+je Creature_healthset_exit
+mov ebx, [edi+38]
+mov [edi+70], ebx
+cmp dword ptr [edi+84], #0
+je Creature_healthset_exit
+mov ebx, [edi+84]
+mov ebx, [ebx+14]
+add [edi+70], ebx
+Creature_healthset_exit:
+
+cmp dword ptr [Creature_ammoset_enable], #0
+je Creature_ammoset_exit
+cmp dword ptr [edi+80], #0
+je Creature_ammoset_exit
+mov ebx, [edi+80]
+mov ecx, [ebx+38]
+mov [ebx+a0], ecx
+Creature_ammoset_exit:
+
+cmp dword ptr [Creature_weaponset_enable], #0
+je Creature_weaponset_exit
+cmp dword ptr [edi+7c], #0
+je Creature_weaponset_exit
+mov ebx, [edi+7c]
+mov [ebx+3c], (float)999
+mov [ebx+40], (float)0
+mov [ebx+44], (float)0
+mov [ebx+48], #1
+cmp dword ptr [edi+80], #0
+je Creature_weaponset_exit
+mov ebx, [edi+80]
+mov [ebx+3c], (float)999
+mov [ebx+40], (float)0
+mov [ebx+44], (float)0
+mov [ebx+48], #1
+Creature_weaponset_exit:
+
+mov ebx, [Creature_temp1]
+mov ecx, [Creature_temp2]
+
+
+Creature_originalcode:
+db D9 87 E8 00 00 00
+//fld dword ptr [edi+000000E8]
+
+
+Creature_exit:
+jmp Creature_returnhere
+
+
+Creature_searchedAOB + a:
+Creature_savedAOB:
+jmp Creature_newmem
+nop
+Creature_returnhere:
+
+
+[DISABLE]
+Creature_savedAOB:
+db D9 87 E8 00 00 00
+//fld dword ptr [edi+000000E8]
+
+unregistersymbol(Creature_savedAOB)
+
+dealloc(Creature_newmem)
+dealloc(Creature_temp1)
+dealloc(Creature_temp2)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "ammo-set-to-max"
+name = "Ammo Set to Max?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_ammoset_enable"
+hops = []
+
+[[cheat]]
+id = "weapon-set-to-massive"
+name = "Weapon Set to Massive?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_weaponset_enable"
+hops = []
+
+[[cheat]]
+id = "creature-update-base-address"
+name = "Creature Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "maxhealth"
+name = "maxHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "ltime"
+name = "lTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "stime"
+name = "sTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "explodeonlifeend"
+name = "explodeOnLifeEnd"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "destroyoncollision"
+name = "destroyOnCollision"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "currenthealthk-backingfield"
+name = "CurrentHealthk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "faction"
+name = "faction"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "family"
+name = "family"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:SMG",
+    "1:RIFLE",
+    "2:HEAVY",
+    "3:THROWN",
+    "4:PLACED",
+    "5:BUILT",
+    "6:SELF",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x30",
+]
+
+[[cheat]]
+id = "mode"
+name = "mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:CONCURRENT",
+    "1:ALTERNATING",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxammunition"
+name = "maxAmmunition"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x38",
+]
+
+[[cheat]]
+id = "rateoffire"
+name = "rateOfFire"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "heatpercentpershot"
+name = "heatPercentPerShot"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x40",
+]
+
+[[cheat]]
+id = "cooldowntime"
+name = "cooldownTime"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x44",
+]
+
+[[cheat]]
+id = "bulletspershot"
+name = "bulletsPerShot"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x48",
+]
+
+[[cheat]]
+id = "bursttime"
+name = "burstTime"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "maxspread"
+name = "maxSpread"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x50",
+]
+
+[[cheat]]
+id = "deployedmaxspread"
+name = "deployedMaxSpread"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x54",
+]
+
+[[cheat]]
+id = "maxrange"
+name = "maxRange"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x58",
+]
+
+[[cheat]]
+id = "directdamage"
+name = "directDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "explosiondamage"
+name = "explosionDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x60",
+]
+
+[[cheat]]
+id = "explosionforce"
+name = "explosionForce"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x64",
+]
+
+[[cheat]]
+id = "usefireoffset"
+name = "useFireOffset"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x68",
+]
+
+[[cheat]]
+id = "lastfiretime"
+name = "lastFireTime"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "lastmuzzleindex"
+name = "lastMuzzleIndex"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x70",
+]
+
+[[cheat]]
+id = "started"
+name = "started"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x74",
+]
+
+[[cheat]]
+id = "lastshotheat"
+name = "lastShotHeat"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x78",
+]
+
+[[cheat]]
+id = "heatblocked"
+name = "heatBlocked"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "overheatmod"
+name = "overHeatMod"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x7d",
+]
+
+[[cheat]]
+id = "overheatmodcount"
+name = "overHeatModCount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x80",
+]
+
+[[cheat]]
+id = "diagonalshooting21"
+name = "diagonalShooting21"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x84",
+]
+
+[[cheat]]
+id = "diagonalshooting45"
+name = "diagonalShooting45"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x85",
+]
+
+[[cheat]]
+id = "diagonalshooting90"
+name = "diagonalShooting90"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x86",
+]
+
+[[cheat]]
+id = "muzzlecount"
+name = "muzzleCount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x88",
+]
+
+[[cheat]]
+id = "doubleshooting"
+name = "doubleShooting"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "waitwithshootingk-backingfield"
+name = "WaitWithShootingk__BackingField"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "currentammunitionk-backingfield"
+name = "CurrentAmmunitionk__BackingField"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x7c",
+    "+0xa0",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x0",
+]
+
+[[cheat]]
+id = "family-2"
+name = "family"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:SMG",
+    "1:RIFLE",
+    "2:HEAVY",
+    "3:THROWN",
+    "4:PLACED",
+    "5:BUILT",
+    "6:SELF",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x30",
+]
+
+[[cheat]]
+id = "mode-2"
+name = "mode"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:CONCURRENT",
+    "1:ALTERNATING",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x34",
+]
+
+[[cheat]]
+id = "maxammunition-2"
+name = "maxAmmunition"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x38",
+]
+
+[[cheat]]
+id = "rateoffire-2"
+name = "rateOfFire"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "heatpercentpershot-2"
+name = "heatPercentPerShot"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x40",
+]
+
+[[cheat]]
+id = "cooldowntime-2"
+name = "cooldownTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x44",
+]
+
+[[cheat]]
+id = "bulletspershot-2"
+name = "bulletsPerShot"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+]
+
+[[cheat]]
+id = "bursttime-2"
+name = "burstTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "maxspread-2"
+name = "maxSpread"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x50",
+]
+
+[[cheat]]
+id = "deployedmaxspread-2"
+name = "deployedMaxSpread"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x54",
+]
+
+[[cheat]]
+id = "maxrange-2"
+name = "maxRange"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x58",
+]
+
+[[cheat]]
+id = "directdamage-2"
+name = "directDamage"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "explosiondamage-2"
+name = "explosionDamage"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x60",
+]
+
+[[cheat]]
+id = "explosionforce-2"
+name = "explosionForce"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x64",
+]
+
+[[cheat]]
+id = "usefireoffset-2"
+name = "useFireOffset"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x68",
+]
+
+[[cheat]]
+id = "lastfiretime-2"
+name = "lastFireTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "lastmuzzleindex-2"
+name = "lastMuzzleIndex"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x70",
+]
+
+[[cheat]]
+id = "started-2"
+name = "started"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x74",
+]
+
+[[cheat]]
+id = "lastshotheat-2"
+name = "lastShotHeat"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x78",
+]
+
+[[cheat]]
+id = "heatblocked-2"
+name = "heatBlocked"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "overheatmod-2"
+name = "overHeatMod"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x7d",
+]
+
+[[cheat]]
+id = "overheatmodcount-2"
+name = "overHeatModCount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x80",
+]
+
+[[cheat]]
+id = "diagonalshooting21-2"
+name = "diagonalShooting21"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x84",
+]
+
+[[cheat]]
+id = "diagonalshooting45-2"
+name = "diagonalShooting45"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x85",
+]
+
+[[cheat]]
+id = "diagonalshooting90-2"
+name = "diagonalShooting90"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x86",
+]
+
+[[cheat]]
+id = "muzzlecount-2"
+name = "muzzleCount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x88",
+]
+
+[[cheat]]
+id = "doubleshooting-2"
+name = "doubleShooting"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "waitwithshootingk-backingfield-2"
+name = "WaitWithShootingk__BackingField"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "currentammunitionk-backingfield-2"
+name = "CurrentAmmunitionk__BackingField"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x80",
+    "+0xa0",
+]
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x84",
+    "+0x0",
+]
+
+[[cheat]]
+id = "armortype"
+name = "armorType"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:LIGHT",
+    "1:MEDIUM",
+    "2:HEAVY",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x84",
+    "+0x10",
+]
+
+[[cheat]]
+id = "healthpoints"
+name = "healthPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x84",
+    "+0x14",
+]
+
+[[cheat]]
+id = "movementpercent"
+name = "movementPercent"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x84",
+    "+0x18",
+]
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x94",
+    "+0x0",
+]
+
+[[cheat]]
+id = "armortype-2"
+name = "armorType"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:LIGHT",
+    "1:MEDIUM",
+    "2:HEAVY",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x94",
+    "+0x10",
+]
+
+[[cheat]]
+id = "healthpoints-2"
+name = "healthPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x94",
+    "+0x14",
+]
+
+[[cheat]]
+id = "movementpercent-2"
+name = "movementPercent"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = [
+    "+0x94",
+    "+0x18",
+]
+
+[[cheat]]
+id = "navspeed"
+name = "navSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "selected"
+name = "selected"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "deploying"
+name = "deploying"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xbd"]
+
+[[cheat]]
+id = "deployedsomething"
+name = "deployedSomething"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xbe"]
+
+[[cheat]]
+id = "equippedspecial"
+name = "equippedSpecial"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "isteleporting"
+name = "isTeleporting"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "isusingtrigger"
+name = "isUsingTrigger"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xdd"]
+
+[[cheat]]
+id = "originalspeed"
+name = "originalSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "minimapevents"
+name = "minimapEvents"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "healthtickmod"
+name = "healthTickMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "healtickinterval"
+name = "healTickInterval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "lasthealtick"
+name = "lastHealTick"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "isposingk-backingfield"
+name = "IsPosingk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "isfemale"
+name = "isFemale"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "specialitemequipped"
+name = "specialItemEquipped"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x11d"]
+
+[[cheat]]
+id = "isplayinguseanimation"
+name = "isPlayingUseAnimation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x11e"]
+
+[[cheat]]
+id = "useanimationstarttime"
+name = "useAnimationStartTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "currentuseactionidk-backingfield"
+name = "CurrentUseActionIdk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Creature_basepointer"
+hops = ["+0x124"]

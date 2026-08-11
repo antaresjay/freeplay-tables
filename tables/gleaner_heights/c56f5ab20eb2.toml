@@ -1,0 +1,272 @@
+[game]
+name = "Gleaner Heights Season 2"
+exe = "gleaner_heights.exe"
+notes = "Converted from a Cheat Engine table by wajrak. Source: https://fearlessrevolution.com/viewtopic.php?t=38446"
+verified = []
+author = "wajrak"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-cheats"
+name = "Enable Cheats"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(MasterController, $2000)
+
+label(StaminaCave)
+label(ReturnStamina)
+label(OriginalStamina)
+
+label(TimerCave)
+label(ReturnTimer)
+label(OriginalTimer)
+
+// --- User Toggles ---
+label(bArmStamina)
+label(bArmTimer)
+label(bInfiniteStamina)
+label(bFreezeTime)
+label(bScaleTime)
+
+// --- Debug & Math Variables ---
+label(ID_Stamina)
+label(ID_Timer)
+label(ptrStamina)
+label(ptrTimer)
+label(fTimeScale)
+
+registersymbol(bArmStamina)
+registersymbol(bArmTimer)
+registersymbol(bInfiniteStamina)
+registersymbol(bFreezeTime)
+registersymbol(bScaleTime)
+registersymbol(ID_Stamina)
+registersymbol(ID_Timer)
+registersymbol(ptrStamina)
+registersymbol(ptrTimer)
+registersymbol(fTimeScale)
+
+MasterController:
+
+bArmStamina:
+  dd 0
+bArmTimer:
+  dd 0
+bInfiniteStamina:
+  dd 0
+bFreezeTime:
+  dd 0
+bScaleTime:
+  dd 0
+ID_Stamina:
+  dd 0
+ID_Timer:
+  dd 0
+ptrStamina:
+  dd 0
+ptrTimer:
+  dd 0
+fTimeScale:
+  dq (double)0.5 // Default to 50% speed
+
+// ==========================================
+// HOOK 1: STAMINA WRITER (F8DF9)
+// ==========================================
+align 10
+StaminaCave:
+  cmp [bArmStamina], 1
+  jne CheckStaminaCheat
+
+  mov [ID_Stamina], edx
+  mov [ptrStamina], esi
+  mov [bArmStamina], 0
+
+CheckStaminaCheat:
+  cmp edx, [ID_Stamina]
+  jne OriginalStamina
+
+  mov [ptrStamina], esi
+
+  cmp [bInfiniteStamina], 1
+  jne OriginalStamina
+
+  jmp ReturnStamina
+
+OriginalStamina:
+  mov [esi],eax
+  mov [esi+04],ecx
+  jmp ReturnStamina
+
+
+// ==========================================
+// HOOK 2: TIME OF DAY WRITER (F9123)
+// ==========================================
+align 10
+TimerCave:
+  cmp [bArmTimer], 1
+  jne CheckTimerCheat
+
+  mov [ID_Timer], edx
+  mov [ptrTimer], esi
+  mov [bArmTimer], 0
+
+CheckTimerCheat:
+  cmp edx, [ID_Timer]
+  jne OriginalTimer
+
+  mov [ptrTimer], esi
+
+  // 1. Check Hard Freeze
+  cmp [bFreezeTime], 1
+  je ReturnTimer // Skip the write entirely
+
+  // 2. Check Time Scaling
+  cmp [bScaleTime], 1
+  jne OriginalTimer
+
+  // --- TIME DILATION FPU MATH ---
+  // Load OLD time from [esi] into xmm0
+  push [esi+04]
+  push [esi]
+  movsd xmm0, [esp]
+  add esp, 08
+
+  // Load NEW incoming time from ecx/eax into xmm1
+  push ecx
+  push eax
+  movsd xmm1, [esp]
+  add esp, 08
+
+  // Calculate Delta (New - Old)
+  subsd xmm1, xmm0
+
+  // Multiply Delta by our custom scale (e.g., 0.5)
+  mulsd xmm1, [fTimeScale]
+
+  // Add scaled Delta back to Old time
+  addsd xmm0, xmm1
+
+  // Write the freshly calculated Double directly to memory
+  movsd [esi], xmm0
+
+  // Jump to return so we skip the original unscaled write
+  jmp ReturnTimer
+
+OriginalTimer:
+  mov [esi],eax
+  mov [esi+04],ecx
+  jmp ReturnTimer
+
+// ==========================================
+// INJECTIONS
+// ==========================================
+Gleaner_Heights.exe+F8DF9:
+  jmp StaminaCave
+ReturnStamina:
+
+Gleaner_Heights.exe+F9123:
+  jmp TimerCave
+ReturnTimer:
+
+[DISABLE]
+Gleaner_Heights.exe+F8DF9:
+  db 89 06 89 4E 04
+
+Gleaner_Heights.exe+F9123:
+  db 89 06 89 4E 04
+
+unregistersymbol(bArmStamina)
+unregistersymbol(bArmTimer)
+unregistersymbol(bInfiniteStamina)
+unregistersymbol(bFreezeTime)
+unregistersymbol(bScaleTime)
+unregistersymbol(ID_Stamina)
+unregistersymbol(ID_Timer)
+unregistersymbol(ptrStamina)
+unregistersymbol(ptrTimer)
+unregistersymbol(fTimeScale)
+dealloc(MasterController)"""
+
+[[cheat]]
+id = "time-scale"
+name = "Time Scale"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fTimeScale"
+hops = []
+
+[[cheat]]
+id = "infinite-stamina"
+name = "Infinite Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInfiniteStamina"
+hops = []
+
+[[cheat]]
+id = "binit"
+name = "bInit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInit"
+hops = []
+
+[[cheat]]
+id = "ptrstaminavalue"
+name = "ptrStaminaValue"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptrStamina"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptrtimervalue"
+name = "ptrTimerValue"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptrTimer"
+hops = ["+0x0"]

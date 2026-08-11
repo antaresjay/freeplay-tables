@@ -1,0 +1,896 @@
+[game]
+name = "Schedule I First Sample"
+exe = "sample.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=34066"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "grab-atm-balance"
+name = "Grab ATM Balance"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+aobscanregion(ATMBalance,ScheduleOne.Money.MoneyManager:Update,ScheduleOne.Money.MoneyManager:Update+93,48 8B F1 66 0F 57 C0 F2 0F 5A E8 F3 0F 11 6D F0)
+alloc(newmem,$1000,ATMBalance)
+registersymbol(ATMB)
+label(code return ATMB)
+
+newmem:
+mov [ATMB],rcx
+
+code:
+  mov rsi,rcx
+  xorpd xmm0,xmm0
+  jmp return
+
+ATMB:
+dw
+
+ATMBalance:
+  jmp!near newmem: c3 | 00*
+  nop 2
+return:
+registersymbol(ATMBalance)
+
+[DISABLE]
+
+ATMBalance:
+  db 48 8B F1 66 0F 57 C0
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "grab-cash-balance"
+name = "Grab Cash Balance"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.Money.MoneyManager:Update+1f7)
+define(bytes,F3 0F 10 48 38)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.Money.MoneyManager:Update+1f7)
+registersymbol(cashoh)
+label(code return cashoh)
+
+newmem:
+mov [cashoh],rax
+
+code:
+  movss xmm1,[rax+38]
+  jmp return
+
+cashoh:
+dq 0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "stealth-mode"
+name = "Stealth Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+define(address,ScheduleOne.Stealth.PlayerVisibility:FixedUpdate+3b)
+define(bytes,F3 0F 11 AE 28 01 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.Stealth.PlayerVisibility:FixedUpdate+3b)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  xorps xmm5,xmm5
+  movss [rsi+00000128],xmm5
+  jmp return
+
+address:
+  jmp!near newmem: c3 | 00*
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(*)
+//Send@Sintrix|FearlessRevolution"""
+
+[[cheat]]
+id = "instant-plant-grow"
+name = "Instant Plant Grow"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+
+aobscanregion(growspeedmultiplier,ScheduleOne.Growing.Plant:MinPass+10b,ScheduleOne.Growing.Plant:MinPass+186,F3 0F 10 88 84 03 00 00)
+alloc(newmem,$1000,growspeedmultiplier)
+label(code return)
+
+newmem:
+
+code:
+  mov [rax+384],(float)100
+  movss xmm1,[rax+00000384]
+  jmp return
+
+growspeedmultiplier:
+  jmp!near newmem: c3 | 00*
+  nop 3
+return:
+registersymbol(growspeedmultiplier)
+
+[DISABLE]
+
+growspeedmultiplier:
+  db F3 0F 10 88 84 03 00 00
+
+unregistersymbol(*)
+dealloc(*)
+//Send@Sintrix|FearlessRevolution"""
+
+[[cheat]]
+id = "enable-yield-multiplier"
+name = "Enable Yield Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.ObjectScripts.Pot:LateUpdate+f)
+define(bytes,48 8B F1 C7 85 58 FE FF FF 00 00 00 00)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.ObjectScripts.Pot:LateUpdate+f)
+registersymbol(yieldmult)
+label(code return yieldmult)
+
+newmem:
+xorps xmm15,xmm15
+movss xmm15,[yieldmult]
+movss [rcx+380],xmm15
+code:
+  mov rsi,rcx
+  mov [rbp-000001A8],00000000
+  jmp return
+
+yieldmult:
+dd (float)2
+//Send@Sintrix|FearlessRevolution
+address:
+  jmp!near newmem: c3 | 00*
+  nop 8
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "set-yield-multiplier"
+name = "Set Yield Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "yieldmult"
+hops = []
+
+[[cheat]]
+id = "supplier-no-debt"
+name = "Supplier: No Debt"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.Economy.Supplier:MinPass)
+define(bytes,55 48 8B EC 48 83 EC 30)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.Economy.Supplier:MinPass)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+2C4],(float)0
+//Send@Sintrix|FearlessRevolution
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,30
+  jmp return
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "supplier-instant-dead-drop-delivery"
+name = "Supplier: Instant Dead Drop Delivery"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.Economy.Supplier:MinPass+c)
+define(bytes,48 8B F1 48 8D AD 00 00 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.Economy.Supplier:MinPass+c)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+2CC],#0
+
+code:
+  mov rsi,rcx
+  lea rbp,[rbp+00000000]
+  jmp return
+
+address:
+  jmp newmem
+  nop 5
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+//Send@Sintrix|FearlessRevolution
+dealloc(*)"""
+
+[[cheat]]
+id = "supplier-larger-max-order-limit"
+name = "Supplier: Larger Max Order Limit"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.Economy.Supplier:MinPass+32)
+define(bytes,48 63 86 B0 02 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.Economy.Supplier:MinPass+32)
+
+label(code)
+label(return)
+
+newmem:
+mov [rsi+2B8],(float)999999999999
+code:
+  movsxd  rax,dword ptr [rsi+000002B0]
+  jmp return
+
+address:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+//Send@Sintrix|FearlessRevolution
+
+dealloc(*)"""
+
+[[cheat]]
+id = "not-in-demo-instant-atm-repair"
+name = "[NOT IN DEMO] Instant ATM Repair"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.Money.ATM:set_IsBroken+8)
+define(bytes,48 8B F9 48 89 54 24 08)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.Money.ATM:set_IsBroken+8)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+14C],#0
+
+code:
+  mov rdi,rcx
+  mov [rsp+08],rdx
+  jmp return
+
+address:
+  jmp newmem
+  nop 3
+return:
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(*)"""
+
+[[cheat]]
+id = "never-disoriented"
+name = "Never Disoriented"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+
+[ENABLE]
+
+aobscanregion(disoriented,ScheduleOne.PlayerScripts.PlayerMovement:UpdateHorizontalAxis+64,ScheduleOne.PlayerScripts.PlayerMovement:UpdateHorizontalAxis+fc,0F B6 80 5E 03 00 00 85 C0 74 02)
+alloc(newmem,$1000,disoriented)
+label(code return)
+
+newmem:
+//Send@Sintrix|FearlessRevolution
+code:
+  mov eax,0
+  jmp return
+
+disoriented:
+  jmp!near newmem: c3 | 00*
+  nop 2
+return:
+registersymbol(disoriented)
+
+[DISABLE]
+
+disoriented:
+  db 0F B6 80 5E 03 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "never-paranoid"
+name = "Never Paranoid"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+aobscanregion(paranoid,ScheduleOne.AvatarFramework.Animation.AvatarLookController:UpdateShit+13e,ScheduleOne.AvatarFramework.Animation.AvatarLookController:UpdateShit+1e7,0F B6 80 5C 03 00 00)
+alloc(newmem,$1000,paranoid)
+label(code return)
+
+newmem:
+//Send@Sintrix|FearlessRevolution
+code:
+  mov eax,0
+  jmp return
+
+paranoid:
+  jmp!near newmem: c3 | 00*
+  nop 2
+return:
+registersymbol(paranoid)
+
+[DISABLE]
+
+paranoid:
+  db 0F B6 80 5C 03 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "unlimited-soil"
+name = "Unlimited Soil"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.ObjectScripts.Soil.PourableSoil:Update+c)
+define(bytes,48 8B F1 F3 0F 10 86 7C 01 00 00)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.ObjectScripts.Soil.PourableSoil:Update+c)
+
+label(code)
+label(return)
+
+newmem:
+mov [rcx+0f1],1
+code:
+  mov rsi,rcx
+  movss xmm0,[rsi+0000017C]
+  jmp return
+
+address:
+  jmp!near newmem: c3 | 00*
+  nop 6
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-watering-can"
+name = "Infinite Watering Can"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address2,ScheduleOne.ObjectScripts.WateringCan.WateringCanInstance:ChangeFillAmount+5b)
+define(bytes2,F3 0F 11 6E 38)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+aobscanregion(wateringcanfill,ScheduleOne.Property.Utilities.Water.Tap:CanInteract+6e,ScheduleOne.Property.Utilities.Water.Tap:CanInteract+e7,F3 41 0F 10 47 38 F3 0F 5A C0 F3 0F 10 0D) // should be unique
+alloc(newmem,$1000,wateringcanfill)
+
+label(code)
+label(return)
+
+newmem:
+mov [r15+38],(float)35
+code:
+  movss xmm0,[r15+38]
+  jmp return
+
+wateringcanfill:
+  jmp!near newmem: c3 | 00*
+  nop
+return:
+registersymbol(wateringcanfill)
+
+assert(address2,bytes2)
+alloc(newmem2,$1000,ScheduleOne.ObjectScripts.WateringCan.WateringCanInstance:ChangeFillAmount+5b)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  movss xmm5,[new]
+  movss [rsi+38],xmm5
+  jmp return2
+
+new:
+dd (float)35
+
+address2:
+  jmp!near newmem2: c3 | 00*
+return2:
+
+[DISABLE]
+
+wateringcanfill:
+  db F3 41 0F 10 47 38
+
+address2:
+  db bytes2
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-punch-cooldown"
+name = "No Punch Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.Combat.PunchController:UpdateCooldown+8c)
+define(bytes,F3 0F 11 6E 6C)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.Combat.PunchController:UpdateCooldown+8c)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  xorps xmm5,xmm5
+  movss [rsi+6C],xmm5
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(*)"""
+
+[[cheat]]
+id = "player-movement-modifiers"
+name = "Player Movement Modifiers"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+[ENABLE]
+//488B??488D??????????49BB????????????????41FF??488B??49BB????????????????41FF??0FB6
+aobscanregion(playermovement,ScheduleOne.PlayerScripts.PlayerMovement:Update,ScheduleOne.PlayerScripts.PlayerMovement:Update+78,48 8B F1 48 8D AD 00 00 00 00 * * * *)
+alloc(newmem,$1000,playermovement)
+registersymbol(mptr)
+label(code return mptr)
+
+newmem:
+mov [mptr],rcx
+
+code:
+  mov rsi,rcx
+  lea rbp,[rbp+00000000]
+  jmp return
+
+mptr:
+dw
+
+playermovement:
+  jmp!near newmem: c3 | 00*
+  nop 5
+return:
+registersymbol(playermovement)
+
+[DISABLE]
+
+playermovement:
+  db 48 8B F1 48 8D AD 00 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "edit-cash-for-trash-payment"
+name = "Edit Cash For Trash Payment"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.ObjectScripts.Recycler:GetTrash)
+define(bytes,55 48 8B EC 48 81 EC 90 01 00 00 48 89 5D C8)
+
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+assert(address,bytes)
+alloc(newmem,$1000)
+registersymbol(recycle)
+label(code return recycle)
+
+newmem:
+xorps xmm15,xmm15
+movss xmm15,[recycle]
+movss [rcx+1BC],xmm15
+
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,00000190
+  mov [rbp-38],rbx
+  jmp return
+
+recycle:
+dd (float)100
+
+address:
+  jmp far newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-cash-value"
+name = "Set Cash Value"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "recycle"
+hops = []
+
+[[cheat]]
+id = "grab-time-data"
+name = "Grab Time Data"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+define(address,ScheduleOne.GameTime.TimeManager:Update)
+define(bytes,55 48 8B EC 48 83 EC 60)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.GameTime.TimeManager:Update)
+registersymbol(timeptr)
+label(code return timeptr)
+
+newmem:
+mov [timeptr],rcx
+
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,60
+  jmp return
+
+timeptr:
+ dq 0
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+
+unregistersymbol(*)
+dealloc(*)
+//Send@Sintrix|FearlessRevolution"""
+
+[[cheat]]
+id = "max-customer-addiction-level"
+name = "Max Customer Addiction Level"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+aobscanregion(customeraddiction,ScheduleOne.Economy.Customer:CheckContractGeneration,ScheduleOne.Economy.Customer:CheckContractGeneration+1a7,F3 0F 10 87 9C 01 00 00 F3 0F 5A C0 F2 0F 5A E8)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+mov [rdi+19C],(float)999 //currentAddiction
+
+code:
+  movss xmm0,[rdi+0000019C]
+  cvtss2sd xmm0,xmm0
+  cvtsd2ss xmm5,xmm0
+  jmp return
+
+customeraddiction:
+  jmp!near newmem: c3 | 00*
+  nop 2
+return:
+registersymbol(customeraddiction)
+
+[DISABLE]
+
+customeraddiction:
+  db F3 0F 10 87 9C 01 00 00 F3 0F 5A C0 F2 0F 5A E8
+
+unregistersymbol(customeraddiction)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "npc-never-aggressive-never-panic"
+name = "NPC: Never Aggressive & Never Panic"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+aobscanregion(aggression,ScheduleOne.NPCs.NPC:ShouldNoticeGeneralCrime+af,ScheduleOne.NPCs.NPC:ShouldNoticeGeneralCrime+c7,0F B6 97 41 02 00 00)
+alloc(newmem,$1000,aggression)
+
+label(code)
+label(return)
+
+newmem:
+mov [rdi+224],0
+mov [rdi+241],0
+code:
+  movzx edx,byte ptr [rdi+00000241]
+  jmp return
+
+aggression:
+  jmp newmem
+  nop 2
+return:
+registersymbol(aggression)
+
+[DISABLE]
+
+aggression:
+  db 0F B6 97 41 02 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "custom-field-of-view"
+name = "Custom Field of View"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,ScheduleOne.PlayerScripts.PlayerCamera:LateUpdate+1d7)
+define(bytes,F3 0F 10 80 B4 00 00 00)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+assert(address,bytes)
+alloc(newmem,$1000,ScheduleOne.PlayerScripts.PlayerCamera:LateUpdate+1d7)
+registersymbol(setfov)
+label(code return setfov)
+
+newmem:
+mov [setfov],rax
+
+code:
+  movss xmm0,[rax+000000B4]
+  jmp return
+
+setfov:
+dq 0
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "npc-all-customers-unlocked-experimental"
+name = "NPC: All Customers Unlocked? [EXPERIMENTAL] "
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(unlockednpc,ScheduleOne.NPCs.Relation.NPCRelationData:IsMutuallyKnown+78,ScheduleOne.NPCs.Relation.NPCRelationData:IsMutuallyKnown+95,0F B6 40 3C 85 C0 74 07)
+alloc(newmem,$1000,unlockednpc)
+
+label(code)
+label(return)
+
+newmem:
+mov [rax+3c],1
+
+code:
+  movzx eax,byte ptr [rax+3C]
+  test eax,eax
+  jmp return
+
+unlockednpc:
+  jmp!near newmem: c3 | 00*
+  nop
+return:
+registersymbol(unlockednpc)
+
+[DISABLE]
+
+unlockednpc:
+  db 0F B6 40 3C 85 C0
+
+unregistersymbol(unlockednpc)
+dealloc(newmem)"""

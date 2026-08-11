@@ -1,0 +1,492 @@
+[game]
+name = "Control"
+exe = "control_dx12.exe"
+notes = "Converted from a Cheat Engine table by Argaricolm. Source: https://fearlessrevolution.com/viewtopic.php?t=18743"
+verified = []
+author = "Argaricolm"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "battle"
+name = "Battle"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Control_DX12.exe
+  Version: 0.0.344.1879 (FINAL|release)
+  Date   : 2022-01-05
+  Author : Argaricolm
+
+  This script will disable health decrease for user (not affecting other)
+}
+
+[ENABLE]
+aobscanmodule(userstruct,Control_DX12.exe,48 8B 45 58 0F 57 C0) // should be unique
+aobscanmodule(decreasehealth,Control_DX12.exe,40 53 48 83 EC 40 0F 29 74 24 30 0F 28 D1) // should be unique
+alloc(newmem,$1000,userstruct)
+registersymbol(OHK)
+registersymbol(God)
+
+label(code)
+label(return)
+label(user)
+label(OHK)
+label(God)
+label(MinusOne)
+label(Zero)
+
+newmem:
+
+code:
+  mov rax,[rbp+58]
+  mov [user],rax
+  xorps xmm0,xmm0
+  jmp return
+user:
+db 00 00 00 00 00 00 00 00
+OHK:
+db 00 00 00 00
+God:
+db 00 00 00 00
+MinusOne:
+dd (float)-1
+Zero:
+dd (float)0
+
+userstruct:
+  jmp newmem
+  nop 2
+return:
+registersymbol(userstruct)
+
+alloc(newmem2,$1000,decreasehealth)
+
+label(code2)
+label(return2)
+label(dont)
+label(normal)
+label(notgod)
+
+newmem2:
+
+code2:
+  push rbx
+  sub rsp,40
+  comiss xmm1,[Zero]
+  jae return2
+  push rax
+  cmp [God],1
+  jnz notgod
+  mov rax,[user]
+  test rax,rax
+  jz normal
+  cmp rax,rcx
+  jz dont
+notgod:
+  mov al,[OHK]
+  cmp al,0
+  jz normal
+  movss xmm1,[MinusOne]
+normal:
+  pop rax
+  jmp return2
+dont:
+  comiss xmm1,[Zero]
+  jae normal
+  movss xmm1,[Zero]
+  pop rax
+  jmp return2
+decreasehealth:
+  jmp newmem2
+  nop 1
+return2:
+registersymbol(decreasehealth)
+
+[DISABLE]
+
+userstruct:
+  db 48 8B 45 58 0F 57 C0
+
+decreasehealth:
+  db 40 53 48 83 EC 40 0F 29 74 24 30 0F 28 D1
+
+unregistersymbol(userstruct)
+unregistersymbol(decreasehealth)
+unregistersymbol(OHK)
+unregistersymbol(God)
+dealloc(newmem)
+dealloc(newmem2)
+
+{
+Tech info:
+After health is found we seek for its pointer with smallest number of offsets.
+Then we check what addresses access pointer with one offset lower (most likely user strucure)
+and look which one access only it.
+Then we use founded code to store user struct offset. This is done in "newmem".
+newmem2 redirects the start of health change function.
+Health change can be found by looking what access health.
+It is done by this code:
+Control_DX12.exe+324875 - F3 41 0F5C C1         - subss xmm0,xmm9
+Control_DX12.exe+32487A - 0F28 F0               - movaps xmm6,xmm0
+Control_DX12.exe+32487D - 0F28 C7               - movaps xmm0,xmm7
+Control_DX12.exe+324880 - F3 0F5F F7            - maxss xmm6,xmm7
+Control_DX12.exe+324884 - F3 0F5D F3            - minss xmm6,xmm3
+Control_DX12.exe+324888 - F3 0F11 73 64         - movss [rbx+64],xmm6 //decrease health and enemies
+
+At start of the function xmm1 register contains info for how much to change health.
+Code here checks if user health is about to be decreased and changes xmm1 to 0.
+If else, then to -1. -1 means - decrease health fully where full health is equal to 1.
+If xmm1 > 0 then we do nothing.
+}"""
+
+[[cheat]]
+id = "expedition-timer-will-count-but-will-not-end"
+name = "Expedition timer (will count, but will not end)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Control_DX12.exe
+  Version: 0.0.344.1879 (FINAL|release)
+  Date   : 2021-12-30
+  Author : Argaricolm
+
+  This script freezes expedition timer (timer on screen will count but expedition will not end)
+}
+
+[ENABLE]
+
+aobscanmodule(Expedition,Control_DX12.exe,F3 0F 5C 41 20 F3 0F 11 80) // should be unique
+alloc(newmem,$1000,Expedition)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  nop
+  jmp return
+
+Expedition:
+  jmp newmem
+return:
+registersymbol(Expedition)
+
+[DISABLE]
+
+Expedition:
+  db F3 0F 5C 41 20
+
+unregistersymbol(Expedition)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX12.exe+1CA394
+
+Control_DX12.exe+1CA36B: EB 02                    - jmp Control_DX12.exe+1CA36F
+Control_DX12.exe+1CA36D: 33 C9                    - xor ecx,ecx
+Control_DX12.exe+1CA36F: 48 8B 05 12 8D BD 00     - mov rax,[Control_DX12.exe+DA3088]
+Control_DX12.exe+1CA376: 48 8B 0C 01              - mov rcx,[rcx+rax]
+Control_DX12.exe+1CA37A: 48 8B 43 08              - mov rax,[rbx+08]
+Control_DX12.exe+1CA37E: 80 B8 9C 00 00 00 00     - cmp byte ptr [rax+0000009C],00
+Control_DX12.exe+1CA385: 75 1A                    - jne Control_DX12.exe+1CA3A1
+Control_DX12.exe+1CA387: F3 0F 10 80 98 00 00 00  - movss xmm0,[rax+00000098]
+Control_DX12.exe+1CA38F: 0F 2F C6                 - comiss xmm0,xmm6
+Control_DX12.exe+1CA392: 7E 0D                    - jle Control_DX12.exe+1CA3A1
+// ---------- INJECTING HERE ----------
+Control_DX12.exe+1CA394: F3 0F 5C 41 20           - subss xmm0,[rcx+20]
+// ---------- DONE INJECTING  ----------
+Control_DX12.exe+1CA399: F3 0F 11 80 98 00 00 00  - movss [rax+00000098],xmm0
+Control_DX12.exe+1CA3A1: 40 84 FF                 - test dil,dil
+Control_DX12.exe+1CA3A4: 48 8B 7C 24 40           - mov rdi,[rsp+40]
+Control_DX12.exe+1CA3A9: 75 25                    - jne Control_DX12.exe+1CA3D0
+Control_DX12.exe+1CA3AB: 66 0F 6E 05 4D A6 0E 01  - movd xmm0,[Control_DX12.exe+12B4A00]
+Control_DX12.exe+1CA3B3: 48 8B 4B 08              - mov rcx,[rbx+08]
+Control_DX12.exe+1CA3B7: 0F 5B C0                 - cvtdq2ps xmm0,xmm0
+Control_DX12.exe+1CA3BA: 0F 2F 81 98 00 00 00     - comiss xmm0,[rcx+00000098]
+Control_DX12.exe+1CA3C1: 72 0D                    - jb Control_DX12.exe+1CA3D0
+Control_DX12.exe+1CA3C3: 48 8D 15 56 6A C2 00     - lea rdx,[Control_DX12.exe+DF0E20]
+}"""
+
+[[cheat]]
+id = "music-coins-freeze"
+name = "Music Coins Freeze"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Control_DX12.exe
+  Version: 0.0.344.1879 (FINAL|release)
+  Date   : 2021-12-30
+  Author : Argaricolm
+
+  This script change music coins on use
+}
+
+[ENABLE]
+
+aobscanmodule(Coins,Control_DX12.exe,2B CD 89 48 40) // should be unique
+alloc(newmem,$1000,Coins)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,#100
+  mov [rax+40],ecx
+  jmp return
+
+Coins:
+  jmp newmem
+return:
+registersymbol(Coins)
+
+[DISABLE]
+
+Coins:
+  db 2B CD 89 48 40
+
+unregistersymbol(Coins)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX12.exe+3BC4D0
+
+Control_DX12.exe+3BC4B2: 74 25              - je Control_DX12.exe+3BC4D9
+Control_DX12.exe+3BC4B4: E8 D7 F5 DB FF     - call Control_DX12.exe+17BA90
+Control_DX12.exe+3BC4B9: 8B D0              - mov edx,eax
+Control_DX12.exe+3BC4BB: 48 8B CE           - mov rcx,rsi
+Control_DX12.exe+3BC4BE: FF 15 6C 6B 9E 00  - call qword ptr [Control_DX12.exe+DA3030]
+Control_DX12.exe+3BC4C4: 48 85 C0           - test rax,rax
+Control_DX12.exe+3BC4C7: 74 10              - je Control_DX12.exe+3BC4D9
+Control_DX12.exe+3BC4C9: 8B 48 40           - mov ecx,[rax+40]
+Control_DX12.exe+3BC4CC: 3B CD              - cmp ecx,ebp
+Control_DX12.exe+3BC4CE: 7C 6E              - jl Control_DX12.exe+3BC53E
+// ---------- INJECTING HERE ----------
+Control_DX12.exe+3BC4D0: 2B CD              - sub ecx,ebp
+// ---------- DONE INJECTING  ----------
+Control_DX12.exe+3BC4D2: 89 48 40           - mov [rax+40],ecx
+Control_DX12.exe+3BC4D5: 85 C9              - test ecx,ecx
+Control_DX12.exe+3BC4D7: 7F 61              - jg Control_DX12.exe+3BC53A
+Control_DX12.exe+3BC4D9: 48 2B 5F 40        - sub rbx,[rdi+40]
+Control_DX12.exe+3BC4DD: 44 8B 47 48        - mov r8d,[rdi+48]
+Control_DX12.exe+3BC4E1: 48 C1 FB 04        - sar rbx,04
+Control_DX12.exe+3BC4E5: 48 8D 43 01        - lea rax,[rbx+01]
+Control_DX12.exe+3BC4E9: 4C 8B D0           - mov r10,rax
+Control_DX12.exe+3BC4EC: 4C 2B D3           - sub r10,rbx
+Control_DX12.exe+3BC4EF: 74 3E              - je Control_DX12.exe+3BC52F
+}"""
+
+[[cheat]]
+id = "skill-points-freeze"
+name = "Skill Points Freeze"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Control_DX12.exe
+  Version: 0.0.344.1879 (FINAL|release)
+  Date   : 2021-12-30
+  Author : Argaricolm
+
+  This script change skill points on use
+}
+
+[ENABLE]
+
+aobscanmodule(points,Control_DX12.exe,89 51 48 44 89 41 4C) // should be unique
+alloc(newmem,$1000,points)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+mov edx,#66
+  mov [rcx+48],edx
+  mov [rcx+4C],r8d
+  jmp return
+
+points:
+  jmp newmem
+  nop 2
+return:
+registersymbol(points)
+
+[DISABLE]
+
+points:
+  db 89 51 48 44 89 41 4C
+
+unregistersymbol(points)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX12.exe+2075AC
+
+Control_DX12.exe+20757E: CC                          - int 3 
+Control_DX12.exe+20757F: CC                          - int 3 
+Control_DX12.exe+207580: 40 57                       - push rdi
+Control_DX12.exe+207582: 48 81 EC 80 00 00 00        - sub rsp,00000080
+Control_DX12.exe+207589: 48 C7 44 24 38 FE FF FF FF  - mov qword ptr [rsp+38],FFFFFFFFFFFFFFFE
+Control_DX12.exe+207592: 48 89 9C 24 98 00 00 00     - mov [rsp+00000098],rbx
+Control_DX12.exe+20759A: 48 8B 05 6F 5A 03 01        - mov rax,[Control_DX12.exe+123D010]
+Control_DX12.exe+2075A1: 48 33 C4                    - xor rax,rsp
+Control_DX12.exe+2075A4: 48 89 44 24 70              - mov [rsp+70],rax
+Control_DX12.exe+2075A9: 48 8B D9                    - mov rbx,rcx
+// ---------- INJECTING HERE ----------
+Control_DX12.exe+2075AC: 89 51 48                    - mov [rcx+48],edx
+// ---------- DONE INJECTING  ----------
+Control_DX12.exe+2075AF: 44 89 41 4C                 - mov [rcx+4C],r8d
+Control_DX12.exe+2075B3: 8B 41 50                    - mov eax,[rcx+50]
+Control_DX12.exe+2075B6: 44 3B C0                    - cmp r8d,eax
+Control_DX12.exe+2075B9: 41 0F 4F C0                 - cmovg eax,r8d
+Control_DX12.exe+2075BD: 89 41 50                    - mov [rcx+50],eax
+Control_DX12.exe+2075C0: 42 8D 04 02                 - lea eax,[rdx+r8]
+Control_DX12.exe+2075C4: 48 8D 91 98 01 00 00        - lea rdx,[rcx+00000198]
+Control_DX12.exe+2075CB: 39 02                       - cmp [rdx],eax
+Control_DX12.exe+2075CD: 74 16                       - je Control_DX12.exe+2075E5
+Control_DX12.exe+2075CF: 89 02                       - mov [rdx],eax
+}"""
+
+[[cheat]]
+id = "set-materials-to-1000-on-change"
+name = "Set Materials to 1000 on change"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Control_DX12.exe
+  Version: 
+  Date   : 2022-01-15
+  Author : arthu
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(items,Control_DX12.exe,2B CD 89 48 40) // should be unique
+alloc(newmem,$1000,items)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,#1000
+  mov [rax+40],ecx
+  jmp return
+
+items:
+  jmp newmem
+return:
+registersymbol(items)
+
+[DISABLE]
+
+items:
+  db 2B CD 89 48 40
+
+unregistersymbol(items)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Control_DX12.exe+3BC4D0
+
+Control_DX12.exe+3BC4B2: 74 25              - je Control_DX12.exe+3BC4D9
+Control_DX12.exe+3BC4B4: E8 D7 F5 DB FF     - call Control_DX12.exe+17BA90
+Control_DX12.exe+3BC4B9: 8B D0              - mov edx,eax
+Control_DX12.exe+3BC4BB: 48 8B CE           - mov rcx,rsi
+Control_DX12.exe+3BC4BE: FF 15 6C 6B 9E 00  - call qword ptr [Control_DX12.exe+DA3030]
+Control_DX12.exe+3BC4C4: 48 85 C0           - test rax,rax
+Control_DX12.exe+3BC4C7: 74 10              - je Control_DX12.exe+3BC4D9
+Control_DX12.exe+3BC4C9: 8B 48 40           - mov ecx,[rax+40]
+Control_DX12.exe+3BC4CC: 3B CD              - cmp ecx,ebp
+Control_DX12.exe+3BC4CE: 7C 6E              - jl Control_DX12.exe+3BC53E
+// ---------- INJECTING HERE ----------
+Control_DX12.exe+3BC4D0: 2B CD              - sub ecx,ebp
+// ---------- DONE INJECTING  ----------
+Control_DX12.exe+3BC4D2: 89 48 40           - mov [rax+40],ecx
+Control_DX12.exe+3BC4D5: 85 C9              - test ecx,ecx
+Control_DX12.exe+3BC4D7: 7F 61              - jg Control_DX12.exe+3BC53A
+Control_DX12.exe+3BC4D9: 48 2B 5F 40        - sub rbx,[rdi+40]
+Control_DX12.exe+3BC4DD: 44 8B 47 48        - mov r8d,[rdi+48]
+Control_DX12.exe+3BC4E1: 48 C1 FB 04        - sar rbx,04
+Control_DX12.exe+3BC4E5: 48 8D 43 01        - lea rax,[rbx+01]
+Control_DX12.exe+3BC4E9: 4C 8B D0           - mov r10,rax
+Control_DX12.exe+3BC4EC: 4C 2B D3           - sub r10,rbx
+Control_DX12.exe+3BC4EF: 74 3E              - je Control_DX12.exe+3BC52F
+}"""
+
+[[cheat]]
+id = "source-points"
+name = "Source Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Control_DX12.exe"
+offset = "0x123d420"
+hops = [
+    "+0x30",
+    "+0x40",
+]
+
+[[cheat]]
+id = "skill-points"
+name = "Skill Points"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Control_DX12.exe"
+offset = "0x123d420"
+hops = [
+    "+0x30",
+    "+0x48",
+]
+
+[[cheat]]
+id = "health-pointer-for-info-just-use-battle-god-mode"
+name = "Health pointer (for info) - just use Battle/God mode"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "static"
+module = "Control_DX12.exe"
+offset = "0x123d420"
+hops = [
+    "+0x48",
+    "+0x58",
+    "+0x64",
+]

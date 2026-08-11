@@ -1,0 +1,913 @@
+[game]
+name = "Bioshock 2"
+exe = "bioshock2.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2769"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "readme-double-click-on-script"
+name = "README:  double click on <script> ---------> "
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Bioshock 2
+  Version: 1.5.0.019
+  Author:  gwodus (gwodusx@xsmail.com)
+  Date:    2014-05-25
+
+  AoB scans are used. So it might work with other versions. But only
+  tested with 1.5.0.019.
+
+  Player Trainer:
+
+  * Unlimited Health: Health will not decrease
+  * Unlimited Eve: Eve will not decrease
+  * Unlimited Adam: Plenty of Adam
+  * Unlimited Money: You're rich
+  * Unlimited Ammo: Never reload again
+  * Unlimited Fuel: Drill drill drill
+  * Unlimited First Aid Kits: You hurtin?
+  * Unlimited Eve Hypos: More then you need.
+  * Float up: Press X in game to float up
+              Press Alt-X in game to float down
+
+  Notes:
+     The float up/down cheat it kind of experimental. It doesn't work very
+     well. You might get stuck in the ceiling of floor and become paralysed.
+     Just float up or down until you are free again. If you still can't move,
+     try to fire some rounds. It usually undoes the paralysis.
+}
+
+[ENABLE]
+[DISABLE]"""
+
+[[cheat]]
+id = "player-trainer"
+name = "Player Trainer"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game:    Bioshock 2
+  Version: 1.5.0.019
+  Author:  gwodus (gwodusx@xsmail.com)
+}
+
+[ENABLE]
+aobscan(inject_PLAYER,F3 0F 10 81 C0 05 00 00)
+alloc(mem_PLAYER,2048)
+label(code_PLAYER)
+label(pPlayer)
+label(pAmmo1)
+label(pAmmo2Parent1)
+label(pAmmo2Parent2)
+label(bEnableHealth)
+label(bEnableEve)
+label(bEnableMoney)
+label(bEnableAdam)
+label(bEnableAmmo)
+label(bEnableFuel)
+label(bEnableFirstAidKit)
+label(bEnableEveHypo)
+label(bEnableFloat)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+label(ammo2loop)
+label(ammo2next)
+label(endofline)
+label(nohealthcheat)
+label(noevecheat)
+label(nomoneycheat)
+label(noadamcheat)
+label(noammocheat)
+label(notdrill)
+label(notfirstaid)
+label(notevehypo)
+label(checkKeyPressedEnd)
+label(iCounter)
+label(fDirection)
+label(lastZ)
+label(fIncStep)
+label(checkKeyPressed)
+label(nokey)
+label(nokeypressed)
+
+registersymbol(inject_PLAYER)
+registersymbol(mem_PLAYER)
+registersymbol(code_PLAYER)
+registersymbol(pPlayer)
+registersymbol(pAmmo1)
+registersymbol(pAmmo2Parent1)
+registersymbol(pAmmo2Parent2)
+registersymbol(fIncStep)
+registersymbol(bEnableHealth)
+registersymbol(bEnableEve)
+registersymbol(bEnableMoney)
+registersymbol(bEnableAdam)
+registersymbol(bEnableAmmo)
+registersymbol(bEnableFuel)
+registersymbol(bEnableFirstAidKit)
+registersymbol(bEnableEveHypo)
+registersymbol(bEnableFloat)
+
+// -------------------------------------------------------------------
+// variables
+// -------------------------------------------------------------------
+
+mem_PLAYER:
+pPlayer:
+dd 00
+pAmmo1:
+dd 00
+pAmmo2Parent1:
+dd 00
+pAmmo2Parent2:
+dd 00
+fIncStep:
+dd (float)2
+lastZ:
+dd 00
+fDirection:
+dd 00
+iCounter:
+dd 00
+bEnableHealth:
+dd 00
+bEnableEve:
+dd 00
+bEnableMoney:
+dd 00
+bEnableAdam:
+dd 00
+bEnableAmmo:
+dd 00
+bEnableFuel:
+dd 00
+bEnableFirstAidKit:
+dd 00
+bEnableEveHypo:
+dd 00
+bEnableFloat:
+dd 00
+
+// -------------------------------------------------------------------
+// code
+// -------------------------------------------------------------------
+
+code_PLAYER:
+push eax
+
+// check if it's the players pointer
+mov eax, [ecx+588]
+test eax, eax
+jz endofline
+cmp [eax], 006c0050     // Unicode 'Pla'
+jne endofline
+cmp [eax+4], 00790061   // Unicode 'yer'
+jne endofline
+
+// retrieve important pointers
+mov [pPlayer], ecx
+mov [pAmmo1], 0
+mov [pAmmo2Parent1], 0
+mov [pAmmo2Parent2], 0
+mov eax, [ecx+6e8]
+test eax, eax
+jz endofline
+mov [pAmmo1], eax
+mov eax, [ecx+9d4]
+test eax, eax
+jz endofline
+mov [pAmmo2Parent1], eax
+mov eax, [eax+3c]
+test eax, eax
+jz endofline
+mov [pAmmo2Parent2], eax
+
+cmp [bEnableHealth], 0
+je nohealthcheat
+mov [ecx+000005C0], (float)10000   // Health
+
+nohealthcheat:
+cmp [bEnableEve], 0
+je noevecheat
+mov [ecx+00000CA0], (float)300     // Eve
+
+noevecheat:
+cmp [bEnableMoney], 0
+je nomoneycheat
+mov [ecx+00000C94], 0384           // Money = 999
+
+nomoneycheat:
+cmp [bEnableAdam], 0
+je noadamcheat
+mov [ecx+00000C9C], 2328           // Adam = 9000
+
+noadamcheat:
+mov eax, [pAmmo1]
+cmp [bEnableAmmo], 0
+je noammocheat
+mov [eax+4f4], 65                  // Ammo1: rounds in chamber
+
+noammocheat:
+mov eax, [pAmmo2Parent2]
+// loop trough all weapons
+push ecx
+push ebx
+mov ecx, 3c
+
+ammo2loop:
+mov ebx, [eax+ecx]
+test ebx, ebx
+jz ammo2next
+
+cmp [ebx+20], 1
+jne notdrill
+cmp [bEnableFuel], 0
+je ammo2next
+mov [ebx+4c], 12c                  // Ammo2, Type 1: Fuel
+jmp ammo2next
+
+notdrill:
+cmp [ebx+20], 2
+jne notfirstaid
+cmp [bEnableFirstAidKit], 0
+je ammo2next
+mov [ebx+4c], 9                    // Ammo2, Type 2: Health Kit
+jmp ammo2next
+
+notfirstaid:
+cmp [ebx+20], 3
+jne notevehypo
+cmp [bEnableEveHypo], 0
+je ammo2next
+mov [ebx+4c], 9                    // Ammo2, Type 3: Eve Kit
+jmp ammo2next
+
+notevehypo:
+cmp [bEnableAmmo], 0
+je ammo2next
+mov [ebx+4c], 259                  // Ammo2: total rounds
+
+ammo2next:
+add ecx, 4
+cmp ecx, f8
+jle ammo2loop
+pop ebx
+pop ecx
+
+cmp [bEnableFloat], 0
+je nokeypressed
+
+call checkKeyPressed
+
+cmp [fDirection], (float)0
+je nokeypressed
+
+fld [lastZ]          // load num and push it onto the fpu stack
+fld [fIncStep]
+fld [fDirection]
+fmulp                // pop two numbers, multiply them, push result on the stack
+faddp                // pop two numbers, add them, push sum on the stack
+fstp [lastZ]         // pop sum from the stack and store it in res
+mov eax, [lastZ]
+mov [ecx+000001e4], eax
+mov [ecx+0000023c], eax
+jmp endofline
+
+nokeypressed:
+mov eax, [ecx+000001e4]
+mov [lastZ], eax
+
+endofline:
+pop eax
+
+originalcode:
+movss xmm0,[ecx+000005C0]
+
+exit:
+jmp returnhere
+
+// -------------------------------------------------------------------
+// subroutine checkKeyPressed
+// -------------------------------------------------------------------
+
+checkKeyPressed:
+
+// We are in a loop which is called very often.
+// It's not neccesary to check ever time.
+add [iCounter], 1
+cmp [iCounter], #20
+jl checkKeyPressedEnd
+mov [iCounter], 0
+
+// save everything
+pushad
+pushfd
+
+mov [fDirection], 0
+//virtual key codes
+push 'X'
+call GetAsyncKeyState
+shr ax,#15 //bit 15 is 1 if it is CURRENTLY down
+jz nokey
+
+mov [fDirection], (float)1
+
+push 12 // VK_MENU (alt)
+call GetAsyncKeyState
+shr ax,#15 //bit 15 is 1 if it is CURRENTLY down
+jz nokey
+
+mov [fDirection], (float)-1
+
+nokey:
+popfd
+popad
+
+checkKeyPressedEnd:
+ret
+
+// -------------------------------------------------------------------
+// injection point
+// -------------------------------------------------------------------
+
+inject_PLAYER:
+//"Bioshock2.exe"+8C545:
+jmp code_PLAYER
+nop
+nop
+nop
+returnhere:
+
+
+// -------------------------------------------------------------------
+// release and clean up
+// -------------------------------------------------------------------
+
+[DISABLE]
+inject_PLAYER:
+//"Bioshock2.exe"+8C545:
+//movss xmm0,[ecx+000005C0]
+db F3 0F 10 81 C0 05 00 00
+
+dealloc(mem_PLAYER)
+unregistersymbol(inject_PLAYER)
+unregistersymbol(mem_PLAYER)
+unregistersymbol(code_PLAYER)
+unregistersymbol(pPlayer)
+unregistersymbol(pAmmo1)
+unregistersymbol(pAmmo2Parent1)
+unregistersymbol(pAmmo2Parent2)
+unregistersymbol(fIncStep)
+unregistersymbol(bEnableHealth)
+unregistersymbol(bEnableEve)
+unregistersymbol(bEnableMoney)
+unregistersymbol(bEnableAdam)
+unregistersymbol(bEnableAmmo)
+unregistersymbol(bEnableFuel)
+unregistersymbol(bEnableFirstAidKit)
+unregistersymbol(bEnableEveHypo)
+unregistersymbol(bEnableFloat)"""
+
+[[cheat]]
+id = "unlimited-health"
+name = "Unlimited Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableHealth:
+dd 01
+
+[DISABLE]
+bEnableHealth:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-eve"
+name = "Unlimited Eve"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableEve:
+dd 01
+
+[DISABLE]
+bEnableEve:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-adam"
+name = "Unlimited Adam"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableAdam:
+dd 01
+
+[DISABLE]
+bEnableAdam:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-money"
+name = "Unlimited Money"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableMoney:
+dd 01
+
+[DISABLE]
+bEnableMoney:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-ammo"
+name = "Unlimited Ammo"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableAmmo:
+dd 01
+
+[DISABLE]
+bEnableAmmo:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-fuel"
+name = "Unlimited Fuel"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableFuel:
+dd 01
+
+[DISABLE]
+bEnableFuel:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-first-aid-kits"
+name = "Unlimited First Aid Kits"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableFirstAidKit:
+dd 01
+
+[DISABLE]
+bEnableFirstAidKit:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-eve-hypos"
+name = "Unlimited Eve Hypos"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableEveHypo:
+dd 01
+
+[DISABLE]
+bEnableEveHypo:
+dd 00"""
+
+[[cheat]]
+id = "enable-float-press-x-alt-x-in-game-experimental"
+name = "Enable Float (Press X/Alt-X in game) (Experimental)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableFloat:
+dd 01
+
+[DISABLE]
+bEnableFloat:
+dd 00"""
+
+[[cheat]]
+id = "float-rate"
+name = "Float Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fIncStep"
+hops = []
+
+[[cheat]]
+id = "alternate-ammo-trainer"
+name = "Alternate Ammo Trainer"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(inject_XAMMO1, F3 0F 2A 85 F4 04 00 00)
+aobscan(inject_XAMMO2, 8B 48 4C 3B D9 7F 02)
+aobscan(inject_XAMMO3, 8B 08 8B 54 24 04 89 0A C2 0C 00 33 D2)
+alloc(mem_XAMMO,2048)
+
+label(code_XAMMO1)
+label(code_XAMMO2)
+label(code_XAMMO3)
+label(originalcode1)
+label(originalcode2)
+label(originalcode3)
+label(returnhere1)
+label(returnhere2)
+label(returnhere3)
+label(drill)
+label(pXAmmo1)
+label(pXAmmo2)
+label(pXAmmo3)
+label(bEnableXAmmo)
+label(bEnableXFuel)
+
+registersymbol(inject_XAMMO1)
+registersymbol(inject_XAMMO2)
+registersymbol(inject_XAMMO3)
+registersymbol(mem_XAMMO)
+registersymbol(code_XAMMO1)
+registersymbol(code_XAMMO2)
+registersymbol(code_XAMMO3)
+registersymbol(pXAmmo1)
+registersymbol(pXAmmo2)
+registersymbol(pXAmmo3)
+registersymbol(bEnableXAmmo)
+registersymbol(bEnableXFuel)
+
+// -------------------------------------------------------------------
+// Variables
+// -------------------------------------------------------------------
+
+mem_XAMMO:
+pXAmmo1:
+dd 00
+pXAmmo2:
+dd 00
+pXAmmo3:
+dd 00
+bEnableXAmmo:
+dd 00
+bEnableXFuel:
+dd 00
+
+// -------------------------------------------------------------------
+// Ammo Code 1: Rounds in chamber
+// -------------------------------------------------------------------
+
+code_XAMMO1:
+mov [pXAmmo1], ebp
+
+originalcode1:
+cvtsi2ss xmm0,[ebp+000004F4]
+jmp returnhere1
+
+// -------------------------------------------------------------------
+// Ammo Code 2: Total Rounds / Fuel
+// -------------------------------------------------------------------
+
+code_XAMMO2:
+mov [pXAmmo2], eax
+cmp [eax+20], 1  // 1 = Drill
+je drill
+cmp [bEnableXAmmo], 0
+je originalcode2
+mov [eax+4c], 258
+xor ebx, ebx
+jmp originalcode2
+
+drill:
+cmp [bEnableXFuel], 0
+je originalcode2
+mov [eax+4c], 12C
+xor ebx, ebx
+
+originalcode2:
+mov ecx,[eax+4C]
+cmp ebx,ecx
+jmp returnhere2
+
+// -------------------------------------------------------------------
+// Ammo Code 3: Loop
+// -------------------------------------------------------------------
+
+code_XAMMO3:
+push ecx
+mov ecx, [pXAmmo1]
+add ecx, 4f4
+cmp eax, ecx
+pop ecx
+jne originalcode3
+
+mov [pXAmmo3], eax
+cmp [bEnableXAmmo], 0
+je originalcode3
+mov [eax], 65
+
+originalcode3:
+mov ecx,[eax]
+mov edx,[esp+04]
+jmp returnhere3
+
+// -------------------------------------------------------------------
+// injection points
+// -------------------------------------------------------------------
+
+inject_XAMMO1:
+//"Bioshock2.exe"+540ED0:
+jmp code_XAMMO1
+nop
+nop
+nop
+returnhere1:
+
+inject_XAMMO2:
+//"Bioshock2.exe"+5E17DD:
+jmp code_XAMMO2
+returnhere2:
+
+inject_XAMMO3:
+//"Bioshock2.exe"+42DF0C:
+jmp code_XAMMO3
+nop
+returnhere3:
+
+
+// -------------------------------------------------------------------
+// DISABLE Block
+// -------------------------------------------------------------------
+
+[DISABLE]
+inject_XAMMO1:
+//"Bioshock2.exe"+540ED0:
+//cvtsi2ss xmm0,[ebp+000004F4]
+db F3 0F 2A 85 F4 04 00 00
+
+inject_XAMMO2:
+//"Bioshock2.exe"+5E17DD:
+//mov ecx,[eax+4C]
+//cmp ebx,ecx
+db 8B 48 4C 3B D9
+
+inject_XAMMO3:
+//"Bioshock2.exe"+42DF0C:
+//mov ecx,[eax]
+//mov edx,[esp+04]
+db 8B 08 8B 54 24 04
+
+dealloc(mem_XAMMO)
+unregistersymbol(inject_XAMMO1)
+unregistersymbol(inject_XAMMO2)
+unregistersymbol(inject_XAMMO3)
+unregistersymbol(mem_XAMMO)
+unregistersymbol(code_XAMMO1)
+unregistersymbol(code_XAMMO2)
+unregistersymbol(code_XAMMO3)
+unregistersymbol(pXAmmo1)
+unregistersymbol(pXAmmo2)
+unregistersymbol(pXAmmo3)
+unregistersymbol(bEnableXAmmo)
+unregistersymbol(bEnableXFuel)"""
+
+[[cheat]]
+id = "unlimited-ammo-2"
+name = "Unlimited Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableXAmmo:
+dd 01
+
+[DISABLE]
+bEnableXAmmo:
+dd 00"""
+
+[[cheat]]
+id = "unlimited-fuel-2"
+name = "Unlimited Fuel"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bEnableXFuel:
+dd 01
+
+[DISABLE]
+bEnableXFuel:
+dd 00"""
+
+[[cheat]]
+id = "pxammo1"
+name = "pXAmmo1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pXAmmo1"
+hops = []
+
+[[cheat]]
+id = "pxammo2"
+name = "pXAmmo2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pXAmmo2"
+hops = []
+
+[[cheat]]
+id = "pxammo3"
+name = "pXAmmo3"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pXAmmo3"
+hops = []
+
+[[cheat]]
+id = "pplayer"
+name = "pPlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = []
+
+[[cheat]]
+id = "pammo1"
+name = "pAmmo1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAmmo1"
+hops = []
+
+[[cheat]]
+id = "pammo2parent1"
+name = "pAmmo2Parent1"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAmmo2Parent1"
+hops = []
+
+[[cheat]]
+id = "pammo2parent2"
+name = "pAmmo2Parent2"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pAmmo2Parent2"
+hops = []
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x5c0"]
+
+[[cheat]]
+id = "eve"
+name = "EVE"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0xca0"]
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0xc94"]
+
+[[cheat]]
+id = "adam"
+name = "Adam"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0xc9c"]

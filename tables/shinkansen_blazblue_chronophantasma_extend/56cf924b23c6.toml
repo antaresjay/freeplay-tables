@@ -1,0 +1,642 @@
+[game]
+name = "BlazBlue: Chronophantasma Extend"
+exe = "shinkansen_blazblue_chronophantasma_extend.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1823"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_player1_basepointer)
+registersymbol(playerstats_player2_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_player1_healthset_enable)
+registersymbol(playerstats_player1_gaugesset_enable)
+registersymbol(playerstats_player1_drivegaugeset_enable)
+registersymbol(playerstats_player2_healthset_enable)
+registersymbol(playerstats_player2_gaugesset_enable)
+registersymbol(playerstats_player2_drivegaugeset_enable)
+
+alloc(playerstats_player1_basepointer, 4)
+alloc(playerstats_player2_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_player1_healthset_enable, 4)
+alloc(playerstats_player1_gaugesset_enable, 4)
+alloc(playerstats_player1_drivegaugeset_enable, 4)
+alloc(playerstats_player2_healthset_enable, 4)
+alloc(playerstats_player2_gaugesset_enable, 4)
+alloc(playerstats_player2_drivegaugeset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_player1_basepointer)
+unregistersymbol(playerstats_player2_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_player1_healthset_enable)
+unregistersymbol(playerstats_player1_gaugesset_enable)
+unregistersymbol(playerstats_player1_drivegaugeset_enable)
+unregistersymbol(playerstats_player2_healthset_enable)
+unregistersymbol(playerstats_player2_gaugesset_enable)
+unregistersymbol(playerstats_player2_drivegaugeset_enable)
+
+dealloc(playerstats_player1_basepointer)
+dealloc(playerstats_player2_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_player1_healthset_enable)
+dealloc(playerstats_player1_gaugesset_enable)
+dealloc(playerstats_player1_drivegaugeset_enable)
+dealloc(playerstats_player2_healthset_enable)
+dealloc(playerstats_player2_gaugesset_enable)
+dealloc(playerstats_player2_drivegaugeset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_player1_entry)
+label(playerstats_player1_update_exit)
+label(playerstats_player1_healthset_exit)
+label(playerstats_player1_gaugesset_exit)
+label(playerstats_player1_drivegaugeset_exit)
+label(playerstats_player2_entry)
+label(playerstats_player2_update_exit)
+label(playerstats_player2_healthset_exit)
+label(playerstats_player2_gaugesset_exit)
+label(playerstats_player2_drivegaugeset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//004CA9E1 - 6B F6 64              - imul esi,esi,64
+//004CA9E4 - 0FB6 B8 65510000      - movzx edi,byte ptr [eax+00005165]
+//004CA9EB - 8B 83 B4090000        - mov eax,[ebx+000009B4]
+//004CA9F1 - 6B FF 64              - imul edi,edi,64
+//004CA9F4 - 89 45 FC              - mov [ebp-04],eax
+//004CA9F7 - 89 4D F8              - mov [ebp-08],ecx
+aobscan(playerstats_searchedAOB, 8B 83 B4 09 00 00 6B FF 64)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], ecx
+
+cmp dword ptr [ebx+30], #0
+jne playerstats_player2_entry
+
+playerstats_player1_entry:
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_player1_update_exit
+mov [playerstats_player1_basepointer], ebx
+playerstats_player1_update_exit:
+
+cmp dword ptr [playerstats_player1_healthset_enable], #0
+je playerstats_player1_healthset_exit
+mov ecx, [ebx+9b8]
+mov [ebx+9b4], ecx
+playerstats_player1_healthset_exit:
+
+cmp dword ptr [playerstats_player1_gaugesset_enable], #0
+je playerstats_player1_gaugesset_exit
+mov [ebx+5944], #10000
+mov [ebx+5954], #100000
+mov [ebx+596c], #10000
+cmp dword ptr [ebx+1c0], #5
+jl playerstats_player1_gaugesset_exit
+mov [ebx+1c0], #1
+playerstats_player1_gaugesset_exit:
+
+cmp dword ptr [playerstats_player1_drivegaugeset_enable], #0
+je playerstats_player1_drivegaugeset_exit
+mov ecx, [ebx+1fea8]
+mov [ebx+1feac], ecx
+playerstats_player1_drivegaugeset_exit:
+
+jmp playerstats_player2_drivegaugeset_exit
+
+
+playerstats_player2_entry:
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_player2_update_exit
+mov [playerstats_player2_basepointer], ebx
+playerstats_player2_update_exit:
+
+cmp dword ptr [playerstats_player2_healthset_enable], #0
+je playerstats_player2_healthset_exit
+cmp dword ptr [ebx+9b4], #5
+jl playerstats_player2_healthset_exit
+mov [ebx+9b4], #1
+playerstats_player2_healthset_exit:
+
+cmp dword ptr [playerstats_player2_gaugesset_enable], #0
+je playerstats_player2_gaugesset_exit
+mov [ebx+5944], #0
+mov [ebx+5954], #0
+mov [ebx+596c], #0
+playerstats_player2_gaugesset_exit:
+
+cmp dword ptr [playerstats_player2_drivegaugeset_enable], #0
+je playerstats_player2_drivegaugeset_exit
+mov [ebx+1feac], #0
+playerstats_player2_drivegaugeset_exit:
+
+mov ecx, [playerstats_temp1]
+
+
+playerstats_originalcode:
+db 8B 83 B4 09 00 00
+//mov eax,[ebx+000009B4]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 8B 83 B4 09 00 00
+//mov eax,[ebx+000009B4]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)"""
+
+[[cheat]]
+id = "player-1-health-gauge-set-to-max"
+name = "Player 1 Health Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "player-1-gauges-set-to-max"
+name = "Player 1 Gauges Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_gaugesset_enable"
+hops = []
+
+[[cheat]]
+id = "player-1-drive-gauge-set-to-max"
+name = "Player 1 Drive Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_drivegaugeset_enable"
+hops = []
+
+[[cheat]]
+id = "player-2-health-set-to-1"
+name = "Player 2 Health Set to 1?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "player-2-gauges-set-to-0"
+name = "Player 2 Gauges Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_gaugesset_enable"
+hops = []
+
+[[cheat]]
+id = "player-2-drive-gauge-set-to-0"
+name = "Player 2 Drive Gauge Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_drivegaugeset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "player"
+name = "Player"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "overdrive-gauge-cooldown"
+name = "Overdrive Gauge Cooldown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "health-gauge"
+name = "Health Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x9b4"]
+
+[[cheat]]
+id = "max-health-gauge"
+name = "Max Health Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x9b8"]
+
+[[cheat]]
+id = "heat-gauge"
+name = "Heat Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x5944"]
+
+[[cheat]]
+id = "overdrive-gauge"
+name = "Overdrive Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x5954"]
+
+[[cheat]]
+id = "barrier-gauge"
+name = "Barrier Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x596c"]
+
+[[cheat]]
+id = "drive-flags"
+name = "Drive Flags"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x1fea0"]
+
+[[cheat]]
+id = "max-drive-gauge"
+name = "Max Drive Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x1fea8"]
+
+[[cheat]]
+id = "drive-gauge"
+name = "Drive Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x1feac"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "player-2"
+name = "Player"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "overdrive-gauge-cooldown-2"
+name = "Overdrive Gauge Cooldown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "health-gauge-2"
+name = "Health Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x9b4"]
+
+[[cheat]]
+id = "max-health-gauge-2"
+name = "Max Health Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x9b8"]
+
+[[cheat]]
+id = "heat-gauge-2"
+name = "Heat Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x5944"]
+
+[[cheat]]
+id = "overdrive-gauge-2"
+name = "Overdrive Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x5954"]
+
+[[cheat]]
+id = "barrier-gauge-2"
+name = "Barrier Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x596c"]
+
+[[cheat]]
+id = "drive-flags-2"
+name = "Drive Flags"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x1fea0"]
+
+[[cheat]]
+id = "max-drive-gauge-2"
+name = "Max Drive Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x1fea8"]
+
+[[cheat]]
+id = "drive-gauge-2"
+name = "Drive Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x1feac"]

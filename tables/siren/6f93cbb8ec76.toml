@@ -1,0 +1,2687 @@
+[game]
+name = "Heroes of Science and Fiction (Silence of the Siren)"
+exe = "siren.exe"
+notes = "Converted from a Cheat Engine table by CannonFodder. Source: https://fearlessrevolution.com/viewtopic.php?t=39929"
+verified = []
+author = "CannonFodder"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlimited-base-building-player-only"
+name = "Unlimited Base Building (Player Only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+// ============================================================
+// Silence of the Siren - 无限基地建造 (仅玩家)
+// ============================================================
+// 功能: 玩家每回合可在基地无限建造建筑，AI 不受影响
+// 原理: Hook Hosaf.Base:GetBuildingAvailability() 方法
+//   注入点在 GetOwner() 返回后 (GBA+0x163)
+//   通过纯 mov+cmp 指针链判断 PlayerSourceType
+//   人类玩家(0) -> 清除 NOT_AVAILABLE_THIS_ROUND 标志位(bit2)
+//   AI(1) -> 保留原始限制
+// ============================================================
+
+// AOB 匹配 GetOwner() 返回后的 14 字节指令 (GBA+0x163)
+//   4C 8B F8       = mov r15,rax        ; 保存 Player* 到 r15
+//   48 8B 46 38    = mov rax,[rsi+38]    ; 加载 building 数据
+//   48 8B D5       = mov rdx,rbp        ; 设置参数
+//   48 83 C2 A8    = add rdx,-58        ; 调整参数
+aobscanregion(GBA_INJECT, Hosaf.Base:GetBuildingAvailability, Hosaf.Base:GetBuildingAvailability+2000, 4C 8B F8 48 8B 46 38 48 8B D5 48 83 C2 A8)
+
+alloc(newmem, 256, GBA_INJECT)
+
+label(returnhere)
+
+registersymbol(GBA_INJECT)
+
+newmem:
+  // === 复制原始 14 字节指令 ===
+  mov r15, rax              // r15 = Player* (GetOwner 返回值)
+  mov rax, [rsi+38]         // 原始: 加载 building 相关数据
+  mov rdx, rbp              // 原始
+  add rdx, -58              // 原始
+
+  // === 纯 mov+cmp 判断人类玩家，无 call ===
+  // 指针链:
+  //   Player.m_state (+0x30)              -> PlayerPersistentData*
+  //   PlayerPersistentData.m_playerSource (+0x10) -> PlayerSource*
+  //   PlayerSource.m_playerSourceType (+0x10)      -> int (0=HUMAN, 1=AI)
+  push rax                  // 保护 rax (后续 mov rcx,rax 需要 [rsi+38] 的值)
+  mov rax, [r15+30]         // rax = Player.m_state (PlayerPersistentData*)
+  mov rax, [rax+10]         // rax = m_playerSource (PlayerSource*)
+  cmp dword ptr [rax+10], 0 // m_playerSourceType == HUMAN(0)?
+  pop rax                   // 恢复 rax = [rsi+38]
+  jne returnhere            // AI(1) -> 跳过，保留 NOT_AVAILABLE_THIS_ROUND 标志
+  and r13d, FFFFFFFB        // 人类 -> 清除 bit2 (NOT_AVAILABLE_THIS_ROUND = 0x04)
+  jmp returnhere            // 返回原始代码
+
+// 注入点: 覆盖 14 字节 (5 字节 jmp + 9 字节 nop)
+GBA_INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+
+// 恢复原始 14 字节指令
+GBA_INJECT:
+  db 4C 8B F8 48 8B 46 38 48 8B D5 48 83 C2 A8
+
+unregistersymbol(GBA_INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Hosaf.Base:GetBuildingAvailability+163
+
+Hosaf.Base:GetBuildingAvailability+139: 48 8B 47 30                    - mov rax,[rdi+30]
+Hosaf.Base:GetBuildingAvailability+13D: 0F B6 80 B9 00 00 00           - movzx eax,byte ptr [rax+000000B9]
+Hosaf.Base:GetBuildingAvailability+144: 85 C0                          - test eax,eax
+Hosaf.Base:GetBuildingAvailability+146: 74 04                          - je Hosaf.Base:GetBuildingAvailability+14C
+Hosaf.Base:GetBuildingAvailability+148: 41 83 CD 04                    - or r13d,04
+Hosaf.Base:GetBuildingAvailability+14C: 48 8B CF                       - mov rcx,rdi
+Hosaf.Base:GetBuildingAvailability+14F: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+Hosaf.Base:GetBuildingAvailability+156: 49 BB E0 2F B2 EB 67 02 00 00 - mov r11,Hosaf.Base:GetOwner
+Hosaf.Base:GetBuildingAvailability+160: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+Hosaf.Base:GetBuildingAvailability+163: 4C 8B F8                       - mov r15,rax
+Hosaf.Base:GetBuildingAvailability+166: 48 8B 46 38                    - mov rax,[rsi+38]
+Hosaf.Base:GetBuildingAvailability+169: 48 8B D5                       - mov rdx,rbp
+Hosaf.Base:GetBuildingAvailability+16C: 48 83 C2 A8                    - add rdx,-58
+// ---------- DONE INJECTING  ----------
+Hosaf.Base:GetBuildingAvailability+16F: 48 8B C8                       - mov rcx,rax
+Hosaf.Base:GetBuildingAvailability+172: 83 38 00                       - cmp dword ptr [rax],00
+Hosaf.Base:GetBuildingAvailability+175: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+Hosaf.Base:GetBuildingAvailability+17C: 49 BB 90 58 DD 99 66 02 00 00 - mov r11,System.Collections.Generic.List`1[T_REF]:GetEnumerator
+Hosaf.Base:GetBuildingAvailability+186: 41 FF D3                       - call r11
+}"""
+
+[[cheat]]
+id = "upgrade-unit-anywhere-get-out-of-base-if-you-can-t-may-cause-game-to-behavior-wierdly-enable-it-before-upgrade-disable-it-after"
+name = "Upgrade Unit Anywhere (Get Out Of Base If You Can't) (May cause game to behavior wierdly, Enable it before upgrade, Disable it after)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+// ============================================================
+// Upgrade Anywhere (Wilderness)
+// ============================================================
+// Hook HeroArmyController.IsBootCamp() to always return true.
+// This tricks UpdateUI into thinking the hero is at a BootCamp,
+// enabling the upgrade button anywhere on the world map.
+//
+// How it works:
+//   IsBootCamp() checks: this.m_tileObject != null && HasTag("boot_camp")
+//   We make it always return true, bypassing the location check.
+//   - In wilderness (m_base == null): button shows + upgrade works
+//   - In base without building: button still hidden (hasBuildingForUnit check)
+//   - In base with building: original behavior (already works)
+//
+// Only affects human player UI; AI doesn't use this codepath.
+// ============================================================
+
+aobscanregion(ISBOOTCAMP, HeroArmyController:IsBootCamp, HeroArmyController:IsBootCamp+100, 55 48 8B EC 48 83 EC 30)
+
+alloc(newmem, 256, ISBOOTCAMP)
+
+registersymbol(ISBOOTCAMP)
+
+newmem:
+  mov eax, 1    // bool IsBootCamp() -> return true
+  ret
+
+ISBOOTCAMP:
+  jmp newmem
+  nop
+  nop
+  nop
+
+[DISABLE]
+
+ISBOOTCAMP:
+  db 55 48 8B EC 48 83 EC 30
+
+unregistersymbol(ISBOOTCAMP)
+dealloc(newmem)
+
+// ============================================================
+// C# Decompile Reference
+// ============================================================
+// private bool IsBootCamp()
+// (
+//   return this.m_tileObject != null && this.m_tileObject.HasTag("boot_camp");
+// )
+
+{
+// ORIGINAL CODE - INJECTION POINT: HeroArmyController:IsBootCamp
+
+// ---------- INJECTING HERE ----------
+HeroArmyController:IsBootCamp+00: 55                 - push rbp
+HeroArmyController:IsBootCamp+01: 48 8B EC           - mov rbp,rsp
+HeroArmyController:IsBootCamp+04: 48 83 EC 30        - sub rsp,30
+// ---------- DONE INJECTING  ----------
+HeroArmyController:IsBootCamp+08: 48 89 75 F8        - mov [rbp-08],rsi
+HeroArmyController:IsBootCamp+0C: 48 8B F1           - mov rsi,rcx
+HeroArmyController:IsBootCamp+0F: 48 8B 46 60        - mov rax,[rsi+60]           ; this.m_tileObject
+HeroArmyController:IsBootCamp+13: 48 85 C0           - test rax,rax               ; null check
+HeroArmyController:IsBootCamp+16: 74 25              - je IsBootCamp+3D           ; null -> return false
+HeroArmyController:IsBootCamp+18: 48 8B 46 60        - mov rax,[rsi+60]
+HeroArmyController:IsBootCamp+1C: 48 8B C8           - mov rcx,rax                ; this.m_tileObject
+HeroArmyController:IsBootCamp+1F: 48 BA [string]     - mov rdx,"boot_camp"
+HeroArmyController:IsBootCamp+29: 83 38 00           - cmp dword ptr [rax],00
+HeroArmyController:IsBootCamp+2E: 49 BB [HasTag]     - mov r11,TileObject:HasTag
+HeroArmyController:IsBootCamp+38: 41 FF D3           - call r11
+HeroArmyController:IsBootCamp+3B: EB 02              - jmp IsBootCamp+3F
+HeroArmyController:IsBootCamp+3D: 33 C0              - xor eax,eax                ; return false
+HeroArmyController:IsBootCamp+3F: 48 8B 75 F8        - mov rsi,[rbp-08]
+HeroArmyController:IsBootCamp+43: 48 8D 65 00        - lea rsp,[rbp+00]
+HeroArmyController:IsBootCamp+47: 5D                 - pop rbp
+HeroArmyController:IsBootCamp+48: C3                 - ret
+}"""
+
+[[cheat]]
+id = "remove-max-skill-count-learnskill"
+name = "Remove Max Skill Count (LearnSkill)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+// ============================================================================
+// Script: Remove Max Skill Count Limit - LearnSkill (Human Only)
+// ID: #676
+// Target: Hosaf.Hero.LearnSkill
+//
+// Description:
+//   Bypasses the TWEAKABLE_MAX_SKILL_COUNT (default: 8) check that
+//   prevents a hero from learning more than 8 skills.  Only affects
+//   the human player's heroes.  AI heroes and neutral creatures are
+//   unaffected.
+//
+// Human-Only Check (5-layer pointer chain):
+//   Hero [+30] -> HeroPersistentData
+//     [+18] -> EntityIDPointer<Player>
+//       [+10] -> Player
+//         [+30] -> PlayerPersistentData
+//           [+10] -> PlayerSource
+//             [+10] -> m_playerSourceType (0 = HUMAN)
+//
+// Injection Point:
+//   LearnSkill+66:  48 8B 45 E0    mov rax,[rbp-20]   ; m_skills.Count
+//   LearnSkill+6A:  3B C1          cmp eax,ecx        ; vs TWEAKABLE
+//   LearnSkill+6C:  7C 22          jl  +90            ; continue if less
+//
+// Patch Behaviour:
+//   Human:       Replace cmp+jl with unconditional jmp to +90
+//   Non-Human:   Execute the original cmp+jl normally
+//
+// In r15 at injection point: Hero* (this) - valid for human check.
+// ============================================================================
+
+[ENABLE]
+
+aobscanregion(LS_INJECT, Hosaf.Hero:LearnSkill+60, Hosaf.Hero:LearnSkill+80, 48 8B 45 E0 3B C1 7C 22)
+
+alloc(newmem,$1000,LS_INJECT)
+
+registersymbol(LS_INJECT)
+
+label(returnhere)
+
+newmem:
+  push rax                               // save rax (holds m_skills.Count)
+  mov rax, [r15+30]                      // Hero.m_state -> HeroPersistentData*
+  mov rax, [rax+18]                      // HeroPersistentData.m_entityIdPtr
+  mov rax, [rax+10]                      // EntityIDPointer -> Player*
+  test rax, rax                          // Player* == null? (neutral / no owner)
+  jz not_human                           // no owner -> non-human
+  mov rax, [rax+30]                      // PlayerPersistentData.m_state -> PlayerState*
+  mov rax, [rax+10]                      // PlayerState -> PlayerSource*
+  cmp dword ptr [rax+10], 0              // m_playerSourceType == HUMAN(0)?
+  jne not_human                          // AI / remote -> non-human
+
+  pop rax                                // restore rax
+  jmp LS_INJECT+2A                       // jump to +90 (learning logic)
+
+not_human:
+  pop rax                                // restore rax (m_skills.Count)
+  mov rax, [rbp-20]                      // original: load m_skills.Count
+  cmp eax, ecx                           // original: compare with limit
+  jl LS_INJECT+2A                        // original: Count < limit -> continue
+  jmp LS_INJECT+8                        // original: Count >= limit -> error+return
+
+LS_INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+
+LS_INJECT:
+  db 48 8B 45 E0 3B C1 7C 22
+
+unregistersymbol(LS_INJECT)
+dealloc(newmem)
+
+// ============================================================================
+// C# DECOMPILE
+// Hosaf.Hero.LearnSkill(GameDBHeroSkill heroSkill, bool randomAbility):
+//   if (this.GetHeroInfo().m_skills.Count >= TWEAKABLE_MAX_SKILL_COUNT)
+//     { Debug.LogError(...); return; }
+//   // actual learning logic ...
+// ============================================================================
+
+{
+// ORIGINAL CODE - INJECTION POINT: Hosaf.Hero:LearnSkill+66
+LearnSkill+60: 48 8B 45 E0  - mov rax,[rbp-20]   // load m_skills.Count
+// ---------- INJECTING HERE ----------
+LearnSkill+6A: 3B C1        - cmp eax,ecx        // vs TWEAKABLE limit
+LearnSkill+6C: 7C 22        - jl LearnSkill+90   // if Count < limit, continue
+// ---------- DONE INJECTING  ----------
+LearnSkill+6E: ...          - ...                // log error + return
+LearnSkill+90: ...          - ...                // learning logic begins
+}"""
+
+[[cheat]]
+id = "remove-max-skill-count-getskills"
+name = "Remove Max Skill Count (GetSkills)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+// ============================================================================
+// Script: Remove Max Skill Count Limit - GetSkillsAvailableForLearning (Human Only)
+// ID: #677
+// Target: Hosaf.HeroInfo.GetSkillsAvailableForLearning
+//
+// Description:
+//   Bypasses the TWEAKABLE_MAX_SKILL_COUNT check that returns an empty
+//   list when the hero has >= 8 skills - making the level-up dialog show
+//   zero options.  Always builds and returns the full list of learnable
+//   skills regardless of how many the hero already knows.
+//   Only affects the human player's heroes.
+//
+// Human-Only Check (5-layer pointer chain):
+//   HeroInfo [+10] -> EntityIDPointer<Hero>
+//       [+10] -> Hero
+//         [+30] -> HeroPersistentData
+//           [+18] -> EntityIDPointer<Player>
+//             [+10] -> Player
+//               [+30] -> PlayerPersistentData
+//                 [+10] -> PlayerSource
+//                   [+10] -> m_playerSourceType (0 = HUMAN)
+//
+// Injection Point:
+//   GetSkills+96:  48 8B 45 98    mov rax,[rbp-68]   ; m_skills.Count
+//   GetSkills+9A:  3B C1          cmp eax,ecx        ; vs TWEAKABLE
+//   GetSkills+9C:  7C 08          jl  +A6            ; continue if less
+//
+// Patch Behaviour:
+//   Human:       Replace cmp+jl with unconditional jmp to +A6
+//   Non-Human:   Execute the original cmp+jl normally
+//
+// In rdi at injection point: HeroInfo* (this) - valid for human check.
+// ============================================================================
+
+[ENABLE]
+
+aobscanregion(GS_INJECT, Hosaf.HeroInfo:GetSkillsAvailableForLearning+90, Hosaf.HeroInfo:GetSkillsAvailableForLearning+B0, 48 8B 45 98 3B C1 7C 08)
+
+alloc(newmem,$1000,GS_INJECT)
+
+registersymbol(GS_INJECT)
+
+label(returnhere)
+
+newmem:
+  // ---- Human-Only Check ----
+  push rax                               // save rax (holds m_skills.Count)
+  mov rax, [rdi+10]                      // HeroInfo.m_hero -> EntityIDPointer<Hero>*
+  mov rax, [rax+10]                      // EntityIDPointer -> Hero*
+  test rax, rax                          // Hero* == null? (unlikely but guard)
+  jz not_human
+  mov rax, [rax+30]                      // Hero.m_state -> HeroPersistentData*
+  mov rax, [rax+18]                      // HeroPersistentData.m_entityIdPtr
+  mov rax, [rax+10]                      // EntityIDPointer -> Player*
+  test rax, rax                          // Player* == null? (neutral / no owner)
+  jz not_human                           // no owner -> non-human
+  mov rax, [rax+30]                      // PlayerPersistentData.m_state -> PlayerState*
+  mov rax, [rax+10]                      // PlayerState -> PlayerSource*
+  cmp dword ptr [rax+10], 0              // m_playerSourceType == HUMAN(0)?
+  jne not_human                          // AI / remote -> non-human
+
+  pop rax                                // restore rax
+  jmp GS_INJECT+10                       // jump to +A6 (list-building logic)
+
+not_human:
+  pop rax                                // restore rax (m_skills.Count)
+  mov rax, [rbp-68]                      // original: load m_skills.Count
+  cmp eax, ecx                           // original: compare with limit
+  jl GS_INJECT+10                        // original: Count < limit -> build list
+  jmp GS_INJECT+8                        // original: Count >= limit -> ret empty list
+
+GS_INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+
+GS_INJECT:
+  db 48 8B 45 98 3B C1 7C 08
+
+unregistersymbol(GS_INJECT)
+dealloc(newmem)
+
+// ============================================================================
+// C# DECOMPILE
+// Hosaf.HeroInfo.GetSkillsAvailableForLearning(GameDBFaction faction):
+//   List<GameDBHeroSkill> list = new List<GameDBHeroSkill>();
+//   if (this.m_skills.Count >= TWEAKABLE_MAX_SKILL_COUNT)
+//     return list;  // empty!
+//   // ... build list from m_skillLearningOrder ...
+// ============================================================================
+
+{
+// ORIGINAL CODE - INJECTION POINT: Hosaf.HeroInfo:GetSkillsAvailableForLearning+96
+GetSkills+96: 48 8B 45 98   - mov rax,[rbp-68]        // load m_skills.Count
+// ---------- INJECTING HERE ----------
+GetSkills+9A: 3B C1         - cmp eax,ecx             // vs TWEAKABLE limit
+GetSkills+9C: 7C 08         - jl GetSkills+A6         // if Count < limit, continue
+// ---------- DONE INJECTING  ----------
+GetSkills+9E: 49 8B C6      - mov rax,r14             // Count >= limit: ret empty list
+GetSkills+A1: E9 E2010000    - jmp ...                // return
+GetSkills+A6: ...           - ...                     // list-building logic begins
+}"""
+
+[[cheat]]
+id = "academy-ability-purchase-cost-no-resource"
+name = "Academy Ability Purchase Cost No Resource"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Silence of the Siren
+  Version: 
+  Date   : 2026-07-04
+  Author : CannonFodder
+
+  前提: 需先在 CE 菜单中执行 Mono -> Activate mono features
+  
+  功能: 学院购买技能不消耗资源（仅影响人类玩家在学院面板点击购买）
+}
+
+[ENABLE]
+
+aobscanregion(ACADEMY_FREE_INJECT, AcademyBuyAbilitiesController:<Start>b__12_0+00, AcademyBuyAbilitiesController:<Start>b__12_0+400, 4D 63 47 18 41 F7 D8 44 0F AF C7 48 8B C8)
+// should be unique
+
+alloc(newmem,$1000,ACADEMY_FREE_INJECT)
+
+label(returnhere)
+
+newmem:
+  xor r8d,r8d
+  jmp returnhere
+
+ACADEMY_FREE_INJECT+4:
+  jmp newmem
+  nop
+  nop
+returnhere:
+registersymbol(ACADEMY_FREE_INJECT)
+
+[DISABLE]
+
+ACADEMY_FREE_INJECT+4:
+  db 41 F7 D8 44 0F AF C7
+
+unregistersymbol(ACADEMY_FREE_INJECT)
+dealloc(newmem)
+
+{
+C# Source: AcademyBuyAbilitiesController.<Start>b__12_0 (buy button onClick lambda)
+
+Inside the buy button callback, inside the foreach over ResourceCosts:
+  r8d = -cost.Value * num  (the resource amount to deduct)
+  Then: GainResource(resource, r8) -- deducts resources
+
+We zero r8d to make the purchase cost nothing.
+Only triggers when human player clicks the Buy button in Academy UI.
+Does NOT affect AI, neutral players, or other resource operations.
+
+// ---------- INJECTING HERE ----------
+  movsxd r8,dword ptr [r15+18]   ; load cost.Value (int32 from GameDBResourceValue)
+  neg r8d                         ; negate: r8d = -Value
+  imul r8d, edi                   ; multiply by num: r8d = -Value * num
+// ---------- DONE INJECTING  ------
+  mov rcx, rax                    ; rcx = PlayerResources* (this for GainResource)
+  cmp dword ptr [rax], 00         ; null check
+  nop 3
+  mov r11, Hosaf.PlayerResources:GainResource
+  call r11                        ; GainResource(resource, r8)
+}"""
+
+[[cheat]]
+id = "academy-canaffordability-always-true"
+name = "Academy CanAffordAbility Always True"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Silence of the Siren
+  Version: 
+  Date   : 2026-07-04
+  Author : CannonFodder
+
+  前提: 需先在 CE 菜单中执行 Mono -> Activate mono features
+  
+  功能: 学院购买技能时 CanAffordAbility 始终返回 true（按钮不灰色）
+        与 #668 Academy Free Purchase 配合使用
+}
+
+[ENABLE]
+
+aobscanregion(CANAFFORD_INJECT, AcademyBuyAbilitiesController:CanAffordAbility+00, AcademyBuyAbilitiesController:CanAffordAbility+200, 49 8B C6 48 8B 7D E8)
+// should be unique
+
+alloc(newmem,$1000,CANAFFORD_INJECT)
+
+label(returnhere)
+
+newmem:
+  mov eax, 1
+  mov rdi, [rbp-18]
+  mov r14, [rbp-10]
+  mov r15, [rbp-08]
+  lea rsp, [rbp+00]
+  pop rbp
+  ret
+
+CANAFFORD_INJECT:
+  jmp newmem
+  nop
+  nop
+returnhere:
+registersymbol(CANAFFORD_INJECT)
+
+[DISABLE]
+
+CANAFFORD_INJECT:
+  db 49 8B C6 48 8B 7D E8
+
+unregistersymbol(CANAFFORD_INJECT)
+dealloc(newmem)
+
+{
+C# Source:
+  private bool CanAffordAbility(GameDBHeroAbility ability) (
+    bool flag = true;
+    foreach (var cost in GetCurrentResourceCosts(ability)) (
+      if (GetResourceAmount(cost.Entry) < cost.Value)
+        flag = false;
+    )
+    return flag;
+  )
+
+JIT epilogue:
+  mov rax, r14              ; rax = flag (bool, 0 or 1)
+  mov rdi, [rbp-18]
+  mov r14, [rbp-10]
+  mov r15, [rbp-08]
+  lea rsp, [rbp+00]
+  pop rbp
+  ret
+
+We replace mov rax,r14 with jmp newmem, which sets eax=1 always.
+
+// ---------- INJECTING HERE ----------
+  mov rax, r14                    ; rax = flag  (3 bytes) <-- replaced by jmp newmem
+  mov rdi, [rbp-18]               ; pop rdi   (4 bytes) <-- 2 bytes nop
+// ---------- DONE INJECTING  ------
+  mov r14, [rbp-10]
+  mov r15, [rbp-08]
+  lea rsp, [rbp+00]
+  pop rbp
+  ret
+}"""
+
+[[cheat]]
+id = "hero-infinite-energy"
+name = "Hero Infinite Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(SEP_INJECT, Hosaf.Hero:SetRemainingEnergyPoints+00, Hosaf.Hero:SetRemainingEnergyPoints+200, 48 8B 75 F0 48 8B 7D F8 48 8D 65 00 5D C3)
+
+alloc(newmem,$1000,SEP_INJECT)
+
+label(returnhere)
+
+newmem:
+  // rax = HeroInfo*
+  mov rax, [rsi+30]
+  mov rax, [rax+48]
+  // if energy >= 100%, skip
+  cmp dword ptr [rax+C8], (float)100
+  jge restore
+  // Human check: Hero -> PersData -> EntityIDPtr -> Player -> State -> Source -> Type
+  mov rax, [rsi+30]
+  mov rax, [rax+18]
+  mov rax, [rax+10]
+  test rax, rax
+  jz restore
+  mov rax, [rax+30]
+  mov rax, [rax+10]
+  cmp dword ptr [rax+10], 0
+  jne restore
+  // Force energy to 100%
+  mov rax, [rsi+30]
+  mov rax, [rax+48]
+  mov dword ptr [rax+C8], (float)100
+
+restore:
+  mov rsi, [rbp-10]
+  mov rdi, [rbp-08]
+  lea rsp, [rbp+00]
+  pop rbp
+  ret
+
+SEP_INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+
+SEP_INJECT:
+  db 48 8B 75 F0 48 8B 7D F8 48 8D 65 00 5D C3
+
+unregistersymbol(SEP_INJECT)
+dealloc(newmem)
+
+// C# decompile:
+// public void SetRemainingEnergyPoints(float energyPointsPercent)
+//   // HeroInfo fields: m_remainingMovementPointsPercent=+C4, m_remainingEnergyPointsPercent=+C8
+//   EventSystem.TriggerEvent(...);
+//   MapPlayerStatistics.IncrementIntStatisticValue(...);
+
+{
+// ORIGINAL CODE - INJECTION POINT: Hosaf.Hero:SetRemainingEnergyPoints+1AB
+SetRemainingEnergyPoints+1AB: 48 8B 75 F0 - mov rsi,[rbp-10]
+// ---------- INJECTING HERE ----------
+SetRemainingEnergyPoints+1AF: 48 8B 7D F8 - mov rdi,[rbp-08]
+SetRemainingEnergyPoints+1B3: 48 8D 65 00 - lea rsp,[rbp+00]
+SetRemainingEnergyPoints+1B7: 5D          - pop rbp
+SetRemainingEnergyPoints+1B8: C3          - ret
+// ---------- DONE INJECTING  ----------
+}"""
+
+[[cheat]]
+id = "infinite-combat-abilities-cast"
+name = "Infinite Combat Abilities Cast"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(GAA_INJECT, GameDBCombatAbility:GetAvailability+00, GameDBCombatAbility:GetAvailability+100, 55 48 8B EC 48 81 EC A0 00 00 00)
+
+alloc(newmem,$1000,GAA_INJECT)
+
+label(returnhere)
+
+newmem:
+  // Human check on rdx (Hero* parameter)
+  test rdx, rdx
+  jz not_human
+  push rdx
+  mov rax, [rdx+30]
+  mov rax, [rax+18]
+  mov rax, [rax+10]
+  test rax, rax
+  jz pop_not_human
+  mov rax, [rax+30]
+  mov rax, [rax+10]
+  cmp dword ptr [rax+10], 0
+  jne pop_not_human
+  pop rdx
+  // Human: return AVAILABLE(0)
+  xor eax, eax
+  ret
+
+pop_not_human:
+  pop rdx
+
+not_human:
+  push rbp
+  mov rbp, rsp
+  sub rsp, A0
+  jmp returnhere
+
+GAA_INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+
+GAA_INJECT:
+  db 55 48 8B EC 48 81 EC A0 00 00 00
+
+unregistersymbol(GAA_INJECT)
+dealloc(newmem)
+
+// C# decompile:
+// public override AbilityAvailability GetAvailability(Hero hero)
+//   // Checks: USED_THIS_ROUND, NOT_ENOUGH_ENERGY, BIO_ABILITIES limit, etc.
+//   // Returns bitmask, 0 = AVAILABLE
+// Human-only: force return AVAILABLE(0) for human-controlled hero
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameDBCombatAbility:GetAvailability
+GetAvailability+00: 55                   - push rbp
+// ---------- INJECTING HERE ----------
+GetAvailability+01: 48 8B EC             - mov rbp,rsp
+GetAvailability+04: 48 81 EC A0 00 00 00 - sub rsp,000000A0
+GetAvailability+0B: 48 89 75 D0          - mov [rbp-30],rsi
+// ---------- DONE INJECTING  ----------
+}"""
+
+[[cheat]]
+id = "force-join-neutral-army"
+name = "Force Join (Neutral Army)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Silence of the Siren
+  Version: 
+  Date   : 2026-07-04
+  Author : CannonFodder
+
+  前提: 需先在 CE 菜单中执行 Mono -> Activate mono features
+  
+  功能: 热键控制特定中立军队强制加入
+        1. 激活此脚本
+        2. 在 CE 中手动添加 hotkey 指向 FORCEJOIN_FLAG，设为 1 byte, value=1
+        3. 走到目标中立军队面前，按下热键
+        4. 右键点击中立军队交互 → 直接弹出加入确认窗口
+        Flag 会在每次触发后自动清零，无需手动重置
+}
+
+[ENABLE]
+
+aobscanregion(WANTS_JOIN_INJECT, Hosaf.Hero:WantsToJoin+00, Hosaf.Hero:WantsToJoin+200, 48 8B F2 33 C0 48 89 45 B8)
+// should be unique
+
+alloc(newmem,$1000,WANTS_JOIN_INJECT)
+alloc(FORCEJOIN_FLAG, 4)
+
+registersymbol(WANTS_JOIN_INJECT)
+registersymbol(FORCEJOIN_FLAG)
+
+label(returnhere)
+
+FORCEJOIN_FLAG:
+  dd 0
+
+newmem:
+  cmp byte ptr [FORCEJOIN_FLAG], 1
+  jne @f
+  mov rax, [rdi+30]
+  mov byte ptr [rax+69], 1
+  mov byte ptr [FORCEJOIN_FLAG], 0
+@@:
+  mov rsi, rdx
+  xor eax, eax
+  jmp returnhere
+
+WANTS_JOIN_INJECT:
+  jmp newmem
+returnhere:
+
+[DISABLE]
+
+WANTS_JOIN_INJECT:
+  db 48 8B F2 33 C0
+
+unregistersymbol(WANTS_JOIN_INJECT)
+unregistersymbol(FORCEJOIN_FLAG)
+dealloc(newmem)
+dealloc(FORCEJOIN_FLAG)
+
+{
+C# Source: Hosaf.Hero.WantsToJoin(Hero otherHero)
+this = neutral army, otherHero = approaching hero (typically player's hero)
+
+bool WantsToJoin(Hero otherHero) (
+  // this.m_state.m_forceJoin check
+  if (this.m_state.m_forceJoin) return true;     // our injection sets this to true
+
+  // IsNeutralArmy check
+  if (!this.IsNeutralArmy()) return false;
+
+  // ...rest of the method (checks components, army strength, stubbornness)...
+)
+
+JIT prologue:
+  mov rdi, rcx                  // rdi = this (neutral army Hero)
+  mov rsi, rdx                  // rsi = otherHero (player)     ← INJECTION POINT
+  xor eax, eax                                                 ← 5 bytes replaced
+
+  mov rax, [rdi+30]             // this.m_state (HeroPersistentData*)
+  movzx eax, byte [rax+69]      // m_forceJoin (bool at offset +0x69)
+  test eax, eax
+  je +0A                        // if (!m_forceJoin) jump
+
+We set m_forceJoin = true BEFORE the original check runs.
+Flag auto-clears after each use. User binds a hotkey to set FORCEJOIN_FLAG=1.
+
+Usage:
+  1. Activate script
+  2. Right-click FORCEJOIN_FLAG in address list → Set/Change hotkeys
+  3. Bind a key → Action: "Toggle value" or "Set value to: 1"
+  4. In game: approach neutral army → press hotkey → right-click interact → join!
+}"""
+
+[[cheat]]
+id = "force-join-or-not"
+name = "Force Join Or Not"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "FORCEJOIN_FLAG"
+hops = []
+
+[[cheat]]
+id = "address"
+name = "Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = []
+
+[[cheat]]
+id = "playertype-do-not-change-it"
+name = "PlayerType (Do not change it !)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Human",
+    "1:AI",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = [
+    "+0x30",
+    "+0x10",
+    "+0x10",
+]
+
+[[cheat]]
+id = "size"
+name = "_size"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = [
+    "+0x30",
+    "+0x40",
+    "+0x10",
+    "+0x10",
+    "+0x18",
+]
+
+[[cheat]]
+id = "size-2"
+name = "_size"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = [
+    "+0x30",
+    "+0x40",
+    "+0x18",
+    "+0x10",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x20",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "original-count"
+name = "Original Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x20",
+    "+0x20",
+]
+
+[[cheat]]
+id = "count-2"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x28",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "original-count-2"
+name = "Original Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x28",
+    "+0x20",
+]
+
+[[cheat]]
+id = "count-3"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x30",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "original-count-3"
+name = "Original Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x30",
+    "+0x20",
+]
+
+[[cheat]]
+id = "count-4"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x38",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "original-count-4"
+name = "Original Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x38",
+    "+0x20",
+]
+
+[[cheat]]
+id = "count-5"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x40",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "original-count-5"
+name = "Original Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x40",
+    "+0x20",
+]
+
+[[cheat]]
+id = "count-6"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x48",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "original-count-6"
+name = "Original Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x48",
+    "+0x20",
+]
+
+[[cheat]]
+id = "count-7"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x50",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "original-count-7"
+name = "Original Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+    "+0x50",
+    "+0x20",
+]
+
+[[cheat]]
+id = "size-3"
+name = "_size"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x18",
+]
+
+[[cheat]]
+id = "m-turns"
+name = "m_turns"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x20",
+    "+0x20",
+]
+
+[[cheat]]
+id = "m-power"
+name = "m_power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x20",
+    "+0x24",
+]
+
+[[cheat]]
+id = "m-usage"
+name = "m_usage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x20",
+    "+0x28",
+]
+
+[[cheat]]
+id = "m-turns-2"
+name = "m_turns"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x28",
+    "+0x20",
+]
+
+[[cheat]]
+id = "m-power-2"
+name = "m_power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x28",
+    "+0x24",
+]
+
+[[cheat]]
+id = "m-usage-2"
+name = "m_usage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x28",
+    "+0x28",
+]
+
+[[cheat]]
+id = "m-turns-3"
+name = "m_turns"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x30",
+    "+0x20",
+]
+
+[[cheat]]
+id = "m-power-3"
+name = "m_power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x30",
+    "+0x24",
+]
+
+[[cheat]]
+id = "m-usage-3"
+name = "m_usage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x30",
+    "+0x28",
+]
+
+[[cheat]]
+id = "m-turns-4"
+name = "m_turns"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x38",
+    "+0x20",
+]
+
+[[cheat]]
+id = "m-power-4"
+name = "m_power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x38",
+    "+0x24",
+]
+
+[[cheat]]
+id = "m-usage-4"
+name = "m_usage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x60",
+    "+0x10",
+    "+0x38",
+    "+0x28",
+]
+
+[[cheat]]
+id = "m-inventoryslots"
+name = "m_inventorySlots"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x68",
+]
+
+[[cheat]]
+id = "m-inventorybackpack"
+name = "m_inventoryBackpack"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x70",
+]
+
+[[cheat]]
+id = "m-inventoryconsumables"
+name = "m_inventoryConsumables"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x78",
+]
+
+[[cheat]]
+id = "size-4"
+name = "_size"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-8"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x20",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-9"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x28",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-10"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x30",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-11"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x38",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-12"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x40",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-13"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x48",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-14"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x50",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-15"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x58",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-16"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x60",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-17"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x68",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-18"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x70",
+    "+0x18",
+]
+
+[[cheat]]
+id = "count-19"
+name = "Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x80",
+    "+0x10",
+    "+0x78",
+    "+0x18",
+]
+
+[[cheat]]
+id = "m-inventoryconsumablesusedthisround"
+name = "m_inventoryConsumablesUsedThisRound"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x88",
+]
+
+[[cheat]]
+id = "size-5"
+name = "_size"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x90",
+    "+0x10",
+    "+0x18",
+]
+
+[[cheat]]
+id = "m-skills"
+name = "m_skills"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0x98",
+]
+
+[[cheat]]
+id = "m-skilllearningorder"
+name = "m_skillLearningOrder"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xa0",
+]
+
+[[cheat]]
+id = "m-explorationxps"
+name = "m_explorationXPs"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xa8",
+]
+
+[[cheat]]
+id = "m-activateditems"
+name = "m_activatedItems"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xb0",
+]
+
+[[cheat]]
+id = "m-alternativeportrait"
+name = "m_alternativePortrait"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xc0",
+]
+
+[[cheat]]
+id = "m-remainingmovementpointspercent"
+name = "m_remainingMovementPointsPercent"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xc4",
+]
+
+[[cheat]]
+id = "m-remainingenergypointspercent"
+name = "m_remainingEnergyPointsPercent"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xc8",
+]
+
+[[cheat]]
+id = "m-level"
+name = "m_level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xcc",
+]
+
+[[cheat]]
+id = "m-xp"
+name = "m_xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xd0",
+]
+
+[[cheat]]
+id = "m-temporaryfogofwarboost"
+name = "m_temporaryFogOfWarBoost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xd4",
+]
+
+[[cheat]]
+id = "m-explorationmovexp"
+name = "m_explorationMoveXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xd8",
+]
+
+[[cheat]]
+id = "m-explorationfogthickxp"
+name = "m_explorationFogThickXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xdc",
+]
+
+[[cheat]]
+id = "m-explorationfogslightxp"
+name = "m_explorationFogSlightXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xe0",
+]
+
+[[cheat]]
+id = "m-movepointtoenergypointpool"
+name = "m_movePointToEnergyPointPool"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xe4",
+]
+
+[[cheat]]
+id = "m-movepointtoresourcepool"
+name = "m_movePointToResourcePool"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xe8",
+]
+
+[[cheat]]
+id = "m-structurebuiltthisturn"
+name = "m_structureBuiltThisTurn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xec",
+]
+
+[[cheat]]
+id = "m-abilityselectionrandomseed"
+name = "m_abilitySelectionRandomSeed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xf0",
+]
+
+[[cheat]]
+id = "m-cannotretreat"
+name = "m_cannotRetreat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xf4",
+]
+
+[[cheat]]
+id = "m-invincibletoneutralarmies"
+name = "m_invincibleToNeutralArmies"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xf5",
+]
+
+[[cheat]]
+id = "m-armylocked"
+name = "m_armyLocked"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xf6",
+]
+
+[[cheat]]
+id = "m-heroarmygrowthpercycle"
+name = "m_heroArmyGrowthPerCycle"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xf8",
+]
+
+[[cheat]]
+id = "m-chosenbyplayer"
+name = "m_chosenByPlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x48",
+    "+0xfc",
+]
+
+[[cheat]]
+id = "m-retreatedatround"
+name = "m_retreatedAtRound"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "m-isdead"
+name = "m_isDead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x60",
+]
+
+[[cheat]]
+id = "m-canmove"
+name = "m_canMove"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x61",
+]
+
+[[cheat]]
+id = "m-fromrandomunit"
+name = "m_fromRandomUnit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x62",
+]
+
+[[cheat]]
+id = "m-armygrowth"
+name = "m_armyGrowth"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x63",
+]
+
+[[cheat]]
+id = "m-explorationabilityusedthisround"
+name = "m_explorationAbilityUsedThisRound"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x64",
+]
+
+[[cheat]]
+id = "m-explorationabilityusedwithartifact"
+name = "m_explorationAbilityUsedWithArtifact"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x65",
+]
+
+[[cheat]]
+id = "m-heromeetingexplorerbonus"
+name = "m_heroMeetingExplorerBonus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x66",
+]
+
+[[cheat]]
+id = "m-scoutskillmovementpointsvisitbonus"
+name = "m_scoutSkillMovementPointsVisitBonus"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x67",
+]
+
+[[cheat]]
+id = "m-trainingarmy"
+name = "m_trainingArmy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x68",
+]
+
+[[cheat]]
+id = "m-forcejoin"
+name = "m_forceJoin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x69",
+]
+
+[[cheat]]
+id = "m-forcedcombatarmyrole"
+name = "m_forcedCombatArmyRole"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "m-respawned"
+name = "m_respawned"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x70",
+]
+
+[[cheat]]
+id = "m-randomjoinstubbornness"
+name = "m_randomJoinStubbornness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x74",
+]
+
+[[cheat]]
+id = "m-movementreplenishedatbasethisturn"
+name = "m_movementReplenishedAtBaseThisTurn"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x78",
+]
+
+[[cheat]]
+id = "m-scheduledforexplosion"
+name = "m_scheduledForExplosion"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x79",
+]
+
+[[cheat]]
+id = "m-explodedinakillzone"
+name = "m_explodedInAKillZone"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x7a",
+]
+
+[[cheat]]
+id = "m-renewedspiritmovementusedthisround"
+name = "m_renewedSpiritMovementUsedThisRound"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x7b",
+]
+
+[[cheat]]
+id = "m-noquickbattle"
+name = "m_noQuickBattle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "m-movementmode"
+name = "m_movementMode"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x80",
+]
+
+[[cheat]]
+id = "m-activationstate"
+name = "m_activationState"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "heroAddr"
+hops = [
+    "+0x30",
+    "+0x84",
+]
+
+[[cheat]]
+id = "bugged-learn-all-abilities-on-level-up-human-only"
+name = "(bugged)Learn All Abilities On Level Up (Human Only)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+// v26: Entry hook → human → overwrite [rcx+38]=items[0] (rcx=this, BEFORE prologue)
+// → then normal prologue → jmp returnhere. Game does everything else naturally.
+// Key insight: write [rcx+38] while rcx still has "this", before prologue saves rsi.
+[ENABLE]
+
+aobscanregion(AAS_INJECT, DialogAbilitySelectionPanel:ApplyAbilitySelection+00, DialogAbilitySelectionPanel:ApplyAbilitySelection+200, 55 48 8B EC 48 83 EC 30 48 89 75 F8 48 8B F1 48 8B 46 28)
+
+alloc(newmem,$1000,AAS_INJECT)
+registersymbol(AAS_INJECT)
+label(returnhere)
+
+newmem:
+  push rax
+  mov rax,[rcx+28]
+  mov rax,[rax+30]
+  mov rax,[rax+18]
+  mov rax,[rax+10]
+  test rax,rax
+  jz not_human
+  mov rax,[rax+30]
+  mov rax,[rax+10]
+  cmp dword ptr [rax+10],0
+  jne not_human
+  pop rax
+
+  // HUMAN: overwrite [rcx+38] with items[0] — rcx is still "this"
+  push rax
+  mov rax,[rcx+30]       // this.m_availableAbilities (List*)
+  mov rax,[rax+10]       // List._items (array ptr)
+  mov rax,[rax+10]       // _items[0]
+  mov [rcx+38],rax        // m_selectedAbility = _items[0]
+  pop rax
+
+  // Normal prologue → jmp returnhere
+  push rbp
+  mov rbp,rsp
+  sub rsp,30
+  jmp returnhere
+
+not_human:
+  pop rax
+  push rbp
+  mov rbp,rsp
+  sub rsp,30
+  jmp returnhere
+
+AAS_INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+AAS_INJECT:
+  db 55 48 8B EC 48 83 EC 30
+unregistersymbol(AAS_INJECT)
+dealloc(newmem)"""

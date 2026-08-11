@@ -1,0 +1,305 @@
+[game]
+name = "Partisans 1941"
+exe = "partisans-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by tfigment. Source: https://fearlessrevolution.com/viewtopic.php?t=14131"
+verified = []
+author = "tfigment"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-partisans-1941-1-0-figment-table-v2"
+name = "[X] <= Partisans 1941 | 1.0 | figment Table v2"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GetCurrentHealth,Partisans-Win64-Shipping.exe,48 8B 42 20 45 33 C9 48 85 C0 41 0F 95 C1 4C 03 C8 4C 89 4A 20 8B 81 34 02 00 00 41 89 00 C3) // should be unique
+aobscanmodule(GetCurrentStatus,Partisans-Win64-Shipping.exe,48 8B 42 20 45 33 C9 48 85 C0 41 0F 95 C1 4C 03 C8 4C 89 4A 20 0F B6 81 70 03 00 00 41 88 00 C3) // should be unique
+
+alloc(newmem,$256,Partisans-Win64-Shipping.exe)
+label(pForceMaxHealth)
+label(pForceMaxStamina)
+label(pForceGodMode)
+label(pLastCharacter)
+
+newmem:
+pForceMaxHealth:
+  dq 0
+pForceMaxStamina:
+  dq 0
+pForceGodMode:
+  dq 0
+pLastCharacter:
+  dq 0
+
+
+registersymbol(pForceMaxHealth)
+registersymbol(pForceMaxStamina)
+registersymbol(pForceGodMode)
+registersymbol(pLastCharacter)
+
+registersymbol(GetCurrentHealth)
+registersymbol(GetCurrentStatus)
+
+[DISABLE]
+
+unregistersymbol(pForceMaxHealth)
+unregistersymbol(pForceMaxStamina)
+unregistersymbol(pForceGodMode)
+unregistersymbol(pLastCharacter)
+
+unregistersymbol(GetCurrentHealth)
+unregistersymbol(GetCurrentStatus)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "x-enable-scripts"
+name = "[X] <- Enable Scripts"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+assert(GetCurrentStatus, 48 8B 42 20 45 33 C9)
+alloc(newmem,$1000,Partisans-Win64-Shipping.exe)
+
+label(code)
+label(return)
+
+newmem:
+
+maxstamina:
+  dd (float)100
+
+alignment:
+  db CC CC CC CC
+
+code:
+  // RCX - Character Pointer
+  // RAX, R9 - available registers overwritten below
+
+  mov rax, [rcx+1D8] // IsPartisan
+  cmp al, 1
+  jne original_code
+  mov rax, [rcx]
+  mov [pLastCharacter], rcx
+
+  cmp [pForceMaxHealth], 1
+  jne @f
+  mov r9d, [rcx+23C]
+  mov [rcx+234], r9d
+@@:
+  cmp [pForceMaxStamina], 1
+  jne @f
+  mov r9d, [maxstamina]
+  mov [rcx+260], r9d
+@@:
+  mov rax, 1
+  mov r9d, [pForceGodMode]
+  sub rax, r9d
+  mov [rcx+360], rax
+@@:
+original_code:
+  mov rax,[rdx+20]
+  xor r9d,r9d
+  jmp return
+
+GetCurrentStatus:
+  jmp code
+  nop 2
+return:
+
+[DISABLE]
+
+GetCurrentStatus:
+  db 48 8B 42 20 45 33 C9
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Partisans-Win64-Shipping.exe"+64E820
+// ---------- INJECTING HERE ----------
+Partisans-Win64-Shipping.exe+64E800 - 48 8B 42 20           - mov rax,[rdx+20]
+Partisans-Win64-Shipping.exe+64E804 - 45 33 C9              - xor r9d,r9d
+// ---------- DONE INJECTING  ----------
+Partisans-Win64-Shipping.exe+64E807 - 48 85 C0              - test rax,rax
+Partisans-Win64-Shipping.exe+64E80A - 41 0F95 C1            - setne r9l
+Partisans-Win64-Shipping.exe+64E80E - 4C 03 C8              - add r9,rax
+Partisans-Win64-Shipping.exe+64E811 - 4C 89 4A 20           - mov [rdx+20],r9
+Partisans-Win64-Shipping.exe+64E815 - 0FB6 81 70030000      - movzx eax,byte ptr [rcx+00000370]
+Partisans-Win64-Shipping.exe+64E81C - 41 88 00              - mov [r8],al
+Partisans-Win64-Shipping.exe+64E81F - C3                    - ret
+
+
+}"""
+
+[[cheat]]
+id = "freeze-countdown-timer"
+name = "Freeze Countdown Timer"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Partisans-Win64-Shipping.exe
+  Version: 
+  Date   : 2020-10-17
+  Author : User
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(DecrementTimeCounter,Partisans-Win64-Shipping.exe,F3 0F 5C 44 24 40 0F 95) // should be unique
+
+DecrementTimeCounter:
+  nop 5
+
+registersymbol(DecrementTimeCounter)
+
+[DISABLE]
+
+DecrementTimeCounter:
+  db F3 0F 5C 44 24 40
+
+unregistersymbol(DecrementTimeCounter)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Partisans-Win64-Shipping.exe"+1D8A2CB
+
+"Partisans-Win64-Shipping.exe"+1D8A29E: EB 1C                    -  jmp Partisans-Win64-Shipping.exe+1D8A2BC
+"Partisans-Win64-Shipping.exe"+1D8A2A0: 4C 8B 83 80 00 00 00     -  mov r8,[rbx+00000080]
+"Partisans-Win64-Shipping.exe"+1D8A2A7: 48 8D 54 24 40           -  lea rdx,[rsp+40]
+"Partisans-Win64-Shipping.exe"+1D8A2AC: 49 8B 40 28              -  mov rax,[r8+28]
+"Partisans-Win64-Shipping.exe"+1D8A2B0: 48 89 83 80 00 00 00     -  mov [rbx+00000080],rax
+"Partisans-Win64-Shipping.exe"+1D8A2B7: E8 54 52 BE FE           -  call Partisans-Win64-Shipping.exe+96F510
+"Partisans-Win64-Shipping.exe"+1D8A2BC: 48 8B 43 20              -  mov rax,[rbx+20]
+"Partisans-Win64-Shipping.exe"+1D8A2C0: 33 C9                    -  xor ecx,ecx
+"Partisans-Win64-Shipping.exe"+1D8A2C2: F3 0F 10 44 24 38        -  movss xmm0,[rsp+38]
+"Partisans-Win64-Shipping.exe"+1D8A2C8: 48 85 C0                 -  test rax,rax
+// ---------- INJECTING HERE ----------
+"Partisans-Win64-Shipping.exe"+1D8A2CB: F3 0F 5C 44 24 40        -  subss xmm0,[rsp+40]
+// ---------- DONE INJECTING  ----------
+"Partisans-Win64-Shipping.exe"+1D8A2D1: 0F 95 C1                 -  setne cl
+"Partisans-Win64-Shipping.exe"+1D8A2D4: 48 03 C8                 -  add rcx,rax
+"Partisans-Win64-Shipping.exe"+1D8A2D7: 48 89 4B 20              -  mov [rbx+20],rcx
+"Partisans-Win64-Shipping.exe"+1D8A2DB: 48 8B 5C 24 30           -  mov rbx,[rsp+30]
+"Partisans-Win64-Shipping.exe"+1D8A2E0: F3 0F 11 07              -  movss [rdi],xmm0
+"Partisans-Win64-Shipping.exe"+1D8A2E4: 48 83 C4 20              -  add rsp,20
+"Partisans-Win64-Shipping.exe"+1D8A2E8: 5F                       -  pop rdi
+"Partisans-Win64-Shipping.exe"+1D8A2E9: C3                       -  ret 
+"Partisans-Win64-Shipping.exe"+1D8A2EA: CC                       -  int 3 
+"Partisans-Win64-Shipping.exe"+1D8A2EB: CC                       -  int 3 
+}"""
+
+[[cheat]]
+id = "force-max-health"
+name = "Force Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "pForceMaxHealth"
+hops = []
+
+[[cheat]]
+id = "force-max-stamina"
+name = "Force Max Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "pForceMaxStamina"
+hops = []
+
+[[cheat]]
+id = "force-god-mode"
+name = "Force God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "pForceGodMode"
+hops = []
+
+[[cheat]]
+id = "max-health"
+name = "Max health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastCharacter"
+hops = ["+0x23c"]
+
+[[cheat]]
+id = "current-health"
+name = "Current Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastCharacter"
+hops = ["+0x234"]
+
+[[cheat]]
+id = "current-status"
+name = "Current Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastCharacter"
+hops = ["+0x370"]
+
+[[cheat]]
+id = "canbedamage"
+name = "CanBeDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastCharacter"
+hops = ["+0x360"]

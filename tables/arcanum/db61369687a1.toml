@@ -1,0 +1,766 @@
+[game]
+name = "Arcanum: Of Steamworks and Magick Obscura"
+exe = "arcanum.exe"
+notes = "Converted from a Cheat Engine table by GarnoriZ. Source: https://fearlessrevolution.com/viewtopic.php?t=14336"
+verified = []
+author = "GarnoriZ"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "action-points"
+name = "Action Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Arcanum.exe"
+offset = "0x1fc234"
+hops = []
+
+[[cheat]]
+id = "character-stats-usage-open-character-cheet"
+name = "Character Stats [Usage: open character cheet]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(code_char,Arcanum.exe,8B 4F 50 8D 14 81 8D 44 24 10)
+alloc(mem_char,$1000)
+
+label(code)
+label(return)
+label(ptr_char)
+label(ptr_main_stats)
+label(ptr_skills)
+label(ptr_tech)
+label(ptr_spells)
+
+mem_char:
+
+code:
+  mov ecx,[edi+50] // Access character sheet memory
+  lea edx,[ecx+eax*4] // This code calculates substructure address which field value will read later
+
+  // at this moment character and it's substructures base addresses can be obtained
+
+  cmp ebx,[Arcanum.exe+24E010] // this static address contains ID (hash) of the character whose sheet is currently opened
+  jne return // skip irrelevant data
+
+  mov eax,edi
+  mov [ptr_char],eax
+
+  test edx,edx
+  je return
+  mov eax,[edx] // hint: list relevant structures with 'Find out what access this address'
+
+  // ESI holds a kind of substructure ID
+
+  cmp esi,DC
+  jne @f
+  mov [ptr_main_stats],eax // main stats (dexterity, etc...)
+@@:
+  cmp esi,DD
+  jne @f
+  mov [ptr_skills],eax // general skills (dodge, etc)
+@@:
+  cmp esi,DE
+  jne @f
+  mov [ptr_tech],eax // tech skills  (repair, etc)
+@@:
+  cmp esi,DF
+  jne @f
+  mov [ptr_spells],eax // tech disciplines (herbology, etc) and spells (conveyance, etc)
+@@:
+  jmp return
+
+ptr_char:
+  dd 0
+ptr_main_stats:
+  dd 0
+ptr_skills:
+  dd 0
+ptr_tech:
+  dd 0
+ptr_spells:
+  dd 0
+
+code_char:
+  jmp mem_char
+  nop
+
+return:
+registersymbol(code_char)
+registersymbol(ptr_char)
+registersymbol(ptr_main_stats)
+registersymbol(ptr_skills)
+registersymbol(ptr_tech)
+registersymbol(ptr_spells)
+
+[DISABLE]
+
+code_char:
+  db 8B 4F 50 8D 14 81
+
+unregistersymbol(*)
+dealloc(mem_char)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Arcanum.exe.text+7C46
+
+Arcanum.exe.text+7C30: 50              - push eax
+Arcanum.exe.text+7C31: 56              - push esi
+Arcanum.exe.text+7C32: 57              - push edi
+Arcanum.exe.text+7C33: E8 18 47 00 00  - call Arcanum.exe.text+C350
+Arcanum.exe.text+7C38: 83 C4 0C        - add esp,0C
+Arcanum.exe.text+7C3B: 85 C0           - test eax,eax
+Arcanum.exe.text+7C3D: 74 20           - je Arcanum.exe.text+7C5F
+Arcanum.exe.text+7C3F: 56              - push esi
+Arcanum.exe.text+7C40: 57              - push edi
+Arcanum.exe.text+7C41: E8 EA 45 00 00  - call Arcanum.exe.text+C230
+// ---------- INJECTING HERE ----------
+Arcanum.exe.text+7C46: 8B 4F 50        - mov ecx,[edi+50]
+Arcanum.exe.text+7C49: 8D 14 81        - lea edx,[ecx+eax*4]
+// ---------- DONE INJECTING  ----------
+Arcanum.exe.text+7C4C: 8D 44 24 10     - lea eax,[esp+10]
+Arcanum.exe.text+7C50: 50              - push eax
+Arcanum.exe.text+7C51: 89 54 24 18     - mov [esp+18],edx
+Arcanum.exe.text+7C55: E8 26 B5 0D 00  - call Arcanum.exe.text+E3180
+Arcanum.exe.text+7C5A: 83 C4 0C        - add esp,0C
+Arcanum.exe.text+7C5D: EB 3C           - jmp Arcanum.exe.text+7C9B
+Arcanum.exe.text+7C5F: 53              - push ebx
+Arcanum.exe.text+7C60: 55              - push ebp
+Arcanum.exe.text+7C61: 57              - push edi
+}"""
+
+[[cheat]]
+id = "main-stats-i"
+name = "Main stats I"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(code_charval,Arcanum.exe,74 20 57 56 E8)
+alloc(mem_charval,$1000)
+
+label(code)
+label(return)
+label(ptr_hp_loss)
+label(ptr_hp_bonus)
+label(ptr_mp_loss)
+label(ptr_mp_bonus)
+label(ptr_name)
+label(ptr_flags)
+
+mem_charval:
+
+code:
+  mov ecx,[esi+50] // Access character sheet memory
+  lea edx,[ecx+eax*4] // This code calculates property address which value will read later
+
+/*
+  cmp edi,1D
+  jne @f
+  mov [edx],0
+@@:
+
+  cmp edi,DB
+  jne @f
+  mov eax,[edx]
+@@:*/
+  cmp ebp,[Arcanum.exe+24E010] // this static address contains ID (hash) of the character whose sheet is currently opened
+  jne return // skip irrelevant data
+
+  test edx,edx
+  je return
+  mov eax,[edx] // hint: list relevant properties with 'Find out what access this address'
+
+  // EDI holds a kind of property ID
+
+  cmp edi,1B
+  jne @f
+  mov [ptr_hp_bonus],edx
+@@:
+  cmp edi,1D
+  jne @f
+  mov [ptr_hp_loss],edx
+@@:
+  cmp edi,E0
+  jne @f
+  mov [ptr_mp_bonus],edx
+@@:
+  cmp edi,E2
+  jne @f
+  mov [ptr_mp_loss],edx
+@@:
+  cmp edi,10E
+  jne @f
+  mov [ptr_name],edx
+@@:
+  cmp edi,13
+  jne @f
+  mov [ptr_flags],edx
+@@:
+  jmp return
+
+ptr_hp_loss:
+  dd 0
+ptr_hp_bonus:
+  dd 0
+ptr_mp_loss:
+  dd 0
+ptr_mp_bonus:
+  dd 0
+ptr_name:
+  dd 0
+ptr_flags:
+  dd 0
+
+code_charval+9:
+  jmp mem_charval
+  nop
+
+return:
+registersymbol(code_charval)
+registersymbol(ptr_hp_loss)
+registersymbol(ptr_hp_bonus)
+registersymbol(ptr_mp_loss)
+registersymbol(ptr_mp_bonus)
+registersymbol(ptr_name)
+registersymbol(ptr_flags)
+
+[DISABLE]
+
+code_charval+9:
+  db 8B 4E 50 8D 14 81
+
+unregistersymbol(*)
+dealloc(mem_charval)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Arcanum.exe.text+7ABE
+
+Arcanum.exe.text+7AA3: 50              - push eax
+Arcanum.exe.text+7AA4: 89 54 24 10     - mov [esp+10],edx
+Arcanum.exe.text+7AA8: E8 D3 B6 0D 00  - call Arcanum.exe.text+E3180
+Arcanum.exe.text+7AAD: 83 C4 04        - add esp,04
+Arcanum.exe.text+7AB0: EB 6A           - jmp Arcanum.exe.text+7B1C
+Arcanum.exe.text+7AB2: 57              - push edi
+Arcanum.exe.text+7AB3: 56              - push esi
+Arcanum.exe.text+7AB4: E8 67 48 00 00  - call Arcanum.exe.text+C320
+Arcanum.exe.text+7AB9: 83 C4 08        - add esp,08
+Arcanum.exe.text+7ABC: 85 C0           - test eax,eax
+Arcanum.exe.text+7ABE: 74 20           - je Arcanum.exe.text+7AE0
+Arcanum.exe.text+7AC0: 57              - push edi
+Arcanum.exe.text+7AC1: 56              - push esi
+Arcanum.exe.text+7AC2: E8 69 47 00 00  - call Arcanum.exe.text+C230
+// ---------- INJECTING HERE ----------
+Arcanum.exe.text+7AC7: 8B 4E 50        - mov ecx,[esi+50]
+Arcanum.exe.text+7ACA: 8D 14 81        - lea edx,[ecx+eax*4]
+// ---------- DONE INJECTING  ----------
+Arcanum.exe.text+7ACD: 8D 44 24 10     - lea eax,[esp+10]
+Arcanum.exe.text+7AD1: 50              - push eax
+Arcanum.exe.text+7AD2: 89 54 24 18     - mov [esp+18],edx
+Arcanum.exe.text+7AD6: E8 A5 B6 0D 00  - call Arcanum.exe.text+E3180
+Arcanum.exe.text+7ADB: 83 C4 0C        - add esp,0C
+}"""
+
+[[cheat]]
+id = "hp-bonus"
+name = "HP bonus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_hp_bonus"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "mp-bonus"
+name = "MP bonus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_mp_bonus"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "hp-loss"
+name = "HP loss"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_hp_loss"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "mp-loss"
+name = "MP loss"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_mp_loss"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "id"
+name = "ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_char"
+hops = [
+    "+0x9c",
+    "+0x8",
+]
+
+[[cheat]]
+id = "strength"
+name = "Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "dexterity"
+name = "Dexterity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "constitution"
+name = "Constitution"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "beauty"
+name = "Beauty"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "intelligence"
+name = "Intelligence"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "perception"
+name = "Perception"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "willpower"
+name = "Willpower"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "charisma"
+name = "Charisma"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "experience"
+name = "Experience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "alignment"
+name = "Alignment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "fate-points"
+name = "Fate Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "skill-points"
+name = "Skill Points"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_main_stats"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "bow"
+name = "Bow"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 197
+choices = [
+    "197:Master",
+    "133:Expert",
+    "69:Apprentice",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "dodge"
+name = "Dodge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "melee"
+name = "Melee"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "throwing"
+name = "Throwing"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "backstab"
+name = "Backstab"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "pickpocket"
+name = "Pickpocket"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "prowling"
+name = "Prowling"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "spot-trap"
+name = "Spot Trap"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "gambling"
+name = "Gambling"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "haggle"
+name = "Haggle"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "heal"
+name = "Heal"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "persuasion"
+name = "Persuasion"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_skills"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "repair"
+name = "Repair"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_tech"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "firearms"
+name = "Firearms"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_tech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "pick-locks"
+name = "Pick Locks"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_tech"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "disarm-traps"
+name = "Disarm Traps"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_tech"
+hops = ["+0x18"]

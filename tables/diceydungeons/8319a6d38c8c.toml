@@ -1,0 +1,692 @@
+[game]
+name = "Dicey Dungeons"
+exe = "diceydungeons.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=10028"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "character-stats-base-address-scan-initialization-activate-this-first"
+name = "Character Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(characterstats_basepointer)
+registersymbol(characterstats_update_enable)
+registersymbol(characterstats_healthset_enable)
+registersymbol(characterstats_furyset_enable)
+registersymbol(characterstats_equipmentset_enable)
+registersymbol(characterstats_diceset_enable)
+registersymbol(characterstats_goldset_enable)
+registersymbol(characterstats_robotset_enable)
+
+alloc(characterstats_basepointer, 8)
+alloc(characterstats_update_enable, 4)
+alloc(characterstats_healthset_enable, 4)
+alloc(characterstats_furyset_enable, 4)
+alloc(characterstats_equipmentset_enable, 4)
+alloc(characterstats_diceset_enable, 4)
+alloc(characterstats_goldset_enable, 4)
+alloc(characterstats_robotset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(characterstats_basepointer)
+unregistersymbol(characterstats_update_enable)
+unregistersymbol(characterstats_healthset_enable)
+unregistersymbol(characterstats_furyset_enable)
+unregistersymbol(characterstats_equipmentset_enable)
+unregistersymbol(characterstats_diceset_enable)
+unregistersymbol(characterstats_goldset_enable)
+unregistersymbol(characterstats_robotset_enable)
+
+dealloc(characterstats_basepointer)
+dealloc(characterstats_update_enable)
+dealloc(characterstats_healthset_enable)
+dealloc(characterstats_furyset_enable)
+dealloc(characterstats_equipmentset_enable)
+dealloc(characterstats_diceset_enable)
+dealloc(characterstats_goldset_enable)
+dealloc(characterstats_robotset_enable)"""
+
+[[cheat]]
+id = "character-battle-stats-base-address-scan-to-update-battle"
+name = "Character Battle Stats Base Address Scan (To Update: Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(characterstats_battle_savedAOB)
+label(characterstats_battle_returnhere)
+label(characterstats_battle_originalcode)
+label(characterstats_battle_exit)
+
+label(characterstats_battle_update_exit)
+label(characterstats_battle_healthset_exit)
+label(characterstats_battle_furyset_exit)
+label(characterstats_battle_equipmentset_exit)
+label(characterstats_battle_diceset_exit)
+label(characterstats_battle_goldset_exit)
+label(characterstats_battle_robotset_exit)
+
+registersymbol(characterstats_battle_originalcode)
+registersymbol(characterstats_battle_savedAOB)
+
+//diceydungeons.exe+1D046A - E8 D1AE1D01           - call diceydungeons.hx_cffi+23F70
+//diceydungeons.exe+1D046F - 48 8B 0B              - mov rcx,[rbx]
+// Accesses Health
+//diceydungeons.exe+1D0472 - 8B B9 B0010000        - mov edi,[rcx+000001B0]
+//diceydungeons.exe+1D0478 - 48 8D 8D B8080000     - lea rcx,[rbp+000008B8]
+//diceydungeons.exe+1D047F - E8 1C500401           - call diceydungeons.exe+12154A0
+//diceydungeons.exe+1D0484 - 48 8B D8              - mov rbx,rax
+aobscan(characterstats_battle_searchedAOB, 8B B9 B0 01 00 00 48 8D 8D B8 08 00 00)
+
+alloc(characterstats_battle_newmem, 2048, characterstats_battle_searchedAOB)
+alloc(characterstats_battle_temp1, 8, characterstats_battle_searchedAOB)
+alloc(characterstats_battle_temp2, 8, characterstats_battle_searchedAOB)
+alloc(characterstats_battle_temp3, 8, characterstats_battle_searchedAOB)
+alloc(characterstats_battle_temp4, 8, characterstats_battle_searchedAOB)
+alloc(characterstats_battle_temp5, 8, characterstats_battle_searchedAOB)
+
+
+characterstats_battle_newmem:
+mov [characterstats_battle_temp1], rax
+mov [characterstats_battle_temp2], rbx
+mov [characterstats_battle_temp3], rcx
+mov [characterstats_battle_temp4], rdx
+
+cmp dword ptr [characterstats_update_enable], #0
+je characterstats_battle_update_exit
+mov [characterstats_basepointer], rcx
+characterstats_battle_update_exit:
+
+cmp dword ptr [characterstats_healthset_enable], #0
+je characterstats_battle_healthset_exit
+mov eax, [rcx+1b4]
+mov [rcx+1b0], eax
+characterstats_battle_healthset_exit:
+
+cmp dword ptr [characterstats_furyset_enable], #0
+je characterstats_battle_furyset_exit
+mov eax, [rcx+204]
+mov [rcx+200], eax
+characterstats_battle_furyset_exit:
+
+cmp dword ptr [characterstats_equipmentset_enable], #0
+je characterstats_battle_equipmentset_exit
+mov rbx, [rcx+240]
+test rbx, rbx
+je characterstats_battle_equipmentset_exit
+mov [rbx+168], #-1
+characterstats_battle_equipmentset_exit:
+
+cmp dword ptr [characterstats_diceset_enable], #0
+je characterstats_battle_diceset_exit
+mov [rcx+190], #12
+characterstats_battle_diceset_exit:
+
+cmp dword ptr [characterstats_goldset_enable], #0
+je characterstats_battle_goldset_exit
+mov [rcx+1cc], #9999
+characterstats_battle_goldset_exit:
+
+cmp dword ptr [characterstats_robotset_enable], #0
+je characterstats_battle_robotset_exit
+//mov [rcx+20c], #21
+mov [rcx+210], #99
+mov [rcx+218], #21
+mov [rcx+234], #3
+characterstats_battle_robotset_exit:
+
+mov rax, [characterstats_battle_temp1]
+mov rbx, [characterstats_battle_temp2]
+mov rcx, [characterstats_battle_temp3]
+mov rdx, [characterstats_battle_temp4]
+
+
+characterstats_battle_originalcode:
+readmem(characterstats_battle_searchedAOB, 6)
+
+
+characterstats_battle_exit:
+jmp characterstats_battle_returnhere
+
+
+characterstats_battle_searchedAOB:
+characterstats_battle_savedAOB:
+jmp characterstats_battle_newmem
+nop
+characterstats_battle_returnhere:
+
+
+[DISABLE]
+characterstats_battle_savedAOB:
+readmem(characterstats_battle_originalcode, 6)
+
+unregistersymbol(characterstats_battle_originalcode)
+unregistersymbol(characterstats_battle_savedAOB)
+
+dealloc(characterstats_battle_newmem)
+dealloc(characterstats_battle_temp1)
+dealloc(characterstats_battle_temp2)
+dealloc(characterstats_battle_temp3)
+dealloc(characterstats_battle_temp4)
+dealloc(characterstats_battle_temp5)"""
+
+[[cheat]]
+id = "character-nonbattle-stats-base-address-scan-to-update-play-level"
+name = "Character Nonbattle Stats Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(characterstats_nonbattle_savedAOB)
+label(characterstats_nonbattle_returnhere)
+label(characterstats_nonbattle_originalcode)
+label(characterstats_nonbattle_exit)
+
+label(characterstats_nonbattle_update_exit)
+label(characterstats_nonbattle_healthset_exit)
+label(characterstats_nonbattle_furyset_exit)
+label(characterstats_nonbattle_equipmentset_exit)
+label(characterstats_nonbattle_diceset_exit)
+label(characterstats_nonbattle_goldset_exit)
+label(characterstats_nonbattle_robotset_exit)
+
+registersymbol(characterstats_nonbattle_originalcode)
+registersymbol(characterstats_nonbattle_savedAOB)
+
+//diceydungeons.exe+E5DA9F - 48 8D 85 80000000     - lea rax,[rbp+00000080]
+//diceydungeons.exe+E5DAA6 - 48 89 44 24 28        - mov [rsp+28],rax
+//diceydungeons.exe+E5DAAB - 41 8B 86 B4010000     - mov eax,[r14+000001B4]
+//diceydungeons.exe+E5DAB2 - 89 44 24 20           - mov [rsp+20],eax
+// Accesses Health
+//diceydungeons.exe+E5DAB6 - 45 8B 8E B0010000     - mov r9d,[r14+000001B0]
+//diceydungeons.exe+E5DABD - 0F28 D7               - movaps xmm2,xmm7
+//diceydungeons.exe+E5DAC0 - 0F28 CE               - movaps xmm1,xmm6
+aobscan(characterstats_nonbattle_searchedAOB, 41 8B 86 B4 01 00 00 89 44 24 20 45 8B 8E B0 01 00 00)
+
+alloc(characterstats_nonbattle_newmem, 2048, characterstats_nonbattle_searchedAOB)
+alloc(characterstats_nonbattle_temp1, 8, characterstats_nonbattle_searchedAOB)
+alloc(characterstats_nonbattle_temp2, 8, characterstats_nonbattle_searchedAOB)
+alloc(characterstats_nonbattle_temp3, 8, characterstats_nonbattle_searchedAOB)
+alloc(characterstats_nonbattle_temp4, 8, characterstats_nonbattle_searchedAOB)
+alloc(characterstats_nonbattle_temp5, 8, characterstats_nonbattle_searchedAOB)
+
+
+characterstats_nonbattle_newmem:
+mov [characterstats_nonbattle_temp1], rax
+mov [characterstats_nonbattle_temp2], rbx
+mov [characterstats_nonbattle_temp3], rcx
+mov [characterstats_nonbattle_temp4], rdx
+
+cmp dword ptr [characterstats_update_enable], #0
+je characterstats_nonbattle_update_exit
+mov [characterstats_basepointer], r14
+characterstats_nonbattle_update_exit:
+
+cmp dword ptr [characterstats_healthset_enable], #0
+je characterstats_nonbattle_healthset_exit
+mov eax, [r14+1b4]
+mov [r14+1b0], eax
+characterstats_nonbattle_healthset_exit:
+
+cmp dword ptr [characterstats_furyset_enable], #0
+je characterstats_nonbattle_furyset_exit
+mov eax, [r14+204]
+mov [r14+200], eax
+characterstats_nonbattle_furyset_exit:
+
+cmp dword ptr [characterstats_equipmentset_enable], #0
+je characterstats_nonbattle_equipmentset_exit
+mov rbx, [r14+240]
+test rbx, rbx
+je characterstats_nonbattle_equipmentset_exit
+mov [rbx+168], #-1
+characterstats_nonbattle_equipmentset_exit:
+
+cmp dword ptr [characterstats_diceset_enable], #0
+je characterstats_nonbattle_diceset_exit
+mov [r14+190], #12
+characterstats_nonbattle_diceset_exit:
+
+cmp dword ptr [characterstats_goldset_enable], #0
+je characterstats_nonbattle_goldset_exit
+mov [r14+1cc], #9999
+characterstats_nonbattle_goldset_exit:
+
+cmp dword ptr [characterstats_robotset_enable], #0
+je characterstats_nonbattle_robotset_exit
+//mov [r14+20c], #21
+mov [r14+210], #99
+mov [r14+218], #21
+mov [r14+234], #3
+characterstats_nonbattle_robotset_exit:
+
+mov rax, [characterstats_nonbattle_temp1]
+mov rbx, [characterstats_nonbattle_temp2]
+mov rcx, [characterstats_nonbattle_temp3]
+mov rdx, [characterstats_nonbattle_temp4]
+
+
+characterstats_nonbattle_originalcode:
+readmem(characterstats_nonbattle_searchedAOB, 7)
+
+
+characterstats_nonbattle_exit:
+jmp characterstats_nonbattle_returnhere
+
+
+characterstats_nonbattle_searchedAOB:
+characterstats_nonbattle_savedAOB:
+jmp characterstats_nonbattle_newmem
+nop
+nop
+characterstats_nonbattle_returnhere:
+
+
+[DISABLE]
+characterstats_nonbattle_savedAOB:
+readmem(characterstats_nonbattle_originalcode, 7)
+
+unregistersymbol(characterstats_nonbattle_originalcode)
+unregistersymbol(characterstats_nonbattle_savedAOB)
+
+dealloc(characterstats_nonbattle_newmem)
+dealloc(characterstats_nonbattle_temp1)
+dealloc(characterstats_nonbattle_temp2)
+dealloc(characterstats_nonbattle_temp3)
+dealloc(characterstats_nonbattle_temp4)
+dealloc(characterstats_nonbattle_temp5)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "fury-set-to-max"
+name = "Fury Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_furyset_enable"
+hops = []
+
+[[cheat]]
+id = "last-equipment-activated-uses-set-to-massive"
+name = "Last Equipment Activated Uses Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_equipmentset_enable"
+hops = []
+
+[[cheat]]
+id = "dice-set-to-massive"
+name = "Dice Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_diceset_enable"
+hops = []
+
+[[cheat]]
+id = "gold-set-to-massive"
+name = "Gold Set to Massive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_goldset_enable"
+hops = []
+
+[[cheat]]
+id = "robot-set-to-massive"
+name = "Robot Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_robotset_enable"
+hops = []
+
+[[cheat]]
+id = "character-stats-update-base-address"
+name = "Character Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "dice"
+name = "Dice"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "max-health"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "exp"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x1cc"]
+
+[[cheat]]
+id = "fury"
+name = "Fury"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x200"]
+
+[[cheat]]
+id = "max-fury"
+name = "Max Fury"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x204"]
+
+[[cheat]]
+id = "cpu-counter"
+name = "CPU Counter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "jackpot-range"
+name = "Jackpot Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x20c"]
+
+[[cheat]]
+id = "roll"
+name = "Roll"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x210"]
+
+[[cheat]]
+id = "cpu"
+name = "CPU"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x218"]
+
+[[cheat]]
+id = "jackpot-abilities"
+name = "Jackpot Abilities"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x234"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x240"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = [
+    "+0x240",
+    "+0x0",
+]
+
+[[cheat]]
+id = "uses"
+name = "Uses"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = [
+    "+0x240",
+    "+0x168",
+]

@@ -1,0 +1,210 @@
+[game]
+name = "Outpost"
+exe = "outpost.exe"
+notes = "Converted from a Cheat Engine table by Impala. Source: https://fearlessrevolution.com/viewtopic.php?t=12674"
+verified = []
+author = "Impala"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "debug-made-by-cfemen"
+name = "Debug (made by cfemen)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Player:Update+15d - 48 0FB6 C0 - movzx rax,al
+aobscanregion(aobDebug,Player:Update,Player:Update+300,480FB6C085C074**) // should be unique
+
+aobDebug+6:
+  db 75
+
+registersymbol(aobDebug)
+
+aobscanregion(aobDay,DayNight:Update,DayNight:Update+1000,480FB6C085C074**) // should be unique
+
+aobDay+6:
+  db 75
+
+registersymbol(aobDay)
+
+[DISABLE]
+
+aobDebug+6:
+  db 74
+
+unregistersymbol(aobDebug)
+
+aobDay+6:
+  db 74
+
+unregistersymbol(aobDay)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 2B9038E5131
+
+2B9038E510B: 85 C0                          -  test eax,eax
+2B9038E510D: 0F 84 50 00 00 00              -  je 2B9038E5163
+2B9038E5113: B9 0D 00 00 00                 -  mov ecx,0000000D
+2B9038E5118: 48 8D 64 24 00                 -  lea rsp,[rsp+00]
+2B9038E511D: 90                             -  nop 
+2B9038E511E: 49 BB 10 4B 8E 03 B9 02 00 00  -  mov r11,000002B9038E4B10
+2B9038E5128: 41 FF D3                       -  call r11
+2B9038E512B: 85 C0                          -  test eax,eax
+2B9038E512D: 74 34                          -  je 2B9038E5163
+2B9038E512F: 33 C0                          -  xor eax,eax
+// ---------- INJECTING HERE ----------
+2B9038E5131: 48 0F B6 C0                    -  movzx rax,al
+2B9038E5135: 85 C0                          -  test eax,eax
+// ---------- DONE INJECTING  ----------
+2B9038E5137: 74 2A                          -  je 2B9038E5163
+2B9038E5139: 48 B8 44 FE 1E 62 B9 02 00 00  -  mov rax,000002B9621EFE44
+2B9038E5143: 48 63 08                       -  movsxd  rcx,dword ptr [rax]
+2B9038E5146: FF C1                          -  inc ecx
+2B9038E5148: 48 B8 44 FE 1E 62 B9 02 00 00  -  mov rax,000002B9621EFE44
+2B9038E5152: 89 08                          -  mov [rax],ecx
+2B9038E5154: 66 90                          -  nop 
+2B9038E5156: 49 BB E4 51 8E 03 B9 02 00 00  -  mov r11,000002B9038E51E4
+2B9038E5160: 41 FF D3                       -  call r11
+2B9038E5163: 48 8B 75 F0                    -  mov rsi,[rbp-10]
+}"""
+
+[[cheat]]
+id = "override-turrets-made-by-cfemen"
+name = "Override Turrets (made by cfemen)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Turret:Update )
+define(bytes,55 48 8B EC 48 81 EC D0 00 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Turret:Update )
+
+label(code)
+label(return)
+label(fRange)
+label(dDamage)
+label(fSpeed)
+registersymbol(fRange)
+registersymbol(dDamage)
+registersymbol(fSpeed)
+
+newmem:
+
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,000000D0
+  push eax
+  mov eax,[fRange]
+  mov [rcx+28],eax
+  mov eax,[dDamage]
+  mov [rcx+2C],eax
+  mov eax,[fSpeed]
+  mov [rcx+34],eax
+  pop eax
+  jmp return
+fRange:
+dd (float)6
+dDamage:
+dd 1
+fSpeed:
+dd (float)0.8
+
+address:
+  jmp newmem
+  nop 6
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // push rbp
+  // mov rbp,rsp
+  // sub rsp,000000D0
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Turret:Update 
+
+2B902FA363D: 00 00                          -  add [rax],al
+2B902FA363F: 00 01                          -  add [rcx],al
+2B902FA3641: 00 00                          -  add [rax],al
+2B902FA3643: 00 00                          -  add [rax],al
+2B902FA3645: 00 00                          -  add [rax],al
+2B902FA3647: 00 00                          -  add [rax],al
+2B902FA3649: 00 00                          -  add [rax],al
+2B902FA364B: 00 00                          -  add [rax],al
+2B902FA364D: 00 00                          -  add [rax],al
+2B902FA364F: 00 55                          - db 00 55  // SHORTENED TO HIT INJECTION FROM:  add [rbp+48],dl
+// ---------- INJECTING HERE ----------
+2B902FA3651: 48 8B EC                       -  mov rbp,rsp
+2B902FA3654: 48 81 EC D0 00 00 00           -  sub rsp,000000D0
+// ---------- DONE INJECTING  ----------
+2B902FA365B: 48 89 75 F0                    -  mov [rbp-10],rsi
+2B902FA365F: 48 89 7D F8                    -  mov [rbp-08],rdi
+2B902FA3663: 48 8B F1                       -  mov rsi,rcx
+2B902FA3666: C7 85 58 FF FF FF 00 00 00 00  -  mov [rbp-000000A8],00000000
+2B902FA3670: C7 85 5C FF FF FF 00 00 00 00  -  mov [rbp-000000A4],00000000
+2B902FA367A: C7 85 60 FF FF FF 00 00 00 00  -  mov [rbp-000000A0],00000000
+2B902FA3684: F3 0F 10 46 3C                 -  movss xmm0,[rsi+3C]
+2B902FA3689: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+2B902FA368D: F2 0F 11 85 50 FF FF FF        -  movsd [rbp-000000B0],xmm0
+2B902FA3695: 90                             -  nop 
+}"""
+
+[[cheat]]
+id = "range"
+name = "Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fRange"
+hops = []
+
+[[cheat]]
+id = "damage"
+name = "Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dDamage"
+hops = []
+
+[[cheat]]
+id = "speed"
+name = "Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fSpeed"
+hops = []

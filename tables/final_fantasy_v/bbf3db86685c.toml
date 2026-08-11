@@ -1,0 +1,557 @@
+[game]
+name = "Final Fantasy V Pixel Remaster"
+exe = "final_fantasy_v.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=28665"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-damage-modifier-god-mode-one-hit-kill"
+name = "Enable Damage Modifier (God Mode, One Hit Kill)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(InfHPAOB,"GameAssembly.dll",89 7B 14 48 8B CB 48 8B 03 48 8B 90 88 01 00 00) // should be unique
+registersymbol(InfHPAOB)
+alloc(newmem,1024,InfHPAOB)
+
+///
+label(return)
+label(bGodMode)
+registersymbol(bGodMode)
+label(bOneHitKill)
+registersymbol(bOneHitKill)
+
+newmem:
+  cmp [rbx+14],edi
+  jle originalcode
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  { Update Our Local Copy of Character Parameter Pointers From The Base Pointers We Have }
+  xor r12,r12
+  mov r13,CurrentPlayerCharacterParameterPtr
+  mov r15,CurrentPlayerCharacterBasePtrs
+StartUpdateParameterLoop:
+  mov r14,[r15+r12*8]
+  test r14,r14
+  je MyCleanUp1
+  mov r14,[r14+28]
+  test r14,r14
+  je MyCleanUp1
+  mov r14,[r14+10]
+  mov [r13+r12*8],r14
+  inc r12
+  cmp r12,4
+  jl StartUpdateParameterLoop
+  cmp rbx,[r13]
+  je DoInfHP
+  cmp rbx,[r13+08]
+  je DoInfHP
+  cmp rbx,[r13+10]
+  je DoInfHP
+  cmp rbx,[r13+18]
+  je DoInfHP
+  jmp CheckOneHitKill
+DoInfHP:
+  cmp [bGodMode],1
+  jne MyCleanUp1
+  mov edi,[rbx+14]
+  jmp MyCleanUp1
+CheckOneHitKill:
+  cmp [bOneHitKill],1
+  jne MyCleanUp1
+  xor edi,edi
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+  mov [rbx+14],edi
+  mov rcx,rbx
+  jmp return
+
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+bGodMode:
+dq 1
+bOneHitKill:
+dq 0
+CurrentPlayerCharacterParameterPtr:
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+dq 0
+  
+///  
+InfHPAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+InfHPAOB:
+  db 89 7B 14 48 8B CB
+  
+unregistersymbol(InfHPAOB)
+unregistersymbol(bGodMode)
+unregistersymbol(bOneHitKill)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bGodMode"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bOneHitKill"
+hops = []
+
+[[cheat]]
+id = "infinite-item-usage-set-minimum-amount-on-use-sell"
+name = "Infinite Item Usage / Set Minimum Amount On Use/Sell"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This is called on gain of item
+//aobscanmodule(ItemUsageAOB,"GameAssembly.dll",45 33 C0 48 8B CF 8D 14 18 E8 ?? ?? ?? ??) // should be unique
+aobscanmodule(ItemUsageAOB,"GameAssembly.dll",45 33 C0 48 8B CF 8D 14 28 E8 ?? ?? ?? ??) // should be unique
+registersymbol(ItemUsageAOB)
+alloc(newmem,1024,ItemUsageAOB)
+
+/// This is called on subtract of item
+aobscanmodule(ItemUsageAOB2,"GameAssembly.dll",41 2B C5 45 33 C0 8B D0 48 8B CB E8 ?? ?? ?? ??) // should be unique
+//aobscanmodule(ItemUsageAOB2,"GameAssembly.dll",41 2B C7 45 33 C0 8B D0 48 8B CB E8 ?? ?? ?? ??) // should be unique
+registersymbol(ItemUsageAOB2)
+alloc(newmem2,1024,ItemUsageAOB2)
+
+/// This is called on use of item
+//aobscanmodule(ItemUsageAOB3,"GameAssembly.dll",8D 50 FF 45 33 C0 48 8B CB E8 ?? ?? ?? ?? 33 D2) // should be unique
+aobscanmodule(ItemUsageAOB3,"GameAssembly.dll",8D 50 FF 45 33 C0 48 8B CB E8 ?? ?? ?? ?? 48 8B 4D) // should be unique
+registersymbol(ItemUsageAOB3)
+alloc(newmem3,1024,ItemUsageAOB3)
+
+///
+label(return)
+label(iSetMinimumAmount)
+registersymbol(iSetMinimumAmount)
+
+///
+label(return2)
+
+///
+label(return3)
+
+newmem:
+  cmp rbx,[iSetMinimumAmount]
+  jge SkipSetMinimumAmount
+  mov ebx,[iSetMinimumAmount]
+SkipSetMinimumAmount:
+  test eax,eax
+  jns originalcode
+  xor rax,rax
+  
+originalcode:
+  xor r8d,r8d
+  mov rcx,rdi
+  // lea edx,[rax+rbx]
+  jmp return  
+
+iSetMinimumAmount:
+dq #20
+
+newmem2:
+  cmp eax,[iSetMinimumAmount]
+  jge SkipSetMinimumAmount2
+  mov eax,[iSetMinimumAmount]
+SkipSetMinimumAmount2:
+  xor r13d,r13d
+
+originalcode2:
+  sub eax,r13d
+  xor r8d,r8d
+  jmp return2
+
+newmem3:
+  cmp eax,[iSetMinimumAmount]
+  jge SkipSetMinimumAmount3
+  mov eax,[iSetMinimumAmount]
+SkipSetMinimumAmount3:
+originalcode3:
+  //lea edx,[rax-01]
+  { We Want Infinite Item Usage, so skip the -01 }
+  mov edx,eax
+  xor r8d,r8d
+  jmp return3
+
+///  
+ItemUsageAOB:
+  jmp newmem
+  nop
+  return:
+
+ItemUsageAOB2:
+  jmp newmem2
+  nop
+  return2:
+
+ItemUsageAOB3:
+  jmp newmem3
+  nop
+  return3:
+  
+[DISABLE]
+
+ItemUsageAOB:
+  db 45 33 C0 48 8B CF
+  
+///
+unregistersymbol(ItemUsageAOB)
+unregistersymbol(iSetMinimumAmount)
+
+ItemUsageAOB2:
+  db 41 2B C7 45 33 C0
+
+unregistersymbol(ItemUsageAOB2)
+
+ItemUsageAOB3:
+  db 8D 50 FF 45 33 C0
+
+unregistersymbol(ItemUsageAOB3)
+  
+dealloc(newmem)
+dealloc(newmem2)
+dealloc(newmem3)"""
+
+[[cheat]]
+id = "set-minimum-amount"
+name = "Set Minimum Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iSetMinimumAmount"
+hops = []
+
+[[cheat]]
+id = "enable-exp-multiplier"
+name = "Enable EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(EXPMultiplierAOB,"GameAssembly.dll",45 33 C0 89 84 24 C8 00 00 00 B2 01 48 8B CD) // should be unique
+aobscanmodule(EXPMultiplierAOB,"GameAssembly.dll",44 8B E8 89 85 C0 00 00 00 33 C9) // should be unique
+registersymbol(EXPMultiplierAOB)
+alloc(newmem,1024,EXPMultiplierAOB)
+
+///
+label(return)
+label(fEXPMultiplier)
+registersymbol(fEXPMultiplier)
+
+newmem:
+  cmp dword ptr [fEXPMultiplier],(float)0
+  je originalcode
+  push eax
+  fild dword ptr [esp]
+  fmul dword ptr [fEXPMultiplier]
+  fistp dword ptr [esp]
+  pop eax
+  
+originalcode:
+  mov r13d,eax
+  mov [rbp+000000C0],eax
+  jmp return
+
+fEXPMultiplier:
+dq (float)5.0
+  
+///  
+EXPMultiplierAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+EXPMultiplierAOB:
+  db 44 8B E8 89 85 C0 00 00 00
+  
+unregistersymbol(EXPMultiplierAOB)
+unregistersymbol(fEXPMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEXPMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-abp-multiplier-job-level-up"
+name = "Enable ABP Multiplier (Job Level Up)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(ABPMultiplierAOB,"GameAssembly.dll",45 8B CF 48 89 7C 24 28 44 8B C6 44 89 64 24 20) // should be unique
+aobscanmodule(ABPMultiplierAOB,"GameAssembly.dll",45 8B CF 48 C7 44 24 28 00 00 00 00 44 8B C7 89 6C 24 20) // should be unique
+registersymbol(ABPMultiplierAOB)
+alloc(newmem,1024,ABPMultiplierAOB)
+
+///
+label(return)
+label(fABPMultiplier)
+registersymbol(fABPMultiplier)
+
+newmem:
+  cmp dword ptr [fABPMultiplier],(float)0
+  je originalcode
+  test r15d,r15d
+  js originalcode
+  push r15d
+  fild dword ptr [esp]
+  fmul dword ptr [fABPMultiplier]
+  fistp dword ptr [esp]
+  pop r15d
+  
+originalcode:
+  mov r9d,r15d
+  mov qword ptr [rsp+28],00000000
+  jmp ABPMultiplierAOB+C
+
+fABPMultiplier:
+dq (float)10.0
+  
+///  
+ABPMultiplierAOB:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+ABPMultiplierAOB:
+  db 45 8B CF 48 C7 44 24 28 00 00 00 00
+  
+unregistersymbol(ABPMultiplierAOB)
+unregistersymbol(fABPMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "abp-multiplier"
+name = "ABP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fABPMultiplier"
+hops = []
+
+[[cheat]]
+id = "no-encounter"
+name = "No Encounter"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(NoEncounterAOB,"GameAssembly.dll",40 55 41 56 41 57 48 83 EC 60 80 3D ?? ?? ?? ?? 00 48 8B EA 4C 8B F1) // should be unique
+registersymbol(NoEncounterAOB)
+alloc(newmem,1024,NoEncounterAOB)
+
+///
+label(return)
+
+newmem:
+  mov eax,0001
+  ret  
+  
+///  
+NoEncounterAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+NoEncounterAOB:
+  db 40 55 41 56 41 57
+  
+unregistersymbol(NoEncounterAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "override-shop-group-id-can-buy-things-from-later-shops-early"
+name = "Override Shop Group ID (Can Buy Things From Later Shops Early)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OverrideShopGroupIDAOB,"GameAssembly.dll",40 55 56 57 41 54 41 55 41 56 41 57 48 83 EC 40 48 8D 6C 24 20 48 89 5D 60 8B D9)
+registersymbol(OverrideShopGroupIDAOB)
+alloc(newmem,1024,OverrideShopGroupIDAOB)
+
+///
+label(return)
+label(OverrideGroupID)
+registersymbol(OverrideGroupID)
+
+newmem:
+  mov ecx,[OverrideGroupID]
+  
+originalcode:
+  push rbp
+  push rsi
+  push rdi
+  push r12
+  jmp return
+
+OverrideGroupID:
+dq #30
+  
+///  
+OverrideShopGroupIDAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+OverrideShopGroupIDAOB:
+  db 40 55 56 57 41 54
+  
+unregistersymbol(OverrideShopGroupIDAOB)
+unregistersymbol(OverrideGroupID)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "override-shop-group-id"
+name = "Override Shop Group ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideGroupID"
+hops = []
+
+[[cheat]]
+id = "gil"
+name = "Gil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MainGilBasePtr"
+hops = ["+0x30"]

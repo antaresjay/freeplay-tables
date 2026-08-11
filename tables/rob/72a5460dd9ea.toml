@@ -1,0 +1,243 @@
+[game]
+name = "Raiders of Blackveil Demo"
+exe = "rob.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=36443"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "get-player"
+name = "Get Player"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,RR.Game.Stats.Currency:get_Gold)
+define(bytes,55 48 8B EC 48 83 EC 30)
+
+[ENABLE]
+//Send@Sintrix|FearlessRevolution
+
+assert(address,bytes)
+alloc(newmem,$1000,RR.Game.Stats.Currency:get_Gold)
+registersymbol(getPlayer)
+label(code return getPlayer)
+
+newmem:
+mov [getPlayer],rcx
+
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,30
+  jmp return
+
+getPlayer:
+dq
+//Send@Sintrix|FearlessRevolution
+address:
+  jmp newmem
+  nop 3
+return:
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+address:
+  db bytes
+
+  unregistersymbol(*)
+  dealloc(*)"""
+
+[[cheat]]
+id = "super-player-damage"
+name = "Super Player Damage"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,RR.Game.Stats.Attack:get_AllDamageMultiplier+1b)
+define(bytes,F3 0F 5A C0 F3 0F 10 0D 19 00 00 00)
+// Send @ Sintrix | FearlessRevolution
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,RR.Game.Stats.Attack:get_AllDamageMultiplier+1b)
+label(code)
+label(return)
+
+newmem:
+
+code:
+
+  movss xmm0,[DmgMult]
+  cvtss2sd xmm0,xmm0
+  movss xmm1,[RR.Game.Stats.Attack:get_AllDamageMultiplier+40]
+  jmp return
+// Send @ Sintrix | FearlessRevolution
+DmgMult:
+dd (float)999999999
+
+address:
+  jmp newmem
+  nop 7
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "no-dash-cooldown"
+name = "No Dash Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix|FearlessRevolution
+define(address,RR.Game.Character.DashAbility:UpdateMovement)
+define(bytes,55 48 8B EC 48 81 EC C0 00 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,RR.Game.Character.DashAbility:UpdateMovement)
+
+label(code)
+label(return)
+//Send@Sintrix|FearlessRevolution
+newmem:
+mov [rcx+170],(float)0
+mov [rcx+184],#1000
+
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,000000C0
+  jmp return
+
+address:
+  jmp newmem
+  nop 6
+return:
+//Send@Sintrix|FearlessRevolution
+[DISABLE]
+
+address:
+  db bytes
+
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-ability-cooldowns"
+name = "No Ability Cooldowns"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send @ Sintrix | FearlessRevolution
+[ENABLE]
+//RR.Game.Character.ChampionAbilityWithCooldown:get_CooldownTime+15b: F3 0F 10 86 68 01 00 00  - movss xmm0,[rsi+00000168]
+//RR.Game.Character.ChampionAbilityWithCooldown - Method: get_CanActivate
+aobscanregion(AbilityCooldown,RR.Game.Character.ChampionAbilityWithCooldown:get_CooldownTime+140,RR.Game.Character.ChampionAbilityWithCooldown:get_CooldownTime+180,F3 0F 10 86 70 01 00 00 F3 0F)
+alloc(newmem,$1000,AbilityCooldown)
+label(code return)
+newmem:
+
+code:
+  movss xmm0,[NewCD]//[rsi+00000170]
+  jmp return
+
+NewCD:
+dd (float)0.1
+
+AbilityCooldown:
+  jmp newmem
+  nop 3
+return:
+registersymbol(AbilityCooldown)
+
+[DISABLE]
+
+AbilityCooldown:
+  db F3 0F 10 86 70 01 00 00
+//Send @ Sintrix | FearlessRevolution
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "increased-loot-drops"
+name = "Increased Loot Drops"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,RR.Utility.ChanceWithBadLuckProtection:get_ChancePercentage+f)
+define(bytes,F3 0F 10 46 10)
+//Send@Sintrix|FearlessRevolution
+define(address2,RR.Game.ItemDrop.EnemyDropConfig:GetRarityModifier)
+define(bytes2,48 81 EC E8 00 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,RR.Utility.ChanceWithBadLuckProtection:get_ChancePercentage+f)
+
+label(code)
+label(return)
+//Send@Sintrix|FearlessRevolution
+newmem:
+
+code:
+  mov [rsi+10],(float)999999999
+  movss xmm0,[rsi+10]
+  jmp return
+
+address:
+  jmp newmem
+return:
+//Send@Sintrix|FearlessRevolution
+assert(address2,bytes2)
+alloc(newmem2,$1000,RR.Game.ItemDrop.EnemyDropConfig:GetRarityModifier)
+
+label(code2)
+label(return2)
+//Send@Sintrix|FearlessRevolution
+newmem2:
+mov [rcx+D8],(float)999999999999
+mov [rcx+C0],(float)999999999999
+mov [rcx+C8],(float)999999999999
+mov [rcx+D0],(float)999999999999
+code2:
+  sub rsp,000000E8
+  jmp return2
+
+address2:
+  jmp newmem2
+  nop 2
+return2:
+
+[DISABLE]
+//Send@Sintrix|FearlessRevolution
+address:
+  db bytes
+
+address2:
+  db bytes2
+
+
+dealloc(*)"""

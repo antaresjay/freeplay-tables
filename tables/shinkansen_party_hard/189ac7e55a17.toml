@@ -1,0 +1,2977 @@
+[game]
+name = "Party Hard"
+exe = "shinkansen_party_hard.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=1056"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "npcbase-base-address-scan-initialization-activate-this-first"
+name = "NpcBase Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(NpcBase_basepointer)
+registersymbol(NpcBase_update_enable)
+registersymbol(NpcBase_set_enable)
+registersymbol(NpcBase_playerset_enable)
+registersymbol(NpcBase_speedset_enable)
+registersymbol(NpcBase_weaponset_enable)
+registersymbol(NpcBase_victimset_enable)
+
+alloc(NpcBase_basepointer, 4)
+alloc(NpcBase_update_enable, 4)
+alloc(NpcBase_set_enable, 4)
+alloc(NpcBase_playerset_enable, 4)
+alloc(NpcBase_speedset_enable, 4)
+alloc(NpcBase_weaponset_enable, 4)
+alloc(NpcBase_victimset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(NpcBase_basepointer)
+unregistersymbol(NpcBase_update_enable)
+unregistersymbol(NpcBase_set_enable)
+unregistersymbol(NpcBase_playerset_enable)
+unregistersymbol(NpcBase_speedset_enable)
+unregistersymbol(NpcBase_weaponset_enable)
+unregistersymbol(NpcBase_victimset_enable)
+
+dealloc(NpcBase_basepointer)
+dealloc(NpcBase_update_enable)
+dealloc(NpcBase_set_enable)
+dealloc(NpcBase_playerset_enable)
+dealloc(NpcBase_speedset_enable)
+dealloc(NpcBase_weaponset_enable)
+dealloc(NpcBase_victimset_enable)"""
+
+[[cheat]]
+id = "npcbase-base-address-scan-to-activate-load-level-to-update-play-level"
+name = "NpcBase Base Address Scan (To Activate: Load Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(NpcBase_savedAOB)
+label(NpcBase_returnhere)
+label(NpcBase_originalcode)
+label(NpcBase_exit)
+
+label(NpcBase_update_exit)
+label(NpcBase_set_exit)
+label(NpcBase_playerset_exit)
+label(NpcBase_speedset_exit)
+label(NpcBase_weaponset_exit)
+label(NpcBase_victimset_entry)
+label(NpcBase_victimset_exit)
+
+registersymbol(NpcBase_savedAOB)
+
+//1745D60E - EE                    - out dx,al
+//1745D60F - D9 9D 40FFFFFF        - fstp dword ptr [ebp-000000C0]
+// Assets.Scripts.Npc:NpcBase:UpdateRayVisionTarget+62
+//1745D615 - 0FB6 87 CC000000      - movzx eax,byte ptr [edi+000000CC]
+//1745D61C - 85 C0                 - test eax,eax
+//1745D61E - 0F84 F4020000         - je 1745D918
+//1745D624 - 8B 47 58              - mov eax,[edi+58]
+//1745D627 - 83 EC 08              - sub esp,08
+//1745D62A - 6A 00                 - push 00
+aobscan(NpcBase_searchedAOB, 0F B6 87 CC 00 00 00 85 C0 * * * * * * 8B 47 58)
+
+alloc(NpcBase_newmem, 2048)
+alloc(NpcBase_temp1, 4)
+
+
+NpcBase_newmem:
+mov [NpcBase_temp1], ebx
+
+cmp dword ptr [edi+c], #0
+je NpcBase_victimset_exit
+mov ebx, [edi+c]
+cmp byte ptr [ebx+33], #1
+jne NpcBase_victimset_entry
+
+cmp dword ptr [NpcBase_update_enable], #0
+je NpcBase_update_exit
+mov [NpcBase_basepointer], edi
+NpcBase_update_exit:
+
+cmp dword ptr [NpcBase_set_enable], #0
+je NpcBase_set_exit
+NpcBase_set_exit:
+
+cmp dword ptr [NpcBase_playerset_enable], #0
+je NpcBase_playerset_exit
+cmp dword ptr [edi+c], #0
+je NpcBase_playerset_exit
+mov ebx, [edi+c]
+mov byte ptr [ebx+81], #1
+mov byte ptr [ebx+82], #1
+NpcBase_playerset_exit:
+
+cmp dword ptr [NpcBase_speedset_enable], #0
+je NpcBase_speedset_exit
+cmp dword ptr [edi+10], #0
+je NpcBase_speedset_exit
+mov ebx, [edi+10]
+mov [ebx+38], (float)2
+mov [ebx+40], (float)2
+mov [ebx+44], (float)2
+NpcBase_speedset_exit:
+
+cmp dword ptr [NpcBase_weaponset_enable], #0
+je NpcBase_weaponset_exit
+cmp dword ptr [edi+14], #0
+je NpcBase_weaponset_exit
+mov ebx, [edi+14]
+mov [ebx+24], #999
+mov byte ptr [ebx+44], #0
+NpcBase_weaponset_exit:
+
+jmp NpcBase_victimset_exit
+
+NpcBase_victimset_entry:
+cmp dword ptr [NpcBase_victimset_enable], #0
+je NpcBase_victimset_exit
+cmp dword ptr [edi+c], #0
+je NpcBase_victimset_exit
+mov ebx, [edi+c]
+mov [ebx+50], #0
+mov byte ptr [ebx+65], #0
+mov byte ptr [ebx+67], #0
+mov byte ptr [ebx+69], #1
+mov byte ptr [ebx+6a], #1
+mov byte ptr [ebx+6c], #0
+mov byte ptr [ebx+84], #0
+NpcBase_victimset_exit:
+
+mov ebx, [NpcBase_temp1]
+
+
+NpcBase_originalcode:
+db 0F B6 87 CC 00 00 00
+//movzx eax,byte ptr [edi+000000CC]
+
+
+NpcBase_exit:
+jmp NpcBase_returnhere
+
+
+NpcBase_searchedAOB:
+NpcBase_savedAOB:
+jmp NpcBase_newmem
+nop
+nop
+NpcBase_returnhere:
+
+
+[DISABLE]
+NpcBase_savedAOB:
+db 0F B6 87 CC 00 00 00
+//movzx eax,byte ptr [edi+000000CC]
+
+unregistersymbol(NpcBase_savedAOB)
+
+dealloc(NpcBase_newmem)
+dealloc(NpcBase_temp1)"""
+
+[[cheat]]
+id = "player-set-to-invisible"
+name = "Player Set to Invisible?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_playerset_enable"
+hops = []
+
+[[cheat]]
+id = "speed-set-to-massive"
+name = "Speed Set to Massive?"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_speedset_enable"
+hops = []
+
+[[cheat]]
+id = "weapon-set-to-massive"
+name = "Weapon Set to Massive?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_weaponset_enable"
+hops = []
+
+[[cheat]]
+id = "victim-set-to-stunned"
+name = "Victim Set to Stunned?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_victimset_enable"
+hops = []
+
+[[cheat]]
+id = "npcbase-update-base-address"
+name = "NpcBase Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x0",
+]
+
+[[cheat]]
+id = "needupdate"
+name = "NeedUpdate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x28",
+]
+
+[[cheat]]
+id = "killedwithaccident"
+name = "KilledWithAccident"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x29",
+]
+
+[[cheat]]
+id = "isstatic"
+name = "IsStatic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x2a",
+]
+
+[[cheat]]
+id = "iscop"
+name = "IsCop"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x2b",
+]
+
+[[cheat]]
+id = "isswat"
+name = "IsSWAT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "isdoctor"
+name = "IsDoctor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x2d",
+]
+
+[[cheat]]
+id = "isdog"
+name = "IsDog"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x2e",
+]
+
+[[cheat]]
+id = "ismario"
+name = "IsMario"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x2f",
+]
+
+[[cheat]]
+id = "isspecial"
+name = "IsSpecial"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x30",
+]
+
+[[cheat]]
+id = "isstunable"
+name = "IsStunable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x31",
+]
+
+[[cheat]]
+id = "isswattarget"
+name = "IsSwatTarget"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x32",
+]
+
+[[cheat]]
+id = "isplayer"
+name = "IsPlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x33",
+]
+
+[[cheat]]
+id = "isflipped"
+name = "IsFlipped"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x34",
+]
+
+[[cheat]]
+id = "ismerchant"
+name = "IsMerchant"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x35",
+]
+
+[[cheat]]
+id = "isbodyguard"
+name = "IsBodyguard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x36",
+]
+
+[[cheat]]
+id = "isbossmikey"
+name = "IsBossMikey"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x37",
+]
+
+[[cheat]]
+id = "aggressivetodance"
+name = "AggressiveToDance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x38",
+]
+
+[[cheat]]
+id = "canreacttodance"
+name = "CanReactToDance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x39",
+]
+
+[[cheat]]
+id = "isimmunetodamage"
+name = "IsImmuneToDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x3a",
+]
+
+[[cheat]]
+id = "canbecontrolled"
+name = "CanBeControlled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x3b",
+]
+
+[[cheat]]
+id = "enablebodysearch"
+name = "EnableBodySearch"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "canwalk"
+name = "CanWalk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x3d",
+]
+
+[[cheat]]
+id = "lifescnt"
+name = "LifesCnt"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x40",
+]
+
+[[cheat]]
+id = "suspval"
+name = "_suspVal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x50",
+]
+
+[[cheat]]
+id = "massacretimeval"
+name = "_massacreTimeVal"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x54",
+]
+
+[[cheat]]
+id = "adrenalinetimeval"
+name = "_adrenalineTimeVal"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x58",
+]
+
+[[cheat]]
+id = "isexhausted"
+name = "_isExhausted"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "ismassacremode"
+name = "_isMassacreMode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x5d",
+]
+
+[[cheat]]
+id = "isbusywithtask"
+name = "_isBusyWithTask"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x5e",
+]
+
+[[cheat]]
+id = "canmodifysusp"
+name = "_canModifySusp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x5f",
+]
+
+[[cheat]]
+id = "showsuspsign"
+name = "_showSuspSign"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x60",
+]
+
+[[cheat]]
+id = "iskillable"
+name = "_isKillable"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x61",
+]
+
+[[cheat]]
+id = "isdead"
+name = "_isDead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x62",
+]
+
+[[cheat]]
+id = "iscovered"
+name = "_isCovered"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x63",
+]
+
+[[cheat]]
+id = "underinvestigation"
+name = "_underInvestigation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x64",
+]
+
+[[cheat]]
+id = "isalerted"
+name = "_isAlerted"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x65",
+]
+
+[[cheat]]
+id = "isarrested"
+name = "_isArrested"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x66",
+]
+
+[[cheat]]
+id = "iscallingcops"
+name = "_isCallingCops"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x67",
+]
+
+[[cheat]]
+id = "cansearchbodies"
+name = "_canSearchBodies"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x68",
+]
+
+[[cheat]]
+id = "isstuned"
+name = "_isStuned"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x69",
+]
+
+[[cheat]]
+id = "isstunedvampire"
+name = "_isStunedVampire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x6a",
+]
+
+[[cheat]]
+id = "isreportedtocops"
+name = "_isReportedToCops"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x6b",
+]
+
+[[cheat]]
+id = "iswitnesssign"
+name = "_isWitnessSign"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "isdrunksleep"
+name = "_isDrunkSleep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x6d",
+]
+
+[[cheat]]
+id = "ishideninwarfog"
+name = "_isHidenInWarFog"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x6e",
+]
+
+[[cheat]]
+id = "undersurveillance"
+name = "_underSurveillance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x6f",
+]
+
+[[cheat]]
+id = "istarget"
+name = "_isTarget"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x70",
+]
+
+[[cheat]]
+id = "playerinrange"
+name = "_playerInRange"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x71",
+]
+
+[[cheat]]
+id = "showpicksign"
+name = "_showPickSign"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x72",
+]
+
+[[cheat]]
+id = "ishandcuffs"
+name = "_isHandcuffs"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x73",
+]
+
+[[cheat]]
+id = "speedmultiplier"
+name = "_speedMultiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x74",
+]
+
+[[cheat]]
+id = "stuntimer"
+name = "_stunTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x78",
+]
+
+[[cheat]]
+id = "iscreature"
+name = "_isCreature"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "inlove"
+name = "_inLove"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x7d",
+]
+
+[[cheat]]
+id = "ispoisoned"
+name = "_isPoisoned"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x7e",
+]
+
+[[cheat]]
+id = "isspecialdead"
+name = "_isSpecialDead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x7f",
+]
+
+[[cheat]]
+id = "canusetraps"
+name = "_canUseTraps"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x80",
+]
+
+[[cheat]]
+id = "cancarrybodyundetected"
+name = "_canCarryBodyUndetected"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x81",
+]
+
+[[cheat]]
+id = "invisible"
+name = "_invisible"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x82",
+]
+
+[[cheat]]
+id = "cancarrybody"
+name = "_canCarryBody"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x83",
+]
+
+[[cheat]]
+id = "ispanic"
+name = "_isPanic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x84",
+]
+
+[[cheat]]
+id = "issprinting"
+name = "_isSprinting"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x85",
+]
+
+[[cheat]]
+id = "isblinded"
+name = "_isBlinded"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x86",
+]
+
+[[cheat]]
+id = "nearwall"
+name = "_nearWall"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x87",
+]
+
+[[cheat]]
+id = "isdrowing"
+name = "_isDrowing"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x88",
+]
+
+[[cheat]]
+id = "iszombie"
+name = "_isZombie"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x89",
+]
+
+[[cheat]]
+id = "isundead"
+name = "_isUndead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x8a",
+]
+
+[[cheat]]
+id = "ishibernated"
+name = "_isHibernated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x8b",
+]
+
+[[cheat]]
+id = "isdisintigratable"
+name = "_isDisintigratable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "isattack"
+name = "_isAttack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x8d",
+]
+
+[[cheat]]
+id = "isvampire"
+name = "_isVampire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x8e",
+]
+
+[[cheat]]
+id = "stunvampiretimer"
+name = "_stunVampireTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x90",
+]
+
+[[cheat]]
+id = "agressivevampire"
+name = "_agressiveVampire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x94",
+]
+
+[[cheat]]
+id = "canawake"
+name = "_canAwake"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x95",
+]
+
+[[cheat]]
+id = "hashostage"
+name = "_hasHostage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x96",
+]
+
+[[cheat]]
+id = "playerishidden"
+name = "_playerIsHidden"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x97",
+]
+
+[[cheat]]
+id = "chargingadrenaline"
+name = "_chargingAdrenaline"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x98",
+]
+
+[[cheat]]
+id = "shotguntarget"
+name = "_shotgunTarget"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x99",
+]
+
+[[cheat]]
+id = "isplayattack"
+name = "_isPlayAttack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x9a",
+]
+
+[[cheat]]
+id = "isshooting"
+name = "_isShooting"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0xc",
+    "+0x9b",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x0",
+]
+
+[[cheat]]
+id = "ischarcontroller"
+name = "IsCharController"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x8",
+]
+
+[[cheat]]
+id = "spotbodiesradius"
+name = "SpotBodiesRadius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0xc",
+]
+
+[[cheat]]
+id = "spotkillerradius"
+name = "SpotKillerRadius"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x10",
+]
+
+[[cheat]]
+id = "searchuseobjectradius"
+name = "SearchUseObjectRadius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x14",
+]
+
+[[cheat]]
+id = "chasetimercounter"
+name = "ChaseTimerCounter"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x18",
+]
+
+[[cheat]]
+id = "dancewatchcount"
+name = "DanceWatchCount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "distancetochasetarget"
+name = "DistanceToChaseTarget"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x20",
+]
+
+[[cheat]]
+id = "stopchasedistance"
+name = "StopChaseDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x24",
+]
+
+[[cheat]]
+id = "ischasefinished"
+name = "IsChaseFinished"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x28",
+]
+
+[[cheat]]
+id = "ischasesuccessful"
+name = "IsChaseSuccessful"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x29",
+]
+
+[[cheat]]
+id = "istimerchase"
+name = "IsTimerChase"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x2a",
+]
+
+[[cheat]]
+id = "isdistancechase"
+name = "IsDistanceChase"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x2b",
+]
+
+[[cheat]]
+id = "affectedoncounter"
+name = "_affectedOnCounter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "speedmodifier"
+name = "_speedModifier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x30",
+]
+
+[[cheat]]
+id = "spotbodykillerradiusmodifier"
+name = "_spotBodyKillerRadiusModifier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x34",
+]
+
+[[cheat]]
+id = "slowspeed"
+name = "_slowSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x38",
+]
+
+[[cheat]]
+id = "notslow"
+name = "_notSlow"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "normalspeed"
+name = "_normalSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x40",
+]
+
+[[cheat]]
+id = "runspeed"
+name = "_runSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x44",
+]
+
+[[cheat]]
+id = "runtophonespeed"
+name = "_runToPhoneSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x48",
+]
+
+[[cheat]]
+id = "sprintcharge"
+name = "_sprintCharge"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "exhaustedcharge"
+name = "_exhaustedCharge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "charcontrollermultiply"
+name = "_charControllerMultiply"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x10",
+    "+0x54",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x0",
+]
+
+[[cheat]]
+id = "damageval"
+name = "DamageVal"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x20",
+]
+
+[[cheat]]
+id = "radius"
+name = "Radius"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x24",
+]
+
+[[cheat]]
+id = "stuntime"
+name = "StunTime"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x28",
+]
+
+[[cheat]]
+id = "randrange"
+name = "RandRange"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "victimscount"
+name = "VictimsCount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x30",
+]
+
+[[cheat]]
+id = "victimsdifferencecount"
+name = "VictimsDifferenceCount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x34",
+]
+
+[[cheat]]
+id = "killedcount"
+name = "KilledCount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x38",
+]
+
+[[cheat]]
+id = "percenttohidebody"
+name = "PercentToHideBody"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "singletarget"
+name = "SingleTarget"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x44",
+]
+
+[[cheat]]
+id = "checkraytrace"
+name = "CheckRaytrace"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x45",
+]
+
+[[cheat]]
+id = "accidentalkill"
+name = "AccidentalKill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x46",
+]
+
+[[cheat]]
+id = "bloodsplash"
+name = "BloodSplash"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x47",
+]
+
+[[cheat]]
+id = "playerowner"
+name = "PlayerOwner"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x48",
+]
+
+[[cheat]]
+id = "layermaskparams"
+name = "LayerMaskParams"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = [
+    "+0x14",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "npcid"
+name = "npcId"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "instid"
+name = "_instId"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "playerid"
+name = "PlayerId"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "updatezcoords"
+name = "UpdateZcoords"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "currtrack"
+name = "CurrTrack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "currnodeintrack"
+name = "CurrNodeInTrack"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "bloodspillcnt"
+name = "_bloodSpillCnt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "isfixedangle"
+name = "_isFixedAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "isinit"
+name = "_isInit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x8d"]
+
+[[cheat]]
+id = "bodysearchfilter"
+name = "_bodySearchFilter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "playersearchfilter"
+name = "_playerSearchFilter"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "showvisionray"
+name = "_showVisionRay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "rayvisioncnt"
+name = "_rayVisionCnt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "depthmodifier"
+name = "_depthModifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NpcBase_basepointer"
+hops = ["+0xd4"]

@@ -1,0 +1,277 @@
+[game]
+name = "Eden Survivors"
+exe = "edensurvivors.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=34567"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "disable-anticheatmanager"
+name = "→ Disable AntiCheatManager"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+AntiCheatManager.add_OnHackDetected:
+db C3
+AntiCheatManager.CheckHack:
+db C3
+
+[DISABLE]
+AntiCheatManager.add_OnHackDetected:
+db C3
+AntiCheatManager.CheckHack:
+db C3"""
+
+[[cheat]]
+id = "invinicble"
+name = "Invinicble"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(heroInvincible_flag,GameAssembly.dll,48 8B 4B 30 48 85 C9 0F 84 C4)
+alloc(newmem,$1000,heroInvincible_flag)
+label(code return)
+
+newmem:
+push rbx
+mov rbx,[rbx+30]
+mov [rbx+1E2],1
+pop rbx
+
+code:
+  mov rcx,[rbx+30]
+  test rcx,rcx
+  jmp return
+
+heroInvincible_flag:
+  jmp newmem
+  nop 2
+return:
+registersymbol(heroInvincible_flag)
+
+[DISABLE]
+
+heroInvincible_flag:
+  db 48 8B 4B 30 48 85 C9
+//HeroTurret.FixedUpdate
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "enable-movement-modifier"
+name = "→ Enable Movement Modifier"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Send@FearlessRevolution|Sintrix
+aobscanmodule(heroMove,GameAssembly.dll,F3 0F 59 C6 0F 28 74 24 20 48 83 C4 30 5B C3 0F)
+alloc(newmem,$1000,heroMove)
+registersymbol(setherospeed)
+label(code return setherospeed)
+newmem:
+
+code:
+  movss xmm6,[setherospeed]
+  mulss xmm0,xmm6
+  movaps xmm6,[rsp+20]
+  jmp return
+
+setherospeed:
+dd (float)5
+
+heroMove:
+  jmp newmem
+  nop 4
+return:
+registersymbol(heroMove)
+
+[DISABLE]
+
+heroMove:
+  db F3 0F 59 C6 0F 28 74 24 20
+//Hero.get_MovementSpeed
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-movement-speed"
+name = "Set Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "setherospeed"
+hops = []
+
+[[cheat]]
+id = "stage-session-data"
+name = "→ Stage/Session Data"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Hero.OldFixedUpdate)
+define(bytes,48 8B C4 55 53)
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Hero.OldFixedUpdate)
+registersymbol(session_data)
+label(code return session_data)
+
+newmem:
+mov [session_data],rcx
+
+code:
+  mov rax,rsp
+  push rbp
+  push rbx
+  jmp return
+
+session_data:
+dw
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-bar-upgrade-requirements-only-enable-in-upgrades-menu"
+name = "No Bar Upgrade Requirements (Only Enable In Upgrades Menu)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(barReqs,GameAssembly.dll,48 39 77 28 48 63 47 10)
+alloc(newmem,$1000,barReqs)
+
+label(code)
+label(return)
+
+newmem:
+mov [rdi+28],#0
+
+code:
+  cmp [rdi+28],rsi
+  movsxd  rax,dword ptr [rdi+10]
+  jmp return
+
+barReqs:
+  jmp newmem
+  nop 3
+return:
+registersymbol(barReqs)
+
+[DISABLE]
+
+barReqs:
+  db 48 39 77 28 48 63 47 10
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "can-always-claim-affection-reward"
+name = "Can Always Claim Affection Reward"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(canClaimReward,GameAssembly.dll,8B 5F 1C FF C3)
+alloc(newmem,$1000,canClaimReward)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rdi+1C],#0
+  mov ebx,[rdi+1C]
+  inc ebx
+  jmp return
+
+canClaimReward:
+  jmp newmem
+return:
+registersymbol(canClaimReward)
+
+[DISABLE]
+
+canClaimReward:
+  db 8B 5F 1C FF C3
+//BistroGirl.GetToClaim
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "temporary-max-affection"
+name = "Temporary Max Affection"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(maxAffection,GameAssembly.dll,41 8B 7E 18 48 8B CD)
+alloc(newmem,$1000,maxAffection)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [r14+18],#35000
+  mov edi,[r14+18]
+  mov rcx,rbp
+  jmp return
+
+maxAffection:
+  jmp newmem
+  nop 2
+return:
+registersymbol(maxAffection)
+
+[DISABLE]
+
+maxAffection:
+  db 41 8B 7E 18 48 8B CD
+//BistroGirl.GetRelationLevel
+unregistersymbol(*)
+dealloc(*)"""

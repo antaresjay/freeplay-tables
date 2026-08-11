@@ -1,0 +1,545 @@
+[game]
+name = "逆光 Sunwards"
+exe = "shinkansen_sunwards.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=12158"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_hpset_enable)
+registersymbol(playerstats_mpset_enable)
+registersymbol(playerstats_epset_enable)
+registersymbol(playerstats_attributesset_enable)
+
+//7FEEBFCF99E - 0F2F C1               - comiss xmm0,xmm1
+//7FEEBFCF9A1 - 76 0A                 - jna 7FEEBFCF9AD
+// Access pointer to Stats
+//7FEEBFCF9A3 - F3 0F11 4C B8 20      - movss [rax+rdi*4+20],xmm1
+//7FEEBFCF9A9 - 48 8B 43 18           - mov rax,[rbx+18]
+//7FEEBFCF9AD - 48 85 C0              - test rax,rax
+//7FEEBFCF9B0 - 0F84 3D030000         - je 7FEEBFCFCF3
+//7FEEBFCF9B6 - 3B 78 18              - cmp edi,[rax+18]
+aobscan(playerstats_initialization_searchedAOB, F3 0F 11 4C B8 20 48 8B 43 18 48 85 C0)
+
+alloc(playerstats_basepointer, 8, playerstats_initialization_searchedAOB)
+alloc(playerstats_update_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_hpset_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_mpset_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_epset_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_attributesset_enable, 4, playerstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_hpset_enable)
+unregistersymbol(playerstats_mpset_enable)
+unregistersymbol(playerstats_epset_enable)
+unregistersymbol(playerstats_attributesset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_hpset_enable)
+dealloc(playerstats_mpset_enable)
+dealloc(playerstats_epset_enable)
+dealloc(playerstats_attributesset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_hpset_exit)
+label(playerstats_mpset_exit)
+label(playerstats_epset_exit)
+label(playerstats_attributesset_exit)
+
+registersymbol(playerstats_originalcode)
+registersymbol(playerstats_savedAOB)
+
+//7FEEBFCF99E - 0F2F C1               - comiss xmm0,xmm1
+//7FEEBFCF9A1 - 76 0A                 - jna 7FEEBFCF9AD
+// Access pointer to Stats
+//7FEEBFCF9A3 - F3 0F11 4C B8 20      - movss [rax+rdi*4+20],xmm1
+//7FEEBFCF9A9 - 48 8B 43 18           - mov rax,[rbx+18]
+//7FEEBFCF9AD - 48 85 C0              - test rax,rax
+//7FEEBFCF9B0 - 0F84 3D030000         - je 7FEEBFCFCF3
+//7FEEBFCF9B6 - 3B 78 18              - cmp edi,[rax+18]
+aobscan(playerstats_searchedAOB, F3 0F 11 4C B8 20 48 8B 43 18 48 85 C0)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 8, playerstats_searchedAOB)
+alloc(playerstats_temp2, 8, playerstats_searchedAOB)
+alloc(playerstats_temp3, 8, playerstats_searchedAOB)
+alloc(playerstats_temp4, 8, playerstats_searchedAOB)
+alloc(playerstats_temp5, 8, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], rax
+mov [playerstats_temp2], rbx
+mov [playerstats_temp3], rcx
+mov [playerstats_temp4], rdx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], rbx
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_hpset_enable], #0
+je playerstats_hpset_exit
+mov rax, [rbx+28]
+test rax, rax
+je playerstats_hpset_exit
+fld [rax+20]
+mov rax, [rbx+18]
+test rax, rax
+je playerstats_hpset_exit
+fstp [rax+20]
+playerstats_hpset_exit:
+
+cmp dword ptr [playerstats_mpset_enable], #0
+je playerstats_mpset_exit
+mov rax, [rbx+28]
+test rax, rax
+je playerstats_mpset_exit
+fld [rax+30]
+mov rax, [rbx+18]
+test rax, rax
+je playerstats_mpset_exit
+fstp [rax+24]
+playerstats_mpset_exit:
+
+cmp dword ptr [playerstats_epset_enable], #0
+je playerstats_epset_exit
+mov rax, [rbx+28]
+test rax, rax
+je playerstats_epset_exit
+fld [rax+40]
+mov rax, [rbx+18]
+test rax, rax
+je playerstats_epset_exit
+fstp [rax+28]
+playerstats_epset_exit:
+
+cmp dword ptr [playerstats_attributesset_enable], #0
+je playerstats_attributesset_exit
+mov rax, [rbx+28]
+test rax, rax
+je playerstats_attributesset_exit
+mov [rax+64], (float)9999999
+mov [rax+6c], (float)9999999
+mov [rax+9c], (float)9999999
+mov [rax+a4], (float)9999999
+playerstats_attributesset_exit:
+
+mov rax, [playerstats_temp1]
+mov rbx, [playerstats_temp2]
+mov rcx, [playerstats_temp3]
+mov rdx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+readmem(playerstats_searchedAOB, 6)
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+readmem(playerstats_originalcode, 6)
+
+unregistersymbol(playerstats_originalcode)
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "mp-set-to-max"
+name = "MP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_mpset_enable"
+hops = []
+
+[[cheat]]
+id = "ep-set-to-max"
+name = "EP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_epset_enable"
+hops = []
+
+[[cheat]]
+id = "attributes-set-to-massive"
+name = "Attributes Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_attributesset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x20",
+]
+
+[[cheat]]
+id = "mp"
+name = "MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x24",
+]
+
+[[cheat]]
+id = "ep"
+name = "EP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x18",
+    "+0x28",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x20",
+]
+
+[[cheat]]
+id = "hp-recover"
+name = "HP Recover"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x28",
+]
+
+[[cheat]]
+id = "max-mp"
+name = "Max MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x30",
+]
+
+[[cheat]]
+id = "mp-recover"
+name = "MP Recover"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x38",
+]
+
+[[cheat]]
+id = "max-ep"
+name = "Max EP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x40",
+]
+
+[[cheat]]
+id = "physical-atk"
+name = "Physical ATK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x64",
+]
+
+[[cheat]]
+id = "magic-atk"
+name = "Magic ATK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "physical-def"
+name = "Physical DEF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "magic-def"
+name = "Magic DEF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x28",
+    "+0xa4",
+]

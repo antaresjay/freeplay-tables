@@ -1,0 +1,242 @@
+[game]
+name = "Mordhau Cheat Table 2026"
+exe = "mordhau-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by adaasda983. Source: https://fearlessrevolution.com/viewtopic.php?t=38090"
+verified = []
+author = "adaasda983"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playerhook"
+name = "PlayerHook"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(charHook,Mordhau-Win64-Shipping.exe,48 8B 01 FF A0 F8 09 00 00)
+alloc(newmem,$1000,charHook)
+label(code)
+label(return)
+alloc(turncap,8,charHook)
+
+label(lplayer)
+
+newmem:
+mov [lplayer],rcx
+
+code:
+  mov rax,[rcx]
+  jmp qword ptr [rax+000009F8]
+  jmp return
+
+lplayer:
+dd 00
+
+turncap:
+dq 00
+
+charHook:
+  jmp newmem
+  nop 4
+return:
+registersymbol(charHook lplayer turncap)
+
+[DISABLE]
+
+charHook:
+  db 48 8B 01 FF A0 F8 09 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-turn-speed"
+name = "Set turn speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 350
+choices = [
+    "350:Legit",
+    "-1:Fast",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "turncap"
+hops = []
+
+[[cheat]]
+id = "buildingcomponenthook"
+name = "BuildingComponentHook"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Mordhau-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-01-06
+  Author : nightfall
+}
+
+[ENABLE]
+aobscanmodule(buildcomphook,Mordhau-Win64-Shipping.exe,E1 FF CC CC CC CC CC CC 4C 89 44 24 18) // should be unique
+alloc(newmem,$1000,buildcomphook)
+label(code)
+label(return)
+
+label(bcomp)
+
+newmem:
+mov [bcomp],rcx
+
+code:
+  mov [rsp+18],r8
+  jmp return
+
+bcomp:
+dq 00
+
+buildcomphook+08:
+  jmp newmem
+return:
+registersymbol(buildcomphook bcomp)
+
+[DISABLE]
+
+buildcomphook+08:
+  db 4C 89 44 24 18
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: BuildingSystemComponent::ValidateSpot
+
+Mordhau-Win64-Shipping.UBuildingSystemComponent::execSetupMeshPreview+A: 41 0F 95 C0     - setne r8b
+Mordhau-Win64-Shipping.UBuildingSystemComponent::execSetupMeshPreview+E: 4C 03 C0        - add r8,rax
+Mordhau-Win64-Shipping.UBuildingSystemComponent::execSetupMeshPreview+11: 4C 89 42 20     - mov [rdx+20],r8
+Mordhau-Win64-Shipping.UBuildingSystemComponent::execSetupMeshPreview+15: E9 36 C3 E1 FF  - jmp Mordhau-Win64-Shipping.UBuildingSystemComponent::SetupMeshPreview
+"Mordhau-Win64-Shipping.exe"+16853DA: CC              - int 3 
+"Mordhau-Win64-Shipping.exe"+16853DB: CC              - int 3 
+"Mordhau-Win64-Shipping.exe"+16853DC: CC              - int 3 
+"Mordhau-Win64-Shipping.exe"+16853DD: CC              - int 3 
+"Mordhau-Win64-Shipping.exe"+16853DE: CC              - int 3 
+"Mordhau-Win64-Shipping.exe"+16853DF: CC              - int 3 
+// ---------- INJECTING HERE ----------
+BuildingSystemComponent::ValidateSpot: 4C 89 44 24 18  - mov [rsp+18],r8
+// ---------- DONE INJECTING  ----------
+BuildingSystemComponent.ValidateSpot+5: 48 89 4C 24 08  - mov [rsp+08],rcx
+BuildingSystemComponent.ValidateSpot+A: 55              - push rbp
+BuildingSystemComponent.ValidateSpot+B: 53              - push rbx
+BuildingSystemComponent.ValidateSpot+C: 56              - push rsi
+BuildingSystemComponent.ValidateSpot+D: 57              - push rdi
+BuildingSystemComponent.ValidateSpot+E: 41 54           - push r12
+BuildingSystemComponent.ValidateSpot+10: 41 55           - push r13
+BuildingSystemComponent.ValidateSpot+12: 41 56           - push r14
+BuildingSystemComponent.ValidateSpot+14: 41 57           - push r15
+BuildingSystemComponent.ValidateSpot+16: 48 8D 6C 24 E1  - lea rbp,[rsp-1F]
+}"""
+
+[[cheat]]
+id = "freebuild"
+name = "FreeBuild"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Mordhau-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-01-09
+  Author : nightfall
+
+}
+
+[ENABLE]
+aobscanmodule(freeBuilding,Mordhau-Win64-Shipping.exe,0F 8C 6A FE FF FF 8B)
+aobscanmodule(freeBuilding2,Mordhau-Win64-Shipping.exe,0F 84 1F 01 00 00 EB 6B)
+registersymbol(freeBuilding2 freeBuilding)
+
+freeBuilding:
+  db 90 90 90 90 90 90
+
+freeBuilding2:
+  db 90 90 90 90 90 90
+
+[DISABLE]
+
+freeBuilding:
+  db 0F 8C 6A FE FF FF
+
+freeBuilding2:
+  db 0F 84 1F 01 00 00
+
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2B2
+
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+285: 48 8B D0              - mov rdx,rax
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+288: 48 8B 4C 24 48        - mov rcx,[rsp+48]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+28D: 48 89 4C 24 20        - mov [rsp+20],rcx
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+292: 48 8B CB              - mov rcx,rbx
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+295: 41 FF 92 70 02 00 00  - call qword ptr [r10+00000270]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+29C: 84 C0                 - test al,al
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+29E: 0F 85 9C 00 00 00     - jne Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+340
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2A4: 41 FF C4              - inc r12d
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2A7: 49 83 C7 08           - add r15,08
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2AB: 44 3B A7 C8 00 00 00  - cmp r12d,[rdi+000000C8]
+// ---------- INJECTING HERE ----------
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2B2: 0F 8C 6A FE FF FF     - jl Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+122
+// ---------- DONE INJECTING  ----------
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2B8: 8B 5C 24 40           - mov ebx,[rsp+40]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2BC: 0F 28 85 30 02 00 00  - movaps xmm0,[rbp+00000230]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2C3: 48 8D 45 90           - lea rax,[rbp-70]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2C7: 0F 28 8D 40 02 00 00  - movaps xmm1,[rbp+00000240]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2CE: 48 8B CF              - mov rcx,rdi
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2D1: 0F B6 B5 00 03 00 00  - movzx esi,byte ptr [rbp+00000300]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2D8: 4C 8B 4C 24 48        - mov r9,[rsp+48]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2DD: 40 80 F6 01           - xor sil,01
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2E1: 0F B6 95 F8 02 00 00  - movzx edx,byte ptr [rbp+000002F8]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2E8: 44 0F B6 C6           - movzx r8d,sil
+}
+// FB 2
+{
+// ORIGINAL CODE - INJECTION POINT: Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+231
+
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+208: 48 8B 4C 24 58        - mov rcx,[rsp+58]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+20D: F2 0F 10 00           - movsd xmm0,[rax]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+211: F2 0F 11 01           - movsd [rcx],xmm0
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+215: 8B 40 08              - mov eax,[rax+08]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+218: 89 41 08              - mov [rcx+08],eax
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+21B: 48 8D 8D 6C 01 00 00  - lea rcx,[rbp+0000016C]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+222: E8 B9 2B 6D 00        - call Mordhau-Win64-Shipping.FWeakObjectPtr::Get
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+227: 48 8B 4C 24 60        - mov rcx,[rsp+60]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+22C: 48 89 01              - mov [rcx],rax
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+22F: 84 DB                 - test bl,bl
+// ---------- INJECTING HERE ----------
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+231: 0F 84 1F 01 00 00     - je Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+356
+// ---------- DONE INJECTING  ----------
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+237: EB 6B                 - jmp Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+2A4
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+239: 48 8B 87 C0 00 00 00  - mov rax,[rdi+000000C0]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+240: F2 41 0F 10 45 00     - movsd xmm0,[r13+00]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+246: F2 0F 11 45 80        - movsd [rbp-80],xmm0
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+24B: 49 8B 1C 07           - mov rbx,[r15+rax]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+24F: 41 8B 45 08           - mov eax,[r13+08]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+253: 89 45 88              - mov [rbp-78],eax
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+256: 48 8B 87 A8 00 00 00  - mov rax,[rdi+000000A8]
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+25D: 48 85 C0              - test rax,rax
+Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+260: 75 08                 - jne Mordhau-Win64-Shipping.UBuildingSystemComponent::ValidateSpot+26A
+}"""

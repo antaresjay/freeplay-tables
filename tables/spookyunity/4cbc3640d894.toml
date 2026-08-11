@@ -1,0 +1,1135 @@
+[game]
+name = "Spooky's Jump Scare Mansion HD Renovation"
+exe = "spookyunity.exe"
+notes = "Converted from a Cheat Engine table by miraikolus. Source: https://fearlessrevolution.com/viewtopic.php?t=12768"
+verified = []
+author = "miraikolus"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "disable-decinvul-in-case-of-problems-only"
+name = "Disable DecInvul in case of problems only"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(aobDisableDecInv,SpookyCharacterController:DecInvulnerability)
+
+[ENABLE]
+//aobscan(aobDisableDecInv,55 8B EC 57 83 EC 04 8B 7D 08 8B 87 00) // should be unique
+registersymbol(aobDisableDecInv)
+
+aobDisableDecInv:
+  db C3
+
+[DISABLE]
+
+aobDisableDecInv:
+  db 55
+
+unregistersymbol(aobDisableDecInv)
+
+{
+// ORIGINAL CODE - INJECTION POINT: SpookyCharacterController:DecInvulnerability
+
+20A4BB01: E3 00                          - jecxz 20A4BB03
+20A4BB03: 00 68 B8                       - add [eax-48],ch
+20A4BB06: 06                             - push es
+20A4BB07: 7B 0F                          - jnp SpookyCharacterController:DecInvulnerability
+20A4BB09: E9 1A 45 23 E3                 - jmp 03C80028
+20A4BB0E: 00 00                          - add [eax],al
+20A4BB10: AC                             - lodsb 
+20A4BB11: B9 A4 20 CA BA                 - mov ecx,BACA20A4
+20A4BB16: A4                             - movsb 
+20A4BB17: 20                             - db 20 
+// ---------- INJECTING HERE ----------
+SpookyCharacterController:DecInvulnerability: 55                             - push ebp
+// ---------- DONE INJECTING  ----------
+SpookyCharacterController:DecInvulnerability+1: 8B EC                          - mov ebp,esp
+SpookyCharacterController:DecInvulnerability+3: 57                             - push edi
+SpookyCharacterController:DecInvulnerability+4: 83 EC 04                       - sub esp,04
+SpookyCharacterController:DecInvulnerability+7: 8B 7D 08                       - mov edi,[ebp+08]
+SpookyCharacterController:DecInvulnerability+a: 8B 87 00 01 00 00              - mov eax,[edi+00000100]
+SpookyCharacterController:DecInvulnerability+10: 48                             - dec eax
+SpookyCharacterController:DecInvulnerability+11: 89 87 00 01 00 00              - mov [edi+00000100],eax
+SpookyCharacterController:DecInvulnerability+17: 85 C0                          - test eax,eax
+SpookyCharacterController:DecInvulnerability+19: 7D 0A                          - jnl SpookyCharacterController:DecInvulnerability+25
+SpookyCharacterController:DecInvulnerability+1b: C7 87 00 01 00 00 00 00 00 00  - mov [edi+00000100],00000000
+}"""
+
+[[cheat]]
+id = "low-stamina-loss-ctrl-num2-new-method"
+name = "Low stamina loss (Ctrl+Num2, NEW METHOD)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(aobStaminaInput,SpookyCharacterController:DoInput+999,SpookyCharacterController:DoInput+1FFF, D9 87 * * * * D9 85)
+//aobscan(aobStaminaInput,24 D9 87 E0 00 00 00 D9 85 44 FE FF FF) // aobStaminaInput+07
+alloc(StaminaBak,6,aobStaminaInput)
+registersymbol(aobStaminaInput)
+registersymbol(StaminaBak)
+
+StaminaBak:
+readmem(aobStaminaInput+06,6)
+
+aobStaminaInput+06:
+  fld1
+  nop 4
+
+[DISABLE]
+
+aobStaminaInput+06:
+//  db D9 85 44 FE FF FF
+  readmem(StaminaBak,6)
+
+unregistersymbol(StaminaBak)
+unregistersymbol(aobStaminaInput)
+dealloc(StaminaBak)
+
+{
+// ORIGINAL CODE - INJECTION POINT: SpookyCharacterController:DoInput+100e
+
+SpookyCharacterController:DoInput+fe5: 8D 85 64 FE FF FF     - lea eax,[ebp-0000019C]
+SpookyCharacterController:DoInput+feb: 83 EC 0C              - sub esp,0C
+SpookyCharacterController:DoInput+fee: 50                    - push eax
+SpookyCharacterController:DoInput+fef: E8 B4 08 00 00        - call UnityEngine:Vector3:get_magnitude
+SpookyCharacterController:DoInput+ff4: 83 C4 10              - add esp,10
+SpookyCharacterController:DoInput+ff7: D9 9D C0 FD FF FF     - fstp dword ptr [ebp-00000240]
+SpookyCharacterController:DoInput+ffd: 0F B6 87 31 01 00 00  - movzx eax,byte ptr [edi+00000131]
+SpookyCharacterController:DoInput+1004: 85 C0                 - test eax,eax
+SpookyCharacterController:DoInput+1006: 74 24                 - je SpookyCharacterController:DoInput+102c
+SpookyCharacterController:DoInput+1008: D9 87 E0 00 00 00     - fld dword ptr [edi+000000E0]
+// ---------- INJECTING HERE ----------
+SpookyCharacterController:DoInput+100e: D9 85 44 FE FF FF     - fld dword ptr [ebp-000001BC]
+// ---------- DONE INJECTING  ----------
+SpookyCharacterController:DoInput+1014: D9 85 C0 FD FF FF     - fld dword ptr [ebp-00000240]
+SpookyCharacterController:DoInput+101a: DE C9                 - fmulp st(1),st(0)
+SpookyCharacterController:DoInput+101c: D9 05 08 04 35 24     - fld dword ptr [24350408]
+SpookyCharacterController:DoInput+1022: DE F9                 - fdivp st(1),st(0)
+SpookyCharacterController:DoInput+1024: DE E9                 - fsubp st(1),st(0)
+SpookyCharacterController:DoInput+1026: D9 9F E0 00 00 00     - fstp dword ptr [edi+000000E0]
+SpookyCharacterController:DoInput+102c: D9 87 50 01 00 00     - fld dword ptr [edi+00000150]
+SpookyCharacterController:DoInput+1032: D9 85 C0 FD FF FF     - fld dword ptr [ebp-00000240]
+SpookyCharacterController:DoInput+1038: DE C1                 - faddp 
+SpookyCharacterController:DoInput+103a: D9 9F 50 01 00 00     - fstp dword ptr [edi+00000150]
+}"""
+
+[[cheat]]
+id = "higher-sprint-speed-ctrl-num3-new-method"
+name = "Higher sprint speed (Ctrl+Num3, NEW METHOD)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(aobSprintSpeed,SpookyCharacterController:DoInput+d00,SpookyCharacterController:DoInput+fff, D9 85 40FEFFFF 8D)
+//aobscan(aobSprintSpeed,"D9 85 40 FE FF FF") // couldn't find unique
+alloc(newmem,$4F,aobSprintSpeed)
+registersymbol(aobSprintSpeed)
+
+label(SprintVal)
+label(SprintBak)
+registersymbol(SprintBak)
+
+newmem:
+SprintBak:
+  readmem(aobSprintSpeed,6)
+SprintVal:
+  dd (float)15
+
+aobSprintSpeed:
+  fld dword ptr [SprintVal]
+
+[DISABLE]
+
+aobSprintSpeed:
+//  db D9 85 40 FE FF FF
+  readmem(SprintBak,6)
+
+unregistersymbol(SprintBak)
+unregistersymbol(aobSprintSpeed)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: SpookyCharacterController:DoInput+d5a
+
+SpookyCharacterController:DoInput+d26: DF F1              - fcomip st(0),st(1)
+SpookyCharacterController:DoInput+d28: DD D8              - fstp st(0)
+SpookyCharacterController:DoInput+d2a: 0F 8A 6D 00 00 00  - jp SpookyCharacterController:DoInput+d9d
+SpookyCharacterController:DoInput+d30: 0F 83 67 00 00 00  - jae SpookyCharacterController:DoInput+d9d
+SpookyCharacterController:DoInput+d36: 8B 85 18 FE FF FF  - mov eax,[ebp-000001E8]
+SpookyCharacterController:DoInput+d3c: 89 85 54 FF FF FF  - mov [ebp-000000AC],eax
+SpookyCharacterController:DoInput+d42: 8B 85 1C FE FF FF  - mov eax,[ebp-000001E4]
+SpookyCharacterController:DoInput+d48: 89 85 58 FF FF FF  - mov [ebp-000000A8],eax
+SpookyCharacterController:DoInput+d4e: 8B 85 20 FE FF FF  - mov eax,[ebp-000001E0]
+SpookyCharacterController:DoInput+d54: 89 85 5C FF FF FF  - mov [ebp-000000A4],eax
+// ---------- INJECTING HERE ----------
+SpookyCharacterController:DoInput+d5a: D9 85 40 FE FF FF  - fld dword ptr [ebp-000001C0]
+// ---------- DONE INJECTING  ----------
+SpookyCharacterController:DoInput+d60: 8D 85 18 FE FF FF  - lea eax,[ebp-000001E8]
+SpookyCharacterController:DoInput+d66: 83 EC 0C           - sub esp,0C
+SpookyCharacterController:DoInput+d69: 83 EC 04           - sub esp,04
+SpookyCharacterController:DoInput+d6c: D9 1C 24           - fstp dword ptr [esp]
+SpookyCharacterController:DoInput+d6f: 83 EC 0C           - sub esp,0C
+SpookyCharacterController:DoInput+d72: 8B 8D 54 FF FF FF  - mov ecx,[ebp-000000AC]
+SpookyCharacterController:DoInput+d78: 89 0C 24           - mov [esp],ecx
+SpookyCharacterController:DoInput+d7b: 8B 8D 58 FF FF FF  - mov ecx,[ebp-000000A8]
+SpookyCharacterController:DoInput+d81: 89 4C 24 04        - mov [esp+04],ecx
+SpookyCharacterController:DoInput+d85: 8B 8D 5C FF FF FF  - mov ecx,[ebp-000000A4]
+}"""
+
+[[cheat]]
+id = "disable-slime-ctrl-num5-green-spots-making-you-slow"
+name = "Disable slime (Ctrl+Num5, green spots making you slow)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(aobDisableSlimeEnter,FloorSlime:OnTriggerEnter)
+define(aobDisableSlimeExit,FloorSlime:OnTriggerExit)
+
+[ENABLE]
+//aobscan(aobDisableSlimeEnter,55 8B EC 83 EC 08 83 EC 0C FF 75 0C 8B 45 0C 39 00 E8 BA DE) // should be unique
+//aobscan(aobDisableSlimeEnter,55 8B EC 83 EC 08 83 EC 0C FF 75 0C 8B 45 0C 39 00 E8 2E)
+registersymbol(aobDisableSlimeEnter)
+//aobscan(aobDisableSlimeExit,55 8B EC 83 EC 08 83 EC 0C FF 75 0C 8B 45 0C 39 00 E8 52) // should be unique
+//aobscan(aobDisableSlimeExit,55 8B EC 83 EC 08 83 EC 0C FF 75 0C 8B 45 0C 39 00 E8 C6)
+registersymbol(aobDisableSlimeExit)
+
+aobDisableSlimeEnter:
+  db C3
+
+aobDisableSlimeExit:
+  db C3
+
+[DISABLE]
+
+aobDisableSlimeEnter:
+  db 55
+
+aobDisableSlimeExit:
+  db 55
+
+unregistersymbol(aobDisableSlimeEnter)
+unregistersymbol(aobDisableSlimeExit)"""
+
+[[cheat]]
+id = "invulnerable-def-0"
+name = "invulnerable (Def 0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "walkspeed-def-5-now-only-copied-to-stack-during-pause"
+name = "walkSpeed (Def 5 - Now only copied to stack during pause)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 5
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "crawlspeed-def-3"
+name = "crawlSpeed (Def 3)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 3
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "waterspeed-def-3"
+name = "waterSpeed (Def 3)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 3
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "slow-def-0-1-if-on-green-slime"
+name = "slow (Def 0 - 1 if on green slime)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x13c"]
+
+[[cheat]]
+id = "hp-def-100"
+name = "hp (Def 100)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "stamina-def-100"
+name = "stamina (Def 100)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "unlimitedstamina-def-0-turns-1-at-room-750"
+name = "unlimitedStamina (Def 0 - Turns 1 at Room 750)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xd3"]
+
+[[cheat]]
+id = "unlimitedstaminahp-def-0-8-at-750-amount-of-rooms-left"
+name = "unlimitedStaminaHp (Def 0, 8 at 750, =amount of rooms left)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "canpause-def-1"
+name = "canPause (Def 1)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xe9"]
+
+[[cheat]]
+id = "staminaregendelay-def-0-1"
+name = "staminaRegenDelay (Def 0.1)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x114"]
+
+[[cheat]]
+id = "hpregendelay-def-8"
+name = "hpRegenDelay (Def 8)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 8
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "hppersecond-def-10"
+name = "hpPerSecond (Def 10)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 10
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "staminapersecond-def-25"
+name = "staminaPerSecond (Def 25)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 25
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "sprintaccumulator-acc-the-longer-you-dont-run"
+name = "sprintAccumulator (acc the longer you dont run)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "hpregenaccumulator-acc-the-longer-you-dont-get-hit"
+name = "hpRegenAccumulator (acc the longer you dont get hit)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "gravity-new-def-9"
+name = "gravity (NEW, Def -9)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -9
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "3-disable-stamina-loss-test"
+name = "3 Disable Stamina Loss (Test)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(aobDisableStaminaDec,SpookyCharacterController:DoInput+999,SpookyCharacterController:DoInput+1FFF, 0FB6 87 * * * * 85 C0 74 * D9)
+//aobscan(INJECT,0F B6 87 31 01 00 00 85 C0 74 24) // should be unique
+alloc(newmem,$4F,aobDisableStaminaDec)
+registersymbol(aobDisableStaminaDec)
+
+label(return)
+label(StaminaBak)
+registersymbol(StaminaBak)
+
+newmem:
+
+StaminaBak:
+//  movzx eax,byte ptr [edi+00000131]
+  readmem(aobDisableStaminaDec,7)
+
+aobDisableStaminaDec:
+  xor eax,eax
+  nop 5
+return:
+
+
+[DISABLE]
+
+aobDisableStaminaDec:
+//  db 0F B6 87 31 01 00 00
+  readmem(StaminaBak,7)
+
+unregistersymbol(StaminaBak)
+unregistersymbol(aobDisableStaminaDec)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: SpookyCharacterController:DoInput+ffd
+
+SpookyCharacterController:DoInput+fd3: 8D 54 FE FF           - lea edx,[esi+edi*8-01]
+SpookyCharacterController:DoInput+fd7: FF 89 4C 24 08 50     - dec [ecx+5008244C]
+SpookyCharacterController:DoInput+fdd: E8 D6 E0 3E E4        - call UnityEngine:Vector3:op_Subtraction
+SpookyCharacterController:DoInput+fe2: 83 C4 1C              - add esp,1C
+SpookyCharacterController:DoInput+fe5: 8D 85 64 FE FF FF     - lea eax,[ebp-0000019C]
+SpookyCharacterController:DoInput+feb: 83 EC 0C              - sub esp,0C
+SpookyCharacterController:DoInput+fee: 50                    - push eax
+SpookyCharacterController:DoInput+fef: E8 B4 08 00 00        - call UnityEngine:Vector3:get_magnitude
+SpookyCharacterController:DoInput+ff4: 83 C4 10              - add esp,10
+SpookyCharacterController:DoInput+ff7: D9 9D C0 FD FF FF     - fstp dword ptr [ebp-00000240]
+// ---------- INJECTING HERE ----------
+SpookyCharacterController:DoInput+ffd: 0F B6 87 31 01 00 00  - movzx eax,byte ptr [edi+00000131]
+// ---------- DONE INJECTING  ----------
+SpookyCharacterController:DoInput+1004: 85 C0                 - test eax,eax
+SpookyCharacterController:DoInput+1006: 74 24                 - je SpookyCharacterController:DoInput+102c
+SpookyCharacterController:DoInput+1008: D9 87 E0 00 00 00     - fld dword ptr [edi+000000E0]
+SpookyCharacterController:DoInput+100e: D9 85 44 FE FF FF     - fld dword ptr [ebp-000001BC]
+SpookyCharacterController:DoInput+1014: D9 85 C0 FD FF FF     - fld dword ptr [ebp-00000240]
+SpookyCharacterController:DoInput+101a: DE C9                 - fmulp st(1),st(0)
+SpookyCharacterController:DoInput+101c: D9 05 08 04 35 24     - fld dword ptr [24350408]
+SpookyCharacterController:DoInput+1022: DE F9                 - fdivp st(1),st(0)
+SpookyCharacterController:DoInput+1024: DE E9                 - fsubp st(1),st(0)
+SpookyCharacterController:DoInput+1026: D9 9F E0 00 00 00     - fstp dword ptr [edi+000000E0]
+}"""
+
+[[cheat]]
+id = "3-stamina-drain-rate-test"
+name = "3 stamina - Drain rate (Test)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(aobStaminaInput,SpookyCharacterController:DoInput+999,SpookyCharacterController:DoInput+1FFF, D9 87 * * * * D9 85)
+//aobscan(aobStaminaInput,24 D9 87 E0 00 00 00) // aobStaminaInput+01
+alloc(newmem,$4F,aobStaminaInput)
+registersymbol(aobStaminaInput)
+
+label(start)
+label(return)
+label(input_bak)
+registersymbol(input_bak)
+
+label(pInputStack)
+registersymbol(pInputStack)
+
+newmem:
+pInputStack:
+  dd 0
+start:
+  lea eax,[ebp-000001BC]
+  mov [pInputStack],eax
+// ah no, prob would need asm mov + autoass. revert but ... let's make it easier.
+input_bak:
+  readmem(aobStaminaInput,6)
+  jmp return
+
+aobStaminaInput:
+  jmp start
+  nop
+return:
+
+
+[DISABLE]
+
+aobStaminaInput:
+  readmem(input_bak,6)
+//  db D9 87 E0 00 00 00
+
+unregistersymbol(pInputStack)
+unregistersymbol(input_bak)
+unregistersymbol(aobStaminaInput)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: SpookyCharacterController:DoInput+1008
+
+SpookyCharacterController:DoInput+fe2: 83 C4 1C              - add esp,1C
+SpookyCharacterController:DoInput+fe5: 8D 85 64 FE FF FF     - lea eax,[ebp-0000019C]
+SpookyCharacterController:DoInput+feb: 83 EC 0C              - sub esp,0C
+SpookyCharacterController:DoInput+fee: 50                    - push eax
+SpookyCharacterController:DoInput+fef: E8 B4 08 00 00        - call UnityEngine:Vector3:get_magnitude
+SpookyCharacterController:DoInput+ff4: 83 C4 10              - add esp,10
+SpookyCharacterController:DoInput+ff7: D9 9D C0 FD FF FF     - fstp dword ptr [ebp-00000240]
+SpookyCharacterController:DoInput+ffd: 0F B6 87 31 01 00 00  - movzx eax,byte ptr [edi+00000131]
+SpookyCharacterController:DoInput+1004: 85 C0                 - test eax,eax
+SpookyCharacterController:DoInput+1006: 74 24                 - je SpookyCharacterController:DoInput+102c
+// ---------- INJECTING HERE ----------
+SpookyCharacterController:DoInput+1008: D9 87 E0 00 00 00     - fld dword ptr [edi+000000E0]
+// ---------- DONE INJECTING  ----------
+SpookyCharacterController:DoInput+100e: D9 85 44 FE FF FF     - fld dword ptr [ebp-000001BC]
+SpookyCharacterController:DoInput+1014: D9 85 C0 FD FF FF     - fld dword ptr [ebp-00000240]
+SpookyCharacterController:DoInput+101a: DE C9                 - fmulp st(1),st(0)
+SpookyCharacterController:DoInput+101c: D9 05 08 04 35 24     - fld dword ptr [24350408]
+SpookyCharacterController:DoInput+1022: DE F9                 - fdivp st(1),st(0)
+SpookyCharacterController:DoInput+1024: DE E9                 - fsubp st(1),st(0)
+SpookyCharacterController:DoInput+1026: D9 9F E0 00 00 00     - fstp dword ptr [edi+000000E0]
+SpookyCharacterController:DoInput+102c: D9 87 50 01 00 00     - fld dword ptr [edi+00000150]
+SpookyCharacterController:DoInput+1032: D9 85 C0 FD FF FF     - fld dword ptr [ebp-00000240]
+SpookyCharacterController:DoInput+1038: DE C1                 - faddp
+
+  local p1 = getAddressList().getMemoryRecordByDescription("pCharacter 2021-02")
+  local p2 =  readPointer("pCharacter")
+  local d1 = getAddressList().getMemoryRecordByDescription("invulnerable (Def 0)")
+  local addr = p2 + 0xAC
+  print("p1 ",p1, p1.Address, string.format("%.8x",p1.CurrentAddress) )
+  print("p2 ", string.format("%.8x",p2), p2)
+  print("d1 ", d1, "addr:",d1.Address,"curr",string.format("%.8x",d1.CurrentAddress),"Value ",d1.Value)
+  print("addr ",string.format("%.8x",addr), addr)
+  writeInteger(d1.CurrentAddress,1)
+}"""
+
+[[cheat]]
+id = "2-walkspeed-def-5"
+name = "2 walkSpeed (Def: 5)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "2-crawlspeed-def-3"
+name = "2 crawlSpeed (Def: 3)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -1
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "2-sprintspeed-def-9"
+name = "2 sprintSpeed (Def: 9)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "2-slow-def-0-1-if-on-green-slime"
+name = "2 slow (Def: 0 - 1 if on green slime)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 257
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "2-hp-def-100"
+name = "2 hp (Def: 100)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "2-stamina-def-100"
+name = "2 stamina (Def: 100)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "2-unlimitedstamina-def-0-turns-1-at-room-750"
+name = "2 unlimitedStamina (Def: 0 - Turns 1 at Room 750)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x8f"]
+
+[[cheat]]
+id = "2-unlimitedstaminahp-def-0-8-at-750-amount-of-rooms-left"
+name = "2 unlimitedStaminaHp (Def: 0, 8 at 750, =amount of rooms left)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "2-canpause-def-1"
+name = "2 canPause (Def: 1)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "2-invulnerable-def-0"
+name = "2 invulnerable (Def: 0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1073741824
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "2-staminaregendelay-def-0-1"
+name = "2 staminaRegenDelay (Def 0.1)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "2-hpregendelay-def-8"
+name = "2 hpRegenDelay (Def: 8)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 10
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "2-hppersecond-def-10"
+name = "2 hpPerSecond (Def: 10)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "2-staminapersecond-def-25"
+name = "2 staminaPerSecond (Def: 25)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -9
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "2-staminadrainrate-def-10"
+name = "2 staminaDrainRate (Def: 10)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "2-sprintaccumulator-acc-the-longer-you-don-t-run"
+name = "2 sprintAccumulator (acc the longer you don't run)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "2-hpregenaccumulator-acc-the-longer-you-don-t-get-hit"
+name = "2 hpRegenAccumulator (acc the longer you don't get hit)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "1-walkspeed-def-5"
+name = "1 walkSpeed (Def: 5)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "1-crawlspeed-def-3"
+name = "1 crawlSpeed (Def: 3)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "1-sprintspeed-def-9"
+name = "1 sprintSpeed (Def: 9)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "1-slow-def-0-1-if-on-green-slime"
+name = "1 slow (Def: 0 - 1 if on green slime)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1120403456
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "1-hp-def-100"
+name = "1 hp (Def: 100)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "1-stamina-def-100"
+name = "1 stamina (Def: 100)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "1-unlimitedstamina-def-0-turns-1-at-room-750"
+name = "1 unlimitedStamina (Def: 0 - Turns 1 at Room 750)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x9a"]
+
+[[cheat]]
+id = "1-unlimitedstaminahp-def-0-8-at-750-amount-of-rooms-left"
+name = "1 unlimitedStaminaHp (Def: 0, 8 at 750, =amount of rooms left)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "1-canpause-def-1"
+name = "1 canPause (Def: 1)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "1-invulnerable-def-0"
+name = "1 invulnerable (Def: 0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "1-staminaregendelay-def-0-1"
+name = "1 staminaRegenDelay (Def 0.1)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 3
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "1-hpregendelay-def-8"
+name = "1 hpRegenDelay (Def: 8)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "hppersecond-def-10-2"
+name = "hpPerSecond (Def: 10)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 10
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "staminapersecond-def-25-2"
+name = "staminaPerSecond (Def: 25)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "staminadrainrate-def-10"
+name = "staminaDrainRate (Def: 10)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -9
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "sprintaccumulator-acc-the-longer-you-don-t-run"
+name = "sprintAccumulator (acc the longer you don't run)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "hpregenaccumulator-acc-the-longer-you-don-t-get-hit"
+name = "hpRegenAccumulator (acc the longer you don't get hit)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xe0"]

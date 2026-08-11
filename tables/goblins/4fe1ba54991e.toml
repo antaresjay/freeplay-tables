@@ -1,0 +1,561 @@
+[game]
+name = "Guns n' Goblins Demo"
+exe = "goblins.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=40242"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,PlayerManager:Update)
+define(bytes,55 48 8B EC 48 81 EC 90 02 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,PlayerManager:Update)
+registersymbol(GetPlayer)
+label(code return GetPlayer)
+//Send
+newmem:
+mov [GetPlayer],rcx
+
+code:
+  push rbp
+  mov rbp,rsp
+  sub rsp,00000290
+  jmp return
+
+GetPlayer:
+dq
+
+address:
+  jmp newmem
+  nop 6
+return:
+//Send
+[DISABLE]
+
+address:
+  db bytes
+
+  unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(Godmode,cowsins.PlayerStats:Update,cowsins.PlayerStats:Update+66,0F B6 46 59 85 C0 0F 84 34 00 00 00 48 8B 46 28) // should be unique
+alloc(newmem,$1000,Godmode)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rsi+58],1
+  movzx eax,byte ptr [rsi+59]
+  test eax,eax
+  jmp return
+
+Godmode:
+  jmp newmem
+  nop
+return:
+registersymbol(Godmode)
+
+[DISABLE]
+
+Godmode:
+  db 0F B6 46 59 85 C0
+
+unregistersymbol(Godmode)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: cowsins.PlayerStats:Update+33
+
+cowsins.PlayerStats:Update+4: 48 83 EC 30                    - sub rsp,30
+cowsins.PlayerStats:Update+8: 48 89 75 F8                    - mov [rbp-08],rsi
+cowsins.PlayerStats:Update+c: 48 8B F1                       - mov rsi,rcx
+cowsins.PlayerStats:Update+f: 0F B6 8E 84 00 00 00           - movzx ecx,byte ptr [rsi+00000084]
+cowsins.PlayerStats:Update+16: B8 F0 48 59 76                 - mov eax,765948F0
+cowsins.PlayerStats:Update+1b: 40 88 08                       - mov [rax],cl
+cowsins.PlayerStats:Update+1e: 48 8B CE                       - mov rcx,rsi
+cowsins.PlayerStats:Update+21: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+cowsins.PlayerStats:Update+26: 49 BB E0 45 E5 7D 00 00 00 00  - mov r11,cowsins.PlayerStats:ProcessAutoHeal
+cowsins.PlayerStats:Update+30: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+cowsins.PlayerStats:Update+33: 0F B6 46 59                    - movzx eax,byte ptr [rsi+59]
+// ---------- DONE INJECTING  ----------
+cowsins.PlayerStats:Update+37: 85 C0                          - test eax,eax
+cowsins.PlayerStats:Update+39: 0F 84 34 00 00 00              - je cowsins.PlayerStats:Update+73
+cowsins.PlayerStats:Update+3f: 48 8B 46 28                    - mov rax,[rsi+28]
+cowsins.PlayerStats:Update+43: 48 8B C8                       - mov rcx,rax
+cowsins.PlayerStats:Update+46: 83 39 00                       - cmp dword ptr [rcx],00
+cowsins.PlayerStats:Update+49: 0F B6 80 AD 02 00 00           - movzx eax,byte ptr [rax+000002AD]
+cowsins.PlayerStats:Update+50: 85 C0                          - test eax,eax
+cowsins.PlayerStats:Update+52: 75 1F                          - jne cowsins.PlayerStats:Update+73
+cowsins.PlayerStats:Update+54: 48 8B 46 30                    - mov rax,[rsi+30]
+cowsins.PlayerStats:Update+58: 0F B6 40 74                    - movzx eax,byte ptr [rax+74]
+}"""
+
+[[cheat]]
+id = "infinite-jumps"
+name = "Infinite Jumps"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(InfJump,cowsins.PlayerMovement:CheckGroundedWithRaycast+22b,cowsins.PlayerMovement:CheckGroundedWithRaycast+29e,08 48 63 86 6C 01 00 00) // should be unique
+alloc(newmem,$1000,InfJump)
+
+label(code)
+label(return)
+
+newmem:
+mov [rsi+16C],1E7
+code:
+  movsxd  rax,dword ptr [rsi+0000016C]
+  jmp return
+
+InfJump+01:
+  jmp newmem
+  nop 2
+return:
+registersymbol(InfJump)
+
+[DISABLE]
+
+InfJump+01:
+  db 48 63 86 6C 01 00 00
+
+unregistersymbol(InfJump)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7E4F4131
+
+cowsins.PlayerMovement:CheckGroundedWithRaycast+246: C6 86 DC 02 00 00 00           - mov byte ptr [rsi+000002DC],00
+cowsins.PlayerMovement:CheckGroundedWithRaycast+24d: 48 85 F6                       - test rsi,rsi
+cowsins.PlayerMovement:CheckGroundedWithRaycast+250: 0F 84 1E 01 00 00              - je cowsins.PlayerMovement:CheckGroundedWithRaycast+374
+cowsins.PlayerMovement:CheckGroundedWithRaycast+256: 48 8D 86 5C 01 00 00           - lea rax,[rsi+0000015C]
+cowsins.PlayerMovement:CheckGroundedWithRaycast+25d: 48 63 4D 80                    - movsxd  rcx,dword ptr [rbp-80]
+cowsins.PlayerMovement:CheckGroundedWithRaycast+261: 89 08                          - mov [rax],ecx
+cowsins.PlayerMovement:CheckGroundedWithRaycast+263: 48 63 4D 84                    - movsxd  rcx,dword ptr [rbp-7C]
+cowsins.PlayerMovement:CheckGroundedWithRaycast+267: 89 48 04                       - mov [rax+04],ecx
+cowsins.PlayerMovement:CheckGroundedWithRaycast+26a: 48 63 4D 88                    - movsxd  rcx,dword ptr [rbp-78]
+cowsins.PlayerMovement:CheckGroundedWithRaycast+26e: 89 48 08                       - mov [rax+08],ecx
+// ---------- INJECTING HERE ----------
+cowsins.PlayerMovement:CheckGroundedWithRaycast+271: 48 63 86 6C 01 00 00           - movsxd  rax,dword ptr [rsi+0000016C]
+// ---------- DONE INJECTING  ----------
+cowsins.PlayerMovement:CheckGroundedWithRaycast+278: 89 86 C4 02 00 00              - mov [rsi+000002C4],eax
+cowsins.PlayerMovement:CheckGroundedWithRaycast+27e: 48 8B 86 A0 00 00 00           - mov rax,[rsi+000000A0]
+cowsins.PlayerMovement:CheckGroundedWithRaycast+285: 48 85 C0                       - test rax,rax
+cowsins.PlayerMovement:CheckGroundedWithRaycast+288: 0F 84 DC 00 00 00              - je cowsins.PlayerMovement:CheckGroundedWithRaycast+36a
+cowsins.PlayerMovement:CheckGroundedWithRaycast+28e: 48 8B 96 A0 00 00 00           - mov rdx,[rsi+000000A0]
+cowsins.PlayerMovement:CheckGroundedWithRaycast+295: 48 8B CE                       - mov rcx,rsi
+cowsins.PlayerMovement:CheckGroundedWithRaycast+298: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+cowsins.PlayerMovement:CheckGroundedWithRaycast+29d: 90                             - nop 
+cowsins.PlayerMovement:CheckGroundedWithRaycast+29e: 49 BB 20 CD CA 7E 00 00 00 00  - mov r11,UnityEngine.MonoBehaviour:StopCoroutine
+cowsins.PlayerMovement:CheckGroundedWithRaycast+2a8: 41 FF D3                       - call r11
+}"""
+
+[[cheat]]
+id = "massive-firearm-damage"
+name = "Massive Firearm Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(FirearmDamage,cowsins.WeaponController:HitscanShot+5a0,cowsins.WeaponController:HitscanShot+619,F3 0F 10 86 7C 01 00 00 F3 0F 5A C0 48 8B) // should be unique
+alloc(newmem,$1000,FirearmDamage)
+
+label(code)
+label(return)
+
+newmem:
+mov [rsi+17C],(float)99999
+mov [rsi+158],(float)999999
+
+code:
+  movss xmm0,[rsi+0000017C]
+  jmp return
+
+FirearmDamage:
+  jmp newmem
+  nop 3
+return:
+registersymbol(FirearmDamage)
+
+[DISABLE]
+
+FirearmDamage:
+  db F3 0F 10 86 7C 01 00 00
+
+unregistersymbol(FirearmDamage)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: cowsins.WeaponController:HitscanShot+5ea
+
+cowsins.WeaponController:HitscanShot+5ba: 89 85 08 FC FF FF        - mov [rbp-000003F8],eax
+cowsins.WeaponController:HitscanShot+5c0: 48 85 DB                 - test rbx,rbx
+cowsins.WeaponController:HitscanShot+5c3: 0F 84 8B 13 00 00        - je cowsins.WeaponController:HitscanShot+1954
+cowsins.WeaponController:HitscanShot+5c9: 48 8D 43 0C              - lea rax,[rbx+0C]
+cowsins.WeaponController:HitscanShot+5cd: 48 63 8D 00 FC FF FF     - movsxd  rcx,dword ptr [rbp-00000400]
+cowsins.WeaponController:HitscanShot+5d4: 89 08                    - mov [rax],ecx
+cowsins.WeaponController:HitscanShot+5d6: 48 63 8D 04 FC FF FF     - movsxd  rcx,dword ptr [rbp-000003FC]
+cowsins.WeaponController:HitscanShot+5dd: 89 48 04                 - mov [rax+04],ecx
+cowsins.WeaponController:HitscanShot+5e0: 48 63 8D 08 FC FF FF     - movsxd  rcx,dword ptr [rbp-000003F8]
+cowsins.WeaponController:HitscanShot+5e7: 89 48 08                 - mov [rax+08],ecx
+// ---------- INJECTING HERE ----------
+cowsins.WeaponController:HitscanShot+5ea: F3 0F 10 86 7C 01 00 00  - movss xmm0,[rsi+0000017C]
+// ---------- DONE INJECTING  ----------
+cowsins.WeaponController:HitscanShot+5f2: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+cowsins.WeaponController:HitscanShot+5f6: 48 8B 86 D0 00 00 00     - mov rax,[rsi+000000D0]
+cowsins.WeaponController:HitscanShot+5fd: F3 0F 10 48 20           - movss xmm1,[rax+20]
+cowsins.WeaponController:HitscanShot+602: F3 0F 5A C9              - cvtss2sd xmm1,xmm1
+cowsins.WeaponController:HitscanShot+606: F2 0F 59 C1              - mulsd xmm0,xmm1
+cowsins.WeaponController:HitscanShot+60a: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+cowsins.WeaponController:HitscanShot+60e: F3 0F 11 AD EC FA FF FF  - movss [rbp-00000514],xmm5
+cowsins.WeaponController:HitscanShot+616: 48 8B CD                 - mov rcx,rbp
+cowsins.WeaponController:HitscanShot+619: 48 81 C1 58 FB FF FF     - add rcx,FFFFFFFFFFFFFB58
+cowsins.WeaponController:HitscanShot+620: 33 D2                    - xor edx,edx
+}"""
+
+[[cheat]]
+id = "no-reload"
+name = "No Reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(NoSmmo,HudUI:Update+3b,HudUI:Update+b3,48 63 80 E0 00 00 00 48 89 85 60 FF FF FF)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+mov [rax+D0],(float)20000000000
+
+code:
+  movsxd  rax,dword ptr [rax+000000E0]
+  mov [rbp-000000A0],rax
+  jmp return
+
+NoSmmo:
+  jmp far newmem
+return:
+registersymbol(NoSmmo)
+
+[DISABLE]
+
+NoSmmo:
+  db 48 63 80 E0 00 00 00 48 89 85 60 FF FF FF
+
+unregistersymbol(NoSmmo)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: HudUI:Update+71
+
+HudUI:Update+43: F3 0F 11 6D 88                 - movss [rbp-78],xmm5
+HudUI:Update+48: B8 90 4F 60 75                 - mov eax,75604F90
+HudUI:Update+4d: 48 63 00                       - movsxd  rax,dword ptr [rax]
+HudUI:Update+50: 85 C0                          - test eax,eax
+HudUI:Update+52: 0F 84 DA 05 00 00              - je HudUI:Update+632
+HudUI:Update+58: 48 8B 46 50                    - mov rax,[rsi+50]
+HudUI:Update+5c: 48 89 85 68 FF FF FF           - mov [rbp-00000098],rax
+HudUI:Update+63: 48 8B 04 25 60 4F 60 75        - mov rax,[75604F60]
+HudUI:Update+6b: 48 8B C8                       - mov rcx,rax
+HudUI:Update+6e: 83 39 00                       - cmp dword ptr [rcx],00
+// ---------- INJECTING HERE ----------
+HudUI:Update+71: 48 63 80 E0 00 00 00           - movsxd  rax,dword ptr [rax+000000E0]
+// ---------- DONE INJECTING  ----------
+HudUI:Update+78: 48 89 85 60 FF FF FF           - mov [rbp-000000A0],rax
+HudUI:Update+7f: B9 88 11 C6 6F                 - mov ecx,6FC61188
+HudUI:Update+84: 66 90                          - nop 2
+HudUI:Update+86: 49 BB 50 10 24 02 00 00 00 00  - mov r11,System.Object:__icall_wrapper_ves_icall_object_new_specific
+HudUI:Update+90: 41 FF D3                       - call r11
+HudUI:Update+93: 48 8B C8                       - mov rcx,rax
+HudUI:Update+96: 48 8B 85 60 FF FF FF           - mov rax,[rbp-000000A0]
+HudUI:Update+9d: 89 41 10                       - mov [rcx+10],eax
+HudUI:Update+a0: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+HudUI:Update+a5: 90                             - nop 
+}"""
+
+[[cheat]]
+id = "rapid-fire"
+name = "Rapid Fire"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(Rifle,cowsins.WeaponController:GetAttachmentsModifiers+3f5,cowsins.WeaponController:GetAttachmentsModifiers+476,F3 0F 11 AE 80 01 00 00 48) // should be unique
+alloc(newmem,$1000,Rifle)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rsi+00000180],(float)0.00002
+  jmp return
+
+Rifle:
+  jmp newmem
+  nop 3
+return:
+registersymbol(Rifle)
+
+aobscanregion(Pistol,cowsins.WeaponController:GetAttachmentsModifiers+346,cowsins.WeaponController:GetAttachmentsModifiers+3be,46 38 F3 0F 10 80 38 01 00 00) // should be unique
+alloc(newmem2,$1000,Pistol)
+
+label(code2)
+label(return2)
+
+newmem2:
+mov [rax+138],(float)0.000002
+code2:
+  movss xmm0,[rax+00000138]
+  jmp return2
+
+Pistol+02:
+  jmp newmem2
+  nop 3
+return2:
+registersymbol(Pistol)
+
+[DISABLE]
+
+Rifle:
+  db F3 0F 11 AE 80 01 00 00
+
+unregistersymbol(Rifle)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: cowsins.WeaponController:GetAttachmentsModifiers+430
+
+cowsins.WeaponController:GetAttachmentsModifiers+3fe: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+402: F3 0F 11 AE 84 01 00 00        - movss [rsi+00000184],xmm5
+cowsins.WeaponController:GetAttachmentsModifiers+40a: 48 8B 46 38                    - mov rax,[rsi+38]
+cowsins.WeaponController:GetAttachmentsModifiers+40e: F3 0F 10 80 70 01 00 00        - movss xmm0,[rax+00000170]
+cowsins.WeaponController:GetAttachmentsModifiers+416: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+41a: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+41e: F3 0F 11 6D 94                 - movss [rbp-6C],xmm5
+cowsins.WeaponController:GetAttachmentsModifiers+423: F3 0F 10 45 94                 - movss xmm0,[rbp-6C]
+cowsins.WeaponController:GetAttachmentsModifiers+428: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+42c: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+// ---------- INJECTING HERE ----------
+cowsins.WeaponController:GetAttachmentsModifiers+430: F3 0F 11 AE 80 01 00 00        - movss [rsi+00000180],xmm5
+// ---------- DONE INJECTING  ----------
+cowsins.WeaponController:GetAttachmentsModifiers+438: 48 B9 B8 2B 93 11 04 00 00 00  - mov rcx,0000000411932BB8
+cowsins.WeaponController:GetAttachmentsModifiers+442: BA 07 00 00 00                 - mov edx,00000007
+cowsins.WeaponController:GetAttachmentsModifiers+447: 48 8D AD 00 00 00 00           - lea rbp,[rbp+00000000]
+cowsins.WeaponController:GetAttachmentsModifiers+44e: 49 BB 40 1A 4E 03 00 00 00 00  - mov r11,System.Object:__icall_wrapper_ves_icall_array_new_specific
+cowsins.WeaponController:GetAttachmentsModifiers+458: 41 FF D3                       - call r11
+cowsins.WeaponController:GetAttachmentsModifiers+45b: 48 8B C8                       - mov rcx,rax
+cowsins.WeaponController:GetAttachmentsModifiers+45e: 48 89 8D 58 FF FF FF           - mov [rbp-000000A8],rcx
+cowsins.WeaponController:GetAttachmentsModifiers+465: 48 8B 4E 28                    - mov rcx,[rsi+28]
+cowsins.WeaponController:GetAttachmentsModifiers+469: 48 63 96 BC 01 00 00           - movsxd  rdx,dword ptr [rsi+000001BC]
+cowsins.WeaponController:GetAttachmentsModifiers+470: 48 63 D2                       - movsxd  rdx,edx
+}
+Pistol+02:
+  db F3 0F 10 80 38 01 00 00
+
+unregistersymbol(Pistol)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: cowsins.WeaponController:GetAttachmentsModifiers+384
+
+cowsins.WeaponController:GetAttachmentsModifiers+352: 48 8B 46 38              - mov rax,[rsi+38]
+cowsins.WeaponController:GetAttachmentsModifiers+356: F3 0F 10 80 8C 01 00 00  - movss xmm0,[rax+0000018C]
+cowsins.WeaponController:GetAttachmentsModifiers+35e: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+362: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+366: F3 0F 11 6D A4           - movss [rbp-5C],xmm5
+cowsins.WeaponController:GetAttachmentsModifiers+36b: F3 0F 10 45 A4           - movss xmm0,[rbp-5C]
+cowsins.WeaponController:GetAttachmentsModifiers+370: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+374: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+378: F3 0F 11 AE DC 01 00 00  - movss [rsi+000001DC],xmm5
+cowsins.WeaponController:GetAttachmentsModifiers+380: 48 8B 46 38              - mov rax,[rsi+38]
+// ---------- INJECTING HERE ----------
+cowsins.WeaponController:GetAttachmentsModifiers+384: F3 0F 10 80 38 01 00 00  - movss xmm0,[rax+00000138]
+// ---------- DONE INJECTING  ----------
+cowsins.WeaponController:GetAttachmentsModifiers+38c: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+390: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+394: F3 0F 11 6D A0           - movss [rbp-60],xmm5
+cowsins.WeaponController:GetAttachmentsModifiers+399: F3 0F 10 45 A0           - movss xmm0,[rbp-60]
+cowsins.WeaponController:GetAttachmentsModifiers+39e: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+3a2: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+cowsins.WeaponController:GetAttachmentsModifiers+3a6: F3 0F 11 AE C0 01 00 00  - movss [rsi+000001C0],xmm5
+cowsins.WeaponController:GetAttachmentsModifiers+3ae: 48 8B 46 38              - mov rax,[rsi+38]
+cowsins.WeaponController:GetAttachmentsModifiers+3b2: F3 0F 10 80 CC 01 00 00  - movss xmm0,[rax+000001CC]
+cowsins.WeaponController:GetAttachmentsModifiers+3ba: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+}"""
+
+[[cheat]]
+id = "unlimited-money"
+name = "Unlimited Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(MoneyAcc,DemoMoneyCap:Update+8,DemoMoneyCap:Update+73,48 63 40 2C 48 89 45 E8) // should be unique
+alloc(newmem,$1000,MoneyAcc)
+
+label(code)
+label(return)
+
+newmem:
+mov [rax+2C],#999999999
+code:
+  movsxd  rax,dword ptr [rax+2C]
+  mov [rbp-18],rax
+  jmp return
+
+MoneyAcc:
+  jmp newmem
+  nop 3
+return:
+registersymbol(MoneyAcc)
+
+[DISABLE]
+
+MoneyAcc:
+  db 48 63 40 2C 48 89 45 E8
+
+unregistersymbol(MoneyAcc)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: DemoMoneyCap:Update+3d
+
+DemoMoneyCap:Update+f: 48 8B 46 20                    - mov rax,[rsi+20]
+DemoMoneyCap:Update+13: 48 8B C8                       - mov rcx,rax
+DemoMoneyCap:Update+16: 83 38 00                       - cmp dword ptr [rax],00
+DemoMoneyCap:Update+19: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+DemoMoneyCap:Update+1e: 49 BB 70 68 6E 7A 02 00 00 00  - mov r11,UnityEngine.Component:get_gameObject
+DemoMoneyCap:Update+28: 41 FF D3                       - call r11
+7D509A1B: 48 89 45 F0                    - mov [rbp-10],rax
+DemoMoneyCap:Update+2f: 48 8B 04 25 78 4F 60 75        - mov rax,[75604F78]
+7D509A27: 48 8B C8                       - mov rcx,rax
+7D509A2A: 83 39 00                       - cmp dword ptr [rcx],00
+// ---------- INJECTING HERE ----------
+7D509A2D: 48 63 40 2C                    - movsxd  rax,dword ptr [rax+2C]
+// ---------- DONE INJECTING  ----------
+7D509A31: 48 89 45 E8                    - mov [rbp-18],rax
+7D509A35: 90                             - nop 
+7D509A36: 49 BB A0 1E 47 7D 00 00 00 00  - mov r11,000000007D471EA0
+7D509A40: 41 FF D3                       - call r11
+7D509A43: 48 8B D0                       - mov rdx,rax
+DemoMoneyCap:Update+56: 48 8B 45 F0                    - mov rax,[rbp-10]
+7D509A4A: 48 8B 4D E8                    - mov rcx,[rbp-18]
+7D509A4E: 48 8B 92 C8 00 00 00           - mov rdx,[rdx+000000C8]
+7D509A55: 48 63 52 10                    - movsxd  rdx,dword ptr [rdx+10]
+7D509A59: 3B CA                          - cmp ecx,edx
+}"""
+
+[[cheat]]
+id = "full-map-coin-magnet"
+name = "Full Map Coin Magnet"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(CoinRadius,GameManager:Update+1350,GameManager:Update+13c7,39 00 F3 0F 10 80 C8 00 00 00) // should be unique
+alloc(newmem,$1000,CoinRadius)
+label(code return)
+
+newmem:
+
+code:
+  movss xmm0,[FullMap]//[rax+000000C8]
+  jmp return
+
+FullMap:
+dd (float)9999999
+
+CoinRadius+02:
+  jmp newmem
+  nop 3
+return:
+registersymbol(CoinRadius)
+
+[DISABLE]
+
+CoinRadius+02:
+  db F3 0F 10 80 C8 00 00 00
+
+unregistersymbol(CoinRadius)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameManager:Update+1389
+
+GameManager:Update+135a: 48 83 C0 0C              - add rax,0C
+GameManager:Update+135e: 48 63 8D E0 FE FF FF     - movsxd  rcx,dword ptr [rbp-00000120]
+GameManager:Update+1365: 89 08                    - mov [rax],ecx
+GameManager:Update+1367: 48 63 8D E4 FE FF FF     - movsxd  rcx,dword ptr [rbp-0000011C]
+GameManager:Update+136e: 89 48 04                 - mov [rax+04],ecx
+GameManager:Update+1371: 48 63 8D E8 FE FF FF     - movsxd  rcx,dword ptr [rbp-00000118]
+GameManager:Update+1378: 89 48 08                 - mov [rax+08],ecx
+GameManager:Update+137b: 48 8B 04 25 60 4F 5B 76  - mov rax,[765B4F60]
+GameManager:Update+1383: 48 8B C8                 - mov rcx,rax
+GameManager:Update+1386: 83 39 00                 - cmp dword ptr [rcx],00
+// ---------- INJECTING HERE ----------
+GameManager:Update+1389: F3 0F 10 80 C8 00 00 00  - movss xmm0,[rax+000000C8]
+// ---------- DONE INJECTING  ----------
+GameManager:Update+1391: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+GameManager:Update+1395: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+GameManager:Update+1399: F3 0F 11 AD 60 F9 FF FF  - movss [rbp-000006A0],xmm5
+GameManager:Update+13a1: F3 0F 10 85 60 F9 FF FF  - movss xmm0,[rbp-000006A0]
+GameManager:Update+13a9: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+GameManager:Update+13ad: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+GameManager:Update+13b1: F3 0F 11 AD 88 F9 FF FF  - movss [rbp-00000678],xmm5
+GameManager:Update+13b9: 48 8B 04 25 60 4F 5B 76  - mov rax,[765B4F60]
+GameManager:Update+13c1: 48 8B C8                 - mov rcx,rax
+GameManager:Update+13c4: 83 39 00                 - cmp dword ptr [rcx],00
+}"""

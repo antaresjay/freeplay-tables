@@ -1,0 +1,110 @@
+[game]
+name = "SimCity Orgin Edition"
+exe = "simcity.exe"
+notes = "Converted from a Cheat Engine table by jfzavala2020. Source: https://fearlessrevolution.com/viewtopic.php?t=13650"
+verified = []
+author = "jfzavala2020"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "city-stuff"
+name = "City Stuff"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(INJECT,SimCity.exe,74 21 8B 70 04 8B CF E8) // should be unique
+alloc(newmem,$1000)
+alloc(moneyBase,4)
+
+
+label(code)
+label(return)
+label(originalcode)
+label(popRegisters)
+label(popperReg)
+
+moneyBase:
+  dd 0
+
+newmem:
+
+code:
+  pushf
+  cmp [eax+9c],FFFF127B
+  jne originalcode
+  mov [moneyBase],eax
+  jmp popRegisters
+
+popRegisters:
+  push ebx
+  push ecx
+  xor ebx,ecx
+  mov ebx,[eax+21DC] // Debt
+  mov ecx,[eax+21E8] //Income
+  cmp ecx,ebx
+  jg popperReg
+  mov ebx,[eax+21DC]
+  add [eax+21E8],ebx //add positive debt to income
+
+popperReg:
+  pop ebx
+  pop ecx
+
+originalcode:
+  popf
+  mov esi,[eax+04]
+  mov ecx,edi
+  jmp return
+
+INJECT+2:
+  jmp newmem
+return:
+registersymbol(INJECT)
+registersymbol(moneyBase)
+
+[DISABLE]
+
+INJECT+2:
+  db 8B 70 04 8B CF
+
+dealloc(moneyBase)
+unregistersymbol(INJECT)
+unregistersymbol(moneyBase)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "SimCity.exe"+2673E5
+
+"SimCity.exe"+2673CC: 53                    -  push ebx
+"SimCity.exe"+2673CD: E8 7E 65 28 00        -  call SimCity.exe+4ED950
+"SimCity.exe"+2673D2: 50                    -  push eax
+"SimCity.exe"+2673D3: 8B 44 24 20           -  mov eax,[esp+20]
+"SimCity.exe"+2673D7: 50                    -  push eax
+"SimCity.exe"+2673D8: 56                    -  push esi
+"SimCity.exe"+2673D9: E8 72 FC F9 FF        -  call SimCity.exe+207050
+"SimCity.exe"+2673DE: 83 C4 18              -  add esp,18
+"SimCity.exe"+2673E1: 85 C0                 -  test eax,eax
+"SimCity.exe"+2673E3: 74 21                 -  je SimCity.exe+267406
+// ---------- INJECTING HERE ----------
+"SimCity.exe"+2673E5: 8B 70 04              -  mov esi,[eax+04]
+"SimCity.exe"+2673E8: 8B CF                 -  mov ecx,edi
+// ---------- DONE INJECTING  ----------
+"SimCity.exe"+2673EA: E8 51 DC F5 FF        -  call SimCity.exe+1C5040
+"SimCity.exe"+2673EF: 8B 10                 -  mov edx,[eax]
+"SimCity.exe"+2673F1: 8B C8                 -  mov ecx,eax
+"SimCity.exe"+2673F3: 8B 42 10              -  mov eax,[edx+10]
+"SimCity.exe"+2673F6: 56                    -  push esi
+"SimCity.exe"+2673F7: FF D0                 -  call eax
+"SimCity.exe"+2673F9: 8B CF                 -  mov ecx,edi
+"SimCity.exe"+2673FB: E8 40 DC F5 FF        -  call SimCity.exe+1C5040
+"SimCity.exe"+267400: 5F                    -  pop edi
+"SimCity.exe"+267401: 5E                    -  pop esi
+}"""

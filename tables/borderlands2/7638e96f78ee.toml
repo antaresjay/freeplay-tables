@@ -1,0 +1,907 @@
+[game]
+name = "Borderlands 2 - Third Person"
+exe = "borderlands2.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2837"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "third-person-freecam-v4-0-press-f5-to-cycle"
+name = "Third Person + FreeCam v4.0 (press F5 to cycle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscan(thirdpersonsubAOB1,F6 81 AC 0A 00 00 14 75 ** B8)
+label(thirdpersonsubAOB1_jmp)
+registersymbol(thirdpersonsubAOB1_jmp)
+aobscan(thirdpersonsubAOB2,55 8b ec 83 ec 14 53 56 8b f1 8b 9e 94)
+label(thirdpersonsubAOB2_jmp)
+registersymbol(thirdpersonsubAOB2_jmp)
+aobscan(overrideTrans,D9 00 D9 9E E0 0A 00 00)
+label(overrideTrans_jmp)
+registersymbol(overrideTrans_jmp)
+globalalloc(pCamera,4)
+globalalloc(bToggleKeyPressed,4)
+globalalloc(bScriptEnabled,4)
+globalalloc(vFreeCamX,4)
+globalalloc(vFreeCamY,4)
+globalalloc(vFreeCamZ,4)
+globalalloc(vFreeCamZRot,4)
+globalalloc(vFreeCamXYRot,4)
+globalalloc(vQuad,4)
+globalalloc(vZero,4)
+globalalloc(vOne,4)
+globalalloc(vThree,4)
+globalalloc(vAccelerationMult,4)
+globalalloc(vFloatStorage,20)
+globalalloc(fTemp1,4)
+globalalloc(fTemp2,4)
+globalalloc(fTemp3,4)
+globalalloc(fTemp4,4)
+globalalloc(vCameraSet,1)
+globalalloc(bFreeCamInit,2)
+globalalloc(bFreeCamStart,2)
+
+///
+pCamera:
+dd 0
+bToggleKeyPressed:
+dd 0
+bScriptEnabled:
+dd 3
+vFreeCamX:
+dd 0
+vFreeCamY:
+dd 0
+vFreeCamZ:
+dd 0
+vFreeCamZRot:
+dd 0
+vFreeCamXYRot:
+dd 0
+vQuad:
+dd #16384
+vZero:
+dd 0
+vOne:
+dd 1
+vThree:
+dd 3
+vAccelerationMult:
+dd 10
+vFloatStorage:
+dd 0000000000000000000000000000000000000000
+fTemp1:
+dd 00000000
+fTemp2:
+dd 00000000
+fTemp3:
+dd 00000000
+fTemp4:
+dd 00000000
+vCameraSet:
+dd 0
+bFreeCamInit:
+dd 0
+bFreeCamStart:
+dd 0
+///
+
+alloc(newmem,4096) //4kb should be enough
+label(returnhere)
+label(originalcode)
+label(togglescript)
+label(togglenotpressed)
+label(toggleup)
+label(toggleempty)
+label(togglefull)
+label(checktoggle)
+label(setfirstperson)
+label(setthirdpsrson)
+label(setfreecam)
+label(setfreeperson)
+label(dochangecamera)
+label(overrideTrans_start)
+label(overrideTrans_skipreset)
+label(overrideTrans_freeperson)
+label(overrideTrans_origCode)
+label(overrideTrans_end)
+label(overrideTrans_returnhere)
+label(skipZW)
+label(skipZS)
+label(skipXYW)
+label(skipXYA)
+label(skipXYD)
+label(skipAllFreeCam)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp dword ptr [ecx+00000190],0
+je originalcode
+
+mov [pCamera],ecx
+
+push ebx
+push eax
+push ecx
+push edx
+push 0x74 //key G, change to 0x74 for key F5
+call GetAsyncKeyState
+shr ax,#15
+mov bx,ax
+push 0x75
+call GetAsyncKeyState
+shr ax,#15
+shl ax,#1
+or bx,ax
+pop edx
+pop ecx
+pop eax
+test bx,3
+je togglenotpressed
+test [bToggleKeyPressed],1
+je togglescript
+pop ebx
+jmp originalcode
+
+togglenotpressed:
+mov [bToggleKeyPressed],0
+pop ebx
+jmp originalcode
+
+togglescript:
+mov [bToggleKeyPressed],1
+test bx,1
+pop ebx
+je toggleup
+test [bScriptEnabled],3
+je toggleempty
+sub [bScriptEnabled],1
+jmp checktoggle
+
+toggleempty:
+mov [bScriptEnabled],3
+jmp checktoggle
+
+toggleup:
+cmp [bScriptEnabled],3
+je togglefull
+add [bScriptEnabled],1
+jmp checktoggle
+
+togglefull:
+mov [bScriptEnabled],0
+jmp checktoggle
+
+checktoggle:
+pushad
+push 02 //key mouse right
+call GetAsyncKeyState
+shr ax,#15
+cmp ax,#1
+popad
+je setfirstperson
+cmp [bScriptEnabled],3
+je setfirstperson
+cmp [bScriptEnabled],2
+je setthirdpsrson
+cmp [bScriptEnabled],1
+je setfreecam
+jmp setfreeperson
+
+//Camera notes: camera value is a 1 byte bitmask
+//0,1 and 2 do nothing in the main game code.
+//1 I repurposed to signify free person cam(locked camera, movable person)
+//2 I repurposed to signify free cam(free camera, locked person)
+//\tboth 1 and 2 are combined with third person mode so that the player model is visible.
+//4 is third person and takes precedence over first person
+//8 is first person and has the lowest priority,
+//\tit is also the default if none of the other vallid bits are set
+//16(0x10) is the inventory/quick change camera and has the highest piority
+//\t(but doesn't really do anything useful when not in those modes)
+//32, 64, 128 do nothing
+
+setfirstperson:
+cmp [vCameraSet],8
+je originalcode
+mov [vCameraSet],8
+jmp dochangecamera
+
+setthirdpsrson:
+cmp [vCameraSet],4
+je originalcode
+mov [vCameraSet],4
+jmp dochangecamera
+
+setfreecam:
+cmp [vCameraSet],6
+je originalcode
+mov [vCameraSet],6
+mov [bFreeCamStart],1
+jmp dochangecamera
+
+setfreeperson:
+cmp [vCameraSet],5
+je originalcode
+mov [vCameraSet],5
+jmp dochangecamera
+
+dochangecamera:
+pushad
+mov esi,ecx
+mov cl,[vCameraSet]      //get new camera value
+mov byte ptr [esi+00000AAC],cl   //assign new camera value
+mov dword ptr [esi+00000694],0   //unknown
+mov ecx,esi
+mov eax,dword ptr [esi+00000190] //data
+push eax
+call thirdpersonsubAOB2_jmp
+popad
+jmp originalcode
+
+originalcode:
+test byte ptr [ecx+00000AAC],17
+jmp returnhere
+
+overrideTrans_start:
+pushad
+//new translation code
+test byte ptr [esi+00000AAC],3
+je overrideTrans_origCode
+push 04 //key mouse middle
+call GetAsyncKeyState
+shr ax,#15
+add ax,1
+cmp ax,[bFreeCamInit]
+jle overrideTrans_skipreset
+//Reset
+fld dword ptr [edi]
+fstp dword ptr [vFreeCamX]
+fld dword ptr [edi+04]
+fstp dword ptr [vFreeCamY]
+fld dword ptr [edi+08]
+fstp dword ptr [vFreeCamZ]
+push eax
+push ecx
+mov eax,dword ptr [ebx+0C]
+mov ecx,dword ptr [eax]
+mov [vFreeCamZRot],ecx
+mov ecx,dword ptr [eax+4]
+mov [vFreeCamXYRot],ecx
+pop ecx
+pop eax
+mov [bFreeCamInit],1
+
+overrideTrans_skipreset:
+test byte ptr [esi+00000AAC],2
+je overrideTrans_freeperson
+//Free Cam
+popad
+pushad
+
+test [bFreeCamStart],0
+jne skipAllFreeCam
+
+push 57 //key W
+call GetAsyncKeyState
+shr ax,#15
+mov bx,ax
+push bx
+push 41 //key A
+call GetAsyncKeyState
+shr ax,#15
+shl ax,1
+pop bx
+or bx,ax
+push bx
+push 53 //key S
+call GetAsyncKeyState
+shr ax,#15
+shl ax,2
+pop bx
+or bx,ax
+push bx
+push 44 //key D
+call GetAsyncKeyState
+shr ax,#15
+shl ax,3
+pop bx
+or ax,bx
+test ax,ax
+je skipAllFreeCam
+
+//zAccel
+fild word ptr [esi+00000AFC]
+fild dword ptr [vQuad]
+fdivp
+
+//xAccel
+fild word ptr [esi+00000b00]
+fild dword ptr [vQuad]
+fdivp
+fabs
+fild dword ptr [vZero]
+fsubp// st1,st0
+fild dword ptr [vOne]
+fsubp
+fchs
+
+//yAccel
+fild word ptr [esi+00000b00]
+fild dword ptr [vQuad]
+fdivp
+fild dword ptr [vOne]
+faddp
+fabs
+fild dword ptr [vOne]
+fild dword ptr [vOne]
+faddp
+fsubp
+fabs
+fild dword ptr [vOne]
+fsubp
+fchs
+
+fstp dword ptr [vFloatStorage]
+fstp dword ptr [vFloatStorage+4]
+fstp dword ptr [vFloatStorage+8]
+
+fld dword ptr [vFloatStorage+8]
+fst dword ptr [vFloatStorage+C]
+fild dword ptr [vAccelerationMult]
+fmulp
+fstp dword ptr [vFloatStorage+8]
+test ax,1
+je skipZW
+fld dword ptr [vFloatStorage+8]
+fadd dword ptr [vFreeCamZ]
+fstp dword ptr [vFreeCamZ]
+skipZW:
+test ax,4
+je skipZS
+fld dword ptr [vFloatStorage+8]
+fchs
+fadd dword ptr [vFreeCamZ]
+fstp dword ptr [vFreeCamZ]
+skipZS:
+
+test ax,2
+je skipXYA
+fld dword ptr [vFloatStorage]
+fild dword ptr [vAccelerationMult]
+fmulp
+fadd dword ptr [vFreeCamX]
+fstp dword ptr [vFreeCamX]
+fld dword ptr [vFloatStorage+4]
+fild dword ptr [vAccelerationMult]
+fmulp
+fchs
+fadd dword ptr [vFreeCamY]
+fstp dword ptr [vFreeCamY]
+skipXYA:
+test ax,8
+je skipXYD
+fld dword ptr [vFloatStorage]
+fild dword ptr [vAccelerationMult]
+fmulp
+fchs
+fadd dword ptr [vFreeCamX]
+fstp dword ptr [vFreeCamX]
+fld dword ptr [vFloatStorage+4]
+fild dword ptr [vAccelerationMult]
+fmulp
+fadd dword ptr [vFreeCamY]
+fstp dword ptr [vFreeCamY]
+skipXYD:
+
+fild dword ptr [vOne]
+fld dword ptr [vFloatStorage+C]
+fabs
+fsubp
+fstp dword ptr [vFloatStorage+C]
+
+test ax,1
+je skipXYW
+fld dword ptr [vFloatStorage]
+fmul dword ptr [vFloatStorage+C]
+fild dword ptr [vAccelerationMult]
+fmulp
+fadd dword ptr [vFreeCamY]
+fstp dword ptr [vFreeCamY]
+fld dword ptr [vFloatStorage+4]
+fmul dword ptr [vFloatStorage+C]
+fild dword ptr [vAccelerationMult]
+fmulp
+fadd dword ptr [vFreeCamX]
+fstp dword ptr [vFreeCamX]
+skipXYW:
+test ax,4
+je skipAllFreeCam
+fld dword ptr [vFloatStorage]
+fmul dword ptr [vFloatStorage+C]
+fild dword ptr [vAccelerationMult]
+fmulp
+fchs
+fadd dword ptr [vFreeCamY]
+fstp dword ptr [vFreeCamY]
+fld dword ptr [vFloatStorage+4]
+fmul dword ptr [vFloatStorage+C]
+fild dword ptr [vAccelerationMult]
+fmulp
+fchs
+fadd dword ptr [vFreeCamX]
+fstp dword ptr [vFreeCamX]
+skipAllFreeCam:
+
+popad
+fld dword ptr [esi+00000AE0]
+fstp dword ptr [eax]
+fld dword ptr [esi+00000AE4]
+fstp dword ptr [eax+04]
+fld dword ptr [esi+00000AE8]
+fstp dword ptr [eax+08]
+fld dword ptr [vFreeCamX]
+fstp dword ptr [edi]
+fld dword ptr [vFreeCamY]
+fstp dword ptr [edi+04]
+fld dword ptr [vFreeCamZ]
+fstp dword ptr [edi+08]
+push eax
+push ecx
+mov eax,dword ptr [ebx+0C]
+mov ecx,dword ptr [eax]
+mov [vFreeCamZRot],ecx
+mov ecx,dword ptr [eax+4]
+mov [vFreeCamXYRot],ecx
+pop ecx
+pop eax
+jmp overrideTrans_end
+jmp overrideTrans_end
+
+overrideTrans_freeperson:
+//Free Person
+popad
+fld dword ptr [vFreeCamX]
+fstp dword ptr [edi]
+fld dword ptr [vFreeCamY]
+fstp dword ptr [edi+04]
+fld dword ptr [vFreeCamZ]
+fstp dword ptr [edi+08]
+//movq xmm0,[esi+00000AFC]
+//mov eax,[ebx+0C]
+//movq [eax],xmm0
+push eax
+push ecx
+mov eax,dword ptr [ebx+0C]
+mov ecx,dword ptr [vFreeCamZRot]
+mov [eax],ecx
+mov ecx,dword ptr [vFreeCamXYRot]
+mov [eax+4],ecx
+pop ecx
+pop eax
+jmp overrideTrans_end
+
+overrideTrans_origCode:
+popad
+overrideTrans_end:
+//original translation code
+fld dword ptr [eax]
+fstp dword ptr [esi+00000AE0]
+jmp overrideTrans_returnhere
+
+thirdpersonsubAOB1: //"Borderlands2.exe"+61F640:
+thirdpersonsubAOB1_jmp:
+jmp newmem
+nop
+nop
+
+returnhere:
+
+thirdpersonsubAOB2: //?
+thirdpersonsubAOB2_jmp:
+
+overrideTrans:
+overrideTrans_jmp:
+jmp overrideTrans_start//5
+nop
+nop
+nop
+overrideTrans_returnhere:
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+thirdpersonsubAOB1_jmp: //"Borderlands2.exe"+61F640:
+db F6 81 AC 0A 00 00 14
+//Alt: test byte ptr [ecx+00000AAC],14
+thirdpersonsubAOB2_jmp: //?
+//
+overrideTrans_jmp:
+db D9 00 D9 9E E0 0A 00 00
+//
+
+unregistersymbol(thirdpersonsubAOB1_jmp)
+unregistersymbol(thirdpersonsubAOB2_jmp)
+unregistersymbol(overrideTrans_jmp)
+dealloc(pCamera)
+dealloc(bToggleKeyPressed)
+dealloc(bScriptEnabled)
+dealloc(vFreeCamX)
+dealloc(vFreeCamY)
+dealloc(vFreeCamZ)
+dealloc(vFreeCamZRot)
+dealloc(vFreeCamXYRot)
+dealloc(vQuad)
+dealloc(vZero)
+dealloc(vOne)
+dealloc(vThree)
+dealloc(vAccelerationMult)
+dealloc(vFloatStorage)
+dealloc(fTemp1,4)
+dealloc(fTemp2,4)
+dealloc(fTemp3,4)
+dealloc(fTemp4,4)
+dealloc(vCameraSet)
+dealloc(bFreeCamInit)
+dealloc(bFreeCamStart)"""
+
+[[cheat]]
+id = "script-state"
+name = "Script State"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bScriptEnabled"
+hops = []
+
+[[cheat]]
+id = "toggle-pressed"
+name = "Toggle Pressed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bToggleKeyPressed"
+hops = []
+
+[[cheat]]
+id = "camera-set-to"
+name = "Camera Set To"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vCameraSet"
+hops = []
+
+[[cheat]]
+id = "free-camera-x"
+name = "Free Camera X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFreeCamX"
+hops = []
+
+[[cheat]]
+id = "free-camera-y"
+name = "Free Camera Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFreeCamY"
+hops = []
+
+[[cheat]]
+id = "free-camera-z"
+name = "Free Camera Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFreeCamZ"
+hops = []
+
+[[cheat]]
+id = "free-camera-z-rot"
+name = "Free Camera Z Rot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFreeCamZRot"
+hops = []
+
+[[cheat]]
+id = "free-camera-xy-rot"
+name = "Free Camera XY Rot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFreeCamXYRot"
+hops = []
+
+[[cheat]]
+id = "free-camera-initialized"
+name = "Free Camera Initialized"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bFreeCamInit"
+hops = []
+
+[[cheat]]
+id = "camera-bitfield"
+name = "Camera bitfield"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xaac"]
+
+[[cheat]]
+id = "character-x-pos"
+name = "Character X Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xae0"]
+
+[[cheat]]
+id = "character-y-pos"
+name = "Character Y Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xae4"]
+
+[[cheat]]
+id = "character-z-pos"
+name = "Character Z Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xae8"]
+
+[[cheat]]
+id = "cheat"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xaec"]
+
+[[cheat]]
+id = "camera-x-pos"
+name = "Camera X Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xaf0"]
+
+[[cheat]]
+id = "camera-y-pos"
+name = "Camera Y Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xaf4"]
+
+[[cheat]]
+id = "camera-z-pos"
+name = "Camera Z Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xaf8"]
+
+[[cheat]]
+id = "camzrot"
+name = "CamZrot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xafc"]
+
+[[cheat]]
+id = "camxyrot"
+name = "CamXYrot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCamera"
+hops = ["+0xb00"]
+
+[[cheat]]
+id = "accel"
+name = "Accel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vAccelerationMult"
+hops = []
+
+[[cheat]]
+id = "floatstorage1"
+name = "FloatStorage1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFloatStorage"
+hops = []
+
+[[cheat]]
+id = "floatstorage2"
+name = "FloatStorage2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFloatStorage"
+hops = []
+
+[[cheat]]
+id = "floatstorage3"
+name = "FloatStorage3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFloatStorage"
+hops = []
+
+[[cheat]]
+id = "floatstorage4"
+name = "FloatStorage4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFloatStorage"
+hops = []
+
+[[cheat]]
+id = "floatstorage5"
+name = "FloatStorage5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vFloatStorage"
+hops = []

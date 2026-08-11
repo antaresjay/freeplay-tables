@@ -1,0 +1,1094 @@
+[game]
+name = "Motorsport Manager"
+exe = "mm.exe"
+notes = "Converted from a Cheat Engine table by Schnitzelmaker. Source: https://fearlessrevolution.com/viewtopic.php?t=3653"
+verified = []
+author = "Schnitzelmaker"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerTeam"
+hops = []
+
+[[cheat]]
+id = "fast-part-improvement"
+name = "Fast Part Improvement"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(PartImprovementGetWorkRateAddress,PartImprovement:GetWorkRate+21a)
+define(PartImprovementGetWorkRateBytes,F2 0F 5E C1 F2 0F 5A C0)
+
+getmonostruct(PartImprovement)
+getmonostruct(Team)
+[ENABLE]
+
+assert(PartImprovementGetWorkRateAddress,PartImprovementGetWorkRateBytes)
+alloc(newmem,$1000,PartImprovementGetWorkRateAddress)
+
+label(code)
+label(return)
+label(dValue)
+
+registersymbol(PartImprovementGetWorkRateAddress)
+
+newmem:
+  push rsi
+
+  //Entity/Team
+  mov rsi, [rdi+PartImprovement.mTeam]
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  cmp [iPlayerTeamId], esi
+  jne code
+
+  movsd xmm0, [dValue]
+
+code:
+  pop rsi
+  divsd xmm0,xmm1
+  cvtsd2ss xmm0,xmm0
+  jmp return
+
+dValue:
+ dq (double)5000
+
+PartImprovementGetWorkRateAddress:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+PartImprovementGetWorkRateAddress:
+  db PartImprovementGetWorkRateBytes
+  // cvtsd2ss xmm0,xmm0
+  // lea rsp,[rbp-18]
+
+unregistersymbol(PartImprovementGetWorkRateAddress)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 2BB4517E
+
+2BB45150: 48 83 C4 20                    -  add rsp,20
+2BB45154: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+2BB45158: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+2BB4515C: F3 0F 11 6D C0                 -  movss [rbp-40],xmm5
+2BB45161: C7 45 C4 09 00 00 00           -  mov [rbp-3C],00000009
+2BB45168: F3 0F 10 45 C0                 -  movss xmm0,[rbp-40]
+2BB4516D: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+2BB45171: B8 90 7E 00 00                 -  mov eax,00007E90
+2BB45176: F2 0F 2A C8                    -  cvtsi2sd xmm1,eax
+2BB4517A: F2 0F 5E C1                    -  divsd xmm0,xmm1
+// ---------- INJECTING HERE ----------
+2BB4517E: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+2BB45182: 48 8D 65 E8                    -  lea rsp,[rbp-18]
+// ---------- DONE INJECTING  ----------
+2BB45186: 41 5E                          -  pop r14
+2BB45188: 5F                             -  pop rdi
+2BB45189: 5E                             -  pop rsi
+2BB4518A: C9                             -  leave 
+2BB4518B: C3                             -  ret 
+2BB4518C: 40 48                          -  dec eax
+2BB4518E: 8B 8D 00 00 20 42              -  mov ecx,[rbp+42200000]
+2BB45194: 48 8B 85 70 FF FF FF           -  mov rax,[rbp-ContractPerson.raceBonus]
+2BB4519B: 49 B8 00 C0 69 8F C2 F5 3D 00  -  mov r8,003DF5C28F69C000
+2BB451A5: 48 99                          -  cqo 
+}"""
+
+[[cheat]]
+id = "fuel"
+name = "Fuel"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(FuelUpdateFuelAddress,Fuel:UpdateFuel+10)
+define(FuelUpdateFuelBytes,48 8B C8 83 39 00)
+
+//getmonostruct(Player)
+getmonostruct(Fuel)
+getmonostruct(PerformanceImpact)
+getmonostruct(RacingVehicle)
+getmonostruct(Driver)
+getmonostruct(Person)
+getmonostruct(ContractPerson)
+getmonostruct(Team)
+[ENABLE]
+
+assert(FuelUpdateFuelAddress,FuelUpdateFuelBytes)
+alloc(newmem,$1000,FuelUpdateFuelAddress)
+
+label(_checkplayer)
+label(_FuelUpdateFuelExit)
+label(code)
+label(return)
+label(bSabotageEnemy)
+
+registersymbol(FuelUpdateFuelAddress)
+registersymbol(bSabotageEnemy)
+
+newmem:
+  cmp byte ptr [bSabotageEnemy], 1
+  jne _checkplayer
+  mov [rcx+Fuel.mFuelLapDistance], 0
+
+_checkplayer:
+  push rsi
+  //rcx = Fuel/PerformanceImpact
+  cmp rcx, #0
+  je _FuelUpdateFuelExit
+  //RacingVehicle
+  mov rsi, [rcx+PerformanceImpact.mVehicle]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //Driver/Person
+  mov rsi, [rsi+RacingVehicle.driver]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //ContractPerson
+  mov rsi, [rsi+Person.contract]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //Entity/Team
+  mov rsi, [rsi+ContractPerson.employeer]
+  cmp rsi, #0
+  je _FuelUpdateFuelExit
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  cmp [iPlayerTeamId], esi
+  jne _FuelUpdateFuelExit
+  //Set Fuel
+  mov esi, [rcx+Fuel.mCircuitLapDistance]
+  mov [rcx+Fuel.mFuelLapDistance], esi
+
+_FuelUpdateFuelExit:
+  pop rsi
+
+code:
+  mov rcx,rax
+  cmp dword ptr [rcx],00
+  jmp return
+
+bSabotageEnemy:
+  db 0
+
+FuelUpdateFuelAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+FuelUpdateFuelAddress:
+  db FuelUpdateFuelBytes
+  //mov rcx,rax
+  //cmp dword ptr [rcx],00
+
+unregistersymbol(FuelUpdateFuelAddress)
+unregistersymbol(bSabotageEnemy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1FCDDC35
+
+1FCDDC1D: 04 03                          -  add al,03
+1FCDDC1F: 05 00 00 04 53                 -  add eax,53040000
+1FCDDC24: 01 50 00                       -  add [rax+00],edx
+1FCDDC27: 00 00                          -  add [rax],al
+1FCDDC29: 00 00                          -  add [rax],al
+1FCDDC2B: 00 00                          -  add [rax],al
+1FCDDC2D: 00 00                          -  add [rax],al
+1FCDDC2F: 00 55 48                       -  add [rbp+48],dl
+1FCDDC32: 8B EC                          -  mov ebp,esp
+1FCDDC34: 56                             -  push rsi
+// ---------- INJECTING HERE ----------
+1FCDDC35: 48 83 EC 18                    -  sub rsp,18
+1FCDDC39: 48 8B F1                       -  mov rsi,rcx
+// ---------- DONE INJECTING  ----------
+1FCDDC3C: 48 8B 46 10                    -  mov rax,[rsi+10]
+1FCDDC40: 48 8B C8                       -  mov rcx,rax
+1FCDDC43: 83 39 00                       -  cmp dword ptr [rcx],00
+1FCDDC46: 48 8B 40 40                    -  mov rax,[rax+40]
+1FCDDC4A: 48 8B C8                       -  mov rcx,rax
+1FCDDC4D: 83 39 00                       -  cmp dword ptr [rcx],00
+1FCDDC50: F3 0F 10 40 4C                 -  movss xmm0,[rax+4C]
+1FCDDC55: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1FCDDC59: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+1FCDDC5D: F3 0F 11 6D F4                 -  movss [rbp-0C],xmm5
+}"""
+
+[[cheat]]
+id = "tyre"
+name = "Tyre"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(TyreSetSimulationUpdateAddress,TyreSet:SimulationUpdate+5)
+define(TyreSetSimulationUpdateBytes,48 83 EC 18 48 8B F1)
+
+//getmonostruct(Player)
+getmonostruct(TyreSet)
+getmonostruct(PerformanceImpact)
+getmonostruct(RacingVehicle)
+getmonostruct(Driver)
+getmonostruct(Person)
+getmonostruct(ContractPerson)
+getmonostruct(Team)
+[ENABLE]
+
+assert(TyreSetSimulationUpdateAddress,TyreSetSimulationUpdateBytes)
+alloc(newmem,$1000,TyreSetSimulationUpdateAddress)
+
+label(_checkplayer)
+label(_TyreSetSimulationUpdateExit)
+label(code)
+label(return)
+label(bSabotageTyreEnemy)
+
+registersymbol(TyreSetSimulationUpdateAddress)
+registersymbol(bSabotageTyreEnemy)
+
+newmem:
+  cmp byte ptr [bSabotageTyreEnemy], 1
+  jne _checkplayer
+  mov [rcx+TyreSet.mCondition], 0
+
+_checkplayer:
+  push rsi
+  //rcx = TyreSet
+  cmp rcx, #0
+  je _TyreSetSimulationUpdateExit
+  //RacingVehicle
+  mov rsi, [rcx+TyreSet.mVehicle]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //Driver/Person
+  mov rsi, [rsi+RacingVehicle.driver]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //ContractPerson
+  mov rsi, [rsi+Person.contract]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //Entity/Team
+  mov rsi, [rsi+ContractPerson.employeer]
+  cmp rsi, #0
+  je _TyreSetSimulationUpdateExit
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  //Check if Player Team
+  cmp [iPlayerTeamId], esi
+  jne _TyreSetSimulationUpdateExit
+  //Set Tyre
+  mov esi, (float)1.0
+  mov [rcx+TyreSet.mCondition], esi
+  mov esi, (float)0.5
+  mov [rcx+TyreSet.mTemperature], esi
+
+_TyreSetSimulationUpdateExit:
+  pop rsi
+
+code:
+  sub rsp,18
+  mov rsi,rcx
+  jmp return
+
+bSabotageTyreEnemy:
+  db 0
+
+TyreSetSimulationUpdateAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+TyreSetSimulationUpdateAddress:
+  db TyreSetSimulationUpdateBytes
+  // sub rsp,18
+  // mov rsi,rcx
+
+unregistersymbol(TyreSetSimulationUpdateAddress)
+unregistersymbol(bSabotageTyreEnemy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 510203D5
+
+510203C1: 0B 0E                          -  or ecx,[rsi]
+510203C3: 00 00                          -  add [rax],al
+510203C5: 00 00                          -  add [rax],al
+510203C7: 00 00                          -  add [rax],al
+510203C9: 00 00                          -  add [rax],al
+510203CB: 00 00                          -  add [rax],al
+510203CD: 00 00                          -  add [rax],al
+510203CF: 00 55 48                       -  add [rbp+48],dl
+510203D2: 8B EC                          -  mov ebp,esp
+510203D4: 56                             -  push rsi
+// ---------- INJECTING HERE ----------
+510203D5: 48 83 EC 18                    -  sub rsp,18
+510203D9: 48 8B F1                       -  mov rsi,rcx
+// ---------- DONE INJECTING  ----------
+510203DC: 48 83 EC 20                    -  sub rsp,20
+510203E0: 49 BB 40 BB 27 13 00 00 00 00  -  mov r11,TyreSet:UpdateTyreDrivingStyleTemperature
+510203EA: 41 FF D3                       -  call r11
+510203ED: 48 83 C4 20                    -  add rsp,20
+510203F1: 48 8B CE                       -  mov rcx,rsi
+510203F4: 48 83 EC 20                    -  sub rsp,20
+510203F8: 49 BB A0 BD 27 13 00 00 00 00  -  mov r11,TyreSet:UpdateWeatherImpactOnTyreTemperature
+51020402: 41 FF D3                       -  call r11
+51020405: 48 83 C4 20                    -  add rsp,20
+51020409: F3 0F 10 46 38                 -  movss xmm0,[rsi+38]
+}"""
+
+[[cheat]]
+id = "destroy-enemies-tyre"
+name = "Destroy Enemies Tyre"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:Disable",
+    "1:Enable",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bSabotageTyreEnemy"
+hops = []
+
+[[cheat]]
+id = "car-parts-condition"
+name = "Car Parts Condition"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+usemono()
+define(CarPartConditionDecrementConditionAddress,CarPartCondition:DecrementCondition+81)
+define(CarPartConditionDecrementConditionBytes,F2 0F 5C C1 49 8B CF)
+
+//getmonostruct(Player)
+getmonostruct(CarPartCondition)
+getmonostruct(CarPart)
+getmonostruct(Car)
+getmonostruct(CarManager)
+getmonostruct(Team)
+[ENABLE]
+
+assert(CarPartConditionDecrementConditionAddress,CarPartConditionDecrementConditionBytes)
+alloc(newmem,$1000,CarPartConditionDecrementConditionAddress)
+
+label(code)
+label(_CarPartConditionDecrementConditionExit)
+label(return)
+label(fMinCondition)
+
+registersymbol(CarPartConditionDecrementConditionAddress)
+
+newmem:
+  push rsi
+  //r15 = CarPartCondition
+  cmp r15, #0
+  je _CarPartConditionDecrementConditionExit
+  //CarPart
+  mov rsi, [r15+CarPartCondition.mPart]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //Car
+  mov rsi, [rsi+CarPart.fittedCar]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //CarManager
+  mov rsi, [rsi+Car.mCarManager]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //Entity/Team
+  mov rsi, [rsi+CarManager.mTeam]
+  cmp rsi, #0
+  je _CarPartConditionDecrementConditionExit
+  //TeamID
+  mov esi, [rsi+Team.teamID]
+  //Check if Player Team
+  cmp [iPlayerTeamId], esi
+  jne _CarPartConditionDecrementConditionExit
+  //Set Car Part Damage to 0
+  xorps xmm1, xmm1
+/*  movss xmm0, [fMinCondition]
+  comiss xmm0, [rcx+CarPartCondition.mCondition]
+  jb _CarPartConditionDecrementConditionExit
+  movss [rcx+CarPartCondition.mCondition], xmm0
+  mov [rcx+CarPartCondition.mState], #0*/
+
+_CarPartConditionDecrementConditionExit:
+  pop rsi
+
+code:
+  subsd xmm0,xmm1
+  mov rcx,r15
+  jmp return
+
+fMinCondition:
+  dd (float)1.0
+
+CarPartConditionDecrementConditionAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+CarPartConditionDecrementConditionAddress:
+  db CarPartConditionDecrementConditionBytes
+  // subsd xmm0,xmm1
+  // mov rcx,r15
+
+unregistersymbol(CarPartConditionDecrementConditionAddress)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 132E2700
+
+132E26D4: 48 83 C4 20                    -  add rsp,20
+132E26D8: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+132E26DC: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+132E26E0: F3 0F 11 6D E4                 -  movss [rbp-1C],xmm5
+132E26E5: 49 63 47 20                    -  movsxd  rax,dword ptr [r15+20]
+132E26E9: 48 89 45 D0                    -  mov [rbp-30],rax
+132E26ED: F3 41 0F 10 47 24              -  movss xmm0,[r15+24]
+132E26F3: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+132E26F7: F3 0F 10 4D E4                 -  movss xmm1,[rbp-1C]
+132E26FC: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+// ---------- INJECTING HERE ----------
+132E2700: F2 0F 5C C1                    -  subsd xmm0,xmm1
+132E2704: 49 8B CF                       -  mov rcx,r15
+// ---------- DONE INJECTING  ----------
+132E2707: F2 0F 10 C8                    -  movsd xmm1,xmm0
+132E270B: F2 0F 5A C9                    -  cvtsd2ss xmm1,xmm1
+132E270F: 48 83 EC 20                    -  sub rsp,20
+132E2713: 49 BB 20 2D 02 51 00 00 00 00  -  mov r11,CarPartCondition:SetCondition
+132E271D: 41 FF D3                       -  call r11
+132E2720: 48 83 C4 20                    -  add rsp,20
+132E2724: 48 8B 45 D0                    -  mov rax,[rbp-30]
+132E2728: 49 63 4F 20                    -  movsxd  rcx,dword ptr [r15+20]
+132E272C: 3B C1                          -  cmp eax,ecx
+132E272E: 0F 84 94 01 00 00              -  je CarPartCondition:DecrementCondition+238
+}"""
+
+[[cheat]]
+id = "car-speed"
+name = "Car Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(VehicleUpdateSpeedAddress,Vehicle:UpdateSpeed+34c)
+define(VehicleUpdateSpeedBytes,F3 0F 5A C0 66 0F 57 C9)
+
+getmonostruct(RacingVehicle)
+getmonostruct(Vehicle)
+getmonostruct(String)
+getmonostruct(Driver)
+getmonostruct(Person)
+getmonostruct(ContractPerson)
+getmonostruct(Team)
+
+[ENABLE]
+
+assert(VehicleUpdateSpeedAddress,VehicleUpdateSpeedBytes)
+alloc(newmem,$1000,VehicleUpdateSpeedAddress)
+
+label(code)
+label(return)
+label(fSpeed)
+label(fOne)
+label(sSafetyVehicle)
+
+registersymbol(VehicleUpdateSpeedAddress)
+registersymbol(fSpeed)
+
+newmem:
+  push rdi
+
+  //Safety Vehicle
+  mov rdi, [rsi+Vehicle.name]
+  mov rdi, [rdi+14]
+  //cmp rdi, 'Safety Vehicle'
+  cmp rdi,[sSafetyVehicle]
+  je code
+
+  //Driver/Person
+  mov rdi, [rsi+RacingVehicle.driver]
+  cmp rdi, #0
+  je code
+  //ContractPerson
+  mov rdi, [rdi+Person.contract]
+  cmp rdi, #0
+  je code
+  //Entity/Team
+  mov rdi, [rdi+ContractPerson.employeer]
+  cmp rdi, #0
+  je code
+  //TeamID
+  mov edi, [rdi+Team.teamID]
+  cmp [iPlayerTeamId], edi
+  jne code
+
+  //Speed
+  movss xmm1, [rbp-74]
+  //xorps xmm0, xmm0
+  comiss xmm1, [fOne]
+  jb code
+  movss xmm0, [fSpeed]
+  //movss [rsi+Vehicle.speed], xmm0
+
+code:
+  pop rdi
+  cvtss2sd xmm0,xmm0
+  xorpd xmm1,xmm1
+  jmp return
+
+fSpeed:
+ dd (float)100
+
+fOne:
+ dd (float)1
+
+sSafetyVehicle:
+  db 'S',0,'a',0,'f',0,'e',0,'t',0,'y',0,' ',0,'V',0,'e',0,'h',0,'i',0,'c',0,'l',0,'e'
+
+VehicleUpdateSpeedAddress:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+VehicleUpdateSpeedAddress:
+  db VehicleUpdateSpeedBytes
+  // cvtss2sd xmm0,xmm0
+  // xorpd xmm1,xmm1
+
+unregistersymbol(VehicleUpdateSpeedAddress)
+unregistersymbol(fSpeed)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1AFB8AA4
+
+1AFB8A73: 48 83 EC 20                    -  sub rsp,20
+1AFB8A77: 49 BB F0 B2 FB 1A 00 00 00 00  -  mov r11,Vehicle:SetPedalState
+1AFB8A81: 41 FF D3                       -  call r11
+1AFB8A84: 48 83 C4 20                    -  add rsp,20
+1AFB8A88: E9 12 00 00 00                 -  jmp Vehicle:UpdateSpeed+32f
+1AFB8A8D: F3 0F 10 45 8C                 -  movss xmm0,[rbp-74]
+1AFB8A92: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1AFB8A96: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+1AFB8A9A: F3 0F 11 6E 7C                 -  movss [rsi+7C],xmm5
+1AFB8A9F: F3 0F 10 46 7C                 -  movss xmm0,[rsi+7C]
+// ---------- INJECTING HERE ----------
+1AFB8AA4: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1AFB8AA8: 66 0F 57 C9                    -  xorpd xmm1,xmm1
+// ---------- DONE INJECTING  ----------
+1AFB8AAC: F2 0F 5A C9                    -  cvtsd2ss xmm1,xmm1
+1AFB8AB0: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+1AFB8AB4: 48 83 EC 20                    -  sub rsp,20
+1AFB8AB8: 49 BB B0 34 35 06 00 00 00 00  -  mov r11,UnityEngine:Mathf:Max
+1AFB8AC2: 41 FF D3                       -  call r11
+1AFB8AC5: 48 83 C4 20                    -  add rsp,20
+1AFB8AC9: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+1AFB8ACD: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+1AFB8AD1: F3 0F 11 6E 7C                 -  movss [rsi+7C],xmm5
+1AFB8AD6: F3 0F 10 46 7C                 -  movss xmm0,[rsi+7C]
+}"""
+
+[[cheat]]
+id = "speed"
+name = "Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -0.000000000000000000000007940226588
+
+[cheat.locator]
+find = "symbol"
+symbol = "fSpeed"
+hops = []
+
+[[cheat]]
+id = "player-pointer"
+name = "Player Pointer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "player-team-pointer"
+name = "Player Team Pointer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerTeam"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "player-team-id"
+name = "Player Team Id"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iPlayerTeamId"
+hops = []
+
+[[cheat]]
+id = "part-design"
+name = "Part Design"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+usemono()
+define(UIComponentEntryOnMouseEnterAddress,UIComponentEntry:OnMouseEnter+5)
+define(UIComponentEntryOnMouseEnterBytes,48 83 EC 08 48 8B F1)
+
+getmonostruct(UIComponentEntry)
+getmonostruct(CarPartComponent)
+[ENABLE]
+
+assert(UIComponentEntryOnMouseEnterAddress,UIComponentEntryOnMouseEnterBytes)
+alloc(newmem,$1000,UIComponentEntryOnMouseEnterAddress)
+
+label(code)
+label(return)
+label(createSuperPart)
+label(bEnableSuperPart)
+label(pCarPartComponent)
+
+registersymbol(UIComponentEntryOnMouseEnterAddress)
+registersymbol(pCarPartComponent)
+registersymbol(bEnableSuperPart)
+registersymbol(CarPartComponent.mNameID)
+registersymbol(CarPartComponent.riskLevel)
+registersymbol(CarPartComponent.statBoost)
+registersymbol(CarPartComponent.maxStatBoost)
+registersymbol(CarPartComponent.reliabilityBoost)
+registersymbol(CarPartComponent.maxReliabilityBoost)
+registersymbol(CarPartComponent.productionTime)
+registersymbol(CarPartComponent.cost)
+registersymbol(CarPartComponent.redZone)
+
+newmem:
+ //rcx = UIComponentEntry
+ cmp [rcx+UIComponentEntry.mComponent], 0
+ je code
+ push rdi
+ mov rdi, [rcx+UIComponentEntry.mComponent]
+ mov [pCarPartComponent], rdi
+ pop rdi
+
+ cmp byte ptr [bEnableSuperPart], 0
+ je code
+
+createSuperPart:
+  push rdi
+  mov rdi, [pCarPartComponent]
+  mov [rdi+CarPartComponent.riskLevel],(float)-10
+  mov [rdi+CarPartComponent.statBoost],(float)500
+  mov [rdi+CarPartComponent.maxStatBoost],(float)500
+  mov [rdi+CarPartComponent.reliabilityBoost],(float)1
+  mov [rdi+CarPartComponent.maxReliabilityBoost],(float)1
+  mov [rdi+CarPartComponent.productionTime],(float)-1000
+  mov [rdi+CarPartComponent.cost],(float)-100000000
+  mov [rdi+CarPartComponent.redZone],(float)-100
+  pop rdi
+
+code:
+  sub rsp,08
+  mov rsi,rcx
+  jmp return
+
+bEnableSuperPart:
+ db 0
+
+pCarPartComponent:
+ dq 0
+
+UIComponentEntryOnMouseEnterAddress:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+UIComponentEntryOnMouseEnterAddress:
+  db UIComponentEntryOnMouseEnterBytes
+  // sub rsp,08
+  // mov rsi,rcx
+
+unregistersymbol(UIComponentEntryOnMouseEnterAddress)
+unregistersymbol(pCarPartComponent)
+unregistersymbol(bEnableSuperPart)
+unregistersymbol(CarPartComponent.mNameID)
+unregistersymbol(CarPartComponent.riskLevel)
+unregistersymbol(CarPartComponent.statBoost)
+unregistersymbol(CarPartComponent.maxStatBoost)
+unregistersymbol(CarPartComponent.reliabilityBoost)
+unregistersymbol(CarPartComponent.maxReliabilityBoost)
+unregistersymbol(CarPartComponent.productionTime)
+unregistersymbol(CarPartComponent.cost)
+unregistersymbol(CarPartComponent.redZone)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 148EB9A5
+
+148EB98C: 01 50 00                       -  add [rax+00],edx
+148EB98F: 00 00                          -  add [rax],al
+148EB991: E8 6A 46 83 F0                 -  call 05120000
+148EB996: 04 98                          -  add al,-68
+148EB998: DD 5C 0E 00                    -  fstp qword ptr [rsi+rcx+00]
+148EB99C: 00 00                          -  add [rax],al
+148EB99E: 00 00                          -  add [rax],al
+148EB9A0: 55                             -  push rbp
+148EB9A1: 48 8B EC                       -  mov rbp,rsp
+148EB9A4: 56                             -  push rsi
+// ---------- INJECTING HERE ----------
+148EB9A5: 48 83 EC 08                    -  sub rsp,08
+148EB9A9: 48 8B F1                       -  mov rsi,rcx
+// ---------- DONE INJECTING  ----------
+148EB9AC: 48 8B 46 68                    -  mov rax,[rsi+68]
+148EB9B0: 48 85 C0                       -  test rax,rax
+148EB9B3: 0F 84 62 00 00 00              -  je UIComponentEntry:OnMouseEnter+7b
+148EB9B9: 48 83 EC 20                    -  sub rsp,20
+148EB9BD: 49 BB 50 15 AC 1B 00 00 00 00  -  mov r11,UIManager:get_instance
+148EB9C7: 41 FF D3                       -  call r11
+148EB9CA: 48 83 C4 20                    -  add rsp,20
+148EB9CE: 48 8B C8                       -  mov rcx,rax
+148EB9D1: 83 39 00                       -  cmp dword ptr [rcx],00
+148EB9D4: 41 BA B0 92 4A 73              -  mov r10d,734A92B0
+}"""
+
+[[cheat]]
+id = "super-part"
+name = "Super Part"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:Disabled",
+    "1:Enabled",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bEnableSuperPart"
+hops = []
+
+[[cheat]]
+id = "practice-easy-car-setup"
+name = "Practice - Easy Car Setup"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1,UISetupBalanceSliderEntry:SetFillBarKnowledge+75)
+define(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2,UISetupBalanceSliderEntry:SetFillBarKnowledge+b4)
+define(UISetupBalanceSliderEntrySetFillBarKnowledgeBytes1,F3 0F 5A C9 F2 0F 5C C1)
+define(UISetupBalanceSliderEntrySetFillBarKnowledgeBytes2,F3 0F 5A C9 F2 0F 58 C1)
+
+[ENABLE]
+
+assert(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1,UISetupBalanceSliderEntrySetFillBarKnowledgeBytes1)
+assert(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2,UISetupBalanceSliderEntrySetFillBarKnowledgeBytes2)
+alloc(newmem,$1000,UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1)
+
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeCode1)
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeReturn1)
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeCode2)
+label(UISetupBalanceSliderEntrySetFillBarKnowledgeCode2)
+label(fReccomended)
+
+registersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1)
+registersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2)
+
+newmem:
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeCode1:
+  movss xmm1, [fReccomended]
+  cvtss2sd xmm1,xmm1
+  subsd xmm0,xmm1
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeReturn1
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeCode2:
+  movss xmm1, [fReccomended]
+  cvtss2sd xmm1,xmm1
+  addsd xmm0,xmm1
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeReturn2
+
+fReccomended:
+ dd (float)0.01
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1:
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeCode1
+  nop
+  nop
+  nop
+UISetupBalanceSliderEntrySetFillBarKnowledgeReturn1:
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2:
+  jmp UISetupBalanceSliderEntrySetFillBarKnowledgeCode2
+  nop
+  nop
+  nop
+UISetupBalanceSliderEntrySetFillBarKnowledgeReturn2:
+
+[DISABLE]
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1:
+  db UISetupBalanceSliderEntrySetFillBarKnowledgeBytes1
+  // cvtss2sd xmm1,xmm1
+  // subsd xmm0,xmm1
+
+UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2:
+  db UISetupBalanceSliderEntrySetFillBarKnowledgeBytes2
+  // cvtss2sd xmm1,xmm1
+  // addsd xmm0,xmm1
+
+unregistersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress1)
+unregistersymbol(UISetupBalanceSliderEntrySetFillBarKnowledgeAddress2)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 114D3EF5
+
+114D3EC3: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+114D3EC7: F2 0F 58 C1                    -  addsd xmm0,xmm1
+114D3ECB: F3 0F 10 0D FD 04 00 00        -  movss xmm1,[UISetupBalanceSliderEntry:SetFillBarKnowledge+550]
+114D3ED3: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+114D3ED7: F2 0F 5E C1                    -  divsd xmm0,xmm1
+114D3EDB: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+114D3EDF: F3 0F 11 6D 84                 -  movss [rbp-7C],xmm5
+114D3EE4: F3 0F 10 45 84                 -  movss xmm0,[rbp-7C]
+114D3EE9: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+114D3EED: F3 0F 10 8D 70 FF FF FF        -  movss xmm1,[rbp-00000090]
+// ---------- INJECTING HERE ----------
+114D3EF5: F3 0F 5A C9                    -  cvtss2sd xmm1,xmm1
+114D3EF9: F2 0F 5C C1                    -  subsd xmm0,xmm1
+// ---------- DONE INJECTING  ----------
+114D3EFD: F2 0F 5A C0                    -  cvtsd2ss xmm0,xmm0
+114D3F01: 48 83 EC 20                    -  sub rsp,20
+114D3F05: 49 BB E0 D1 5E 05 00 00 00 00  -  mov r11,UnityEngine:Mathf:Clamp01
+114D3F0F: 41 FF D3                       -  call r11
+114D3F12: 48 83 C4 20                    -  add rsp,20
+114D3F16: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+114D3F1A: F2 0F 5A E8                    -  cvtsd2ss xmm5,xmm0
+114D3F1E: F3 0F 11 6D 80                 -  movss [rbp-80],xmm5
+114D3F23: F3 0F 10 45 84                 -  movss xmm0,[rbp-7C]
+114D3F28: F3 0F 5A C0                    -  cvtss2sd xmm0,xmm0
+}"""
+
+[[cheat]]
+id = "type"
+name = "Type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Permanent",
+    "1:Temporary",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "all-stats"
+name = "All Stats"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "morale-modifier"
+name = "Morale Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "mechanic-modifier"
+name = "Mechanic Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "teammate-modifier"
+name = "Teammate Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "chairman-modifier"
+name = "Chairman Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "improveability-modifier"
+name = "Improveability Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "potential-modifier"
+name = "Potential Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "desired-winsmodifier"
+name = "Desired WinsModifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []
+
+[[cheat]]
+id = "desired-earningsmodifier"
+name = "Desired EarningsModifier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTrait"
+hops = []

@@ -1,0 +1,788 @@
+[game]
+name = "Crimzon Clover WORLD IGNITION"
+exe = "crimzonclover_wi.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1631"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_breakrate_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_livesset_enable)
+registersymbol(playerstats_starsset_enable)
+registersymbol(playerstats_break1set_enable)
+registersymbol(playerstats_break2set_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_breakrate_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_livesset_enable, 4)
+alloc(playerstats_starsset_enable, 4)
+alloc(playerstats_break1set_enable, 4)
+alloc(playerstats_break2set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_breakrate_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_livesset_enable)
+unregistersymbol(playerstats_starsset_enable)
+unregistersymbol(playerstats_break1set_enable)
+unregistersymbol(playerstats_break2set_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_breakrate_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_livesset_enable)
+dealloc(playerstats_starsset_enable)
+dealloc(playerstats_break1set_enable)
+dealloc(playerstats_break2set_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-battle"
+name = "Player Stats Base Address Scan (To Update: Battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_livesset_exit)
+label(playerstats_starsset_exit)
+label(playerstats_break1set_exit)
+label(playerstats_break2set_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//CrimzonClover_WI.exe+6A926 - 89 48 0C              - mov [eax+0C],ecx
+//CrimzonClover_WI.exe+6A929 - 69 D2 0C3C0000        - imul edx,edx,00003C0C
+// Accesses Stars
+//CrimzonClover_WI.exe+6A92F - 8B 0D 6CAFE100        - mov ecx,[CrimzonClover_WI.exe+A1AF6C]
+//CrimzonClover_WI.exe+6A935 - 69 C9 A8200000        - imul ecx,ecx,000020A8
+//CrimzonClover_WI.exe+6A93B - 81 C2 49B10000        - add edx,0000B149
+//CrimzonClover_WI.exe+6A941 - 81 C1 84E10000        - add ecx,0000E184
+//CrimzonClover_WI.exe+6A947 - 89 50 18              - mov [eax+18],edx
+//CrimzonClover_WI.exe+6A94A - 8B 15 8CB0E100        - mov edx,[CrimzonClover_WI.exe+A1B08C]
+aobscan(playerstats_searchedAOB, 69 C9 A8 20 00 00 81 C2 49 B1 00 00)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], #4608
+
+mov eax, [playerstats_savedAOB-4]
+mov ebx, [playerstats_savedAOB-13]
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], eax
+mov [playerstats_breakrate_basepointer], ebx
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_livesset_enable], #0
+je playerstats_livesset_exit
+mov [eax-28], #8
+playerstats_livesset_exit:
+
+cmp dword ptr [playerstats_starsset_enable], #0
+je playerstats_starsset_exit
+mov [eax], #999999999
+playerstats_starsset_exit:
+
+cmp dword ptr [playerstats_break1set_enable], #0
+je playerstats_break1set_exit
+mov [playerstats_break1set_enable], 0
+fild [playerstats_temp3]
+fstp qword ptr [eax+164]
+playerstats_break1set_exit:
+
+cmp dword ptr [playerstats_break2set_enable], #0
+je playerstats_break2set_exit
+mov [playerstats_break2set_enable], 0
+fild [playerstats_temp3]
+fstp qword ptr [eax+16c]
+playerstats_break2set_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+
+
+playerstats_originalcode:
+db 69 C9 A8 20 00 00
+//imul ecx,ecx,000020A8
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 69 C9 A8 20 00 00
+//imul ecx,ecx,000020A8
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)"""
+
+[[cheat]]
+id = "lives-set-to-max"
+name = "Lives Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_livesset_enable"
+hops = []
+
+[[cheat]]
+id = "stars-set-to-massive"
+name = "Stars Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_starsset_enable"
+hops = []
+
+[[cheat]]
+id = "break-gauge-1-set-to-max-auto-disable"
+name = "Break Gauge 1 Set to Max? (Auto Disable)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_break1set_enable"
+hops = []
+
+[[cheat]]
+id = "break-gauge-2-set-to-max-auto-disable"
+name = "Break Gauge 2 Set to Max? (Auto Disable)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_break2set_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "lives"
+name = "Lives"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xffffffd8"]
+
+[[cheat]]
+id = "stars"
+name = "Stars"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "break-gauge-1-4608-max"
+name = "Break Gauge 1 (4608 = Max)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x164"]
+
+[[cheat]]
+id = "break-gauge-2-4608-max"
+name = "Break Gauge 2 (4608 = Max)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x16c"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_breakrate_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "display-break-rate"
+name = "Display Break Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_breakrate_basepointer"
+hops = ["+0xfffffffc"]
+
+[[cheat]]
+id = "break-rate"
+name = "Break Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_breakrate_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "shield-stats-base-address-scan-initialization-activate-this-first"
+name = "Shield Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(shieldstats_basepointer)
+registersymbol(shieldstats_update_enable)
+registersymbol(shieldstats_set_enable)
+registersymbol(shieldstats_shieldset_enable)
+registersymbol(shieldstats_dronesset_enable)
+
+alloc(shieldstats_basepointer, 4)
+alloc(shieldstats_update_enable, 4)
+alloc(shieldstats_set_enable, 4)
+alloc(shieldstats_shieldset_enable, 4)
+alloc(shieldstats_dronesset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(shieldstats_basepointer)
+unregistersymbol(shieldstats_update_enable)
+unregistersymbol(shieldstats_set_enable)
+unregistersymbol(shieldstats_shieldset_enable)
+unregistersymbol(shieldstats_dronesset_enable)
+
+dealloc(shieldstats_basepointer)
+dealloc(shieldstats_update_enable)
+dealloc(shieldstats_set_enable)
+dealloc(shieldstats_shieldset_enable)
+dealloc(shieldstats_dronesset_enable)"""
+
+[[cheat]]
+id = "shield-stats-base-address-scan-to-update-shield-activated"
+name = "Shield Stats Base Address Scan (To Update: Shield Activated)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(shieldstats_savedAOB)
+label(shieldstats_returnhere)
+label(shieldstats_originalcode)
+label(shieldstats_exit)
+
+label(shieldstats_update_exit)
+label(shieldstats_set_exit)
+label(shieldstats_shieldset_exit)
+label(shieldstats_dronesset_exit)
+
+registersymbol(shieldstats_savedAOB)
+
+//CrimzonClover_WI.exe+F91FC - 8B 7D 08              - mov edi,[ebp+08]
+//CrimzonClover_WI.exe+F91FF - BE FF000000           - mov esi,000000FF
+// Accesses Shield Duration
+//CrimzonClover_WI.exe+F9204 - 2B B7 68010000        - sub esi,[edi+00000168]
+//CrimzonClover_WI.exe+F920A - 8D 34 B6              - lea esi,[esi+esi*4]
+//CrimzonClover_WI.exe+F920D - 03 F6                 - add esi,esi
+//CrimzonClover_WI.exe+F920F - 83 FE F6              - cmp esi,-0A
+aobscan(shieldstats_searchedAOB, 2B B7 68 01 00 00 8D 34 B6)
+
+alloc(shieldstats_newmem, 2048, shieldstats_searchedAOB)
+alloc(shieldstats_temp1, 4, shieldstats_searchedAOB)
+
+
+shieldstats_newmem:
+cmp dword ptr [shieldstats_update_enable], #0
+je shieldstats_update_exit
+mov [shieldstats_basepointer], edi
+shieldstats_update_exit:
+
+cmp dword ptr [shieldstats_set_enable], #0
+je shieldstats_set_exit
+shieldstats_set_exit:
+
+cmp dword ptr [shieldstats_shieldset_enable], #0
+je shieldstats_shieldset_exit
+mov byte ptr [edi+168], #100
+shieldstats_shieldset_exit:
+
+cmp dword ptr [shieldstats_dronesset_enable], #0
+je shieldstats_dronesset_exit
+mov [edi+1f90], #10
+shieldstats_dronesset_exit:
+
+
+shieldstats_originalcode:
+db 2B B7 68 01 00 00
+//sub esi,[edi+00000168]
+
+
+shieldstats_exit:
+jmp shieldstats_returnhere
+
+
+shieldstats_searchedAOB:
+shieldstats_savedAOB:
+jmp shieldstats_newmem
+nop
+shieldstats_returnhere:
+
+
+[DISABLE]
+shieldstats_savedAOB:
+db 2B B7 68 01 00 00
+//sub esi,[edi+00000168]
+
+unregistersymbol(shieldstats_savedAOB)
+
+dealloc(shieldstats_newmem)
+dealloc(shieldstats_temp1)"""
+
+[[cheat]]
+id = "shield-duration-set-to-massive"
+name = "Shield Duration Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shieldstats_shieldset_enable"
+hops = []
+
+[[cheat]]
+id = "drones-set-to-massive"
+name = "Drones Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shieldstats_dronesset_enable"
+hops = []
+
+[[cheat]]
+id = "shield-stats-update-base-address"
+name = "Shield Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shieldstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shieldstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "shield-duration"
+name = "Shield Duration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shieldstats_basepointer"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "drones"
+name = "Drones"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shieldstats_basepointer"
+hops = ["+0x1f90"]
+
+[[cheat]]
+id = "break-stats-base-address-scan-initialization-activate-this-first"
+name = "Break Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(breakstats_basepointer)
+registersymbol(breakstats_update_enable)
+registersymbol(breakstats_set_enable)
+registersymbol(breakstats_breakset_enable)
+
+alloc(breakstats_basepointer, 4)
+alloc(breakstats_update_enable, 4)
+alloc(breakstats_set_enable, 4)
+alloc(breakstats_breakset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(breakstats_basepointer)
+unregistersymbol(breakstats_update_enable)
+unregistersymbol(breakstats_set_enable)
+unregistersymbol(breakstats_breakset_enable)
+
+dealloc(breakstats_basepointer)
+dealloc(breakstats_update_enable)
+dealloc(breakstats_set_enable)
+dealloc(breakstats_breakset_enable)"""
+
+[[cheat]]
+id = "break-stats-base-address-scan-to-update-break-mode"
+name = "Break Stats Base Address Scan (To Update: Break Mode)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(breakstats_savedAOB)
+label(breakstats_returnhere)
+label(breakstats_originalcode)
+label(breakstats_exit)
+
+label(breakstats_update_exit)
+label(breakstats_set_exit)
+label(breakstats_breakset_exit)
+
+registersymbol(breakstats_savedAOB)
+
+//CrimzonClover_WI.exe+9A106 - DB 80 D8010000        - fild dword ptr [eax+000001D8]
+//CrimzonClover_WI.exe+9A10C - DD 5C 24 58           - fstp qword ptr [esp+58]
+// Accesses Break Mode Duration
+//CrimzonClover_WI.exe+9A110 - DB 80 DC010000        - fild dword ptr [eax+000001DC]
+//CrimzonClover_WI.exe+9A116 - DD 5C 24 50           - fstp qword ptr [esp+50]
+//CrimzonClover_WI.exe+9A11A - E8 D1100600           - call CrimzonClover_WI.exe+FB1F0
+//CrimzonClover_WI.exe+9A11F - 8B 80 BC1F0000        - mov eax,[eax+00001FBC]
+aobscan(breakstats_searchedAOB, DB 80 DC 01 00 00 DD 5C 24 50)
+
+alloc(breakstats_newmem, 2048, breakstats_searchedAOB)
+alloc(breakstats_temp1, 4, breakstats_searchedAOB)
+
+
+breakstats_newmem:
+mov [breakstats_temp1], ebx
+
+cmp dword ptr [breakstats_update_enable], #0
+je breakstats_update_exit
+mov [breakstats_basepointer], eax
+breakstats_update_exit:
+
+cmp dword ptr [breakstats_set_enable], #0
+je breakstats_set_exit
+breakstats_set_exit:
+
+cmp dword ptr [breakstats_breakset_enable], #0
+je breakstats_breakset_exit
+mov ebx, [eax+1d8]
+add ebx, [eax+1d8]
+mov [eax+1dc], ebx
+breakstats_breakset_exit:
+
+mov ebx, [breakstats_temp1]
+
+
+breakstats_originalcode:
+db DB 80 DC 01 00 00
+//fild dword ptr [eax+000001DC]
+
+
+breakstats_exit:
+jmp breakstats_returnhere
+
+
+breakstats_searchedAOB:
+breakstats_savedAOB:
+jmp breakstats_newmem
+nop
+breakstats_returnhere:
+
+
+[DISABLE]
+breakstats_savedAOB:
+db DB 80 DC 01 00 00
+//fild dword ptr [eax+000001DC]
+
+unregistersymbol(breakstats_savedAOB)
+
+dealloc(breakstats_newmem)
+dealloc(breakstats_temp1)"""
+
+[[cheat]]
+id = "break-duration-set-to-max"
+name = "Break Duration Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "breakstats_breakset_enable"
+hops = []
+
+[[cheat]]
+id = "break-stats-update-base-address"
+name = "Break Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "breakstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "breakstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "max-break-mode-duration"
+name = "Max Break Mode Duration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "breakstats_basepointer"
+hops = ["+0x1d8"]
+
+[[cheat]]
+id = "break-mode-duration"
+name = "Break Mode Duration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "breakstats_basepointer"
+hops = ["+0x1dc"]

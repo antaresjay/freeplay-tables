@@ -1,0 +1,156 @@
+[game]
+name = "Voidling Bound 沃德灵：共生"
+exe = "voidlingwrangler-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by FreyaChen. Source: https://fearlessrevolution.com/viewtopic.php?t=39804"
+verified = []
+author = "FreyaChen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "auto-max-voidling-exp"
+name = "Auto MAX Voidling EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,"VoidlingWrangler-Win64-Shipping.exe"+4C232CC)
+alloc(voidlingCurrentBase,8,"VoidlingWrangler-Win64-Shipping.exe"+4C232CC)
+
+registersymbol(voidlingCurrentBase)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+  // 只有新经验大于旧经验时，才认为这是回飞船后的经验结算
+  cmp eax,[rsi+48]
+  jle originalcode
+
+  // rsi = 当前结算经验的 voidling 对象基址
+  mov [voidlingCurrentBase],rsi
+
+  // 如果新经验小于 24998，则提升到 24998
+  cmp eax,#24998
+  jge originalcode
+  mov eax,#24998
+
+originalcode:
+  mov [rsi+48],eax
+  sub eax,ebx
+
+exit:
+  jmp returnhere
+
+"VoidlingWrangler-Win64-Shipping.exe"+4C232CC:
+  jmp newmem
+
+returnhere:
+
+[DISABLE]
+
+"VoidlingWrangler-Win64-Shipping.exe"+4C232CC:
+  db 89 46 48 2B C3
+
+unregistersymbol(voidlingCurrentBase)
+dealloc(voidlingCurrentBase)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "current-voidling-base"
+name = "Current Voidling Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "voidlingCurrentBase"
+hops = []
+
+[[cheat]]
+id = "auto-max-resources"
+name = "Auto MAX Resources"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,"VoidlingWrangler-Win64-Shipping.exe"+4C9F98E)
+alloc(resourceCurrentBase,8,"VoidlingWrangler-Win64-Shipping.exe"+4C9F98E)
+
+registersymbol(resourceCurrentBase)
+
+label(returnhere)
+label(originalcode)
+label(setSmallResource)
+label(setLargeResource)
+label(exit)
+
+newmem:
+  // rax = 当前变化资源的结构基址
+  mov [resourceCurrentBase],rax
+
+originalcode:
+  // 原本的购买/消耗扣除
+  sub [rax+08],edi
+
+  // 如果当前资源数值小于 1000，视为突变因子这类小数值资源
+  cmp dword ptr [rax+08],#1000
+  jl setSmallResource
+
+setLargeResource:
+  // 科研点数等大数值资源
+  mov dword ptr [rax+08],#66666
+  jmp exit
+
+setSmallResource:
+  // 突变因子等小数值资源
+  mov dword ptr [rax+08],#666
+
+exit:
+  // 保留原始逻辑
+  neg edi
+  jmp returnhere
+
+"VoidlingWrangler-Win64-Shipping.exe"+4C9F98E:
+  jmp newmem
+
+returnhere:
+
+[DISABLE]
+
+"VoidlingWrangler-Win64-Shipping.exe"+4C9F98E:
+  db 29 78 08 F7 DF
+
+unregistersymbol(resourceCurrentBase)
+dealloc(resourceCurrentBase)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "current-resource-base"
+name = "Current Resource Base"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "researchPointBase"
+hops = []

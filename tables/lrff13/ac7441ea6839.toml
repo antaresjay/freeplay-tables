@@ -1,0 +1,238 @@
+[game]
+name = "LIGHTNING RETURNS: FINAL FANTASY XIII (DrummerIX, Steam)"
+exe = "lrff13.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=16509"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script-god-mode-one-hit-kill-etc"
+name = "Damage Modifier Script (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(DamageModAOB,$process,8B F8 03 7D 08 F6 41 40 02) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,1024,DamageModAOB)
+
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+newmem:
+  mov [EAXSave],eax
+  mov edi,eax
+  mov eax,[ebp+08]
+  cmp dword ptr [esi+1C0],FFFFFFFF
+  je EnemyHit
+  jmp HeroHit
+HeroHit:
+  cmp eax,0
+  jl HeroDamageHit
+  jmp MyCleanUp
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push eax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [rsp]
+  pop eax
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor eax,eax
+  jmp MyCleanUp
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne MyCleanUp
+  cmp eax,edi
+  jl @F
+  xor eax,eax
+@@:
+  jmp MyCleanUp 
+EnemyHit:
+  cmp eax,0
+  jl EnemyDamageHit
+  jmp MyCleanUp
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  push eax
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [rsp]
+  pop eax
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne MyCleanUp
+  mov eax,edi
+  neg eax
+  jmp MyCleanUp
+
+MyCleanUp:
+  mov [ebp+08],eax
+  mov eax,[EAXSave]
+  jmp originalcode
+
+originalcode:
+  mov edi,eax
+  add edi,[ebp+08]
+  jmp return
+
+EAXSave:
+dq 0
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)0.0
+fHeroDamageMult:
+dq (float)0.5
+HeroCannotDie:
+dq 1
+
+DamageModAOB:
+  jmp newmem
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  db 8B F8 03 7D 08
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(HeroCannotDie)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-damage-to-hero-party"
+name = "Hero Damage Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half damage to hero party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-if-on-and-god-mode-off-then-you-take-damage-until-the-hit-will-kill-you"
+name = "Hero Cannot Die (If On and God Mode Off, Then You Take Damage Until The Hit Will Kill You)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier-to-damage-you-deal-to-enemies"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier to damage you deal to enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "always-drop-item"
+name = "Always Drop Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ItemDropAOB1,$process,81 FF 10 27 00 00 7D 15 68 10 27 00 00) // should be unique
+registersymbol(ItemDropAOB1)
+
+ItemDropAOB1+6:
+  db EB
+
+[DISABLE]
+
+ItemDropAOB1+6:
+  db 7D
+
+unregistersymbol(ItemDropAOB1)"""

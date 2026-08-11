@@ -1,0 +1,581 @@
+[game]
+name = "The Tawashi"
+exe = "shinkansen_the_tawashi.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=11435"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_hpset_enable)
+registersymbol(playerstats_lifeset_enable)
+
+//GameAssembly.dll+6D908B - 84 C0                 - test al,al
+//GameAssembly.dll+6D908D - 74 25                 - je GameAssembly.dll+6D90B4
+//GameAssembly.dll+6D908F - 48 8B 8F 20010000     - mov rcx,[rdi+00000120]
+//GameAssembly.dll+6D9096 - 48 85 C9              - test rcx,rcx
+//GameAssembly.dll+6D9099 - 0F84 6A020000         - je GameAssembly.dll+6D9309
+//GameAssembly.dll+6D909F - 48 8B 01              - mov rax,[rcx]
+//GameAssembly.dll+6D90A2 - 48 8B 90 B8020000     - mov rdx,[rax+000002B8]
+// Calls function that accesses Health
+//GameAssembly.dll+6D90A9 - FF 90 B0020000        - call qword ptr [rax+000002B0]
+aobscan(playerstats_initialization_searchedAOB, 48 8B 8F 20 01 00 00 48 85 C9 * * * * * * 48 8B 01)
+
+alloc(playerstats_basepointer, 8, playerstats_initialization_searchedAOB)
+alloc(playerstats_update_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_hpset_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_lifeset_enable, 4, playerstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_hpset_enable)
+unregistersymbol(playerstats_lifeset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_hpset_enable)
+dealloc(playerstats_lifeset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_hpset_exit)
+label(playerstats_lifeset_exit)
+
+registersymbol(playerstats_originalcode)
+registersymbol(playerstats_savedAOB)
+
+//GameAssembly.dll+6D908B - 84 C0                 - test al,al
+//GameAssembly.dll+6D908D - 74 25                 - je GameAssembly.dll+6D90B4
+//GameAssembly.dll+6D908F - 48 8B 8F 20010000     - mov rcx,[rdi+00000120]
+//GameAssembly.dll+6D9096 - 48 85 C9              - test rcx,rcx
+//GameAssembly.dll+6D9099 - 0F84 6A020000         - je GameAssembly.dll+6D9309
+//GameAssembly.dll+6D909F - 48 8B 01              - mov rax,[rcx]
+//GameAssembly.dll+6D90A2 - 48 8B 90 B8020000     - mov rdx,[rax+000002B8]
+// Calls function that accesses Health
+//GameAssembly.dll+6D90A9 - FF 90 B0020000        - call qword ptr [rax+000002B0]
+aobscan(playerstats_searchedAOB, 48 8B 8F 20 01 00 00 48 85 C9 * * * * * * 48 8B 01)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 8, playerstats_searchedAOB)
+alloc(playerstats_temp2, 8, playerstats_searchedAOB)
+alloc(playerstats_temp3, 8, playerstats_searchedAOB)
+alloc(playerstats_temp4, 8, playerstats_searchedAOB)
+alloc(playerstats_temp5, 8, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], rax
+mov [playerstats_temp2], rbx
+mov [playerstats_temp3], rcx
+mov [playerstats_temp4], rdx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], rdi
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_hpset_enable], #0
+je playerstats_hpset_exit
+mov rbx, [rdi+120]
+test rbx, rbx
+je playerstats_hpset_exit
+fld [rbx+60]
+fstp [rbx+64]
+playerstats_hpset_exit:
+
+cmp dword ptr [playerstats_lifeset_enable], #0
+je playerstats_lifeset_exit
+mov [rdi+12c], #10
+playerstats_lifeset_exit:
+
+mov rax, [playerstats_temp1]
+mov rbx, [playerstats_temp2]
+mov rcx, [playerstats_temp3]
+mov rdx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+readmem(playerstats_searchedAOB, 7)
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+readmem(playerstats_originalcode, 7)
+
+unregistersymbol(playerstats_originalcode)
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "life-set-to-massive"
+name = "Life Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_lifeset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x120",
+    "+0x0",
+]
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x120",
+    "+0x60",
+]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x120",
+    "+0x64",
+]
+
+[[cheat]]
+id = "weapon-type"
+name = "Weapon Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x120",
+    "+0xec",
+]
+
+[[cheat]]
+id = "score"
+name = "Score"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "life"
+name = "Life"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x12c"]
+
+[[cheat]]
+id = "weapon-stats-base-address-scan-initialization-activate-this-first"
+name = "Weapon Stats Base Address Scan Initialization (Activate This First)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(weaponstats_basepointer)
+registersymbol(weaponstats_update_enable)
+registersymbol(weaponstats_weapontypeset_enable)
+registersymbol(weaponstats_weapontypeset_value)
+
+//GameAssembly.dll+6D3EA5 - 74 65                 - je GameAssembly.dll+6D3F0C
+//GameAssembly.dll+6D3EA7 - E9 34FFFFFF           - jmp GameAssembly.dll+6D3DE0
+// Accesses Weapon Type
+//GameAssembly.dll+6D3EAC - 44 89 B7 EC000000     - mov [rdi+000000EC],r14d
+//GameAssembly.dll+6D3EB3 - 48 8B 0D DE844C01     - mov rcx,[GameAssembly.dll+1B9C398]
+//GameAssembly.dll+6D3EBA - E8 91D9AEFF           - call GameAssembly.dll+1C1850
+//GameAssembly.dll+6D3EBF - 33 D2                 - xor edx,edx
+//GameAssembly.dll+6D3EC1 - 48 8B C8              - mov rcx,rax
+//GameAssembly.dll+6D3EC4 - 48 8B D8              - mov rbx,rax
+//GameAssembly.dll+6D3EC7 - E8 945AE7FF           - call GameAssembly.dll+549960
+aobscan(weaponstats_initialization_searchedAOB, 44 89 B7 EC 00 00 00 * * * * * * * * * * * * 33 D2 48 8B C8)
+
+alloc(weaponstats_basepointer, 8, weaponstats_initialization_searchedAOB)
+alloc(weaponstats_update_enable, 4, weaponstats_initialization_searchedAOB)
+alloc(weaponstats_weapontypeset_enable, 4, weaponstats_initialization_searchedAOB)
+alloc(weaponstats_weapontypeset_value, 4, weaponstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(weaponstats_basepointer)
+unregistersymbol(weaponstats_update_enable)
+unregistersymbol(weaponstats_weapontypeset_enable)
+unregistersymbol(weaponstats_weapontypeset_value)
+
+dealloc(weaponstats_basepointer)
+dealloc(weaponstats_update_enable)
+dealloc(weaponstats_weapontypeset_enable)
+dealloc(weaponstats_weapontypeset_value)"""
+
+[[cheat]]
+id = "weapon-stats-base-address-scan-to-update-pickup-weapon"
+name = "Weapon Stats Base Address Scan (To Update: Pickup Weapon)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(weaponstats_savedAOB)
+label(weaponstats_returnhere)
+label(weaponstats_originalcode)
+label(weaponstats_exit)
+
+label(weaponstats_update_exit)
+label(weaponstats_weapontypeset_exit)
+
+registersymbol(weaponstats_originalcode)
+registersymbol(weaponstats_savedAOB)
+
+//GameAssembly.dll+6D3EA5 - 74 65                 - je GameAssembly.dll+6D3F0C
+//GameAssembly.dll+6D3EA7 - E9 34FFFFFF           - jmp GameAssembly.dll+6D3DE0
+// Accesses Weapon Type
+//GameAssembly.dll+6D3EAC - 44 89 B7 EC000000     - mov [rdi+000000EC],r14d
+//GameAssembly.dll+6D3EB3 - 48 8B 0D DE844C01     - mov rcx,[GameAssembly.dll+1B9C398]
+//GameAssembly.dll+6D3EBA - E8 91D9AEFF           - call GameAssembly.dll+1C1850
+//GameAssembly.dll+6D3EBF - 33 D2                 - xor edx,edx
+//GameAssembly.dll+6D3EC1 - 48 8B C8              - mov rcx,rax
+//GameAssembly.dll+6D3EC4 - 48 8B D8              - mov rbx,rax
+//GameAssembly.dll+6D3EC7 - E8 945AE7FF           - call GameAssembly.dll+549960
+aobscan(weaponstats_searchedAOB, 44 89 B7 EC 00 00 00 * * * * * * * * * * * * 33 D2 48 8B C8)
+
+alloc(weaponstats_newmem, 2048, weaponstats_searchedAOB)
+alloc(weaponstats_temp1, 8, weaponstats_searchedAOB)
+alloc(weaponstats_temp2, 8, weaponstats_searchedAOB)
+alloc(weaponstats_temp3, 8, weaponstats_searchedAOB)
+alloc(weaponstats_temp4, 8, weaponstats_searchedAOB)
+alloc(weaponstats_temp5, 8, weaponstats_searchedAOB)
+
+
+weaponstats_newmem:
+mov [weaponstats_temp1], rax
+mov [weaponstats_temp2], rbx
+mov [weaponstats_temp3], rcx
+mov [weaponstats_temp4], rdx
+
+cmp dword ptr [weaponstats_update_enable], #0
+je weaponstats_update_exit
+mov [weaponstats_basepointer], rdi
+weaponstats_update_exit:
+
+cmp dword ptr [weaponstats_weapontypeset_enable], #0
+je weaponstats_weapontypeset_exit
+mov r14d, [weaponstats_weapontypeset_value]
+weaponstats_weapontypeset_exit:
+
+mov rax, [weaponstats_temp1]
+mov rbx, [weaponstats_temp2]
+mov rcx, [weaponstats_temp3]
+mov rdx, [weaponstats_temp4]
+
+
+weaponstats_originalcode:
+readmem(weaponstats_searchedAOB, 7)
+
+
+weaponstats_exit:
+jmp weaponstats_returnhere
+
+
+weaponstats_searchedAOB:
+weaponstats_savedAOB:
+jmp weaponstats_newmem
+nop
+nop
+weaponstats_returnhere:
+
+
+[DISABLE]
+weaponstats_savedAOB:
+readmem(weaponstats_originalcode, 7)
+
+unregistersymbol(weaponstats_originalcode)
+unregistersymbol(weaponstats_savedAOB)
+
+dealloc(weaponstats_newmem)
+dealloc(weaponstats_temp1)
+dealloc(weaponstats_temp2)
+dealloc(weaponstats_temp3)
+dealloc(weaponstats_temp4)
+dealloc(weaponstats_temp5)"""
+
+[[cheat]]
+id = "weapon-type-set-to-weapon-type-value"
+name = "Weapon Type Set to Weapon Type Value?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "weaponstats_weapontypeset_enable"
+hops = []
+
+[[cheat]]
+id = "weapon-type-value"
+name = "Weapon Type Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1
+choices = [
+    "1:Rocket Punch",
+    "2:Wide Spread",
+    "3:Laser",
+    "4:Rocket",
+    "5:Homing",
+    "6:All Directions",
+    "7:Shield Drones",
+    "8:Tight Stream",
+    "9:Forward Backward",
+    "10:Tight Spread",
+    "11:Wide Stream",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "weaponstats_weapontypeset_value"
+hops = []
+
+[[cheat]]
+id = "weapon-stats-update-base-address"
+name = "Weapon Stats Update Base Address?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "weaponstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weaponstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "max-hp-2"
+name = "Max HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "weaponstats_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weaponstats_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "weapon-type-2"
+name = "Weapon Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weaponstats_basepointer"
+hops = ["+0xec"]

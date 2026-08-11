@@ -1,0 +1,258 @@
+[game]
+name = "RAD - 2019-Aug-24"
+exe = "rad.exe"
+notes = "Converted from a Cheat Engine table by BitKit. Source: https://fearlessrevolution.com/viewtopic.php?t=10071"
+verified = []
+author = "BitKit"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : RAD.exe
+  Version: 1.1
+  Date   : 2019-08-22
+  Author : BitKit
+
+  - Tapes and Floppies quantity on take or trade
+  - Tapes in MAC automat (start location)
+  - God Mode and Quick Kill (default 100)
+  - Player XP Multiplier (default x2)
+}
+
+[ENABLE]
+aobscanmodule(hpPMon,RAD.exe,8B B0 E8 04 00 00 48 85 DB 74 23 E8 50 C5 17 00 48 8B 53 10)
+aobscanmodule(hpTapes,RAD.exe,4C 03 C8 4C 89 4A 20 8B 41 30 41 89 00 C3)
+aobscanmodule(hpTapesMac,RAD.exe,8B 93 48 03 00 00 8B 80 9C 02 00 00 3B D0 0F 4E C2)
+aobscanmodule(hpGodMode,RAD.exe,89 8B E8 04 00 00 44 8B C1 8B 83 B0 03 00 00)
+aobscanmodule(hpXPMult,RAD.exe,01 83 BC 01 00 00 89 B3 B8 01 00 00 E8 12 E6 01 00)
+//==========
+alloc(codeMem,4096,RAD.exe)
+//==========
+label(_PMon)
+label(_exitPMon)
+label(_Tapes)
+label(origTapes)
+label(_exitTapes)
+label(_TapesMac)
+label(origTapesMac)
+label(_exitTapesMac)
+label(_GodMode)
+label(origGodMode)
+label(_exitGodMode)
+label(_XPMult)
+label(origXPMult)
+label(_exitXPMult)
+
+label(enableTapes)
+label(enableTapesMac)
+label(enableGM)
+label(enableQK)
+label(enableXPM)
+
+label(pHero)
+label(varTapes)
+label(varGod)
+label(varDead)
+label(varXPM)
+//==========
+registersymbol(codeMem)
+registersymbol(hpPMon)
+registersymbol(pHero)
+registersymbol(_PMon)
+registersymbol(hpTapes)
+registersymbol(origTapes)
+registersymbol(hpTapesMac)
+registersymbol(origTapesMac)
+registersymbol(hpGodMode)
+registersymbol(origGodMode)
+registersymbol(hpXPMult)
+registersymbol(origXPMult)
+
+registersymbol(enableTapes)
+registersymbol(enableTapesMac)
+registersymbol(enableGM)
+registersymbol(enableQK)
+registersymbol(enableXPM)
+registersymbol(varTapes)
+registersymbol(varGod)
+registersymbol(varDead)
+registersymbol(varXPM)
+//==========
+codeMem:
+//==========
+// Player on mission check
+_PMon:
+  readmem(hpPMon,6)
+  mov [pHero],esi
+  jmp _exitPMon
+// Set Amount of Tapes
+_Tapes:
+  cmp dword ptr [pHero],0
+  je origTapes
+  cmp byte ptr [enableTapes],0
+  je origTapes
+  mov eax,[varTapes]
+  mov [rcx+30],eax
+origTapes:
+  readmem(hpTapes+7,6)
+  jmp _exitTapes
+// Set Amount of Tapes in MAC
+_TapesMac:
+  cmp dword ptr [pHero],0
+  je origTapesMac
+  cmp byte ptr [enableTapesMac],0
+  je origTapesMac
+  mov [rbx+00000348],#50000
+  mov [rax+0000029C],#100
+origTapesMac:
+  readmem(hpTapesMac,6)
+  jmp _exitTapesMac
+// God Mode and Quick kill mode
+_GodMode:
+  cmp dword ptr [pHero],0
+  je origGodMode
+  cmp [rbx+4e8],0
+  je origGodMode
+  cmp byte ptr [enableGM],0
+  je QuickKillMode
+  cmp dword ptr [rbx+660],0
+  cmovne ecx,[varGod]
+QuickKillMode:
+  cmp byte ptr [enableQK],0
+  je origGodMode
+  cmp dword ptr [rbx+660],0
+  cmove ecx,[varDead]
+origGodMode:
+  readmem(hpGodMode,6)
+  jmp _exitGodMode
+// XP Multiplier
+_XPMult:
+  cmp dword ptr [pHero],0
+  je origXPMult
+  cmp byte ptr [enableXPM],0
+  je origXPMult
+  imul eax,[varXPM]
+origXPMult:
+  readmem(hpXPMult,6)
+  jmp _exitXPMult
+//==========
+align 10,'='
+//==========
+pHero:
+  dd 0
+enableTapes:
+  db 0
+enableTapesMac:
+  db 0
+enableGM:
+  db 0
+enableQK:
+  db 0
+enableXPM:
+  db 0
+varTapes:
+  dd #100
+varGod:
+  dd #6
+varDead:
+  dd 0
+varXPM:
+  dd #2
+//==========
+hpPMon:
+  jmp _PMon
+  nop
+_exitPMon:
+hpTapes+7:
+  jmp _Tapes
+  nop
+_exitTapes:
+hpTapesMac:
+  nop
+  jmp _TapesMac
+_exitTapesMac:
+hpGodMode:
+  jmp _GodMode
+  nop
+_exitGodMode:
+hpXPMult:
+  jmp _XPMult
+  nop
+_exitXPMult:
+//==========
+[DISABLE]
+hpPMon:
+  readmem(_PMon,6)
+hpTapes+7:
+  readmem(origTapes,6)
+hpTapesMac:
+  readmem(origTapesMac,6)
+hpGodMode:
+  readmem(origGodMode,6)
+hpXPMult:
+  readmem(origXPMult,6)
+//==========
+unregistersymbol(codeMem)
+unregistersymbol(hpPMon)
+unregistersymbol(pHero)
+unregistersymbol(_PMon)
+unregistersymbol(hpTapes)
+unregistersymbol(origTapes)
+unregistersymbol(hpTapesMac)
+unregistersymbol(origTapesMac)
+unregistersymbol(hpGodMode)
+unregistersymbol(origGodMode)
+unregistersymbol(hpXPMult)
+unregistersymbol(origXPMult)
+unregistersymbol(enableTapes)
+unregistersymbol(enableTapesMac)
+unregistersymbol(enableGM)
+unregistersymbol(enableQK)
+unregistersymbol(enableXPM)
+unregistersymbol(varTapes)
+unregistersymbol(varGod)
+unregistersymbol(varDead)
+unregistersymbol(varXPM)
+//==========
+dealloc(codeMem)"""
+
+[[cheat]]
+id = "amount"
+name = "Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "varTapes"
+hops = []
+
+[[cheat]]
+id = "multiplier"
+name = "Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 2
+
+[cheat.locator]
+find = "symbol"
+symbol = "varXPM"
+hops = []

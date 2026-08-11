@@ -1,0 +1,164 @@
+[game]
+name = "Diablo - The Hell 4"
+exe = "th4.exe"
+notes = "Converted from a Cheat Engine table by Varok. Source: https://fearlessrevolution.com/viewtopic.php?t=37149"
+verified = []
+author = "Varok"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlimited-gold-enable-then-buy-anything-to-active-like-grisword-reroll"
+name = "Unlimited Gold (Enable, then buy anything to active, like Grisword Reroll)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Unlimited Gold (32-bit, CE-safe)
+// Forces gold to 1,000,000 (0x000F4240)
+
+[ENABLE]
+aobscanmodule(WriteGoldAOB, TH4.exe, 89 8C 38 9F 23 00 00)
+alloc(newmem, 2048, WriteGoldAOB)
+
+newmem:
+  push eax
+  push edi
+  push ecx
+  push edx
+
+  lea  edx, [eax+edi+0000239F]     // address of gold
+  mov  dword ptr [edx], 000F4240   // write 1,000,000
+
+  pop  edx
+  pop  ecx
+  pop  edi
+  pop  eax
+  jmp  WriteGoldAOB+7              // skip original 7-byte instr
+
+WriteGoldAOB:
+  jmp newmem
+  nop
+  nop
+
+registersymbol(WriteGoldAOB)
+
+[DISABLE]
+WriteGoldAOB:
+  db 89 8C 38 9F 23 00 00          // restore original bytes
+unregistersymbol(WriteGoldAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "mega-exp-level-150-with-few-kills-do-not-use-while-other-scripts-active-to-avoid-crashes"
+name = "Mega Exp (level 150 with few kills, Do not use while other scripts active to avoid crashes)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+// TH4 – EXP ×250 (32-bit, CE-safe labels)
+// Hook: mov [edi+ecx+0000010F], edx
+// Multiplies total experience by 250 each time the game updates EXP.
+
+[ENABLE]
+aobscanmodule(ExpHighAOB, TH4.exe, 89 94 0F 0F 01 00 00)   // adjust module/pattern if needed
+alloc(newmem, 512, ExpHighAOB)
+
+label(returnhere)
+label(tmp_low)
+label(tmp_high)
+
+newmem:
+  // save full CPU state
+  pushad
+  pushfd
+
+  // original instruction first
+  mov [edi+ecx+0000010F], edx
+
+  // pointer to low dword (low is at +0x10B)
+  lea esi, [edi+ecx+0000010B]
+
+  // read low/high
+  mov eax, [esi]        // low
+  mov ebx, [esi+4]      // high
+
+  // low * 250 -> EDX:EAX
+  mov ecx, 250
+  xor edx, edx
+  mul ecx               // EDX:EAX = low * 250
+  mov [tmp_low], eax    // new low
+  mov edi, edx          // carry from low*250
+
+  // high * 250 -> EDX:EAX
+  mov eax, ebx
+  xor edx, edx
+  mul ecx               // EDX:EAX = high * 250
+  add eax, edi          // add carry
+  mov [tmp_high], eax   // new high
+
+  // write multiplied value back (low then high)
+  mov eax, [tmp_low]
+  mov [esi], eax
+  mov eax, [tmp_high]
+  mov [esi+4], eax
+
+  // restore state and return
+  popfd
+  popad
+  jmp returnhere
+
+// data storage
+tmp_low:
+  dd 0
+tmp_high:
+  dd 0
+
+// install the hook
+ExpHighAOB:
+  jmp newmem
+  nop
+  nop
+
+returnhere:
+
+[DISABLE]
+ExpHighAOB:
+  db 89 94 0F 0F 01 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "giga-magicfind"
+name = "Giga MagicFind"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,64,TH4.exe+35BE44)
+label(return)
+
+newmem:
+  mov ax,6660                     // ax = 9999
+  mov [ebx+00014E1C],ax           // force MagicFind
+  jmp return
+
+TH4.exe+35BE44:
+  jmp newmem                      // 5 bytes
+  nop
+  nop                              // pad to 7 bytes
+
+return:
+
+[DISABLE]
+TH4.exe+35BE44:
+  db 66 89 83 1C 4E 01 00         // restore: mov [ebx+14E1C], ax
+dealloc(newmem)"""

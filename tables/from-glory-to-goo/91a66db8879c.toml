@@ -1,0 +1,658 @@
+[game]
+name = "From Glory to Goo"
+exe = "from glory to goo.exe"
+notes = "Converted from a Cheat Engine table by BigBear743. Source: https://fearlessrevolution.com/viewtopic.php?t=28472"
+verified = []
+author = "BigBear743"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "quick-ship-power-regen"
+name = "Quick ship power regen"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(fastshippwINJECT,GameAssembly.dll,F3 0F 10 B8 98 01 00 00) // should be unique
+alloc(newmem,$100,fastshippwINJECT)
+
+label(code)
+label(return)
+
+newmem:
+  mov [rax+198],(float)250
+code:
+  movss xmm7,[rax+00000198]
+  jmp return
+
+fastshippwINJECT:
+  jmp newmem
+  nop 3
+return:
+registersymbol(fastshippwINJECT)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+fastshippwINJECT:
+  db F3 0F 10 B8 98 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "quick-build"
+name = "Quick Build"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(quickbuild,GameAssembly.dll,F3 0F 10 B3 18 05 00 00 83) // should be unique
+alloc(quickbuildnewmem,$100,quickbuild)
+
+label(quickbuildcode)
+label(quickbuildreturn)
+
+quickbuildnewmem:
+  cmp [rbx+1F9],#1 //check if building or not
+  jne quickbuildcode
+  cmp [rbx+521],#1 //check if the unit is underConstruction
+  jne quickbuildcode
+  mov [rbx+518],00  //timeToBuildRemaining set to 0 for instant build
+  movss xmm15,[rbx+1E8]
+  movss [rbx+1EC],xmm15  //set building to maxHealth after built
+  jmp quickbuildreturn
+
+quickbuildcode:
+  movss xmm6,[rbx+00000518]
+  jmp quickbuildreturn
+
+quickbuild:
+  jmp quickbuildnewmem
+  nop 3
+quickbuildreturn:
+registersymbol(quickbuild)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+quickbuild:
+  db F3 0F 10 B3 18 05 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "fast-unit-build"
+name = "Fast Unit build"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(fastunitbuild,GameAssembly.dll,F3 0F 5C F0 F3 0F 11 B3 20 06 00 00) // should be unique
+alloc(newmem,$100,fastunitbuild)
+alloc(fastunitmult,$20,fastunitbuild)
+label(code)
+label(return)
+
+fastunitmult:
+  dd (float)32
+newmem:
+  mulss xmm0,[fastunitmult]
+code:
+  subss xmm6,xmm0
+  movss [rbx+00000620],xmm6
+  jmp return
+
+fastunitbuild:
+  jmp newmem
+  nop 7
+return:
+registersymbol(fastunitbuild fastunitmult)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+fastunitbuild:
+  db F3 0F 5C F0 F3 0F 11 B3 20 06 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "variable"
+name = "Variable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fastunitmult"
+hops = []
+
+[[cheat]]
+id = "fast-effort-upgrade-modules"
+name = "Fast Effort/Upgrade Modules"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//effort faster  -- GUIScript.Update+1BB
+aobscanmodule(fasteffort,GameAssembly.dll,F3 0F 5C F0 F3 0F 11 B3 00 0E 00 00) // should be unique
+alloc(newmem,$100,fasteffort)
+alloc(effortmult,$16,fasteffort)
+
+label(code)
+label(return)
+
+effortmult:
+  dd (float)8
+newmem:
+  mulss xmm0,[effortmult]
+code:
+  subss xmm6,xmm0
+  movss [rbx+00000E00],xmm6
+  jmp return
+
+fasteffort:
+  jmp newmem
+  nop 7
+return:
+
+//module upgrade faster  -- Module.Update+1C2
+aobscanmodule(fastmoduleupgrade,GameAssembly.dll,F3 41 0F 59 C0 F3 0F 5C F0 0F) // should be unique
+alloc(newmem1,$100,fastmoduleupgrade)
+alloc(modulemult,$16,fastmoduleupgrade)
+
+label(code1)
+label(return1)
+
+modulemult:
+  dd (float)32
+newmem1:
+  mulss xmm0,[modulemult]
+code1:
+  subss xmm6,xmm0
+  comiss xmm7,xmm6
+  jmp return1
+
+fastmoduleupgrade:
+  jmp newmem1
+  nop 2
+return1:
+
+//research faster -- Tech.increaseAmountResearched+32
+aobscanmodule(fastresearch,GameAssembly.dll,F3 0F 11 73 2C 48 8B 05)
+alloc(newmem2,$100,fastresearch)
+alloc(researchmult,$20,fastresearch)
+
+label(code2)
+label(return2)
+
+researchmult:
+  dd (float)4
+newmem2:
+  mulss xmm6,[researchmult]
+code2:
+  movss [rbx+2C],xmm6
+  jmp return2
+
+fastresearch:
+  jmp newmem2
+return2:
+
+registersymbol(fasteffort effortmult fastmoduleupgrade modulemult fastresearch researchmult)
+
+[DISABLE]
+fasteffort:
+  db F3 0F 5C F0 F3 0F 11 B3 00 0E 00 00
+
+fastmoduleupgrade:
+  db F3 41 0F 59 C0
+
+fastresearch:
+  db F3 0F 11 73 2C
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "effort-speed"
+name = "Effort speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "effortmult"
+hops = []
+
+[[cheat]]
+id = "modules-speed"
+name = "Modules Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "modulemult"
+hops = []
+
+[[cheat]]
+id = "research-speed"
+name = "Research Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "researchmult"
+hops = []
+
+[[cheat]]
+id = "unlock-all-research"
+name = "Unlock all research"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(researchinject,GameAssembly.dll,48 8B 88 48 01 00 00 48 85 C9 74) // should be unique
+alloc(newmem,$200,researchinject)
+
+label(code)
+label(return)
+
+
+newmem:
+//unlocking all researches
+  mov [rax+18],#1
+  mov [rax+19],#1
+  mov [rax+1A],#1
+  mov [rax+1B],#1
+  mov [rax+1C],#1
+  mov [rax+1D],#1
+  mov [rax+1E],#1
+  mov [rax+1F],#1
+  mov [rax+20],#1
+
+code:
+  mov rcx,[rax+00000148]
+  jmp return
+
+researchinject:
+  jmp newmem
+  nop 2
+return:
+registersymbol(researchinject)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+researchinject:
+  db 48 8B 88 48 01 00 00
+
+unregistersymbol(researchinject)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "solar-give-high-energy"
+name = "Solar give high energy"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(maxsolarene,GameAssembly.dll,89 83 74 05 00 00 8B) // should be unique
+alloc(newmem,$100,maxsolarene)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+//  mov [rbx+00000574],eax
+  mov [rbx+00000574],#999
+  jmp return
+
+maxsolarene:
+  jmp newmem
+  nop
+return:
+registersymbol(maxsolarene)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+maxsolarene:
+  db 89 83 74 05 00 00
+
+unregistersymbol(maxsolarene)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "pump-give-high-water"
+name = "Pump give high water"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(highwaterpump,GameAssembly.dll,84 00 F3 0F 59 C6 F3 0F 11 83 78 05 00 00) // should be unique
+alloc(newmem,$100,highwaterpump)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+//  movss [rbx+00000578],xmm0
+  mov [rbx+578],(float)999
+  jmp return
+
+highwaterpump+06:
+  jmp newmem
+  nop 3
+return:
+registersymbol(highwaterpump)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+highwaterpump+06:
+  db F3 0F 11 83 78 05 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "drill-mine-yield-higher-products"
+name = "Drill Mine yield higher products"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(highdrillmine,GameAssembly.dll,F3 0F 11 83 78 05 00 00 80) // should be unique
+alloc(newmem,$100,highdrillmine)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+//  movss [rbx+00000578],xmm0
+  mov [rbx+578],(float)999
+  jmp return
+
+highdrillmine:
+  jmp newmem
+  nop 3
+return:
+registersymbol(highdrillmine)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+highdrillmine:
+  db F3 0F 11 83 78 05 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "mine-yield-more-crystal"
+name = "Mine yield more crystal"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(morecrystal,GameAssembly.dll,C7 44 24 20 01 00 00 00 E8 58) // should be unique
+alloc(newmem,$100,morecrystal)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+//  mov [rsp+20],00000001 //original code
+  mov [rsp+20],5  //number that each ore gonna increase your crystal
+  jmp return
+
+morecrystal:
+  jmp newmem
+  nop 3
+return:
+registersymbol(morecrystal)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+morecrystal:
+  db C7 44 24 20 01 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "pointers-hover-click-on-unit-to-update-addresses"
+name = "Pointers Hover click on unit to update addresses"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(ppunit,GameAssembly.dll,F3 0F 10 80 EC 01 00 00 E8) // should be unique
+alloc(ppunitnewmem,$100,ppunit)
+alloc(ppunitptr,$8,ppunit)
+
+label(ppunitcode)
+label(ppunitreturn)
+
+ppunitptr:
+  dq 0
+ppunitnewmem:
+  cmp [rax+260],#1  //check if enemy or not
+  je ppunitcode
+  mov [ppunitptr],rax
+  jmp ppunitcode
+ppunitcode:
+  movss xmm0,[rax+000001EC]
+  jmp ppunitreturn
+
+ppunit:
+  jmp ppunitnewmem
+  nop 3
+ppunitreturn:
+registersymbol(ppunit ppunitptr)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+ppunit:
+  db F3 0F 10 80 EC 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "thumber-range"
+name = "Thumber Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "max-health"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x1e8"]
+
+[[cheat]]
+id = "current-health"
+name = "Current Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x1ec"]
+
+[[cheat]]
+id = "upgrade-time-remaining"
+name = "Upgrade time remaining"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "base-speed"
+name = "Base Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "damage"
+name = "Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x224"]
+
+[[cheat]]
+id = "range"
+name = "Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x250"]
+
+[[cheat]]
+id = "base-attack-speed"
+name = "Base Attack Speed"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "enermy-or-not-1-enemy-0-player"
+name = "Enermy or not (1= enemy, 0=player)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x260"]
+
+[[cheat]]
+id = "current-exp"
+name = "Current Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x410"]
+
+[[cheat]]
+id = "energy"
+name = "Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ppunitptr"
+hops = ["+0x454"]

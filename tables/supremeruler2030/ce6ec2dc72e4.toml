@@ -1,0 +1,1374 @@
+[game]
+name = "Supreme Ruler 2030 Godmode, Economy, Diplomacy"
+exe = "supremeruler2030.exe"
+notes = "Converted from a Cheat Engine table by SRule30. Source: https://fearlessrevolution.com/viewtopic.php?t=39816"
+verified = []
+author = "SRule30"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "1-ammo-refill-auto-player-country"
+name = "1) Ammo Refill - Auto Player Country"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// AMMO REFILL - AUTO PLAYER COUNTRY
+// Player country marker: SupremeRuler2030.exe+18294E0
+// Own unit marker: unitBase+01E
+
+define(ammoWrite,SupremeRuler2030.exe+7ECA21)
+assert(ammoWrite,F3 41 0F 11 8C 24 84 00 00 00)
+alloc(ammoAutoMem,2048,ammoWrite)
+label(returnHere)
+label(originalWrite)
+label(doRefill)
+label(ammoRefillValue)
+
+ammoAutoMem:
+  pushfq
+  push rax
+  mov al,[r12+0000001E]
+  cmp al,byte ptr [SupremeRuler2030.exe+18294E0]
+  jne originalWrite
+  mov eax,[r12+00000084]
+  and eax,7FFFFFFF
+  jne doRefill
+  movd eax,xmm1
+  and eax,7FFFFFFF
+  je originalWrite
+
+doRefill:
+  movss xmm1,[ammoRefillValue]
+
+originalWrite:
+  pop rax
+  popfq
+  movss [r12+00000084],xmm1
+  jmp returnHere
+
+ammoRefillValue:
+  dd (float)9999.0
+
+ammoWrite:
+  jmp ammoAutoMem
+  nop 5
+returnHere:
+
+[DISABLE]
+ammoWrite:
+  db F3 41 0F 11 8C 24 84 00 00 00
+dealloc(ammoAutoMem)"""
+
+[[cheat]]
+id = "2-health-strength-safety-min-50-auto-player-country"
+name = "2) Health/Strength Safety Min 50 - Auto Player Country"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// HEALTH/STRENGTH SAFETY MINIMUM - AUTO PLAYER COUNTRY
+// Player country marker: SupremeRuler2030.exe+18294E0
+// Own unit marker: unitBase+01E
+
+define(healthWrite,SupremeRuler2030.exe+7ECBF2)
+assert(healthWrite,F3 41 0F 11 84 24 90 00 00 00)
+alloc(healthAutoMem,2048,healthWrite)
+label(returnHere)
+label(originalWrite)
+label(healthMinValue)
+
+healthAutoMem:
+  pushfq
+  push rax
+  mov al,[r12+0000001E]
+  cmp al,byte ptr [SupremeRuler2030.exe+18294E0]
+  jne originalWrite
+  ucomiss xmm0,[healthMinValue]
+  jae originalWrite
+  movss xmm0,[healthMinValue]
+
+originalWrite:
+  pop rax
+  popfq
+  movss [r12+00000090],xmm0
+  jmp returnHere
+
+healthMinValue:
+  dd (float)50.0
+
+healthWrite:
+  jmp healthAutoMem
+  nop 5
+returnHere:
+
+[DISABLE]
+healthWrite:
+  db F3 41 0F 11 84 24 90 00 00 00
+dealloc(healthAutoMem)"""
+
+[[cheat]]
+id = "3-damage-control-0x-enemy-multiplier-auto-player-country"
+name = "3) Damage Control 0x + Enemy Multiplier - Auto Player Country"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// DAMAGE CONTROL + SAFE ENEMY DAMAGE MULTIPLIER - AUTO PLAYER COUNTRY
+// Uses the current player country marker from:
+//   SupremeRuler2030.exe+18294E0
+// Player-unit check:
+//   byte [unitBase+01E] == byte [SupremeRuler2030.exe+18294E0]
+// Hook:
+//   SupremeRuler2030.exe+7ECBE6
+// Original:
+//   subss xmm0,xmm7
+//   movaps [rsp+100],xmm6
+// Own units: damage x 0 and safety min 50.
+// Other units: damage multiplied by enemyDamageMultiplier.
+// This is NOT old hard-kill. It does not write huge or forced negative health.
+
+// Change enemyDamageMultiplier through the child dropdown.
+// Recommended: 2x or 5x first. 10x and 20x are stronger tests.
+
+define(damageCalc,SupremeRuler2030.exe+7ECBE6)
+assert(damageCalc,F3 0F 5C C7 0F 29 B4 24 00 01 00 00)
+
+alloc(damageAutoMem,4096,damageCalc)
+
+label(returnHere)
+label(enemyTarget)
+label(afterDamage)
+label(ownDamageMultiplier)
+label(enemyDamageMultiplier)
+label(ownHealthMinValue)
+label(zeroFloat)
+
+registersymbol(enemyDamageMultiplier)
+
+damageAutoMem:
+  pushfq
+  push rax
+
+  // Compare unit country byte with active player country byte.
+  mov al,[r12+0000001E]
+  cmp al,byte ptr [SupremeRuler2030.exe+18294E0]
+  jne enemyTarget
+
+  // Own unit: scale received damage by 0.
+  mulss xmm7,[ownDamageMultiplier]
+  subss xmm0,xmm7
+
+  // Own safety: do not allow own result below safe minimum.
+  ucomiss xmm0,[ownHealthMinValue]
+  jae afterDamage
+  movss xmm0,[ownHealthMinValue]
+  jmp afterDamage
+
+enemyTarget:
+  // Enemy or other country: boost normal damage, but do not use hard-kill.
+  mulss xmm7,[enemyDamageMultiplier]
+  subss xmm0,xmm7
+
+  // Safety: avoid forced negative values from huge multiplier.
+  ucomiss xmm0,[zeroFloat]
+  jae afterDamage
+  movss xmm0,[zeroFloat]
+
+afterDamage:
+  pop rax
+  popfq
+
+  movaps [rsp+00000100],xmm6
+  jmp returnHere
+
+ownDamageMultiplier:
+  dd (float)0.0
+enemyDamageMultiplier:
+  dd (float)2.0
+ownHealthMinValue:
+  dd (float)50.0
+zeroFloat:
+  dd (float)0.0
+
+damageCalc:
+  jmp damageAutoMem
+  nop 7
+
+returnHere:
+
+[DISABLE]
+damageCalc:
+  db F3 0F 5C C7 0F 29 B4 24 00 01 00 00
+
+unregistersymbol(enemyDamageMultiplier)
+dealloc(damageAutoMem)"""
+
+[[cheat]]
+id = "enemy-damage-multiplier-2x-5x-10x-20x"
+name = "Enemy Damage Multiplier - 2x / 5x / 10x / 20x"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 2
+choices = [
+    "2:2x safer",
+    "5:5x strong",
+    "10:10x very strong",
+    "20:20x risky",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemyDamageMultiplier"
+hops = []
+
+[[cheat]]
+id = "3-fuel-energy-min-200-auto-player-country"
+name = "3) Fuel/Energy Min 200 - Auto Player Country"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// FUEL / ENERGY MINIMUM - AUTO PLAYER COUNTRY
+
+define(fuelWrite,SupremeRuler2030.exe+7ECA41)
+assert(fuelWrite,F3 41 0F 11 94 24 80 00 00 00)
+alloc(fuelAutoMem,2048,fuelWrite)
+label(returnHere)
+label(originalWrite)
+label(fuelMinValue)
+label(zeroFloat)
+
+fuelAutoMem:
+  pushfq
+  push rax
+  mov al,[r12+0000001E]
+  cmp al,byte ptr [SupremeRuler2030.exe+18294E0]
+  jne originalWrite
+  ucomiss xmm2,[zeroFloat]
+  jbe originalWrite
+  ucomiss xmm2,[fuelMinValue]
+  jae originalWrite
+  movss xmm2,[fuelMinValue]
+
+originalWrite:
+  pop rax
+  popfq
+  movss [r12+00000080],xmm2
+  jmp returnHere
+
+fuelMinValue:
+  dd (float)200.0
+zeroFloat:
+  dd (float)0.0
+
+fuelWrite:
+  jmp fuelAutoMem
+  nop 5
+returnHere:
+
+[DISABLE]
+fuelWrite:
+  db F3 41 0F 11 94 24 80 00 00 00
+dealloc(fuelAutoMem)"""
+
+[[cheat]]
+id = "selected-unit-base-pointer"
+name = "Selected Unit Base Pointer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x1764398"
+hops = []
+
+[[cheat]]
+id = "live-player-country-id-auto-marker"
+name = "Live Player Country ID - Auto Marker"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18294e0"
+hops = []
+
+[[cheat]]
+id = "selected-unit-country-id"
+name = "Selected Unit Country ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x1764398"
+hops = ["+0x1e"]
+
+[[cheat]]
+id = "selected-unit-fuel-energy"
+name = "Selected Unit Fuel/Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x1764398"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "selected-unit-ammo-supply"
+name = "Selected Unit Ammo/Supply"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x1764398"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "selected-unit-health-strength"
+name = "Selected Unit Health/Strength"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x1764398"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "player-state-economy-base-pointer"
+name = "Player State/Economy Base Pointer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = []
+
+[[cheat]]
+id = "birth-rate"
+name = "Birth Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14b74"]
+
+[[cheat]]
+id = "domestic-approval-rating"
+name = "Domestic Approval Rating"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14b04"]
+
+[[cheat]]
+id = "military-approval-rating"
+name = "Military Approval Rating"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14b08"]
+
+[[cheat]]
+id = "treasury"
+name = "Treasury"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14b88"]
+
+[[cheat]]
+id = "gdp"
+name = "GDP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14c50"]
+
+[[cheat]]
+id = "inflation"
+name = "Inflation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14c60"]
+
+[[cheat]]
+id = "unemployment"
+name = "Unemployment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14b68"]
+
+[[cheat]]
+id = "credit-rating"
+name = "Credit Rating"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14b18"]
+
+[[cheat]]
+id = "agriculture"
+name = "Agriculture"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14da4"]
+
+[[cheat]]
+id = "rubber"
+name = "Rubber"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14ef4"]
+
+[[cheat]]
+id = "timber"
+name = "Timber"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x15044"]
+
+[[cheat]]
+id = "petroleum"
+name = "Petroleum"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x15194"]
+
+[[cheat]]
+id = "coal"
+name = "Coal"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x152e4"]
+
+[[cheat]]
+id = "metal-ore"
+name = "Metal Ore"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x15434"]
+
+[[cheat]]
+id = "uranium"
+name = "Uranium"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x15584"]
+
+[[cheat]]
+id = "electric-power"
+name = "Electric Power"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x156d4"]
+
+[[cheat]]
+id = "consumer-goods"
+name = "Consumer Goods"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x15824"]
+
+[[cheat]]
+id = "industry-goods"
+name = "Industry Goods"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x15974"]
+
+[[cheat]]
+id = "military-goods"
+name = "Military Goods"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x15ac4"]
+
+[[cheat]]
+id = "research-efficiency"
+name = "Research Efficiency"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14cec"]
+
+[[cheat]]
+id = "reserve-personnel"
+name = "Reserve Personnel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x18295f8"
+hops = ["+0x14b64"]
+
+[[cheat]]
+id = "enable-capture-selected-country-resource-base-from-atlas-ui"
+name = "ENABLE - Capture Selected Country Resource Base from Atlas/UI"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// SELECTED COUNTRY RESOURCE BASE CAPTURE
+// Enable, then open Region Atlas/country info and click a country flag.
+
+define(selectedCountryCopy,SupremeRuler2030.exe+5F9EF1)
+assert(selectedCountryCopy,48 89 84 24 D0 50 01 00)
+alloc(selectedCountryCaptureMem,2048,selectedCountryCopy)
+alloc(selectedCountryBase,8)
+registersymbol(selectedCountryBase)
+label(returnHere)
+
+selectedCountryBase:
+  dq 0
+selectedCountryCaptureMem:
+  mov [selectedCountryBase],rax
+  mov [rsp+000150D0],rax
+  jmp returnHere
+selectedCountryCopy:
+  jmp selectedCountryCaptureMem
+  nop 3
+returnHere:
+
+[DISABLE]
+selectedCountryCopy:
+  db 48 89 84 24 D0 50 01 00
+unregistersymbol(selectedCountryBase)
+dealloc(selectedCountryBase)
+dealloc(selectedCountryCaptureMem)"""
+
+[[cheat]]
+id = "selected-target-country-id-ui-atlas-full-2-byte-id"
+name = "Selected / Target Country ID - UI/Atlas (full 2-byte ID)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x176438c"
+hops = []
+
+[[cheat]]
+id = "selected-country-packed-value-debug"
+name = "Selected Country Packed Value - debug"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "SupremeRuler2030.exe"
+offset = "0x1764388"
+hops = []
+
+[[cheat]]
+id = "selected-country-resource-base-captured"
+name = "Selected Country Resource Base - captured"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = []
+
+[[cheat]]
+id = "selected-country-treasury"
+name = "Selected Country Treasury"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14b88"]
+
+[[cheat]]
+id = "selected-country-gdp"
+name = "Selected Country GDP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14c50"]
+
+[[cheat]]
+id = "selected-country-inflation"
+name = "Selected Country Inflation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14c60"]
+
+[[cheat]]
+id = "selected-country-unemployment"
+name = "Selected Country Unemployment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14b68"]
+
+[[cheat]]
+id = "selected-country-credit-rating"
+name = "Selected Country Credit Rating"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14b18"]
+
+[[cheat]]
+id = "selected-country-domestic-approval"
+name = "Selected Country Domestic Approval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14b04"]
+
+[[cheat]]
+id = "selected-country-military-approval"
+name = "Selected Country Military Approval"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14b08"]
+
+[[cheat]]
+id = "selected-country-birth-rate"
+name = "Selected Country Birth Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14b74"]
+
+[[cheat]]
+id = "selected-country-agriculture"
+name = "Selected Country Agriculture"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14da4"]
+
+[[cheat]]
+id = "selected-country-rubber"
+name = "Selected Country Rubber"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14ef4"]
+
+[[cheat]]
+id = "selected-country-timber"
+name = "Selected Country Timber"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x15044"]
+
+[[cheat]]
+id = "selected-country-petroleum"
+name = "Selected Country Petroleum"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x15194"]
+
+[[cheat]]
+id = "selected-country-coal"
+name = "Selected Country Coal"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x152e4"]
+
+[[cheat]]
+id = "selected-country-metal-ore"
+name = "Selected Country Metal Ore"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x15434"]
+
+[[cheat]]
+id = "selected-country-uranium"
+name = "Selected Country Uranium"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x15584"]
+
+[[cheat]]
+id = "selected-country-electric-power"
+name = "Selected Country Electric Power"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x156d4"]
+
+[[cheat]]
+id = "selected-country-consumer-goods"
+name = "Selected Country Consumer Goods"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x15824"]
+
+[[cheat]]
+id = "selected-country-industry-goods"
+name = "Selected Country Industry Goods"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x15974"]
+
+[[cheat]]
+id = "selected-country-military-goods"
+name = "Selected Country Military Goods"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x15ac4"]
+
+[[cheat]]
+id = "selected-country-research-efficiency"
+name = "Selected Country Research Efficiency"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14cec"]
+
+[[cheat]]
+id = "selected-country-reserve-personnel"
+name = "Selected Country Reserve Personnel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedCountryBase"
+hops = ["+0x14b64"]
+
+[[cheat]]
+id = "diplomatic-rating-enter-value"
+name = "Diplomatic Rating — enter value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "relPlayerToTargetDip"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "civilian-rating-enter-value"
+name = "Civilian Rating — enter value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "relPlayerToTargetCiv"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "casus-belli-enter-value"
+name = "Casus Belli — enter value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "relPlayerToTargetCas"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "diplomatic-rating-enter-value-2"
+name = "Diplomatic Rating — enter value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "relTargetToPlayerDip"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "civilian-rating-enter-value-2"
+name = "Civilian Rating — enter value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "relTargetToPlayerCiv"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "casus-belli-enter-value-2"
+name = "Casus Belli — enter value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "relTargetToPlayerCas"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "1-research-one-day-finish-auto-player-country"
+name = "1) Research - One Day Finish - Auto Player Country"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// RESEARCH - ONE DAY FINISH - AUTO PLAYER COUNTRY
+// Research update code:
+//   SupremeRuler2030.exe+76AB31  comiss xmm15,xmm0
+//   SupremeRuler2030.exe+76AB35  movss [rdi+28],xmm0
+//
+// Live player-country marker used by the other auto tools:
+//   SupremeRuler2030.exe+18294E0
+//
+// R9 is the country/context ID of the research item currently updating.
+// Only the country currently controlled by the player gets 0.0 remaining
+// research days. The game's normal next daily tick then completes it.
+// AI research is left unchanged.
+
+// Important: “One Day” intentionally writes 0.0, not 1.0.
+// In this game 0.0 completes research on the next daily update.
+
+define(researchWrite,SupremeRuler2030.exe+76AB31)
+assert(researchWrite,44 0F 2F F8 F3 0F 11 47 28)
+alloc(researchOneDayMem,2048,researchWrite)
+
+label(returnHere)
+label(originalCode)
+
+researchOneDayMem:
+  push rax
+  movzx eax,word ptr [SupremeRuler2030.exe+18294E0]
+  cmp r9d,eax
+  pop rax
+  jne originalCode
+  xorps xmm0,xmm0
+
+originalCode:
+  comiss xmm15,xmm0
+  movss [rdi+28],xmm0
+  jmp returnHere
+
+researchWrite:
+  jmp researchOneDayMem
+  nop 4
+returnHere:
+
+[DISABLE]
+
+researchWrite:
+  db 44 0F 2F F8 F3 0F 11 47 28
+
+dealloc(researchOneDayMem)"""
+
+[[cheat]]
+id = "2-construction-one-day-finish-auto-player-country-pass-through"
+name = "2) Construction - One Day Finish - Auto Player Country (Pass-Through)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// CONSTRUCTION - ONE DAY FINISH - AUTO PLAYER COUNTRY
+// Confirmed construction progress display/update code:
+//   SupremeRuler2030.exe+780999  movss [r14+90],xmm1
+//
+// Confirmed construction structure:
+//   R14+90 = construction progress, where 0.0 is empty and 1.0 is full.
+//
+// RDI is the country ID of the construction item currently updating.
+// It is compared with the live player-country ID used by the other auto tools:
+//   SupremeRuler2030.exe+18294E0
+//
+// IMPORTANT: Do NOT use exactly 1.0 here. In this game an exact 1.0 can
+// glitch the construction state. 0.9999999404 is the highest float value
+// below 1.0 (float32 0x3F7FFFFF), so it preserves the game's completion flow.
+//
+// PASS-THROUGH FIX:
+// The old version wrote 0.9999999404 on every update, so the game never got
+// its final natural write to 1.0 and the construction could remain stuck.
+// This version only boosts progress while the game is still below 99.9%.
+// Once it is near completion, it lets the original code write the real final
+// value and trigger the normal factory/object activation.
+// AI construction is left unchanged.
+
+define(constructionWrite,SupremeRuler2030.exe+780999)
+assert(constructionWrite,F3 41 0F 11 8E 90 00 00 00)
+alloc(constructionOneDayMem,2048,constructionWrite)
+
+label(returnHere)
+label(originalCode)
+label(constructionNearThreshold)
+label(maxSafeProgress)
+
+constructionOneDayMem:
+  push rax
+  movzx eax,word ptr [SupremeRuler2030.exe+18294E0]
+  cmp edi,eax
+  pop rax
+  jne originalCode
+
+  // Let the engine itself perform the final 99.9% -> 100% completion update.
+  comiss xmm1,[constructionNearThreshold]
+  jae originalCode
+  movss xmm1,[maxSafeProgress]
+
+originalCode:
+  movss [r14+00000090],xmm1
+  jmp returnHere
+
+constructionNearThreshold:
+  dd (float)0.999
+maxSafeProgress:
+  dd (float)0.9999999404
+
+constructionWrite:
+  jmp constructionOneDayMem
+  nop 4
+returnHere:
+
+[DISABLE]
+
+constructionWrite:
+  db F3 41 0F 11 8E 90 00 00 00
+
+dealloc(constructionOneDayMem)"""
+
+[[cheat]]
+id = "3-build-missile-one-day-finish-auto-player-country"
+name = "3) Build / Missile - One Day Finish - Auto Player Country"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// BUILD / MISSILE - ONE DAY FINISH - AUTO PLAYER COUNTRY
+// Confirmed build-progress update code:
+//   SupremeRuler2030.exe+8448D0  subss xmm0,xmm12
+//   SupremeRuler2030.exe+8448DC  movss [rcx],xmm0
+//
+// Confirmed contexts from aircraft, tank, and missile builds:
+//   RBX = country production/state context
+//   [SupremeRuler2030.exe+18295F8] = current player country/state context
+//
+// Only when RBX belongs to the country currently controlled by the player,
+// remaining build time is changed to 0.0 after the normal daily calculation.
+// AI production is left on the original calculation.
+//
+// “One Day” intentionally means 0.0 remaining time: the game completes it
+// on its next production update, just as research did.
+//
+// The hook preserves EFLAGS because later original code uses CMOVA.
+
+
+define(buildCalc,SupremeRuler2030.exe+8448D0)
+assert(buildCalc,F3 41 0F 5C C4 48 8D 85 84 00 00 00)
+alloc(buildOneDayMem,2048,buildCalc)
+
+label(returnHere)
+label(aiBuild)
+
+buildOneDayMem:
+  // Original instructions overwritten by the jump.
+  subss xmm0,xmm12
+  lea rax,[rbp+00000084]
+
+  // Keep the original flags intact for the later CMOVA in game code.
+  pushfq
+  push rax
+  mov rax,[SupremeRuler2030.exe+18295F8]
+  cmp rbx,rax
+  pop rax
+  jne aiBuild
+
+  popfq
+  xorps xmm0,xmm0
+  jmp returnHere
+
+aiBuild:
+  popfq
+  jmp returnHere
+
+buildCalc:
+  jmp buildOneDayMem
+  nop 7
+returnHere:
+
+[DISABLE]
+
+buildCalc:
+  db F3 41 0F 5C C4 48 8D 85 84 00 00 00
+
+dealloc(buildOneDayMem)"""

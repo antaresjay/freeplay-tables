@@ -1,0 +1,254 @@
+[game]
+name = "R-Type Tactics I • II cheat engine"
+exe = "rtypetacticscosmossteam-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by asakisan. Source: https://fearlessrevolution.com/viewtopic.php?t=39814"
+verified = []
+author = "asakisan"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "resources-spending-adds-instead"
+name = "Resources: Spending Adds Instead"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+// ==================================================
+// Resources: Spending Adds Instead
+//
+// Purpose:
+// - Reverses the resource spending calculation.
+// - When resources are spent, the spent amount is added instead of subtracted.
+//
+// Notes:
+// - Single-player use only.
+// - Disable this option if unexpected resource behavior occurs.
+// - Game updates may break the AOB pattern.
+// ==================================================
+
+[ENABLE]
+
+aobscanmodule(resourceWrite,RTypeTacticsCosmosSteam-Win64-Shipping.exe,03 CB 89 0A 48 8B 5C 24 30 48 83 C4 20)
+registersymbol(resourceWrite)
+
+resourceWrite:
+  db 2B CB
+
+[DISABLE]
+
+resourceWrite:
+  db 03 CB
+
+unregistersymbol(resourceWrite)"""
+
+[[cheat]]
+id = "1-prevent-action-flag-underflow"
+name = "1. Prevent Action Flag Underflow"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// ==================================================
+// Infinite Move 1: Prevent Action Flag Underflow
+//
+// Purpose:
+// - Prevents action-state flag behavior that can block re-action.
+// - Required as part of the Infinite Move Set.
+//
+// Important:
+// - Enable all three Infinite Move entries together.
+// - This entry alone is not enough for full post-combat re-action support.
+// ==================================================
+
+[ENABLE]
+
+aobscanmodule(actionFlagDec,RTypeTacticsCosmosSteam-Win64-Shipping.exe,FE 8B A0 00 00 00 0F 28 74 24 20 48 83 C4 30)
+alloc(newmemActionFlagDec,$1000,actionFlagDec)
+
+label(returnActionFlagDec)
+label(skipActionFlagDec)
+
+newmemActionFlagDec:
+  cmp byte ptr [rbx+000000A0],00
+  je skipActionFlagDec
+
+  dec byte ptr [rbx+000000A0]
+
+skipActionFlagDec:
+  jmp returnActionFlagDec
+
+actionFlagDec:
+  jmp newmemActionFlagDec
+  nop
+
+returnActionFlagDec:
+
+registersymbol(actionFlagDec)
+
+[DISABLE]
+
+actionFlagDec:
+  db FE 8B A0 00 00 00
+
+unregistersymbol(actionFlagDec)
+dealloc(newmemActionFlagDec)"""
+
+[[cheat]]
+id = "2-reset-action-after-move-wait"
+name = "2. Reset Action After Move/Wait"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// ==================================================
+// Infinite Move 2: Reset Action After Move/Wait
+//
+// Purpose:
+// - Restores action state after moving or waiting.
+// - Restores remaining movement points where applicable.
+// - Restores current fuel from the unit maximum-fuel value.
+//
+// Important:
+// - Enable all three Infinite Move entries together.
+// - This works together with the combat hook and action flag protection.
+// - Fuel restore is kept here, not in the combat hook, to reduce side effects.
+// ==================================================
+
+[ENABLE]
+
+// Original instruction:
+// RTypeTacticsCosmosSteam-Win64-Shipping.exe+4E9F35C
+// C6 83 A0 00 00 00 04
+// mov byte ptr [rbx+000000A0],04
+//
+// The first 7 bytes are replaced with a 5-byte jump and 2 NOPs.
+aobscanmodule(actionEndMove,RTypeTacticsCosmosSteam-Win64-Shipping.exe,C6 83 A0 00 00 00 04 48 83 C4 20 5B)
+alloc(newmemActionEndMove,$1000,actionEndMove)
+
+label(returnActionEndMove)
+
+newmemActionEndMove:
+  // RBX is the UnitState base for this hook.
+  // +0xA0: action-state flag. 00 keeps the unit actionable.
+  mov byte ptr [rbx+000000A0],00
+
+  // +0x10C: remaining movement points as Float. 5.0f = 0x40A00000.
+  mov dword ptr [rbx+0000010C],40A00000
+
+  // +0x104: current fuel, +0x108: maximum fuel candidate.
+  // Copy the raw Float bits from max fuel back to current fuel.
+  push rax
+  mov eax,[rbx+00000108]
+  mov [rbx+00000104],eax
+  pop rax
+
+  jmp returnActionEndMove
+
+actionEndMove:
+  jmp newmemActionEndMove
+  nop 2
+
+returnActionEndMove:
+
+registersymbol(actionEndMove)
+
+[DISABLE]
+
+actionEndMove:
+  db C6 83 A0 00 00 00 04
+
+unregistersymbol(actionEndMove)
+dealloc(newmemActionEndMove)"""
+
+[[cheat]]
+id = "3-reset-action-after-combat"
+name = "3. Reset Action After Combat"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+// ==================================================
+// Infinite Move 3: Reset Action After Combat
+//
+// Purpose:
+// - Restores action state after attacking.
+// - Required for post-combat re-action support.
+//
+// Notes:
+// - This hook is more sensitive than the move/wait hook.
+// - Preserve original flag behavior where necessary.
+// - Enable all three Infinite Move entries together.
+// - Fuel restore is intentionally not handled here to reduce side effects.
+// ==================================================
+
+[ENABLE]
+
+// Original instruction area:
+// RTypeTacticsCosmosSteam-Win64-Shipping.exe+4E97BE3
+// 41 88 01             - mov [r9],al
+// 0F 9C C2             - setl dl
+//
+// setl dl depends on flags from the previous cmp, so this hook saves and restores flags.
+aobscanmodule(actionEndGenericAttack,RTypeTacticsCosmosSteam-Win64-Shipping.exe,41 88 01 0F 9C C2 E9 42 DE 00 00)
+alloc(newmemActionEndGenericAttack,$1000,actionEndGenericAttack)
+
+label(returnActionEndGenericAttack)
+label(doOriginalGenericAttack)
+label(writeReadyGenericAttack)
+
+newmemActionEndGenericAttack:
+  pushfq
+
+  // Only intercept when R9 points to UnitState+0xA0.
+  push rdx
+  lea rdx,[rcx+000000A0]
+  cmp r9,rdx
+  pop rdx
+  jne doOriginalGenericAttack
+
+  // AL=04 is the final acted-state write after combat.
+  // Other values, such as temporary state 02, are left untouched.
+  cmp al,04
+  jne doOriginalGenericAttack
+
+writeReadyGenericAttack:
+  mov byte ptr [r9],00
+
+  // R9 is UnitState+0xA0, so +0x6C reaches UnitState+0x10C.
+  // 5.0f = 0x40A00000.
+  mov dword ptr [r9+0000006C],40A00000
+
+  popfq
+  setl dl
+  jmp returnActionEndGenericAttack
+
+doOriginalGenericAttack:
+  mov [r9],al
+  popfq
+  setl dl
+  jmp returnActionEndGenericAttack
+
+actionEndGenericAttack:
+  jmp newmemActionEndGenericAttack
+  nop
+
+returnActionEndGenericAttack:
+
+registersymbol(actionEndGenericAttack)
+
+[DISABLE]
+
+actionEndGenericAttack:
+  db 41 88 01 0F 9C C2
+
+unregistersymbol(actionEndGenericAttack)
+dealloc(newmemActionEndGenericAttack)"""

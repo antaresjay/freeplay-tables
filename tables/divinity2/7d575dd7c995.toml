@@ -1,0 +1,507 @@
+[game]
+name = "Divinity II - Developers CUT"
+exe = "divinity2.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3667"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-divinity-ii-v1-4-9-70-script-aob"
+name = "[X] <== Divinity II  V1.4.9.70 Script AOB"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Divinity II: The Dragon Knight Saga
+ Game Version  : 1.4.9.70
+ Script Version: 2.0
+ CE Version    : 5.6
+ GodMode, Mana and Gold
+ 12-Nov-2010 For version 1.4.9.32
+ 27-Dec-2010 Changed offsets for version 1.4.9.70 + _MonXP
+ 27-Dec-2010 AOB Version
+===========================================
+}
+
+[ENABLE]
+//=========================================
+alloc(MyCode,4096,Divinity2.exe)
+//=========================================
+
+aobscan(aobGodMode,d9 9e 8c 01 00 00 5e 83 c4 08)
+aobscan(aobMonMana,d9 9e 90 01 00 00 5e 83 c4 08 c2 04 00)
+aobscan(aobMonGold,8b 81 94 00 00 00 c3 cc cc cc cc cc cc cc cc cc 8b 81 8c)
+aobscan(aobMonPlayer,d9 86 8c 01 00 00 d9 44 24 04 d8 d1)
+aobscan(aobMonXP,8b 44 24 04 01 81 90 00 00 00) //+04
+
+//=========================================
+// Declaration section
+label(pGodMode)
+label(pMonMana)
+label(pMonGold)
+label(pMonPlayer)
+label(pMonXP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(_MonPlayer)
+label(_BackMP)
+label(_MonXP)
+label(_BackMX)
+label(_ExitMX)
+label(pHero)
+label(pHero1)
+label(pGoldXP)
+label(iEnableGM)
+label(iEnableMM)
+label(iEnableMG)
+label(iEnableMX)
+label(iMinGold)
+label(iEAX)
+
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(pHero1)
+registersymbol(pGoldXP)
+registersymbol(iEnableGM)
+registersymbol(iEnableMM)
+registersymbol(iEnableMG)
+registersymbol(iEnableMX)
+registersymbol(iMinGold)
+registersymbol(pGodMode)
+registersymbol(pMonMana)
+registersymbol(pMonGold)
+registersymbol(pMonPlayer)
+registersymbol(pMonXP)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ push eax
+ 
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+ 
+ cmp byte ptr [esi+00000184],1  // Player´s unit?
+ jne _ExitGM                    // Jump if false
+ 
+ mov [pHero],esi                // Save pointer for debugging
+
+ fst dword ptr [iEAX]
+ mov eax,[iEAX]
+ cmp eax,[esi+0000018c]        
+ jge _ExitGM
+ 
+ fstp st(0)                     // Discard value
+ fld dword ptr [esi+0000018c]   // Get current HP
+
+_ExitGM:
+ fstp dword ptr [esi+0000018c]  // Original code
+ pop eax
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+_MonMana:
+ push eax
+ 
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                     // Jump if feature is disabled
+ 
+ cmp byte ptr [esi+00000184],1  // Player´s unit?
+ jne _ExitMM                    // Jump if false
+ 
+ mov [pHero],esi                // Save pointer for debugging
+
+ fst dword ptr [iEAX]
+ mov eax,[iEAX]
+ cmp eax,[esi+00000190]
+ jge _ExitMM
+ 
+ fstp st(0)                     // Discard value
+ fld dword ptr [esi+00000190]   // Get current Mana
+
+_ExitMM:
+ fstp dword ptr [esi+00000190]  // Original code
+ pop eax
+ jmp _BackMM                    // Back to main code
+
+//=========================================
+_MonGold:
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                     // Jump if feature is disabled
+
+ cmp ecx,[pGoldXP]
+ jne _ExitMG                    // Jump if it is not the player´s gold
+ 
+ mov eax,[iMinGold]             // Get minimum value
+ cmp eax,[ecx+00000094]         // Current value >= minimum?
+ jle _ExitMG                    // Jump if true
+ 
+ mov [ecx+00000094],eax         // Update gold
+
+_ExitMG: 
+ mov eax,[ecx+00000094]         // Original code
+ jmp _BackMG                    // Back to main code
+
+//=========================================
+_MonPlayer:
+ mov [pHero1],esi               // Save pointer for debugging
+ 
+ mov esi,[esi+000000fc]         // Get pointer to Gold Structure
+ mov [pGoldXP],esi              // Save it for further use
+
+ mov esi,[pHero1]
+ 
+ fld dword ptr [esi+0000018c]   // Original code
+ jmp _BackMP                    // Back to main code
+
+//=========================================
+_MonXP:
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX                     // Jump if feature is disabled
+
+ cmp ecx,[pGoldXP]
+ jne _ExitMX                    // Jump if it is not the player´s XP
+ 
+ xor eax,eax                    // Make value2decrease = 0
+ mov [ecx+00000090],eax         // Make XP_Debt = 0 
+
+_ExitMX: 
+ add [ecx+00000090],eax         // Original code (update XP Debt)
+ jmp _BackMX                    // Back to main code
+
+//=========================================
+ db '=============================>'
+ db 'CE6.2 Script by Recifense 103012'
+//=========================================
+// Variables
+iEnableGM:
+ dd 0
+iEnableMM:
+ dd 0
+iEnableMG:
+ dd 0
+iEnableMX:
+ dd 0
+pHero:
+ dd 0
+pHero1:
+ dd 0 
+pGoldXP:
+ dd 0 
+iMinGold:
+ dd #62000
+iEAX:
+ dd 0
+
+//=========================================
+// Hacking Points
+//Divinity2.exe+002ef2b9:
+//Divinity2.exe+002fdd99:
+aobGodMode:
+pGodMode:
+ jmp _GodMode
+ nop
+_BackGM:
+
+//Divinity2.exe+002e8860:
+//Divinity2.exe+002f7290:
+aobMonMana:
+pMonMana:
+ jmp _MonMana
+ nop
+_BackMM:
+
+//Divinity2.exe+003172a0:
+//Divinity2.exe+00325010:
+aobMonGold:
+pMonGold:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//Divinity2.exe+002f214f:
+//Divinity2.exe+00300c2f:
+aobMonPlayer:
+pMonPlayer:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+//Divinity2.exe+00325044:
+aobMonXP+04:
+pMonXP:
+ jmp _MonXP
+ nop
+_BackMX:
+
+//=========================================
+// Original Codes
+[DISABLE]
+//Divinity2.exe+002ef2b9:
+//Divinity2.exe+002fdd99:
+pGodMode:
+ fstp dword ptr [esi+0000018c]
+
+//Divinity2.exe+002e8860:
+//Divinity2.exe+002f7290:
+pMonMana:
+ fstp dword ptr [esi+00000190]
+
+//Divinity2.exe+003172a0:
+//Divinity2.exe+00325010:
+pMonGold:
+ mov eax,[ecx+00000094]
+
+//Divinity2.exe+002f214f:
+//Divinity2.exe+00300c2f:
+pMonPlayer:
+ fld dword ptr [esi+0000018c]
+
+//Divinity2.exe+00325044:
+pMonXP:
+ add [ecx+00000090],eax
+ 
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(pHero1)
+unregistersymbol(pGoldXP)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMX)
+unregistersymbol(iMinGold)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonMana)
+unregistersymbol(pMonGold)
+unregistersymbol(pMonPlayer)
+unregistersymbol(pMonXP)
+
+dealloc(MyCode)"""
+
+[[cheat]]
+id = "enable-disable-god-mode-1-0"
+name = "Enable/Disable God Mode => (1/0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-mana-1-0"
+name = "Enable/Disable Unlimited Mana =>(1/0)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMM"
+hops = []
+
+[[cheat]]
+id = "minimum-gold-value"
+name = "Minimum Gold Value"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinGold"
+hops = []
+
+[[cheat]]
+id = "enable-disable-no-decreasing-xp-1-0"
+name = "Enable/Disable No decreasing XP => (1/0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMX"
+hops = []
+
+[[cheat]]
+id = "hero-s-gold"
+name = "Hero's Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0xfc",
+    "+0x94",
+]
+
+[[cheat]]
+id = "hero-s-xp"
+name = "Hero's XP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0xfc",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "hero-s-skill-points"
+name = "Hero's Skill Points"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0xfc",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "hero-s-attribute-points"
+name = "Hero's Attribute Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0xfc",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "hero-s-vitality"
+name = "Hero's Vitality"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0x104",
+    "+0x28",
+]
+
+[[cheat]]
+id = "hero-s-spirit"
+name = "Hero's Spirit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0x104",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "hero-s-strength"
+name = "Hero's Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0x104",
+    "+0x50",
+]
+
+[[cheat]]
+id = "hero-s-dexterity"
+name = "Hero's Dexterity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0x104",
+    "+0x64",
+]
+
+[[cheat]]
+id = "hero-s-intelligence"
+name = "Hero's Intelligence"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero1"
+hops = [
+    "+0x104",
+    "+0x78",
+]

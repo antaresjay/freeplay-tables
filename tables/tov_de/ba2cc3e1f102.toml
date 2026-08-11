@@ -1,0 +1,1380 @@
+[game]
+name = "Tales of Vesperia Definitive Edition"
+exe = "tov_de.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=8513"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script"
+name = "Damage Modifier Script"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(DamageModAOB,TOV_DE.exe,8B 4F 4C 8B 47 54 03 CB 3B C8 7E 10) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,2048,DamageModAOB)
+
+label(originalcode)
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(EnemyDamageMultiplier)
+registersymbol(EnemyDamageMultiplier)
+label(HeroDamageMultiplier)
+registersymbol(HeroDamageMultiplier)
+label(EnemyHealingMultiplier)
+registersymbol(EnemyHealingMultiplier)
+label(HeroHealingMultiplier)
+registersymbol(HeroHealingMultiplier)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+label(AffectYuriOnly)
+registersymbol(AffectYuriOnly)
+
+newmem:
+  mov ecx,[rdi+4C]
+  cmp [rdi+04],0
+  jne EnemyHit
+  cmp [rdi+08],0
+  jne EnemyHit
+HeroHit:
+  cmp [AffectYuriOnly],0
+  je @F
+  cmp [rdi+44],1
+  jne originalcode
+@@:
+  cmp ebx,0
+  jl HeroDamageHit
+  jg HeroHealingHit
+  jmp originalcode
+HeroDamageHit:
+  cmp [HeroDamageMultiplier],(float)0.0
+  je CheckGodMode
+  neg ebx
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [HeroDamageMultiplier]
+  fistp dword ptr [esp]
+  pop ebx
+  neg ebx
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor ebx,ebx
+  jmp originalcode
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne originalcode
+  neg ebx
+  cmp ebx,ecx
+  jl @F
+  xor ebx,ebx
+@@:
+  neg ebx
+  jmp originalcode
+HeroHealingHit:
+  cmp [HeroHealingMultiplier],(float)0.0
+  je originalcode
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [HeroHealingMultiplier]
+  fistp dword ptr [esp]
+  pop ebx
+  jmp originalcode
+EnemyHit:
+  cmp [AffectYuriOnly],0
+  je @F
+  cmp r10,1000
+  jb @F
+  cmp [r10+44],1
+  jne originalcode
+@@:
+  cmp ebx,0
+  jl EnemyDamageHit
+  jg EnemyHealingHit
+  jmp CheckOneHitKill
+EnemyDamageHit:
+  cmp [EnemyDamageMultiplier],(float)0.0
+  je CheckOneHitKill
+  neg ebx
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [EnemyDamageMultiplier]
+  fistp dword ptr [esp]
+  pop ebx
+  neg ebx
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne originalcode
+  mov ebx,#99999
+  neg ebx
+  jmp originalcode
+EnemyHealingHit:
+  cmp [EnemyHealingMultiplier],(float)0.0
+  je originalcode
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [EnemyHealingMultiplier]
+  fistp dword ptr [esp]
+  pop ebx
+    
+originalcode:
+  mov eax,[rdi+54]
+  add ecx,ebx
+
+  jmp return
+
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+EnemyDamageMultiplier:
+dq (float)5.0
+HeroDamageMultiplier:
+dq (float)0.125
+EnemyHealingMultiplier:
+dq (float)0.0
+HeroHealingMultiplier:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+AffectYuriOnly:
+dq 0
+
+DamageModAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  db 8B 4F 4C 8B 47 54 03 CB
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(EnemyDamageMultiplier)
+unregistersymbol(EnemyHealingMultiplier)
+unregistersymbol(HeroDamageMultiplier)
+unregistersymbol(HeroHealingMultiplier)
+unregistersymbol(HeroCannotDie)
+unregistersymbol(AffectYuriOnly)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EnemyDamageMultiplier"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-set-to-zero-off-otherwise-multiplier-e-g-0-5-is-half-healing"
+name = "Enemy Healing Multiplier (Set to Zero = Off; Otherwise multiplier, e.g. 0.5 is half healing)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EnemyHealingMultiplier"
+hops = []
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-lose-hp-unless-the-hit-will-kill-you-if-on"
+name = "Hero Cannot Die (Lose HP Unless The Hit Will Kill You If On)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-zero-off-otherwise-multiplier-e-g-0-5-is-half-damage"
+name = "Hero Damage Multiplier (Set to Zero = Off; Otherwise multiplier, e.g. 0.5 is half damage)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroDamageMultiplier"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-set-to-zero-off-otherwise-multiplier"
+name = "Hero Healing Multiplier (Set to Zero = Off; Otherwise multiplier)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroHealingMultiplier"
+hops = []
+
+[[cheat]]
+id = "affect-yuri-only"
+name = "Affect Yuri Only"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "AffectYuriOnly"
+hops = []
+
+[[cheat]]
+id = "infinite-in-battle-tp"
+name = "Infinite In-Battle TP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(TPDamageModAOB,TOV_DE.exe,8B 4F 50 8B 47 58 03 CB 3B C8 7E 10) // should be unique
+registersymbol(TPDamageModAOB)
+alloc(newmem,2048,TPDamageModAOB)
+
+label(originalcode)
+label(return)
+
+newmem:
+  cmp [rdi+04],0
+  jne originalcode
+  cmp [rdi+08],0
+  jne originalcode
+  cmp ebx,0
+  jge originalcode
+  xor ebx,ebx
+  
+originalcode:
+  mov ecx,[rdi+50]
+  mov eax,[rdi+58]
+  add ecx,ebx
+  jmp return
+
+TPDamageModAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+TPDamageModAOB:
+  db 8B 4F 50 8B 47 58 03 CB
+
+unregistersymbol(TPDamageModAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-item-usage-or-set-item-amount"
+name = "Infinite Item Usage or Set Item Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(InfiniteItemUsageAOB,TOV_DE.exe,8B 7C 81 38 4C 8D 34 81 41 03 F8) // should be unique
+alloc(newmem,2048,InfiniteItemUsageAOB)
+registersymbol(InfiniteItemUsageAOB)
+
+
+label(return)
+label(originalcode)
+label(SetItemAmount)
+registersymbol(SetItemAmount)
+
+newmem:
+  cmp byte ptr [SetItemAmount],0
+  je originalcode
+  push r15
+  xor r15,r15
+  mov r15d,[SetItemAmount]
+  cmp [rcx+rax*4+38],r15l
+  jge @F
+  mov [rcx+rax*4+38],r15l
+@@:
+  pop r15
+
+originalcode:
+  mov edi,[rcx+rax*4+38]
+  lea r14,[rcx+rax*4]
+  cmp r8d,0
+  jge @F
+  xor r8d,r8d
+@@:
+  add edi,r8d
+  jmp return
+
+SetItemAmount:
+db #9
+    
+InfiniteItemUsageAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+InfiniteItemUsageAOB:
+  db 8B 7C 81 38 4C 8D 34 81 41 03 F8
+
+  
+unregistersymbol(SetItemAmount)
+unregistersymbol(InfiniteItemUsageAOB)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "set-item-amount-on-use-discard-0-off"
+name = "Set Item Amount On Use/Discard (0 = Off)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetItemAmount"
+hops = []
+
+[[cheat]]
+id = "art-usage-multiplier"
+name = "Art Usage Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ArtUsageModAOB,TOV_DE.exe,8B 8A D8 04 00 00 41 03 C8 3B C8) // should be unique
+registersymbol(ArtUsageModAOB)
+alloc(newmem,2048,ArtUsageModAOB)
+
+label(originalcode)
+label(return)
+label(ArtUsageMult)
+registersymbol(ArtUsageMult)
+
+newmem:
+  imul r8d,[ArtUsageMult]
+  
+originalcode:
+  mov ecx,[rdx+00004D8]
+  jmp return
+
+ArtUsageMult:
+dq #10
+
+ArtUsageModAOB:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+ArtUsageModAOB:
+  db 8B 8A D8 04 00 00
+
+unregistersymbol(ArtUsageModAOB)
+unregistersymbol(ArtUsageMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "art-usage-multiplier-2"
+name = "Art Usage Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArtUsageMult"
+hops = []
+
+[[cheat]]
+id = "exp-multiplier"
+name = "Exp Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ExpMultAOB,TOV_DE.exe,8B 49 60 03 CA 3B C8 7F 09)
+registersymbol(ExpMultAOB)
+alloc(newmem,2048,ExpMultAOB)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(ExpMult)
+registersymbol(ExpMult)
+
+newmem:
+  imul edx,[ExpMult]
+
+originalcode:
+  mov ecx,[rcx+60]
+  add ecx,edx
+
+exit:
+  jmp returnhere
+
+ExpMult:
+dq #5
+
+ExpMultAOB:
+  jmp newmem
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+
+ExpMultAOB:
+db 8B 49 60 03 CA
+
+unregistersymbol(ExpMultAOB)
+unregistersymbol(ExpMult)"""
+
+[[cheat]]
+id = "exp-multiplier-2"
+name = "Exp Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ExpMult"
+hops = []
+
+[[cheat]]
+id = "lp-multiplier-quick-gain-skills"
+name = "LP Multiplier (Quick Gain Skills)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(LPMultAOB,TOV_DE.exe,42 8B 8C 8F 10 27 00 00 41 03 CE 3B CA)
+registersymbol(LPMultAOB)
+alloc(newmem,2048,LPMultAOB)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+label(LPMult)
+registersymbol(LPMult)
+
+newmem:
+  imul r14,[LPMult]
+
+originalcode:
+  mov ecx,[rdi+r9*4+00002710]
+
+exit:
+  jmp returnhere
+
+LPMult:
+dq #25
+
+LPMultAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+returnhere:
+
+[DISABLE]
+dealloc(newmem)
+
+LPMultAOB:
+db 42 8B 8C 8F 10 27 00 00
+
+unregistersymbol(LPMultAOB)
+unregistersymbol(LPMult)"""
+
+[[cheat]]
+id = "lp-multiplier"
+name = "LP Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "LPMult"
+hops = []
+
+[[cheat]]
+id = "infinite-sp"
+name = "Infinite SP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(SPAOB,TOV_DE.exe,8B 8B F8 24 00 00 8B 83 FC 24 00 00 2B CE 3B C8)
+registersymbol(SPAOB)
+
+SPAOB+C:
+  db 90 90
+
+[DISABLE]
+
+SPAOB+C:
+  db 2B CE
+
+unregistersymbol(SPAOB)"""
+
+[[cheat]]
+id = "overlimit-multiplier"
+name = "OverLimit Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OLModAOB,TOV_DE.exe,F3 0F 58 91 58 3C 00 00 F3 0F 11 91 58 3C 00 00 83 B9 58 1E 00 00 00 74 07) // should be unique
+registersymbol(OLModAOB)
+alloc(newmem,2048,OLModAOB)
+
+label(originalcode)
+label(return)
+
+label(OLMult)
+registersymbol(OLMult)
+label(EnemyHit2)
+
+newmem:
+  mov [EnemyHit2],0
+  cmp r10,1000
+  jb originalcode
+  cmp [r10+4],0
+  jne EnemyHitJMP
+  cmp [r10+8],0
+  jne EnemyHitJMP
+  comiss xmm2,xmm15
+  jb originalcode
+  mulss xmm2,[OLMult]
+  jmp originalcode
+EnemyHitJMP:
+  mov [EnemyHit2],1
+  
+originalcode:
+  addss xmm2,dword ptr [rcx+00003C58]
+  movss [rcx+00003C58],xmm2
+  cmp [EnemyHit2],1
+  je return
+  jmp OLModAOB+19
+
+OLMult:
+dq (float)25.0
+EnemyHit2:
+dq 0
+
+OLModAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+OLModAOB:
+  db F3 0F 58 91 58 3C 00 00 F3 0F 11 91 58 3C 00 00
+
+unregistersymbol(OLModAOB)
+unregistersymbol(OLMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "ol-multiplier"
+name = "OL Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OLMult"
+hops = []
+
+[[cheat]]
+id = "cooking-exp-multiplier"
+name = "Cooking EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CookingEXPModAOB,TOV_DE.exe,8B 8A 1C 3D 00 00 41 03 C8 0F 49 C1) // should be unique
+registersymbol(CookingEXPModAOB)
+alloc(newmem,2048,CookingEXPModAOB)
+
+label(originalcode)
+label(return)
+
+label(CookingEXPMult)
+registersymbol(CookingEXPMult)
+
+newmem:
+  imul r8,[CookingEXPMult]
+  
+originalcode:
+  mov ecx,[rdx+00003D1C]
+  jmp return
+
+CookingEXPMult:
+dq #25
+
+CookingEXPModAOB:
+  jmp newmem
+  nop 
+return:
+
+[DISABLE]
+
+CookingEXPModAOB:
+  db 8B 8A 1C 3D 00 00
+
+unregistersymbol(CookingEXPModAOB)
+unregistersymbol(CookingEXPMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "cooking-exp-multiplier-2"
+name = "Cooking EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CookingEXPMult"
+hops = []
+
+[[cheat]]
+id = "tools-original-by-exeter"
+name = "[ Tools ] (Original By Exeter)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+TOV_DE.exe + 118201C:
+InventoryBasePtr:
+
+registersymbol(InventoryBasePtr)
+
+[DISABLE]
+
+unregistersymbol(InventoryBasePtr)"""
+
+[[cheat]]
+id = "apple-gel"
+name = "Apple Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "lemon-gel"
+name = "Lemon Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "orange-gel"
+name = "Orange Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "pineapple-gel"
+name = "Pineapple Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "melange-gel"
+name = "Melange Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "miracle-gel"
+name = "Miracle Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "specific"
+name = "Specific"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "treat"
+name = "Treat"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "special-gel"
+name = "Special Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "lottery-gel"
+name = "Lottery Gel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "poison-bottle"
+name = "Poison Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "paralysis-bottle"
+name = "Paralysis Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "stone-bottle"
+name = "Stone Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "seal-bottle"
+name = "Seal Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "weak-bottle"
+name = "Weak Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "mind-bottle"
+name = "Mind Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "life-bottle"
+name = "Life Bottle"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "cure-bottle"
+name = "Cure Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "dinei-bottle"
+name = "Dinei Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "panacea-bottle"
+name = "Panacea Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "holy-bottle"
+name = "Holy Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "dark-bottle"
+name = "Dark Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "syrup-bottle"
+name = "Syrup Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "nectar-bottle"
+name = "Nectar Bottle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "sage"
+name = "Sage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "red-sage"
+name = "Red Sage"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "savory"
+name = "Savory"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "red-savory"
+name = "Red Savory"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "lavender"
+name = "Lavender"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "red-lavender"
+name = "Red Lavender"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "verbena"
+name = "Verbena"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "red-verbena"
+name = "Red Verbena"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "chamomile"
+name = "Chamomile"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "red-chamomile"
+name = "Red Chamomile"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "basil"
+name = "Basil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "red-basil"
+name = "Red Basil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "saffron"
+name = "Saffron"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "red-saffron"
+name = "Red Saffron"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "magic-lens"
+name = "Magic Lens"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "all-divide"
+name = "All-Divide"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []
+
+[[cheat]]
+id = "hourglass"
+name = "Hourglass"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryBasePtr"
+hops = []

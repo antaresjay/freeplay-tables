@@ -1,0 +1,3024 @@
+[game]
+name = "Age of Empire II HD Edition STEAM - Unit and Resource Editor"
+exe = "hd.exe"
+notes = "Converted from a Cheat Engine table by besthsq. Source: https://fearlessrevolution.com/viewtopic.php?t=5773"
+verified = []
+author = "besthsq"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "master-script"
+name = "Master Script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Table by besthsq
+// Table version: 1.1
+// Game version: 5.7.2970167 & 5.8.2990569
+// Changes v1.1:
+// - Removed melee pierce attack/armor editing fields because their functions
+//   are redundant and can mess things up if not used correctly.
+// - Reorganized fields
+
+//define(PBASE,"AoK HD.exe"+3431C5) // 8B 0C F2 51 8B C4 89 38 8B 01
+//define(HP,"AoK HD.exe"+31DB68) // F3 0F 2C 50 34 0F BF 41 2A 85 D2
+
+// =======================
+[ENABLE]
+AOBScanModule(PBASE,"AoK HD.exe",8B 0C F2 51 8B C4 89 38 8B 01)
+AOBScanModule(HP,"AoK HD.exe",F3 0F 2C 50 34 0F BF 41 2A 85 D2)
+
+alloc(MyCodeBlock,4096,$process)
+
+registersymbol(PBASE)
+registersymbol(HP)
+
+label(_PBASECode)
+label(_PBASERet)
+label(_HPCode)
+label(_HPRet)
+
+// pointers to expose
+label(pPlayerBase)
+label(iResEditorPlayerOffset)
+label(pUnitSelected)
+label(pUnitType)
+
+registersymbol(pPlayerBase)
+registersymbol(iResEditorPlayerOffset)
+registersymbol(pUnitSelected)
+registersymbol(pUnitType)
+
+
+// =======================
+// Implementation
+MyCodeBlock:
+
+// On checking all players for score
+_PBASECode:
+ mov ecx,[edx+esi*8]   // original code
+ push ecx
+ mov eax,esp
+ mov [pPlayerBase],edx     // expose base pointer to list of all player pointers
+ jmp _PBASERet
+
+// On viewing unit HP
+_HPCode:
+ cvttss2si edx,[eax+34]    // original code
+ mov [pUnitSelected],eax   // expose selected unit pointer
+ mov [pUnitType],ecx       // expose selected unit type pointer
+ jmp _HPRet
+
+
+// ============================
+// Variables
+pPlayerBase:
+ dd 0
+iResEditorPlayerOffset:
+ dd 8
+pUnitSelected:
+ dd 0
+pUnitType:
+ dd 0
+
+// Hack Points
+PBASE:
+jmp _PBASECode
+nop
+_PBASERet:
+
+HP:
+jmp _HPCode
+_HPRet:
+
+// =============================
+[DISABLE]
+
+PBASE:
+ mov ecx,[edx+esi*8]
+ push ecx
+ mov eax,esp
+/*
+AoK HD.exe+3431C5 - 8B 0C F2              - mov ecx,[edx+esi*8]
+AoK HD.exe+3431C8 - 51                    - push ecx
+AoK HD.exe+3431C9 - 8B C4                 - mov eax,esp
+AoK HD.exe+3431CB - 89 38                 - mov [eax],edi
+AoK HD.exe+3431CD - 8B 01                 - mov eax,[ecx]
+*/
+
+HP:
+cvttss2si edx,[eax+34]
+/*
+AoK HD.exe+31DB68 - F3 0F2C 50 34         - cvttss2si edx,[eax+34]
+AoK HD.exe+31DB6D - 0FBF 41 2A            - movsx eax,word ptr [ecx+2A]
+AoK HD.exe+31DB71 - 85 D2                 - test edx,edx
+*/
+
+
+unregistersymbol(pPlayerBase)
+unregistersymbol(iResEditorPlayerOffset)
+unregistersymbol(pUnitSelected)
+unregistersymbol(pUnitType)
+
+unregistersymbol(PBASE)
+unregistersymbol(HP)
+
+
+dealloc(MyCodeBlock)"""
+
+[[cheat]]
+id = "hp-current-unit"
+name = "HP (current unit)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitSelected"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x2a"]
+
+[[cheat]]
+id = "valid-attack-types-do-not-edit-anything-beyond-this-count"
+name = "Valid Attack Types (do not edit anything beyond this count)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "attack-1-type"
+name = "Attack 1 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "attack-1-amount"
+name = "Attack 1 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x2",
+]
+
+[[cheat]]
+id = "attack-2-type"
+name = "Attack 2 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x4",
+]
+
+[[cheat]]
+id = "attack-2-amount"
+name = "Attack 2 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x6",
+]
+
+[[cheat]]
+id = "attack-3-type"
+name = "Attack 3 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x8",
+]
+
+[[cheat]]
+id = "attack-3-amount"
+name = "Attack 3 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0xa",
+]
+
+[[cheat]]
+id = "attack-4-type"
+name = "Attack 4 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "attack-4-amount"
+name = "Attack 4 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0xe",
+]
+
+[[cheat]]
+id = "attack-5-type"
+name = "Attack 5 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x10",
+]
+
+[[cheat]]
+id = "attack-5-amount"
+name = "Attack 5 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x12",
+]
+
+[[cheat]]
+id = "attack-6-type"
+name = "Attack 6 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x14",
+]
+
+[[cheat]]
+id = "attack-6-amount"
+name = "Attack 6 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x16",
+]
+
+[[cheat]]
+id = "attack-7-type"
+name = "Attack 7 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x18",
+]
+
+[[cheat]]
+id = "attack-7-amount"
+name = "Attack 7 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "attack-8-type"
+name = "Attack 8 Type"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "attack-8-amount"
+name = "Attack 8 Amount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x14c",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "valid-armor-types-do-not-edit-anything-beyond-this-count"
+name = "Valid Armor Types (do not edit anything beyond this count)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x142"]
+
+[[cheat]]
+id = "armor-1-type"
+name = "Armor 1 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x0",
+]
+
+[[cheat]]
+id = "armor-1-amount"
+name = "Armor 1 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x2",
+]
+
+[[cheat]]
+id = "armor-2-type"
+name = "Armor 2 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x4",
+]
+
+[[cheat]]
+id = "armor-2-amount"
+name = "Armor 2 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x6",
+]
+
+[[cheat]]
+id = "armor-3-type"
+name = "Armor 3 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x8",
+]
+
+[[cheat]]
+id = "armor-3-amount"
+name = "Armor 3 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0xa",
+]
+
+[[cheat]]
+id = "armor-4-type"
+name = "Armor 4 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0xc",
+]
+
+[[cheat]]
+id = "armor-4-amount"
+name = "Armor 4 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0xe",
+]
+
+[[cheat]]
+id = "armor-5-type"
+name = "Armor 5 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x10",
+]
+
+[[cheat]]
+id = "armor-5-amount"
+name = "Armor 5 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x12",
+]
+
+[[cheat]]
+id = "armor-6-type"
+name = "Armor 6 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x14",
+]
+
+[[cheat]]
+id = "armor-6-amount"
+name = "Armor 6 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x16",
+]
+
+[[cheat]]
+id = "armor-7-type"
+name = "Armor 7 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x18",
+]
+
+[[cheat]]
+id = "armor-7-amount"
+name = "Armor 7 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "armor-8-type"
+name = "Armor 8 Type"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Unused",
+    "1:Infantry",
+    "2:Turtle Ships",
+    "3:Base Pierce",
+    "4:Base Melee",
+    "5:War Elephants",
+    "6:Unused",
+    "7:Unused",
+    "8:Cavalry",
+    "9:Unused",
+    "10:Unused",
+    "11:All Buildings (except port)",
+    "12:Unused",
+    "13:Stone Defense",
+    "14:FE Predator Animals",
+    "15:Archers",
+    "16:Ship & Camels & Saboteurs",
+    "17:Rams",
+    "18:Trees",
+    "19:Unique Units (except Turtle Ship)",
+    "20:Siege Weapons",
+    "21:Standard Buildings",
+    "22:Walls & Gates",
+    "23:FE Gunpowder Units",
+    "24:Boars",
+    "25:Monks",
+    "26:Castle",
+    "27:Spearmen",
+    "28:Cavalry Archers",
+    "29:Eagle Warriors",
+    "30:HD Camels",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "armor-8-amount"
+name = "Armor 8 Amount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = [
+    "+0x144",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "range"
+name = "Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "line-of-sight"
+name = "Line of Sight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "speed"
+name = "Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "is-hero"
+name = "Is Hero"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1d1"]
+
+[[cheat]]
+id = "valid-terrain"
+name = "Valid Terrain"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:All",
+    "1:Land and shallows",
+    "2:Beach",
+    "3:Water",
+    "4:Land",
+    "5:Nothing",
+    "6:Water",
+    "7:All but water",
+    "8:Land but no farm",
+    "9:Nothing",
+    "10:Land and beach",
+    "11:Land but no farm",
+    "12:All but water bridge",
+    "13:Water",
+    "14:All but water bridge",
+    "15:Water",
+    "16:Grass and beach",
+    "17:Water and bridge no beach",
+    "18:All but water bridge",
+    "19:Water and ice",
+    "20:All but water",
+    "21:Shallow water",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x6e"]
+
+[[cheat]]
+id = "work-rate"
+name = "Work Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x124"]
+
+[[cheat]]
+id = "reload-time"
+name = "Reload Time"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "attack-delay-frames"
+name = "Attack Delay Frames"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x16a"]
+
+[[cheat]]
+id = "accuracy-percent"
+name = "Accuracy Percent"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x166"]
+
+[[cheat]]
+id = "attack-dispersion"
+name = "Attack Dispersion"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "search-radius"
+name = "Search Radius"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "minimum-range"
+name = "Minimum Range"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "blast-radius"
+name = "Blast Radius"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "blast-attack-level-damages-units-with-the-same-or-higher-blast-defense-level"
+name = "Blast Attack Level (damages units with the same or higher blast defense level)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:Damages everything in area",
+    "1:Damages units and trees in area",
+    "2:Damages units in area",
+    "3:Damages only targeted unit",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x15c"]
+
+[[cheat]]
+id = "blast-defense-level-0-protects-from-everything-but-level-0-blast-attacks"
+name = "Blast Defense Level (0 protects from everything but level 0 blast attacks)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x93"]
+
+[[cheat]]
+id = "projectile-unit-id"
+name = "Projectile Unit ID"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x164"]
+
+[[cheat]]
+id = "secondary-projectile-unit-id"
+name = "Secondary Projectile Unit ID"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "max-total-projectiles"
+name = "Max Total Projectiles"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "total-projectiles"
+name = "Total Projectiles"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "total-projectiles-current-unit"
+name = "Total Projectiles (current unit)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitSelected"
+hops = ["+0x1cc"]
+
+[[cheat]]
+id = "projectile-scatter-width"
+name = "Projectile Scatter Width"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "projectile-scatter-height"
+name = "Projectile Scatter Height"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "projectile-scatter-randomness"
+name = "Projectile Scatter Randomness"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "garrison-capacity"
+name = "Garrison Capacity"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "cost-amount-1"
+name = "Cost Amount 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x18e"]
+
+[[cheat]]
+id = "cost-amount-2"
+name = "Cost Amount 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "cost-amount-3"
+name = "Cost Amount 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x19a"]
+
+[[cheat]]
+id = "train-build-time"
+name = "Train/Build Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x19e"]
+
+[[cheat]]
+id = "trained-built-by-unit-id"
+name = "Trained/Built By (Unit ID)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "is-available"
+name = "Is Available"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x5a"]
+
+[[cheat]]
+id = "train-button-position"
+name = "Train Button Position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1a2"]
+
+[[cheat]]
+id = "x-position-current-unit"
+name = "X Position (current unit)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitSelected"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "y-position-current-unit"
+name = "Y Position (current unit)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitSelected"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "trailing-unit-id"
+name = "Trailing Unit ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = -1
+choices = [
+    "-1:None",
+    "247:SMOKE",
+    "654:S_SMOKE",
+    "677:S_FIRE",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0xf6"]
+
+[[cheat]]
+id = "trail-mode"
+name = "Trail Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:Off",
+    "1:Very Dense",
+    "2:Density Value Based",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "trail-density"
+name = "Trail Density"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "interface-kind"
+name = "Interface Kind"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:None",
+    "1:Resource",
+    "2:Building",
+    "3:Civilian",
+    "4:Soldier",
+    "5:Trade Unit",
+    "6:Priest",
+    "7:Transport Ship",
+    "8:Relic / Priest with Relic",
+    "9:Fishing Boat",
+    "10:Building 2",
+    "11:Shield Building (build page 3)",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x97"]
+
+[[cheat]]
+id = "interaction-mode"
+name = "Interaction Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:None",
+    "1:Object. Can Pick.",
+    "2:Resource. Can select, unable to attack or move.",
+    "3:Building. Can select and attack, unable to move.",
+    "4:Unit. Can select, attack and move.",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x95"]
+
+[[cheat]]
+id = "icon-id"
+name = "Icon ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "minimap-mode"
+name = "Minimap Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:None. No dot on minimap",
+    "1:Unit. Square dot turning white when selected.",
+    "2:Building. Diamond dot turning white when selected.",
+    "3:Terrain. Diamond dot keeping color.",
+    "4:Terrain. Larger spot, not following the unit, not blinking when attacked, everyone can see.",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x96"]
+
+[[cheat]]
+id = "minimap-color"
+name = "Minimap Color"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "displayed-melee-attack"
+name = "Displayed Melee Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x17e"]
+
+[[cheat]]
+id = "displayed-range"
+name = "Displayed Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "displayed-reload-time"
+name = "Displayed Reload Time"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x184"]
+
+[[cheat]]
+id = "displayed-pierce-armor"
+name = "Displayed Pierce Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "displayed-melee-armor"
+name = "Displayed Melee Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x17c"]
+
+[[cheat]]
+id = "collision-size-x"
+name = "Collision Size X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "collision-size-y"
+name = "Collision Size Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "selection-outline-size-x"
+name = "Selection Outline Size X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "selection-outline-size-y"
+name = "Selection Outline Size Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "collision-size-z"
+name = "Collision Size Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "selection-outline-size-z"
+name = "Selection Outline Size Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "dead-unit-type-id"
+name = "Dead Unit Type ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "unit-data-start-address"
+name = "Unit Data Start Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitSelected"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "unit-type-data-start-address"
+name = "Unit Type Data Start Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "unit-type-id"
+name = "Unit Type ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "type"
+name = "Type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = -1
+choices = [
+    "-1:No Type/Invalid Type",
+    "10:Eye Candy",
+    "15:Tree (AoK)",
+    "20:Animated",
+    "25:Doppelganger",
+    "30:Moving",
+    "40:Actor",
+    "50:Superclass",
+    "60:Projectile",
+    "70:Combatant",
+    "80:Building",
+    "90:Tree (AoE)",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "class"
+name = "Class"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = -1
+choices = [
+    "-1:No Class/Invalid Class",
+    "0:Archer",
+    "1:Artifact",
+    "2:Trade Boat",
+    "3:Building",
+    "4:Civilian",
+    "5:Ocean Fish",
+    "6:Infantry",
+    "7:Berry Bush",
+    "8:Stone Mine",
+    "9:Prey Animal",
+    "10:Predator Animal",
+    "11:Miscellaneous",
+    "12:Cavalry",
+    "13:Siege Weapon",
+    "14:Terrain",
+    "15:Tree",
+    "16:Tree Stump",
+    "17:Healer",
+    "18:Monk",
+    "19:Trade Cart",
+    "20:Transport Boat",
+    "21:Fishing Boat",
+    "22:Warship",
+    "23:Conquistador",
+    "24:War Elephant",
+    "25:Hero",
+    "26:Elephant Archer",
+    "27:Wall",
+    "28:Phalanx",
+    "29:Domestic Animal",
+    "30:Flag",
+    "31:Deep Sea Fish",
+    "32:Gold Mine",
+    "33:Shore Fish",
+    "34:Cliff",
+    "35:Petard",
+    "36:Cavalry Archer",
+    "37:Doppelganger",
+    "38:Bird",
+    "39:Gate",
+    "40:Salvage Pile",
+    "41:Resource Pile",
+    "42:Relic",
+    "43:Monk with Relic",
+    "44:Hand Cannoneer",
+    "45:Two Handed Swordsman",
+    "46:Pikeman",
+    "47:Scout",
+    "48:Ore Mine",
+    "49:Farm",
+    "50:Spearman",
+    "51:Packed Unit",
+    "52:Tower",
+    "53:Boarding Boat",
+    "54:Unpacked Siege Unit",
+    "55:Ballista",
+    "56:Raider",
+    "57:Cavalry Raider",
+    "58:LIvestock",
+    "59:King",
+    "60:Misc Building",
+    "61:Controlled Animal",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitType"
+hops = ["+0x16"]
+
+[[cheat]]
+id = "selected-player-ctrl-or-to-cycle"
+name = "Selected Player (Ctrl+[ or ] to cycle)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 8
+choices = [
+    "8:Player 1",
+    "16:Player 2",
+    "24:Player 3",
+    "32:Player 4",
+    "40:Player 5",
+    "48:Player 6",
+    "56:Player 7",
+    "64:Player 8",
+    "0:Gaia",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "iResEditorPlayerOffset"
+hops = []
+
+[[cheat]]
+id = "wood"
+name = "Wood"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x4",
+]
+
+[[cheat]]
+id = "food"
+name = "Food"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "stone"
+name = "Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x8",
+]
+
+[[cheat]]
+id = "population-headroom"
+name = "Population Headroom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x10",
+]
+
+[[cheat]]
+id = "population-cap"
+name = "Population Cap"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x80",
+]
+
+[[cheat]]
+id = "current-population"
+name = "Current Population"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "chopping-productivity"
+name = "Chopping Productivity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2f4",
+]
+
+[[cheat]]
+id = "food-productivity"
+name = "Food Productivity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2f8",
+]
+
+[[cheat]]
+id = "gold-mining-productivity"
+name = "Gold Mining Productivity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0xbc",
+]
+
+[[cheat]]
+id = "stone-mining-productivity"
+name = "Stone Mining Productivity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "farm-food-amount"
+name = "Farm Food Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x90",
+]
+
+[[cheat]]
+id = "fish-trap-food-amount"
+name = "Fish Trap Food Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x160",
+]
+
+[[cheat]]
+id = "relic-gold-rate"
+name = "Relic Gold Rate"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2fc",
+]
+
+[[cheat]]
+id = "construction-rate"
+name = "Construction Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x30c",
+]
+
+[[cheat]]
+id = "feitoria-food"
+name = "Feitoria Food"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x334",
+]
+
+[[cheat]]
+id = "feitoria-wood"
+name = "Feitoria Wood"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x338",
+]
+
+[[cheat]]
+id = "feitoria-stone"
+name = "Feitoria Stone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x33c",
+]
+
+[[cheat]]
+id = "feitoria-gold"
+name = "Feitoria Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x340",
+]
+
+[[cheat]]
+id = "spies-reveal-enemy"
+name = "Spies (reveal enemy)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2dc",
+]
+
+[[cheat]]
+id = "dominant-sheep-control"
+name = "Dominant Sheep Control"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x184",
+]
+
+[[cheat]]
+id = "tribute-inefficiency"
+name = "Tribute Inefficiency"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0xb8",
+]
+
+[[cheat]]
+id = "market-buy-sell-price-difference-set-to-negative-values"
+name = "Market Buy Sell Price Difference (set to negative values)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x138",
+]
+
+[[cheat]]
+id = "berserker-heal-timer"
+name = "Berserker Heal Timer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x180",
+]
+
+[[cheat]]
+id = "faith-recharge-rate"
+name = "Faith Recharge Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "can-convert"
+name = "Can Convert"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x10c",
+]
+
+[[cheat]]
+id = "conversion-chance-min-set-to-100"
+name = "Conversion Chance Min (set to -100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2c0",
+]
+
+[[cheat]]
+id = "conversion-chance-max"
+name = "Conversion Chance Max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2c4",
+]
+
+[[cheat]]
+id = "conversion-resistance-min-set-to-more-than-100"
+name = "Conversion Resistance Min (set to more than 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2c8",
+]
+
+[[cheat]]
+id = "conversion-resistance-max"
+name = "Conversion Resistance Max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2cc",
+]
+
+[[cheat]]
+id = "conversion-building-min"
+name = "Conversion Building Min"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2d0",
+]
+
+[[cheat]]
+id = "conversion-building-max"
+name = "Conversion Building Max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2d4",
+]
+
+[[cheat]]
+id = "conversion-building-chance"
+name = "Conversion Building Chance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x2d8",
+]
+
+[[cheat]]
+id = "healing-rate"
+name = "Healing Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x164",
+]
+
+[[cheat]]
+id = "healing-range"
+name = "Healing Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x168",
+]
+
+[[cheat]]
+id = "faith-conversion-resistance"
+name = "Faith (conversion resistance)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x134",
+]
+
+[[cheat]]
+id = "block-printing-conversion-range"
+name = "Block Printing (conversion range)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x14",
+]
+
+[[cheat]]
+id = "theocracy-one-monk-must-rest"
+name = "Theocracy (one monk must rest)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x304",
+]
+
+[[cheat]]
+id = "atonement-convert-enemy-monks"
+name = "Atonement (convert enemy monks)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "redemption-convert-siege-and-buildings"
+name = "Redemption (convert siege and buildings)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x70",
+]
+
+[[cheat]]
+id = "heresy-converted-units-die"
+name = "Heresy (converted units die)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = [
+    "+0x3c",
+    "+0x300",
+]

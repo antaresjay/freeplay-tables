@@ -1,0 +1,1310 @@
+[game]
+name = "HunieCam Studio"
+exe = "shinkansen_huniecam_studio.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=867"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "game-base-address-scan-initialization-activate-this-first"
+name = "Game Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Game_basepointer)
+registersymbol(Game_update_enable)
+registersymbol(Game_set_enable)
+registersymbol(Game_timeset_enable)
+registersymbol(Game_cashset_enable)
+registersymbol(Game_drinkscigsset_enable)
+
+alloc(Game_basepointer, 4)
+alloc(Game_update_enable, 4)
+alloc(Game_set_enable, 4)
+alloc(Game_timeset_enable, 4)
+alloc(Game_cashset_enable, 4)
+alloc(Game_drinkscigsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Game_basepointer)
+unregistersymbol(Game_update_enable)
+unregistersymbol(Game_set_enable)
+unregistersymbol(Game_timeset_enable)
+unregistersymbol(Game_cashset_enable)
+unregistersymbol(Game_drinkscigsset_enable)
+
+dealloc(Game_basepointer)
+dealloc(Game_update_enable)
+dealloc(Game_set_enable)
+dealloc(Game_timeset_enable)
+dealloc(Game_cashset_enable)
+dealloc(Game_drinkscigsset_enable)"""
+
+[[cheat]]
+id = "game-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Game Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Game_savedAOB)
+label(Game_returnhere)
+label(Game_originalcode)
+label(Game_exit)
+
+label(Game_update_exit)
+label(Game_set_exit)
+label(Game_timeset_exit)
+label(Game_cashset_exit)
+label(Game_drinkscigsset_exit)
+
+registersymbol(Game_savedAOB)
+
+//05188973 - 57                    - push edi
+//05188974 - 83 EC 04              - sub esp,04
+//05188977 - 8B 7D 08              - mov edi,[ebp+08]
+// Game:Update+a
+//0518897A - 8B 47 40              - mov eax,[edi+40]
+//0518897D - 3D 01000000           - cmp eax,00000001
+//05188982 - 75 34                 - jne 051889B8
+//05188984 - E8 4F010000           - call 05188AD8
+//05188989 - 83 EC 08              - sub esp,08
+aobscan(Game_searchedAOB, 8B 47 40 3D 01 00 00 00 75 34)
+
+alloc(Game_newmem, 2048, Game_searchedAOB)
+alloc(Game_temp1, 4, Game_searchedAOB)
+
+
+Game_newmem:
+mov [Game_temp1], ebx
+
+cmp dword ptr [Game_update_enable], #0
+je Game_update_exit
+mov [Game_basepointer], edi
+Game_update_exit:
+
+cmp dword ptr [Game_set_enable], #0
+je Game_set_exit
+Game_set_exit:
+
+cmp dword ptr [edi+8], #0
+je Game_drinkscigsset_exit
+mov ebx, [edi+8]
+
+cmp dword ptr [Game_timeset_enable], #0
+je Game_timeset_exit
+mov [ebx+50], #1
+Game_timeset_exit:
+
+cmp dword ptr [Game_cashset_enable], #0
+je Game_cashset_exit
+mov [ebx+54], #9999999
+Game_cashset_exit:
+
+cmp dword ptr [Game_drinkscigsset_enable], #0
+je Game_drinkscigsset_exit
+mov [ebx+58], #99
+mov [ebx+5c], #99
+Game_drinkscigsset_exit:
+
+mov ebx, [Game_temp1]
+
+
+Game_originalcode:
+db 3D 01 00 00 00
+//cmp eax,00000001
+
+
+Game_exit:
+jmp Game_returnhere
+
+
+Game_searchedAOB+3:
+Game_savedAOB:
+jmp Game_newmem
+Game_returnhere:
+
+
+[DISABLE]
+Game_savedAOB:
+db 3D 01 00 00 00
+//cmp eax,00000001
+
+unregistersymbol(Game_savedAOB)
+
+dealloc(Game_newmem)
+dealloc(Game_temp1)"""
+
+[[cheat]]
+id = "time-set-to-12-01am"
+name = "Time Set to 12.01am?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_timeset_enable"
+hops = []
+
+[[cheat]]
+id = "cash-set-to-massive"
+name = "Cash Set to Massive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_cashset_enable"
+hops = []
+
+[[cheat]]
+id = "drinks-cigs-set-to-massive"
+name = "Drinks & Cigs Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_drinkscigsset_enable"
+hops = []
+
+[[cheat]]
+id = "game-update-base-address"
+name = "Game Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "started"
+name = "_started"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "clockminuteselapsed"
+name = "_clockMinutesElapsed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x50",
+]
+
+[[cheat]]
+id = "cash"
+name = "_cash"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x54",
+]
+
+[[cheat]]
+id = "cigs"
+name = "_cigs"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x58",
+]
+
+[[cheat]]
+id = "drinks"
+name = "_drinks"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "activetutorialstep"
+name = "_activeTutorialStep"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x60",
+]
+
+[[cheat]]
+id = "indebttimestamp"
+name = "_inDebtTimestamp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x64",
+]
+
+[[cheat]]
+id = "complete"
+name = "_complete"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x68",
+]
+
+[[cheat]]
+id = "success"
+name = "_success"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x69",
+]
+
+[[cheat]]
+id = "lifetimerevenue"
+name = "_lifetimeRevenue"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "payrollexpenses"
+name = "_payrollExpenses"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x70",
+]
+
+[[cheat]]
+id = "investmentexpenses"
+name = "_investmentExpenses"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x74",
+]
+
+[[cheat]]
+id = "promoexpenses"
+name = "_promoExpenses"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x78",
+]
+
+[[cheat]]
+id = "timerushed"
+name = "_timeRushed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "accessoriesearned"
+name = "_accessoriesEarned"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x80",
+]
+
+[[cheat]]
+id = "adspurchasedtoday"
+name = "_adsPurchasedToday"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x84",
+]
+
+[[cheat]]
+id = "hadlowvices"
+name = "_hadLowVices"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = [
+    "+0x8",
+    "+0x88",
+]
+
+[[cheat]]
+id = "pauseable"
+name = "_pauseable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "paused"
+name = "_paused"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = ["+0x45"]
+
+[[cheat]]
+id = "prioritypause"
+name = "_priorityPause"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = ["+0x46"]
+
+[[cheat]]
+id = "pausetimestamp"
+name = "_pauseTimestamp"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "totalpausedtime"
+name = "_totalPausedTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "loadingoverlayindex"
+name = "_loadingOverlayIndex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Game_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "girlplayerdata-base-address-scan-initialization-activate-this-first"
+name = "GirlPlayerData Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GirlPlayerData_basepointer)
+registersymbol(GirlPlayerData_update_enable)
+registersymbol(GirlPlayerData_set_enable)
+registersymbol(GirlPlayerData_stressset_enable)
+registersymbol(GirlPlayerData_payset_enable)
+registersymbol(GirlPlayerData_talentstyleset_enable)
+
+alloc(GirlPlayerData_basepointer, 4)
+alloc(GirlPlayerData_update_enable, 4)
+alloc(GirlPlayerData_set_enable, 4)
+alloc(GirlPlayerData_stressset_enable, 4)
+alloc(GirlPlayerData_payset_enable, 4)
+alloc(GirlPlayerData_talentstyleset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(GirlPlayerData_basepointer)
+unregistersymbol(GirlPlayerData_update_enable)
+unregistersymbol(GirlPlayerData_set_enable)
+unregistersymbol(GirlPlayerData_stressset_enable)
+unregistersymbol(GirlPlayerData_payset_enable)
+unregistersymbol(GirlPlayerData_talentstyleset_enable)
+
+dealloc(GirlPlayerData_basepointer)
+dealloc(GirlPlayerData_update_enable)
+dealloc(GirlPlayerData_set_enable)
+dealloc(GirlPlayerData_stressset_enable)
+dealloc(GirlPlayerData_payset_enable)
+dealloc(GirlPlayerData_talentstyleset_enable)"""
+
+[[cheat]]
+id = "girlplayerdata-base-address-scan-to-activate-mouseover-girl-staffing-portrait-to-update-mouseover-girl-staffing-portrait"
+name = "GirlPlayerData Base Address Scan (To Activate: Mouseover Girl Staffing Portrait, To Update: Mouseover Girl Staffing Portrait)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GirlPlayerData_savedAOB)
+label(GirlPlayerData_returnhere)
+label(GirlPlayerData_originalcode)
+label(GirlPlayerData_exit)
+
+label(GirlPlayerData_update_exit)
+label(GirlPlayerData_set_exit)
+label(GirlPlayerData_stressset_exit)
+label(GirlPlayerData_payset_exit)
+label(GirlPlayerData_talentstyleset_exit)
+
+registersymbol(GirlPlayerData_savedAOB)
+
+//051E80AA - 89 85 E4FEFFFF        - mov [ebp-0000011C],eax
+//051E80B0 - 39 3F                 - cmp [edi],edi
+// UiStudioBarBooth:RefreshStatsBubble+14a
+//051E80B2 - 8B 47 30              - mov eax,[edi+30]
+//051E80B5 - 89 85 48FFFFFF        - mov [ebp-000000B8],eax
+//051E80BB - 8D 85 48FFFFFF        - lea eax,[ebp-000000B8]
+//051E80C1 - 83 EC 0C              - sub esp,0C
+//051E80C4 - 50                    - push eax
+//051E80C5 - E8 BE43F6FF           - call 0514C488
+aobscan(GirlPlayerData_searchedAOB, 8B 47 30 89 85 48 FF FF FF)
+
+alloc(GirlPlayerData_newmem, 2048, GirlPlayerData_searchedAOB)
+
+
+GirlPlayerData_newmem:
+cmp dword ptr [GirlPlayerData_update_enable], #0
+je GirlPlayerData_update_exit
+mov [GirlPlayerData_basepointer], edi
+GirlPlayerData_update_exit:
+
+cmp dword ptr [GirlPlayerData_set_enable], #0
+je GirlPlayerData_set_exit
+GirlPlayerData_set_exit:
+
+cmp dword ptr [GirlPlayerData_stressset_enable], #0
+je GirlPlayerData_stressset_exit
+mov [edi+30], #0
+mov eax, #0
+GirlPlayerData_stressset_exit:
+
+cmp dword ptr [GirlPlayerData_payset_enable], #0
+je GirlPlayerData_payset_exit
+mov [edi+24], #0
+GirlPlayerData_payset_exit:
+
+cmp dword ptr [GirlPlayerData_talentstyleset_enable], #0
+je GirlPlayerData_talentstyleset_exit
+mov [edi+28], #250
+mov [edi+2c], #250
+GirlPlayerData_talentstyleset_exit:
+
+
+GirlPlayerData_originalcode:
+db 89 85 48 FF FF FF
+//mov [ebp-000000B8],eax
+
+
+GirlPlayerData_exit:
+jmp GirlPlayerData_returnhere
+
+
+GirlPlayerData_searchedAOB + 3:
+GirlPlayerData_savedAOB:
+jmp GirlPlayerData_newmem
+nop
+GirlPlayerData_returnhere:
+
+
+[DISABLE]
+GirlPlayerData_savedAOB:
+db 89 85 48 FF FF FF
+//mov [ebp-000000B8],eax
+
+unregistersymbol(GirlPlayerData_savedAOB)
+
+dealloc(GirlPlayerData_newmem)"""
+
+[[cheat]]
+id = "stress-set-to-0"
+name = "Stress Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_stressset_enable"
+hops = []
+
+[[cheat]]
+id = "pay-owed-set-to-0"
+name = "Pay Owed Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_payset_enable"
+hops = []
+
+[[cheat]]
+id = "talent-style-set-to-max"
+name = "Talent & Style Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_talentstyleset_enable"
+hops = []
+
+[[cheat]]
+id = "girlplayerdata-update-base-address"
+name = "GirlPlayerData Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "girldefinition-type-girldefinition-unknown"
+name = "_girlDefinition (type: GirlDefinition) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "diseasedefinition-type-diseasedefinition-unknown"
+name = "_diseaseDefinition (type: DiseaseDefinition) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "accessories-type-system-collections-generic-listgirlaccessoryplayerdata-unknown"
+name = "_accessories (type: System.Collections.Generic.ListGirlAccessoryPlayerData) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "locationvisitcounts-type-system-collections-generic-dictionarylocationdefinition-system-int32-unknown"
+name = "_locationVisitCounts (type: System.Collections.Generic.DictionaryLocationDefinition,System.Int32) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "girlresourcechangedevent-type-girlplayerdata-girldelegate-unknown"
+name = "GirlResourceChangedEvent (type: GirlPlayerData.GirlDelegate) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "recruittimestamp"
+name = "_recruitTimestamp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "slotindex"
+name = "_slotIndex"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "payowed"
+name = "_payOwed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "talent"
+name = "_talent"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "style"
+name = "_style"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "stress"
+name = "_stress"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "drinksconsumed"
+name = "_drinksConsumed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "cigsconsumed"
+name = "_cigsConsumed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "diseasescaught"
+name = "_diseasesCaught"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "cashearned"
+name = "_cashEarned"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "cashconsumed"
+name = "_cashConsumed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GirlPlayerData_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "savedata-base-address-scan-initialization-activate-this-first"
+name = "SaveData Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(SaveData_basepointer)
+registersymbol(SaveData_update_enable)
+registersymbol(SaveData_set_enable)
+
+alloc(SaveData_basepointer, 4)
+alloc(SaveData_update_enable, 4)
+alloc(SaveData_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(SaveData_basepointer)
+unregistersymbol(SaveData_update_enable)
+unregistersymbol(SaveData_set_enable)
+
+dealloc(SaveData_basepointer)
+dealloc(SaveData_update_enable)
+dealloc(SaveData_set_enable)"""
+
+[[cheat]]
+id = "savedata-base-address-scan-to-activate-view-wardrobe-to-update-view-wardrobe"
+name = "SaveData Base Address Scan (To Activate: View Wardrobe, To Update: View Wardrobe)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(SaveData_savedAOB)
+label(SaveData_returnhere)
+label(SaveData_originalcode)
+label(SaveData_exit)
+
+label(SaveData_update_exit)
+label(SaveData_set_exit)
+
+registersymbol(SaveData_savedAOB)
+
+//0509E6BC - E8 EFDBFCFF           - call 0506C2B0
+//0509E6C1 - 8B 40 08              - mov eax,[eax+08]
+// UiWardrobeWindow:Refresh+164
+//0509E6C4 - 8B 40 30              - mov eax,[eax+30]
+//0509E6C7 - 85 C0                 - test eax,eax
+//0509E6C9 - 7E 1F                 - jle 0509E6EA
+//0509E6CB - 8B 46 0C              - mov eax,[esi+0C]
+//0509E6CE - 3D 05000000           - cmp eax,00000005
+aobscan(SaveData_searchedAOB, 8B 40 30 85 C0 7E 1F)
+
+alloc(SaveData_newmem, 2048, SaveData_searchedAOB)
+
+
+SaveData_newmem:
+cmp dword ptr [SaveData_update_enable], #0
+je SaveData_update_exit
+mov [SaveData_basepointer], eax
+SaveData_update_exit:
+
+cmp dword ptr [SaveData_set_enable], #0
+je SaveData_set_exit
+mov [eax+30], #999
+SaveData_set_exit:
+
+
+SaveData_originalcode:
+db 8B 40 30 85 C0
+//mov eax,[eax+30]
+//test eax,eax
+
+
+SaveData_exit:
+jmp SaveData_returnhere
+
+
+SaveData_searchedAOB:
+SaveData_savedAOB:
+jmp SaveData_newmem
+SaveData_returnhere:
+
+
+[DISABLE]
+SaveData_savedAOB:
+db 8B 40 30 85 C0
+//mov eax,[eax+30]
+//test eax,eax
+
+unregistersymbol(SaveData_savedAOB)
+
+dealloc(SaveData_newmem)"""
+
+[[cheat]]
+id = "tokens-set-to-massive"
+name = "Tokens Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SaveData_set_enable"
+hops = []
+
+[[cheat]]
+id = "savedata-update-base-address"
+name = "SaveData Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SaveData_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SaveData_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "besttrophy"
+name = "bestTrophy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SaveData_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "highscore"
+name = "highScore"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SaveData_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "tokens"
+name = "tokens"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SaveData_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "totaltokens"
+name = "totalTokens"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SaveData_basepointer"
+hops = ["+0x34"]

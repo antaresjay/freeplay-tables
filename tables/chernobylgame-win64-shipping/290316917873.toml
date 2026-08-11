@@ -1,0 +1,678 @@
+[game]
+name = "Chernobylite"
+exe = "chernobylgame-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by cfemen. Source: https://fearlessrevolution.com/viewtopic.php?t=10558"
+verified = []
+author = "cfemen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-48725"
+name = "Enable 48725"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(aobConstruct,$process,48 89 5C 24 10 48 89 74 24 18 55 57 41 54 41 56 41 57 48 8D AC 24 50 FF FF FF) // should be unique
+registersymbol(aobConstruct)
+
+aobscanmodule(aobFName_FName,$process,89 5C 24 08 57 48 83 EC 30 48 8B D9 48 89 54 24 20 33 C9 41 8B F8 4C 8B DA) // should be unique
+registersymbol(aobFName_FName)
+
+aobscanmodule(aobStaticFind,$process, 48 89 5C 24 08 48 89 74 24 18 55 57 41 54 41 56 41 57 48 8B EC 48 83 EC 60 80) // should be unique
+registersymbol(aobStaticFind)
+
+aobscanmodule(aobGetGameEngine,$process,48 8B 88 80 07 00 00 48 8B 01) // should be unique
+alloc(newmem,$1000,aobGetGameEngine)
+
+aobscanmodule(aobFNameToString,$process,48 89 5C 24 18 48 89 74 24 20 57 48 83 EC 30 8B 01 48 8B F1 44 8B 49 04 8B F8)
+registersymbol(aobFNameToString)
+
+label(code)
+label(return)
+label(pGEngine)
+registersymbol(pGEngine)
+
+newmem:
+
+code:
+  mov [pGEngine],rax
+  mov rcx,[rax+00000780]
+  jmp return
+pGEngine:
+dq 0
+aobGetGameEngine:
+  jmp newmem
+  nop 2
+return:
+registersymbol(aobGetGameEngine)
+
+
+alloc(CreateConsole,$1000,$process)
+registersymbol(CreateConsole)
+
+CreateConsole:
+push rbx
+sub rsp,70
+mov rdi,pGEngine
+mov rdi,[rdi]
+mov rax,[rdi+F0]
+mov rdi,[rdi+780]
+xorps xmm0,xmm0
+lea rcx,[rsp+20]
+mov [rsp+20],rax
+mov [rsp+28],rdi
+movdqu [rsp+30],xmm0
+movdqu [rsp+40],xmm0
+movdqu [rsp+50],xmm0
+mov r11,aobConstruct
+call r11
+mov [rdi+40],rax
+add rsp,70
+pop rbx
+ret
+
+
+[DISABLE]
+
+
+dealloc(CreateConsole)
+
+aobGetGameEngine:
+  db 48 8B 88 80 07 00 00
+
+dealloc(newmem)
+
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "allow-commands"
+name = "Allow Commands"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ChernobylGame-Win64-Shipping.exe
+  Version: 
+  Date   : 2022-05-20
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(aobExec,ChernobylGame-Win64-Shipping.exe,FF 90 30 02 00 00 84 C0 0F 85 CD) // should be unique
+alloc(newmem2,$1000,aobExec)
+
+label(code2)
+label(return2)
+label(bExec)
+registersymbol(bExec)
+
+newmem2:
+
+code2:
+  mov byte ptr[bExec],1
+  call qword ptr [rax+00000230] // Hero
+  mov byte ptr[bExec],0
+  test al,al
+  jne return2
+
+  // gameinstance:
+  mov rcx,pGEngine
+  mov rcx,[rcx]
+  test rcx,rcx
+  je return2
+
+  mov rcx,[rcx+DE8]
+  mov rax,[rcx]
+  mov r9,rbx
+  mov r8,rbp
+  mov rdx,r14
+  mov byte ptr[bExec],1
+  call qword ptr[rax+230]
+  mov byte ptr[bExec],0
+
+  jmp return2
+bExec:
+db 0
+aobExec:
+  jmp newmem2
+  nop
+return2:
+registersymbol(aobExec)
+
+
+/////
+
+
+aobscanmodule(aobCheckExecFlag,ChernobylGame-Win64-Shipping.exe,F7 80 B0 00 00 00 00 02 00 00) // should be unique
+alloc(newmem,$1000,aobCheckExecFlag)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  cmp byte ptr[bExec],0
+  je short @f
+   or [rax+b0],200
+  @@:
+  test [rax+000000B0],00000200
+  jmp return
+
+aobCheckExecFlag:
+  jmp newmem
+  nop 5
+return:
+registersymbol(aobCheckExecFlag)
+
+
+[DISABLE]
+
+aobCheckExecFlag:
+  db F7 80 B0 00 00 00 00 02 00 00
+
+unregistersymbol(aobCheckExecFlag)
+dealloc(newmem)
+
+
+aobExec:
+  db FF 90 30 02 00 00
+
+unregistersymbol(aobExec)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "no-recoil"
+name = "No Recoil"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ChernobylGame-Win64-Shipping.exe
+  Version: 
+  Date   : 2022-11-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobTimeline,ChernobylGame-Win64-Shipping.exe,F3 42 0F 11 34 38) // should be unique
+alloc(newmem,$1000,aobTimeline)
+
+label(code)
+label(return)
+label(Skip)
+label(WeaponRecoil)
+newmem:
+
+code:
+  push rbx
+  push rcx
+  mov rbx,pGEngine
+  mov rbx,[rbx]
+  test rbx,rbx
+  je Skip
+   mov rbx,[rbx+DE8]
+   test rbx,rbx
+   je Skip
+   mov rbx,[rbx+38]
+   test rbx,rbx
+   je Skip
+    mov rbx,[rbx]
+    test rbx,rbx
+    je Skip
+     mov rbx,[rbx+30]
+     test rbx,rbx
+     je Skip
+      mov rbx,[rbx+260]
+      add rbx,1230
+      lea rcx,[rax+r15]
+      cmp rbx,rcx
+      je WeaponRecoil
+       sub rbx,4
+       cmp rbx,rcx
+       je WeaponRecoil
+  Skip:
+  pop rcx
+  pop rbx
+  movss [rax+r15],xmm6
+  jmp return
+WeaponRecoil:
+ pop rcx
+ pop rbx
+ jmp return
+
+aobTimeline:
+  jmp newmem
+  nop
+return:
+registersymbol(aobTimeline)
+
+[DISABLE]
+
+aobTimeline:
+  db F3 42 0F 11 34 38
+
+unregistersymbol(aobTimeline)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-alert"
+name = "No Alert"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ChernobylGame-Win64-Shipping.exe
+  Version: 
+  Date   : 2022-11-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(aobAddAlert,$process,48 8B C4 55 53 57 41 54 41 57 48 8D A8 08 FC FF FF)
+registersymbol(aobAddAlert)
+
+aobAddAlert:
+db C3
+
+[DISABLE]
+
+
+aobAddAlert:
+db 48
+
+unregistersymbol(aobAddAlert)"""
+
+[[cheat]]
+id = "psyche-disabled-set-to-1"
+name = "Psyche Disabled? (Set To 1)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x1c50",
+]
+
+[[cheat]]
+id = "skill-points"
+name = "Skill Points:"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x2ae0",
+]
+
+[[cheat]]
+id = "crouch-speed"
+name = "Crouch Speed:"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0x780",
+    "+0x78",
+    "+0x118",
+    "+0x340",
+]
+
+[[cheat]]
+id = "run-speed"
+name = "Run Speed:"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0x780",
+    "+0x78",
+    "+0x118",
+    "+0x34c",
+]
+
+[[cheat]]
+id = "human-headshot-multiplier-x"
+name = "Human Headshot Multiplier x?"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ChernobylGame-Win64-Shipping.exe
+  Version: 
+  Date   : 2022-11-12
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobACGSoldier_CGTakeDamage,ChernobylGame-Win64-Shipping.exe,4C 8B DC 55 49 8D AB 98 FE FF FF 48 81 EC 60 02 00 00 41 0F 29 73 A8) // should be unique
+alloc(newmem,$1000,aobACGSoldier_CGTakeDamage)
+
+label(code)
+label(return)
+label(fHeadshotMul)
+registersymbol(fHeadshotMul)
+
+newmem:
+
+code:
+  test r8,r8
+  je short @f
+   cmp dword ptr[r8+11],1 // limb head?
+   jne short @f
+    mulss xmm1,[fHeadshotMul]
+  @@:
+  mov r11,rsp
+  push rbp
+  lea rbp,[r11-00000168]
+  jmp return
+fHeadshotMul:
+dd (float)2
+
+aobACGSoldier_CGTakeDamage:
+  jmp newmem
+  nop 6
+return:
+registersymbol(aobACGSoldier_CGTakeDamage)
+
+[DISABLE]
+
+aobACGSoldier_CGTakeDamage:
+  db 4C 8B DC 55 49 8D AB 98 FE FF FF
+
+unregistersymbol(aobACGSoldier_CGTakeDamage)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage
+
+ChernobylGame-Win64-Shipping.ACGChernohost::CGTakeDamage+8D: 49 8B 73 18           - mov rsi,[r11+18]
+ChernobylGame-Win64-Shipping.ACGChernohost::CGTakeDamage+91: 41 0F 28 73 F0        - movaps xmm6,[r11-10]
+ChernobylGame-Win64-Shipping.ACGChernohost::CGTakeDamage+96: 49 8B E3              - mov rsp,r11
+ChernobylGame-Win64-Shipping.ACGChernohost::CGTakeDamage+99: 5F                    - pop rdi
+ChernobylGame-Win64-Shipping.ACGChernohost::CGTakeDamage+9A: C3                    - ret 
+ChernobylGame-Win64-Shipping.exe+F2621B: CC                    - int 3 
+ChernobylGame-Win64-Shipping.exe+F2621C: CC                    - int 3 
+ChernobylGame-Win64-Shipping.exe+F2621D: CC                    - int 3 
+ChernobylGame-Win64-Shipping.exe+F2621E: CC                    - int 3 
+ChernobylGame-Win64-Shipping.exe+F2621F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage: 4C 8B DC              - mov r11,rsp
+// ---------- DONE INJECTING  ----------
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+3: 55                    - push rbp
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+4: 49 8D AB 98 FE FF FF  - lea rbp,[r11-00000168]
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+B: 48 81 EC 60 02 00 00  - sub rsp,00000260
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+12: 41 0F 29 73 A8        - movaps [r11-58],xmm6
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+17: 48 8B 05 AA 5C 14 04  - mov rax,[ChernobylGame-Win64-Shipping.__security_cookie]
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+1E: 48 33 C4              - xor rax,rsp
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+21: 48 89 85 A8 00 00 00  - mov [rbp+000000A8],rax
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+28: 49 89 5B F0           - mov [r11-10],rbx
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+2C: 49 8B D0              - mov rdx,r8
+ChernobylGame-Win64-Shipping.ACGSoldier::CGTakeDamage+2F: 49 89 73 E8           - mov [r11-18],rsi
+}"""
+
+[[cheat]]
+id = "x"
+name = "x?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeadshotMul"
+hops = []
+
+[[cheat]]
+id = "clip"
+name = "Clip"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x470",
+]
+
+[[cheat]]
+id = "max-clip"
+name = "Max Clip"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x474",
+]
+
+[[cheat]]
+id = "sway-set-to-0"
+name = "Sway? (Set To 0)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x4d8",
+]
+
+[[cheat]]
+id = "reduced-recoil"
+name = "Reduced Recoil?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 1
+choices = [
+    "1:False",
+    "9999999:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x484",
+]
+
+[[cheat]]
+id = "aim-fov"
+name = "Aim FOV "
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x54c",
+]
+
+[[cheat]]
+id = "thermal-set-to-1"
+name = "Thermal? (Set To 1)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x559",
+]
+
+[[cheat]]
+id = "damage-min"
+name = "Damage Min"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x4a8",
+]
+
+[[cheat]]
+id = "damage-max"
+name = "Damage Max"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x4ac",
+]
+
+[[cheat]]
+id = "spread"
+name = "Spread"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pGEngine"
+hops = [
+    "+0xde8",
+    "+0x38",
+    "+0x0",
+    "+0x30",
+    "+0x260",
+    "+0x1770",
+    "+0x4c4",
+]

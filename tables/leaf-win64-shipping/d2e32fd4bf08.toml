@@ -1,0 +1,638 @@
+[game]
+name = "Nexus 5X"
+exe = "leaf-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by CannonFodder. Source: https://fearlessrevolution.com/viewtopic.php?t=39845"
+verified = []
+author = "CannonFodder"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "get-player-leader-experience-on-turn-pass"
+name = "Get Player Leader Experience On Turn Pass"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Leaf-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-06-23
+  Author : CannonFodder
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(ExpReadInject,Leaf-Win64-Shipping.exe,8B 43 50 3B C2) // should be unique
+alloc(newmem,$1000,ExpReadInject)
+
+label(code)
+label(return)
+registersymbol(leaderAddr)
+
+newmem:
+  mov [leaderAddr],rbx
+code:
+  mov eax,[rbx+50]
+  cmp eax,edx
+  jmp return
+
+leaderAddr:
+  dq 0
+
+ExpReadInject:
+  jmp newmem
+return:
+registersymbol(ExpReadInject)
+
+[DISABLE]
+
+ExpReadInject:
+  db 8B 43 50 3B C2
+
+unregistersymbol(*)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Leaf-Win64-Shipping.exe"+47F4D84
+
+"Leaf-Win64-Shipping.exe"+47F4D60: 40 53                       - push rbx
+"Leaf-Win64-Shipping.exe"+47F4D62: 48 83 EC 20                 - sub rsp,20
+"Leaf-Win64-Shipping.exe"+47F4D66: 48 3B 15 13 9B 86 02        - cmp rdx,["Leaf-Win64-Shipping.exe"+705E880]
+"Leaf-Win64-Shipping.exe"+47F4D6D: 48 8B D9                    - mov rbx,rcx
+"Leaf-Win64-Shipping.exe"+47F4D70: 75 61                       - jne "Leaf-Win64-Shipping.exe"+47F4DD3
+"Leaf-Win64-Shipping.exe"+47F4D72: 8B 49 54                    - mov ecx,[rcx+54]
+"Leaf-Win64-Shipping.exe"+47F4D75: 83 F9 06                    - cmp ecx,06
+"Leaf-Win64-Shipping.exe"+47F4D78: 7C 59                       - jl "Leaf-Win64-Shipping.exe"+47F4DD3
+"Leaf-Win64-Shipping.exe"+47F4D7A: 8D 04 89                    - lea eax,[rcx+rcx*4]
+"Leaf-Win64-Shipping.exe"+47F4D7D: 8D 14 85 1E 00 00 00        - lea edx,[rax*4+0000001E]
+// ---------- INJECTING HERE ----------
+"Leaf-Win64-Shipping.exe"+47F4D84: 8B 43 50                    - mov eax,[rbx+50]
+// ---------- DONE INJECTING  ----------
+"Leaf-Win64-Shipping.exe"+47F4D87: 3B C2                       - cmp eax,edx
+"Leaf-Win64-Shipping.exe"+47F4D89: 7C 48                       - jl "Leaf-Win64-Shipping.exe"+47F4DD3
+"Leaf-Win64-Shipping.exe"+47F4D8B: 2B C2                       - sub eax,edx
+"Leaf-Win64-Shipping.exe"+47F4D8D: BA 3C 06 00 00              - mov edx,0000063C
+"Leaf-Win64-Shipping.exe"+47F4D92: 89 43 50                    - mov [rbx+50],eax
+"Leaf-Win64-Shipping.exe"+47F4D95: 8D 41 01                    - lea eax,[rcx+01]
+"Leaf-Win64-Shipping.exe"+47F4D98: 8B 0D 62 7E 8B 02           - mov ecx,["Leaf-Win64-Shipping.exe"+70ACC00]
+"Leaf-Win64-Shipping.exe"+47F4D9E: 89 43 54                    - mov [rbx+54],eax
+"Leaf-Win64-Shipping.exe"+47F4DA1: 65 48 8B 04 25 58 00 00 00  - mov rax,gs:[00000058]
+"Leaf-Win64-Shipping.exe"+47F4DAA: 48 8B 0C C8                 - mov rcx,[rax+rcx*8]
+}"""
+
+[[cheat]]
+id = "experience"
+name = "Experience"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "leaderAddr"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "get-all-faction-resources-on-turn-pass"
+name = "Get All Faction Resources On Turn Pass"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Leaf-Win64-Shipping.exe
+  Version: 
+  Date   : 2026-06-22
+  Author : CannonFodder
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(ResourceTurnPassReadInject,Leaf-Win64-Shipping.exe,44 8B 41 70 44 03 C2) // should be unique
+alloc(newmem,$1000,ResourceTurnPassReadInject)
+
+label(code)
+label(return)
+registersymbol(playerAddr)
+
+newmem:
+  push rax
+  mov eax, [rcx+40]             // 玩家编号 (0~7)
+  cmp eax, 7
+  ja skip_store                 // 超出范围则跳过
+  push r10
+  mov r10, playerAddr           // 取得 playerAddr 的基址（安全 64 位立即数）
+  shl rax, 3                    // 索引 * 8
+  add r10, rax                  // r10 = playerAddr + 偏移
+  mov [r10], rcx                // 存入对应槽位
+  pop r10
+skip_store:
+  pop rax
+code:
+  mov r8d,[rcx+70]
+  add r8d,edx
+  jmp return
+
+playerAddr:
+  dq 0,0,0,0,0,0,0,0           // 8 个 qword，对应玩家 0~7
+
+ResourceTurnPassReadInject:
+  jmp newmem
+  nop 2
+return:
+registersymbol(ResourceTurnPassReadInject)
+
+[DISABLE]
+
+ResourceTurnPassReadInject:
+  db 44 8B 41 70 44 03 C2
+
+unregistersymbol(*)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Leaf-Win64-Shipping.exe"+4809C30
+
+"Leaf-Win64-Shipping.exe"+4809C11: 4C 8B C7              - mov r8,rdi
+"Leaf-Win64-Shipping.exe"+4809C14: 48 89 4C 24 20        - mov [rsp+20],rcx
+"Leaf-Win64-Shipping.exe"+4809C19: 48 8B CB              - mov rcx,rbx
+"Leaf-Win64-Shipping.exe"+4809C1C: 48 8B 10              - mov rdx,[rax]
+"Leaf-Win64-Shipping.exe"+4809C1F: E8 7C 69 FF FF        - call "Leaf-Win64-Shipping.exe"+48005A0
+"Leaf-Win64-Shipping.exe"+4809C24: 48 8B 5C 24 48        - mov rbx,[rsp+48]
+"Leaf-Win64-Shipping.exe"+4809C29: 48 83 C4 30           - add rsp,30
+"Leaf-Win64-Shipping.exe"+4809C2D: 5F                    - pop rdi
+"Leaf-Win64-Shipping.exe"+4809C2E: C3                    - ret 
+"Leaf-Win64-Shipping.exe"+4809C2F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+"Leaf-Win64-Shipping.exe"+4809C30: 44 8B 41 70           - mov r8d,[rcx+70]
+// ---------- DONE INJECTING  ----------
+"Leaf-Win64-Shipping.exe"+4809C34: 44 03 C2              - add r8d,edx
+"Leaf-Win64-Shipping.exe"+4809C37: 44 89 41 70           - mov [rcx+70],r8d
+"Leaf-Win64-Shipping.exe"+4809C3B: 79 08                 - jns "Leaf-Win64-Shipping.exe"+4809C45
+"Leaf-Win64-Shipping.exe"+4809C3D: C7 41 70 00 00 00 00  - mov [rcx+70],00000000
+"Leaf-Win64-Shipping.exe"+4809C44: C3                    - ret 
+"Leaf-Win64-Shipping.exe"+4809C45: BA 32 00 00 00        - mov edx,00000032
+"Leaf-Win64-Shipping.exe"+4809C4A: 41 8B C0              - mov eax,r8d
+"Leaf-Win64-Shipping.exe"+4809C4D: 44 3B C2              - cmp r8d,edx
+"Leaf-Win64-Shipping.exe"+4809C50: 0F 4F C2              - cmovg eax,edx
+"Leaf-Win64-Shipping.exe"+4809C53: 89 41 70              - mov [rcx+70],eax
+}"""
+
+[[cheat]]
+id = "race-special-resource"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "race-special-resource-2"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials-2"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support-2"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit-2"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "race-special-resource-3"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials-3"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support-3"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit-3"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "race-special-resource-4"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials-4"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support-4"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit-4"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "race-special-resource-5"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials-5"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support-5"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit-5"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "race-special-resource-6"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials-6"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support-6"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit-6"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "race-special-resource-7"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials-7"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support-7"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit-7"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "race-special-resource-8"
+name = "Race Special Resource"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "materials-8"
+name = "Materials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "support-8"
+name = "Support"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "credit-8"
+name = "Credit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerAddr"
+hops = ["+0x74"]

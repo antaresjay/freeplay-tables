@@ -1,0 +1,536 @@
+[game]
+name = "Final Fantasy II Pixel Remaster"
+exe = "ii.exe"
+notes = "Converted from a Cheat Engine table by cray. Source: https://fearlessrevolution.com/viewtopic.php?t=16865"
+verified = []
+author = "cray"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "encount-rate"
+name = "Encount Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : FINAL FANTASY II.exe
+  Version:
+  Date   : 2021-07-31
+  Author : Cray
+}
+
+[ENABLE]
+
+aobscanmodule(encountRateIndex,GameAssembly.dll,01 6F 28 8B 47 24) // should be unique
+alloc(newmem,$128,encountRateIndex)
+
+registersymbol(encountRateIndex)
+registersymbol(encountEnable)
+registersymbol(encountRateSet)
+
+label(encountEnable)
+label(encountRateSet)
+label(code)
+label(changeRate)
+label(resetRate)
+label(finish)
+label(return)
+
+newmem:
+
+code:
+  mov rcx,[encountEnable]
+  cmp rcx,1
+  je changeRate
+
+  mov rcx,ebp
+  jmp finish
+
+changeRate:
+  mov rcx,[encountRateSet]
+  cmp rcx,0
+  je resetRate
+  jmp finish
+
+resetRate:
+  mov [rdi+28],0
+  jmp finish
+
+finish:
+  add [rdi+28],rcx
+  mov eax,[rdi+24]
+  mov [encountEnable],0
+  jmp return
+
+encountEnable:
+  dq 1
+encountRateSet:
+  dq 0
+
+encountRateIndex:
+  jmp newmem
+  nop
+return:
+
+
+[DISABLE]
+
+encountRateIndex:
+  db 01 6F 28 8B 47 24
+
+unregistersymbol(encountRateIndex)
+unregistersymbol(encountEnable)
+unregistersymbol(encountRateSet)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECT_NO_ENCOUNTION POINT: INJECT_NO_ENCOUNT
+
+GameAssembly.dll+77F671: 48 C1 E0 04     - shl rax,04
+GameAssembly.dll+77F675: 49 03 C3        - add rax,r11
+GameAssembly.dll+77F678: E9 15 FF FF FF  - jmp GameAssembly.dll+77F592
+GameAssembly.dll+77F67D: 8B C5           - mov eax,ebp
+GameAssembly.dll+77F67F: 45 33 C0        - xor r8d,r8d
+GameAssembly.dll+77F682: 8B D0           - mov edx,eax
+GameAssembly.dll+77F684: E8 77 7A D5 FF  - call GameAssembly.dll+4D7100
+GameAssembly.dll+77F689: 8B E8           - mov ebp,eax
+GameAssembly.dll+77F68B: 4C 8B 4B 20     - mov r9,[rbx+20]
+GameAssembly.dll+77F68F: BA FF FF FF FF  - mov edx,FFFFFFFF
+// ---------- INJECT_NO_ENCOUNTING HERE ----------
+INJECT_NO_ENCOUNT: 01 6F 28        - add [rdi+28],ebp
+// ---------- DONE INJECT_NO_ENCOUNTING  ----------
+GameAssembly.dll+77F697: 8B 47 24        - mov eax,[rdi+24]
+GameAssembly.dll+77F69A: 2B 47 28        - sub eax,[rdi+28]
+GameAssembly.dll+77F69D: 85 C0           - test eax,eax
+GameAssembly.dll+77F69F: 7F 16           - jg GameAssembly.dll+77F6B7
+GameAssembly.dll+77F6A1: 48 8B 4F 38     - mov rcx,[rdi+38]
+GameAssembly.dll+77F6A5: 48 85 C9        - test rcx,rcx
+GameAssembly.dll+77F6A8: 74 0D           - je GameAssembly.dll+77F6B7
+GameAssembly.dll+77F6AA: 45 33 C0        - xor r8d,r8d
+GameAssembly.dll+77F6AD: 49 8B D1        - mov rdx,r9
+GameAssembly.dll+77F6B0: E8 FB 39 BE FF  - call GameAssembly.dll+3630B0
+}"""
+
+[[cheat]]
+id = "enable-f1"
+name = "Enable [F1]"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "encountEnable"
+hops = []
+
+[[cheat]]
+id = "rate"
+name = "Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+value = 0
+choices = [
+    "0:No Encount",
+    "1:1/4",
+    "2:1/2",
+    "3:3/4",
+    "4:×1 (Default)",
+    "8:×2",
+    "16:×4",
+    "32:×8",
+    "64:×16",
+    "128:×32",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "encountRateSet"
+hops = []
+
+[[cheat]]
+id = "item-never-less-than-1"
+name = "Item Never Less than 1"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : FINAL FANTASY II.exe
+  Version:
+  Date   : 2021-07-31
+  Author : Cray
+}
+
+[ENABLE]
+
+aobscanmodule(itemNeverLessIndex,GameAssembly.dll,89 50 14 48 83 C4 28 C3 E8 06) // should be unique
+alloc(newmem,$1000,itemNeverLessIndex)
+
+label(code)
+label(return)
+label(holdOne)
+label(finish)
+
+newmem:
+
+code:
+  cmp edx,1
+  jle holdOne
+
+  mov [rax+14],edx
+  jmp finish
+
+holdOne:
+  mov [rax+14],1
+  jmp finish
+
+finish:
+  add rsp,28
+  jmp return
+
+itemNeverLessIndex:
+  jmp newmem
+  nop 2
+
+return:
+registersymbol(itemNeverLessIndex)
+
+[DISABLE]
+
+itemNeverLessIndex:
+  db 89 50 14 48 83 C4 28
+
+unregistersymbol(itemNeverLessIndex)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+60AE2D
+
+GameAssembly.dll+60AE16: E8 D5 FD C0 FF  - call GameAssembly.dll+21ABF0
+GameAssembly.dll+60AE1B: CC              - int 3
+GameAssembly.dll+60AE1C: CC              - int 3
+GameAssembly.dll+60AE1D: CC              - int 3
+GameAssembly.dll+60AE1E: CC              - int 3
+GameAssembly.dll+60AE1F: CC              - int 3
+GameAssembly.dll+60AE20: 48 83 EC 28     - sub rsp,28
+GameAssembly.dll+60AE24: 48 8B 41 78     - mov rax,[rcx+78]
+GameAssembly.dll+60AE28: 48 85 C0        - test rax,rax
+GameAssembly.dll+60AE2B: 74 08           - je GameAssembly.dll+60AE35
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+60AE2D: 89 50 14        - mov [rax+14],edx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+60AE30: 48 83 C4 28     - add rsp,28
+GameAssembly.dll+60AE34: C3              - ret
+GameAssembly.dll+60AE35: E8 B6 FD C0 FF  - call GameAssembly.dll+21ABF0
+GameAssembly.dll+60AE3A: CC              - int 3
+GameAssembly.dll+60AE3B: CC              - int 3
+GameAssembly.dll+60AE3C: CC              - int 3
+GameAssembly.dll+60AE3D: CC              - int 3
+GameAssembly.dll+60AE3E: CC              - int 3
+GameAssembly.dll+60AE3F: CC              - int 3
+GameAssembly.dll+60AE40: 89 51 6C        - mov [rcx+6C],edx
+}"""
+
+[[cheat]]
+id = "1st"
+name = "1st"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x20",
+    "+0x28",
+    "+0x10",
+    "+0x14",
+]
+
+[[cheat]]
+id = "2nd"
+name = "2nd"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x28",
+    "+0x38",
+    "+0x78",
+    "+0x14",
+]
+
+[[cheat]]
+id = "3rd"
+name = "3rd"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x30",
+    "+0x28",
+    "+0x10",
+    "+0x14",
+]
+
+[[cheat]]
+id = "4th"
+name = "4th"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x38",
+    "+0x28",
+    "+0x10",
+    "+0x14",
+]
+
+[[cheat]]
+id = "1st-2"
+name = "1st"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x20",
+    "+0x28",
+    "+0x10",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "2nd-2"
+name = "2nd"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x28",
+    "+0x38",
+    "+0x78",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "3rd-2"
+name = "3rd"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x30",
+    "+0x28",
+    "+0x10",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "4th-2"
+name = "4th"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x38",
+    "+0x28",
+    "+0x10",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "1st-3"
+name = "1st"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x20",
+    "+0x28",
+    "+0x10",
+    "+0x18",
+]
+
+[[cheat]]
+id = "2nd-3"
+name = "2nd"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x28",
+    "+0x38",
+    "+0x78",
+    "+0x18",
+]
+
+[[cheat]]
+id = "3rd-3"
+name = "3rd"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x30",
+    "+0x28",
+    "+0x10",
+    "+0x18",
+]
+
+[[cheat]]
+id = "4th-3"
+name = "4th"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GameAssembly.dll"
+offset = "0x1abf918"
+hops = [
+    "+0xb8",
+    "+0x0",
+    "+0x80",
+    "+0x50",
+    "+0x38",
+    "+0x28",
+    "+0x10",
+    "+0x18",
+]

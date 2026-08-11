@@ -1,0 +1,1244 @@
+[game]
+name = "Pro Cycling Manager 2015"
+exe = "shinkansen_pro_cycling_manager_2015.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1953"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "cyclists-effort-stats-base-address-scan-initialization-activate-this-first"
+name = "Cyclists Effort Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(cyclistseffortstats_basepointer)
+registersymbol(cyclistseffortstats_update_enable)
+registersymbol(cyclistseffortstats_set_enable)
+registersymbol(cyclistseffortstats_heartrateset_enable)
+registersymbol(cyclistseffortstats_heartrateset_value)
+registersymbol(cyclistseffortstats_barsset_enable)
+
+alloc(cyclistseffortstats_basepointer, 4)
+alloc(cyclistseffortstats_update_enable, 4)
+alloc(cyclistseffortstats_set_enable, 4)
+alloc(cyclistseffortstats_heartrateset_enable, 4)
+alloc(cyclistseffortstats_heartrateset_value, 4)
+alloc(cyclistseffortstats_barsset_enable, 4)
+
+cyclistseffortstats_heartrateset_value:
+dd (float)9999999
+
+
+[DISABLE]
+unregistersymbol(cyclistseffortstats_basepointer)
+unregistersymbol(cyclistseffortstats_update_enable)
+unregistersymbol(cyclistseffortstats_set_enable)
+unregistersymbol(cyclistseffortstats_heartrateset_enable)
+unregistersymbol(cyclistseffortstats_heartrateset_value)
+unregistersymbol(cyclistseffortstats_barsset_enable)
+
+dealloc(cyclistseffortstats_basepointer)
+dealloc(cyclistseffortstats_update_enable)
+dealloc(cyclistseffortstats_set_enable)
+dealloc(cyclistseffortstats_heartrateset_enable)
+dealloc(cyclistseffortstats_heartrateset_value)
+dealloc(cyclistseffortstats_barsset_enable)"""
+
+[[cheat]]
+id = "cyclists-effort-stats-base-address-scan-to-update-race-set-cyclist-effort-to-99"
+name = "Cyclists Effort Stats Base Address Scan (To Update: Race, Set Cyclist Effort to 99)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(cyclistseffortstats_savedAOB)
+label(cyclistseffortstats_returnhere)
+label(cyclistseffortstats_originalcode)
+label(cyclistseffortstats_exit)
+
+label(cyclistseffortstats_update_entry)
+label(cyclistseffortstats_update_exit)
+label(cyclistseffortstats_set_exit)
+label(cyclistseffortstats_heartrateset_exit)
+label(cyclistseffortstats_barsset_exit)
+
+registersymbol(cyclistseffortstats_savedAOB)
+
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC70 - 8B 89 44010000        - mov ecx,[ecx+00000144]
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC76 - 6A 04                 - push 04
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC78 - 8B 01                 - mov eax,[ecx]
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC7A - 8B 40 10              - mov eax,[eax+10]
+aobscan(cyclistseffortstats_searchedAOB, 8B 89 44 01 00 00 6A 04)
+
+alloc(cyclistseffortstats_newmem, 2048)
+
+
+cyclistseffortstats_newmem:
+
+// Check Normal Effort which should be set to (float)99
+// AI seems to be alwaya (float)65
+cmp dword ptr [ecx+194], #1120272384
+je cyclistseffortstats_update_entry
+
+// Check Individual Time-Trial Effort which should be set to (float)99
+// AI seems to be alwaya (float)70
+cmp dword ptr [ecx+1c0], #1120272384
+je cyclistseffortstats_update_entry
+
+// Check Team Time-Trial Effort which should be set to (float)99
+// AI seems to be alwaya (float)70
+cmp dword ptr [ecx+1d4], #1120272384
+jne cyclistseffortstats_barsset_exit
+
+cyclistseffortstats_update_entry:
+cmp dword ptr [cyclistseffortstats_update_enable], #0
+je cyclistseffortstats_update_exit
+mov [cyclistseffortstats_basepointer], ecx
+cyclistseffortstats_update_exit:
+
+cmp dword ptr [cyclistseffortstats_set_enable], #0
+je cyclistseffortstats_set_exit
+cyclistseffortstats_set_exit:
+
+cmp dword ptr [cyclistseffortstats_heartrateset_enable], #0
+je cyclistseffortstats_heartrateset_exit
+mov eax, [ecx+144]
+fld [cyclistseffortstats_heartrateset_value]
+fstp [eax+14]
+cyclistseffortstats_heartrateset_exit:
+
+cmp dword ptr [cyclistseffortstats_barsset_enable], #0
+je cyclistseffortstats_barsset_exit
+mov eax, [ecx+144]
+// Individual Time-Trial
+fld [eax+28]
+fstp [eax+20]
+// Team Time-Trial
+fld [eax+30]
+fstp [eax+24]
+// Normal
+fld [eax+50]
+fstp [eax+40]
+fld [eax+58]
+fstp [eax+44]
+fld [eax+58]
+fstp [eax+48]
+mov [eax+5c], (float)0
+cyclistseffortstats_barsset_exit:
+
+
+cyclistseffortstats_originalcode:
+db 8B 89 44 01 00 00
+//mov ecx,[ecx+00000144]
+
+
+cyclistseffortstats_exit:
+jmp cyclistseffortstats_returnhere
+
+
+cyclistseffortstats_searchedAOB:
+cyclistseffortstats_savedAOB:
+jmp cyclistseffortstats_newmem
+nop
+cyclistseffortstats_returnhere:
+
+
+[DISABLE]
+cyclistseffortstats_savedAOB:
+db 8B 89 44 01 00 00
+//mov ecx,[ecx+00000144]
+
+unregistersymbol(cyclistseffortstats_savedAOB)
+
+dealloc(cyclistseffortstats_newmem)"""
+
+[[cheat]]
+id = "heart-rate-set-to-heart-rate-value"
+name = "Heart Rate Set to Heart Rate Value?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_heartrateset_enable"
+hops = []
+
+[[cheat]]
+id = "heart-rate-value"
+name = "Heart Rate Value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_heartrateset_value"
+hops = []
+
+[[cheat]]
+id = "bars-set-to-max"
+name = "Bars Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_barsset_enable"
+hops = []
+
+[[cheat]]
+id = "cyclists-effort-stats-update-base-address"
+name = "Cyclists Effort Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "individual-time-trial-ai"
+name = "Individual Time-Trial AI"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "action"
+name = "Action"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Attack",
+    "4:Relay",
+    "5:Infinite relay",
+    "7:Maintain position",
+    "8:Effort cursor",
+    "9:Automatic",
+    "32:Fetch water bottles",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = ["+0x17c"]
+
+[[cheat]]
+id = "normal-effort"
+name = "Normal Effort"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "individual-time-trial-effort"
+name = "Individual Time-Trial Effort"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "team-time-trial-energy-spend"
+name = "Team Time-Trial Energy Spend"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "team-time-trial-effort"
+name = "Team Time-Trial Effort"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x0",
+]
+
+[[cheat]]
+id = "heart-rate"
+name = "Heart Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x14",
+]
+
+[[cheat]]
+id = "stamina-bar"
+name = "Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x20",
+]
+
+[[cheat]]
+id = "max-stamina-bar"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x24",
+]
+
+[[cheat]]
+id = "max-stamina-bar-2"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x28",
+]
+
+[[cheat]]
+id = "stamina-bar-2"
+name = "Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x24",
+]
+
+[[cheat]]
+id = "max-stamina-bar-3"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "max-stamina-bar-4"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x30",
+]
+
+[[cheat]]
+id = "stamina-bar-3"
+name = "Stamina Bar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x40",
+]
+
+[[cheat]]
+id = "resistance-bar"
+name = "Resistance Bar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x44",
+]
+
+[[cheat]]
+id = "attack-sprint-bar"
+name = "Attack & Sprint Bar"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x48",
+]
+
+[[cheat]]
+id = "max-stamina-bar-5"
+name = "Max Stamina Bar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "max-stamina-bar-6"
+name = "Max Stamina Bar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x50",
+]
+
+[[cheat]]
+id = "max-resistance-bar"
+name = "Max Resistance Bar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x54",
+]
+
+[[cheat]]
+id = "max-attack-sprint-bar"
+name = "Max Attack & Sprint Bar"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x58",
+]
+
+[[cheat]]
+id = "water-used"
+name = "Water Used"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistseffortstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "cyclists-stats-base-address-scan-initialization-activate-this-first"
+name = "Cyclists Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(cyclistsstats_basepointer)
+registersymbol(cyclistsstats_update_enable)
+registersymbol(cyclistsstats_set_enable)
+registersymbol(cyclistsstats_heartrateset_enable)
+registersymbol(cyclistsstats_heartrateset_value)
+registersymbol(cyclistsstats_barsset_enable)
+
+alloc(cyclistsstats_basepointer, 4)
+alloc(cyclistsstats_update_enable, 4)
+alloc(cyclistsstats_set_enable, 4)
+alloc(cyclistsstats_heartrateset_enable, 4)
+alloc(cyclistsstats_heartrateset_value, 4)
+alloc(cyclistsstats_barsset_enable, 4)
+
+cyclistsstats_heartrateset_value:
+dd (float)9999999
+
+[DISABLE]
+unregistersymbol(cyclistsstats_basepointer)
+unregistersymbol(cyclistsstats_update_enable)
+unregistersymbol(cyclistsstats_set_enable)
+unregistersymbol(cyclistsstats_heartrateset_enable)
+unregistersymbol(cyclistsstats_heartrateset_value)
+unregistersymbol(cyclistsstats_barsset_enable)
+
+dealloc(cyclistsstats_basepointer)
+dealloc(cyclistsstats_update_enable)
+dealloc(cyclistsstats_set_enable)
+dealloc(cyclistsstats_heartrateset_enable)
+dealloc(cyclistsstats_heartrateset_value)
+dealloc(cyclistsstats_barsset_enable)"""
+
+[[cheat]]
+id = "cyclists-stats-base-address-scan-to-update-race"
+name = "Cyclists Stats Base Address Scan (To Update: Race)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(cyclistsstats_savedAOB)
+label(cyclistsstats_returnhere)
+label(cyclistsstats_originalcode)
+label(cyclistsstats_exit)
+
+label(cyclistsstats_update_exit)
+label(cyclistsstats_set_exit)
+label(cyclistsstats_heartrateset_exit)
+label(cyclistsstats_barsset_exit)
+label(cyclistsstats_timetrial_update_exit)
+label(cyclistsstats_timetrial_set_exit)
+label(cyclistsstats_timetrial_heartrateset_exit)
+label(cyclistsstats_timetrial_barsset_exit)
+
+registersymbol(cyclistsstats_savedAOB)
+
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC70 - 8B 89 44010000        - mov ecx,[ecx+00000144]
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC76 - 6A 04                 - push 04
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC78 - 8B 01                 - mov eax,[ecx]
+//PCM.SFLB_IRC2_CWorld_IRC2_CWorld+2BC7A - 8B 40 10              - mov eax,[eax+10]
+aobscan(cyclistsstats_searchedAOB, 8B 89 44 01 00 00 6A 04)
+
+alloc(cyclistsstats_newmem, 2048)
+
+
+cyclistsstats_newmem:
+// Check Individual Time-Trial AI
+cmp dword ptr [ecx+1c8], #0
+jne cyclistsstats_timetrial_barsset_exit
+
+cmp dword ptr [cyclistsstats_update_enable], #0
+je cyclistsstats_timetrial_update_exit
+mov [cyclistsstats_basepointer], ecx
+cyclistsstats_timetrial_update_exit:
+
+cmp dword ptr [cyclistsstats_set_enable], #0
+je cyclistsstats_timetrial_set_exit
+cyclistsstats_timetrial_set_exit:
+
+cmp dword ptr [cyclistsstats_heartrateset_enable], #0
+je cyclistsstats_timetrial_heartrateset_exit
+mov eax, [ecx+144]
+fld [cyclistseffortstats_heartrateset_value]
+fstp [eax+14]
+cyclistsstats_timetrial_heartrateset_exit:
+
+cmp dword ptr [cyclistsstats_barsset_enable], #0
+je cyclistsstats_timetrial_barsset_exit
+mov eax, [ecx+144]
+fld [eax+28]
+fstp [eax+20]
+cyclistsstats_timetrial_barsset_exit:
+
+// If is Individual Time-Trial AI, also check Actions
+// Players seem to be 0 or 7, AI seems to be 4
+cmp dword ptr [ecx+17c], #4
+je cyclistsstats_barsset_exit
+
+cmp dword ptr [cyclistsstats_update_enable], #0
+je cyclistsstats_update_exit
+mov [cyclistsstats_basepointer], ecx
+cyclistsstats_update_exit:
+
+cmp dword ptr [cyclistsstats_set_enable], #0
+je cyclistsstats_set_exit
+cyclistsstats_set_exit:
+
+cmp dword ptr [cyclistsstats_heartrateset_enable], #0
+je cyclistsstats_heartrateset_exit
+mov eax, [ecx+144]
+fld [cyclistseffortstats_heartrateset_value]
+fstp [eax+14]
+cyclistsstats_heartrateset_exit:
+
+cmp dword ptr [cyclistsstats_barsset_enable], #0
+je cyclistsstats_barsset_exit
+mov eax, [ecx+144]
+fld [eax+50]
+fstp [eax+40]
+fld [eax+58]
+fstp [eax+44]
+fld [eax+58]
+fstp [eax+48]
+mov [eax+5c], (float)0
+cyclistsstats_barsset_exit:
+
+
+cyclistsstats_originalcode:
+db 8B 89 44 01 00 00
+//mov ecx,[ecx+00000144]
+
+
+cyclistsstats_exit:
+jmp cyclistsstats_returnhere
+
+
+cyclistsstats_searchedAOB:
+cyclistsstats_savedAOB:
+jmp cyclistsstats_newmem
+nop
+cyclistsstats_returnhere:
+
+
+[DISABLE]
+cyclistsstats_savedAOB:
+db 8B 89 44 01 00 00
+//mov ecx,[ecx+00000144]
+
+unregistersymbol(cyclistsstats_savedAOB)
+
+dealloc(cyclistsstats_newmem)"""
+
+[[cheat]]
+id = "heart-rate-set-to-heart-rate-value-2"
+name = "Heart Rate Set to Heart Rate Value?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_heartrateset_enable"
+hops = []
+
+[[cheat]]
+id = "heart-rate-value-2"
+name = "Heart Rate Value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_heartrateset_value"
+hops = []
+
+[[cheat]]
+id = "bars-set-to-max-2"
+name = "Bars Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_barsset_enable"
+hops = []
+
+[[cheat]]
+id = "cyclists-stats-update-base-address"
+name = "Cyclists Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "individual-time-trial-ai-2"
+name = "Individual Time-Trial AI"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "action-2"
+name = "Action"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Attack",
+    "4:Relay",
+    "5:Infinite relay",
+    "7:Maintain position",
+    "8:Effort cursor",
+    "9:Automatic",
+    "32:Fetch water bottles",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = ["+0x17c"]
+
+[[cheat]]
+id = "normal-effort-2"
+name = "Normal Effort"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "individual-time-trial-effort-2"
+name = "Individual Time-Trial Effort"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "team-time-trial-energy-spend-2"
+name = "Team Time-Trial Energy Spend"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "team-time-trial-effort-2"
+name = "Team Time-Trial Effort"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x0",
+]
+
+[[cheat]]
+id = "heart-rate-2"
+name = "Heart Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x14",
+]
+
+[[cheat]]
+id = "stamina-bar-4"
+name = "Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x20",
+]
+
+[[cheat]]
+id = "max-stamina-bar-7"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x24",
+]
+
+[[cheat]]
+id = "max-stamina-bar-8"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x28",
+]
+
+[[cheat]]
+id = "stamina-bar-5"
+name = "Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x24",
+]
+
+[[cheat]]
+id = "max-stamina-bar-9"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "max-stamina-bar-10"
+name = "Max Stamina Bar"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x30",
+]
+
+[[cheat]]
+id = "stamina-bar-6"
+name = "Stamina Bar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x40",
+]
+
+[[cheat]]
+id = "resistance-bar-2"
+name = "Resistance Bar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x44",
+]
+
+[[cheat]]
+id = "attack-sprint-bar-2"
+name = "Attack & Sprint Bar"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x48",
+]
+
+[[cheat]]
+id = "max-stamina-bar-11"
+name = "Max Stamina Bar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "max-stamina-bar-12"
+name = "Max Stamina Bar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x50",
+]
+
+[[cheat]]
+id = "max-resistance-bar-2"
+name = "Max Resistance Bar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x54",
+]
+
+[[cheat]]
+id = "max-attack-sprint-bar-2"
+name = "Max Attack & Sprint Bar"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x58",
+]
+
+[[cheat]]
+id = "water-used-2"
+name = "Water Used"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cyclistsstats_basepointer"
+hops = [
+    "+0x144",
+    "+0x5c",
+]

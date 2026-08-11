@@ -1,0 +1,237 @@
+[game]
+name = "Neptunia Shooter"
+exe = "neptuniashooter.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=9489"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_invulnerabilityset_enable)
+registersymbol(playerstats_livesset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_invulnerabilityset_enable, 4)
+alloc(playerstats_livesset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_invulnerabilityset_enable)
+unregistersymbol(playerstats_livesset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_invulnerabilityset_enable)
+dealloc(playerstats_livesset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_invulnerabilityset_exit)
+label(playerstats_livesset_exit)
+
+registersymbol(playerstats_originalcode)
+registersymbol(playerstats_savedAOB)
+
+//NeptuniaShooter.exe+106F0 - E8 3B000000           - call NeptuniaShooter.exe+10730
+// Accesses Lives
+//NeptuniaShooter.exe+106F5 - 0FBF 0D A017CA00      - movsx ecx,word ptr [NeptuniaShooter.exe+417A0]
+//NeptuniaShooter.exe+106FC - 6A 0E                 - push 0E
+//NeptuniaShooter.exe+106FE - BA 0A000000           - mov edx,0000000A
+//NeptuniaShooter.exe+10703 - E8 282D0000           - call NeptuniaShooter.exe+13430
+//NeptuniaShooter.exe+10708 - 83 C4 0C              - add esp,0C
+aobscan(playerstats_searchedAOB, 6A 0E BA 0A 00 00 00)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+alloc(playerstats_temp5, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+mov ebx, [playerstats_savedAOB-6]
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], ebx
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_invulnerabilityset_enable], #0
+je playerstats_invulnerabilityset_exit
+mov byte ptr [ebx-c], #99
+playerstats_invulnerabilityset_exit:
+
+cmp dword ptr [playerstats_livesset_enable], #0
+je playerstats_livesset_exit
+mov word ptr [ebx], #99
+playerstats_livesset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+readmem(playerstats_searchedAOB+2, 5)
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB+2:
+playerstats_savedAOB:
+jmp playerstats_newmem
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+readmem(playerstats_originalcode, 5)
+
+unregistersymbol(playerstats_originalcode)
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "invulnerability-set-to-invulnerability"
+name = "Invulnerability Set to Invulnerability"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_invulnerabilityset_enable"
+hops = []
+
+[[cheat]]
+id = "lives-set-to-massive"
+name = "Lives Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_livesset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "invulnerability-timer"
+name = "Invulnerability Timer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xfffffff4"]
+
+[[cheat]]
+id = "lives"
+name = "Lives"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]

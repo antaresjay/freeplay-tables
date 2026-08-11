@@ -1,0 +1,454 @@
+[game]
+name = "Grotesque Tactics 2 - Dungeons and Donuts"
+exe = "grotesquetactics.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4217"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-grotesque-tactics-2-script"
+name = "[X] <== Grotesque Tactics 2 Script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Game Title    : Grotesque Tactics - Dungeons & Donuts
+ Game Version  : 1.5.1.1
+ Process Name  : GrotesqueTactics.exe
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 24-Nov-2011
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Full Mana
+ - Minimum Gold (user can define the minimum)
+ - Pointer to Hero
+[1] Adapted from GT Evil Heroes;
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to running game version
+// If false the script will not be loaded
+
+assert(SilentEnginePlugin.vPlugin+1f43e6,f3 0f 11 86 b8 09 00 00)
+assert(SilentEnginePlugin.vPlugin+1586c3,8b 8e b4 08 00 00)
+assert(SilentEnginePlugin.vPlugin+15e805,8b 80 b0 09 00 00)
+assert(SilentEnginePlugin.vPlugin+1d7cac,f3 0f 11 80 b4 09 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(_MonUnit)
+label(_BackMU)
+label(_MonMana)
+label(_BackMM)
+label(_ExitMM)
+label(pHero)
+label(iEnableGM)
+label(iEnableMG)
+label(iEnableMM)
+label(iMinGold)
+
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMG)
+registersymbol(iEnableMM)
+registersymbol(iMinGold)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ pushfd
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                     // Jump if feature is disabled
+ 
+ cmp dword ptr [esi+000009bc],0 // Is it a player´s unit?
+ jne _ExitGM                    // Jump if false
+
+ cvtsi2ss xmm0,[esi+00000890]   // Get maximum HP value
+ 
+_ExitGM:
+ popfd
+
+ movss [esi+000009B8],xmm0      // Original code
+ jmp _BackGM                    // Back to main code
+
+//=========================================
+// Active on entering/leaving the Character Info Window 
+_MonGold:
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                     // Jump if feature is disabled
+ 
+ mov ecx,[iMinGold]             // Get minimum gold
+
+ cmp ecx,[esi+000008B4]         // Current value >= minimum?
+ jle _ExitMG                    // Jump if true
+ 
+ mov [esi+000008B4],ecx         // Update currrent gold value
+ 
+_ExitMG:
+ mov ecx,[esi+000008B4]         // Original code
+ jmp _BackMG                    // Back to main code
+
+//=========================================
+// Active on entering/leaving the Character Info Window 
+_MonUnit:
+ mov [pHero],eax                // Save pointer for debugging
+
+ mov eax,[eax+000009B0]         // Original code
+ jmp _BackMU                    // Back to main code
+
+//=========================================
+_MonMana:
+ cmp dword ptr [iEnableMM],0
+ je _ExitMM                     // Jump if feature is disabled
+
+ cmp dword ptr [eax+000009bc],0 // Is it a player´s unit?
+ jne _ExitMM                    // Jump if false
+
+ cvtsi2ss xmm0,[eax+00000898]   // Get maximum Mana value
+
+_ExitMM:
+ movss [eax+000009B4],xmm0      // Original code
+ jmp _BackMM                    // Back to main code
+
+//=========================================
+ db '==============================>'
+ db 'CE6.1 Script by Recifense 112411'
+//=========================================
+// Variables
+pHero:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMG:
+ dd 1
+iEnableMM:
+ dd 1
+iMinGold:
+ dd #10000
+
+//=========================================
+// Hacking Points
+SilentEnginePlugin.vPlugin+1f43e6:
+ jmp _GodMode
+ nop
+ nop
+ nop
+_BackGM:
+
+SilentEnginePlugin.vPlugin+1586c3:
+ jmp _MonGold
+ nop
+_BackMG:
+
+SilentEnginePlugin.vPlugin+15e805:
+ jmp _MonUnit
+ nop
+_BackMU:
+
+SilentEnginePlugin.vPlugin+1d7cac:
+ jmp _MonMana
+ nop
+ nop
+ nop
+_BackMM:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+SilentEnginePlugin.vPlugin+1f43e6:
+// movss [esi+000009B8],xmm0
+ db f3 0f 11 86 b8 09 00 00
+
+SilentEnginePlugin.vPlugin+1586c3:
+// mov ecx,[esi+000008B4]
+ db 8b 8e b4 08 00 00
+
+SilentEnginePlugin.vPlugin+15e805:
+// mov eax,[eax+000009B0]
+ db 8b 80 b0 09 00 00
+
+SilentEnginePlugin.vPlugin+1d7cac:
+// movss [eax+000009B4],xmm0
+ db f3 0f 11 80 b4 09 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMG)
+unregistersymbol(iEnableMM)
+unregistersymbol(iMinGold)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+}"""
+
+[[cheat]]
+id = "enable-disable-god-mode-1-0"
+name = "Enable/Disable God Mode ==>(1/0)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-full-mana-1-0"
+name = "Enable/Disable Full Mana ==>(1/0)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMM"
+hops = []
+
+[[cheat]]
+id = "minimum-gold-value"
+name = "Minimum Gold Value ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinGold"
+hops = []
+
+[[cheat]]
+id = "selected-unit-xp"
+name = "Selected Unit XP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x9b0"]
+
+[[cheat]]
+id = "selected-unit-points"
+name = "Selected Unit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x10a4"]
+
+[[cheat]]
+id = "selected-unit-obsesssion"
+name = "Selected Unit Obsesssion"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x8a8"]
+
+[[cheat]]
+id = "selected-unit-strength"
+name = "Selected Unit Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x878"]
+
+[[cheat]]
+id = "selected-unit-strength-2"
+name = "Selected Unit Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x878"]
+
+[[cheat]]
+id = "selected-unit-strength-3"
+name = "Selected Unit Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x888"]
+
+[[cheat]]
+id = "selected-unit-initiative"
+name = "Selected Unit Initiative"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x870"]
+
+[[cheat]]
+id = "selected-unit-initiative-2"
+name = "Selected Unit Initiative"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x884"]
+
+[[cheat]]
+id = "selected-unit-magic"
+name = "Selected Unit Magic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x880"]
+
+[[cheat]]
+id = "selected-unit-magic-2"
+name = "Selected Unit Magic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x89c"]
+
+[[cheat]]
+id = "selected-unit-maximum-mana"
+name = "Selected Unit Maximum Mana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x898"]
+
+[[cheat]]
+id = "selected-unit-current-mana"
+name = "Selected Unit Current Mana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x9b4"]
+
+[[cheat]]
+id = "selected-unit-maximum-hp"
+name = "Selected Unit Maximum HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x890"]
+
+[[cheat]]
+id = "selected-unit-current-hp"
+name = "Selected Unit Current HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x9b8"]

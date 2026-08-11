@@ -1,0 +1,163 @@
+[game]
+name = "Hitman 2 precision aim"
+exe = "hitman2.exe"
+notes = "Converted from a Cheat Engine table by Fruitpunch. Source: https://fearlessrevolution.com/viewtopic.php?t=8523"
+verified = []
+author = "Fruitpunch"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "precision-aim"
+name = "Precision Aim"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(SHIFT,hitman2.exe,63 D2 0F B6 04 10 C3)
+alloc(newmem,$1000,"hitman2.exe"+B67793B)
+alloc(rclick,4)
+
+aobscanmodule(SNIPER,hitman2.exe,?? 88 78 3A 48 8B 45 EF)
+alloc(newmem2,$1000,"hitman2.exe"+3A2A42)
+alloc(ogbytes,8)
+alloc(Timer_run,1)
+
+label(code)
+label(return)
+label(button)
+label(check)
+
+label(code2)
+label(return2)
+label(StoredTime)
+label(timing)
+label(popi)
+label(popper)
+label(restore)
+label(clear_timer)
+
+ogbytes:
+  readmem(SNIPER,8)
+
+newmem:
+  cmp dword ptr [rax+100],110
+  jne check
+  mov [button],rax
+  jmp code
+
+check:
+  cmp dword ptr [rax+10],20
+  jne code
+  cmp dword ptr [rax+C],1
+  jne code
+  mov [rclick],rax
+
+
+code:
+  movzx eax,byte ptr [rax+rdx]
+  ret
+  jmp return
+
+button:
+  dd 0
+
+rclick:
+  dd 0
+
+SHIFT+02:
+  jmp newmem
+return:
+registersymbol(SHIFT)
+
+newmem2:
+  push rdi
+  mov rdi,[button]
+  cmp byte ptr [rdi+2A],1
+  jne popi
+  mov rdi,[rclick]
+  cmp byte ptr [rdi+1],1
+
+popi:
+  pop rdi
+  jne clear_timer
+
+  cmp [rax+88],(float)0.5
+  jne clear_timer
+  cmp dil,1
+  je code2
+
+
+  mov byte ptr [Timer_run],1
+  push rax
+  call kernel32.GetTickCount
+
+  cmp [StoredTime],0
+  jg timing
+
+  mov [StoredTime],eax
+  jmp popper
+
+timing:
+  push rax
+  sub eax,[StoredTime]
+  cmp eax,BB8
+  pop rax
+  jg restore
+  mov [hitman2.exe+2BE0788],(float)0.2
+  jmp popper
+
+clear_timer:
+  mov [StoredTime],0
+
+restore:
+  mov [hitman2.exe+2BE0788],(float)1.0
+
+popper:
+  cmp byte ptr [Timer_run],1
+  jne code2
+  pop rax
+  mov byte ptr [Timer_run],0
+
+code2:
+  mov [rax+3A],dil
+  mov rax,[rbp-11]
+  jmp return2
+
+StoredTime:
+  dd 0
+
+Timer_run:
+  db 0
+
+SNIPER:
+  jmp newmem2
+  nop
+  nop
+  nop
+return2:
+registersymbol(SNIPER)
+registersymbol(ogbytes)
+
+[DISABLE]
+SHIFT+02:
+  db 0F B6 04 10 C3
+
+unregistersymbol(SHIFT)
+dealloc(newmem)
+dealloc(rclick)
+
+SNIPER:
+  readmem(ogbytes,8)
+
+unregistersymbol(SNIPER)
+unregistersymbol(ogbytes)
+dealloc(newmem2)
+dealloc(ogbytes)
+dealloc(Timer_run)"""

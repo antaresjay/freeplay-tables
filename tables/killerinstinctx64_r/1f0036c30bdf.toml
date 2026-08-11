@@ -1,0 +1,2141 @@
+[game]
+name = "Killer Instinct Anniversary - Free Camera and stuffs"
+exe = "killerinstinctx64_r.exe"
+notes = "Converted from a Cheat Engine table by lamain. Source: https://fearlessrevolution.com/viewtopic.php?t=28944"
+verified = []
+author = "lamain"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "ctrl-ins"
+name = "Ctrl - Ins"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Killer Instinct
+  Version:
+  Date   : 2024-04-26
+  Author : pat
+
+  Infinite Health for P1
+}
+
+define(addr_inf_health,"KillerInstinctX64_r.exe"+70771A)
+define(bytes,F3 0F 11 8E C0 01 00 00)
+
+define(D_ELT_OFFSET, 6)
+
+
+//-----------------------------------------------------------------------
+[ENABLE]
+//-----------------------------------------------------------------------
+
+assert(addr_inf_health,bytes)
+alloc(newmem,$1000,"KillerInstinctX64_r.exe"+70771A)
+
+label(hook_start)
+label(playerCheck)
+label(hook_job)
+label(fill_p1)
+label(fill_p2)
+label(originalcode)
+label(hook_exit)
+label(return)
+
+label(b_invert_check)
+
+label(p1_addr)
+label(p2_addr)
+
+label(p1_elt_addr)
+label(p2_elt_addr)
+
+registersymbol(b_invert_check)
+registersymbol(p1_addr)
+registersymbol(p2_addr)
+
+registersymbol(p1_elt_addr)
+registersymbol(p2_elt_addr)
+
+
+//---------
+// Code
+//---------
+
+newmem:
+
+//-------
+hook_start:
+  pushfq // save flags register
+  push RAX
+  jmp playerCheck
+
+
+//-------
+//-------
+hook_job:
+  // check if Human
+  mov RAX, rsi
+  add RAX, D_ELT_OFFSET
+  mov EAX, [RAX]
+  and EAX, 00010000
+  cmp EAX, 0
+  je case_false
+  mov EAX, [b_invert_check]
+  cmp EAX, 0
+  je originalcode
+  jmp hook_exit
+case_false:
+  mov EAX, [b_invert_check]
+  cmp EAX, 0
+  je hook_exit
+  jmp originalcode
+
+
+
+//-------
+playerCheck:
+  cmp [p1_addr], 0
+  je fill_p1
+  // check if P1
+  cmp RSI, [p1_addr]
+  je hook_job
+  // if p2 still unknown
+  cmp [p2_addr], 0
+  je fill_p2
+  // check if P2
+  cmp [p2_addr],RSI
+  jne hook_job
+  // nor P1, nor P2 => reset variables
+  jmp fill_p1
+
+//-------
+fill_p1:
+  mov [p2_addr], 0
+  mov [p1_addr], RSI
+  mov RAX, RSI
+  ADD RAX, D_ELT_OFFSET
+  mov [p1_elt_addr], RAX
+  // don't know if it's P1 or P2
+  jmp hook_job
+
+fill_p2:
+  cmp [p1_addr], RSI
+  je hook_job
+  mov [p2_addr], RSI
+  add RSI, D_ELT_OFFSET
+  mov [p2_elt_addr], RSI
+  sub RSI, D_ELT_OFFSET
+  jmp hook_job
+
+
+
+//-------
+originalcode:
+  movss [rsi+000001C0],xmm1
+  jmp hook_exit
+
+//-------
+hook_exit:
+  pop RAX
+  popfq
+  jmp return
+
+
+
+//---------
+// Variables
+//---------
+
+b_invert_check:
+  dq 0
+
+p1_addr:
+  dq 0
+
+p2_addr:
+  dq 0
+
+
+p1_elt_addr:
+  dq 0
+
+p2_elt_addr:
+  dq 0
+
+
+
+//---------
+// Hook
+//---------
+addr_inf_health:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+
+
+//-----------------------------------------------------------------------
+[DISABLE]
+//-----------------------------------------------------------------------
+
+addr_inf_health:
+  db bytes
+
+unregistersymbol(b_invert_check)
+unregistersymbol(p1_addr)
+unregistersymbol(p2_addr)
+
+unregistersymbol(p1_elt_addr)
+unregistersymbol(p2_elt_addr)
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 14070771A
+
+1407076E9: EB 02                       - jmp 1407076ED
+1407076EB: B2 01                       - mov dl,01
+1407076ED: F3 44 0F 10 8E C0 01 00 00  - movss xmm9,[rsi+000001C0]
+1407076F6: 48 8B 86 F8 06 00 00        - mov rax,[rsi+000006F8]
+1407076FD: 48 8B 48 48                 - mov rcx,[rax+48]
+140707701: F3 0F 10 81 30 0D 00 00     - movss xmm0,[rcx+00000D30]
+140707709: F3 0F 59 F0                 - mulss xmm6,xmm0
+14070770D: F3 44 0F 59 C0              - mulss xmm8,xmm0
+140707712: 0F 28 CE                    - movaps xmm1,xmm6
+140707715: F3 41 0F 58 C9              - addss xmm1,xmm9
+// ---------- INJECTING HERE ----------
+14070771A: F3 0F 11 8E C0 01 00 00     - movss [rsi+000001C0],xmm1
+// ---------- DONE INJECTING  ----------
+140707722: 0F 2F CF                    - comiss xmm1,xmm7
+140707725: 77 4F                       - ja 140707776
+140707727: 84 DB                       - test bl,bl
+140707729: 74 4B                       - je 140707776
+14070772B: 84 D2                       - test dl,dl
+14070772D: 75 47                       - jne 140707776
+14070772F: 48 63 BE 88 10 00 00        - movsxd  rdi,dword ptr [rsi+00001088]
+140707736: E8 B5 53 04 00              - call 14074CAF0
+14070773B: 48 8B CF                    - mov rcx,rdi
+14070773E: 48 83 F1 01                 - xor rcx,01
+}"""
+
+[[cheat]]
+id = "b-invert-check"
+name = "b_invert_check"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "b_invert_check"
+hops = []
+
+[[cheat]]
+id = "p1-addr"
+name = "p1_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p1_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "p2-addr"
+name = "p2_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p2_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "p1-elt-addr"
+name = "p1_elt_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "p1_elt_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "p2-elt-addr"
+name = "p2_elt_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "p2_elt_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "gamspeed-numpad-mult"
+name = "GamSpeed (NumPad MULT)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Killer Instinct
+  Version:
+  Date   : 2024-04-22
+  Author : lamain
+
+  Manage game speed
+}
+
+define(addr_hook_gamespeed,"KillerInstinctX64_r.exe"+10F2FA)
+define(bytes_hook_gamespeed,F3 0F 11 B5 18 01 00 00)
+
+define(addr_mute_gamSpd_00,"KillerInstinctX64_r.exe"+17D699)
+define(bytes_mute_gamSpd_00,F3 0F 11 36)
+
+[ENABLE]
+
+assert(addr_hook_gamespeed,bytes_hook_gamespeed)
+alloc(hook_gamespeed_start,$1000,"KillerInstinctX64_r.exe"+10F2FA)
+
+//-------
+// decl code
+label(hook_gamespeed_main)
+label(hook_exit)
+label(return)
+
+//-------
+// Variables
+label(b_gamespeed_init_done)
+
+label(ptr_gameSpeed_val)
+label(gameSpeed_init_val)
+
+registerSymbol(ptr_gameSpeed_val)
+
+
+
+//----------------------------
+// Code
+//----------------------------
+hook_gamespeed_start:
+
+hook_gamespeed_main:
+ \tpushfq // save flags register
+ \tpush RCX
+ \tcmp [b_gamespeed_init_done], 1
+ \tje hook_exit
+ \tmov RCX, rbp
+ \tadd RCX, 00000118
+ \tmov [ptr_gameSpeed_val], RCX
+ \tmov RCX, [gameSpeed_init_val]
+    mov [rbp+118], RCX
+ \tmov [b_gamespeed_init_done], 1
+ \tjmp hook_exit
+
+hook_exit:
+    // put cheat value in xmm0
+    mov RCX, [ptr_gameSpeed_val]
+    movss xmm6, [RCX]
+ \tpop RCX
+\tpopfq // restore flags register
+\tjmp return
+
+
+b_gamespeed_init_done:
+\tdd (int)0
+
+ptr_gameSpeed_val:
+\tdq 0
+
+gameSpeed_init_val:
+     dd (float)0.000001
+
+
+addr_mute_gamSpd_00:
+  nop
+  nop
+  nop
+  nop
+
+
+addr_hook_gamespeed:
+  jmp hook_gamespeed_main
+  nop
+  nop
+  nop
+
+return:
+
+
+
+[DISABLE]
+
+addr_hook_gamespeed:
+  db bytes_hook_gamespeed
+addr_mute_gamSpd_00:
+  db bytes_mute_gamSpd_00
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: KillerInstinctX64_r.exe+10F2FA
+
+KillerInstinctX64_r.exe+10F2DD: 0F 1F 00                       - nop dword ptr [rax]
+KillerInstinctX64_r.exe+10F2E0: 48 8B 4F 10                    - mov rcx,[rdi+10]
+KillerInstinctX64_r.exe+10F2E4: 48 8B 3F                       - mov rdi,[rdi]
+KillerInstinctX64_r.exe+10F2E7: 48 8B 01                       - mov rax,[rcx]
+KillerInstinctX64_r.exe+10F2EA: 0F 28 CE                       - movaps xmm1,xmm6
+KillerInstinctX64_r.exe+10F2ED: FF 50 08                       - call qword ptr [rax+08]
+KillerInstinctX64_r.exe+10F2F0: 48 3B FE                       - cmp rdi,rsi
+KillerInstinctX64_r.exe+10F2F3: 75 EB                          - jne KillerInstinctX64_r.exe+10F2E0
+KillerInstinctX64_r.exe+10F2F5: 49 3B DE                       - cmp rbx,r14
+KillerInstinctX64_r.exe+10F2F8: 75 86                          - jne KillerInstinctX64_r.exe+10F280
+// ---------- INJECTING HERE ----------
+KillerInstinctX64_r.exe+10F2FA: F3 0F 11 B5 18 01 00 00        - movss [rbp+00000118],xmm6
+// ---------- DONE INJECTING  ----------
+KillerInstinctX64_r.exe+10F302: 0F 2F 35 7F 49 4C 02           - comiss xmm6,[KillerInstinctX64_r.exe+25D3C88]
+KillerInstinctX64_r.exe+10F309: 76 0A                          - jna KillerInstinctX64_r.exe+10F315
+KillerInstinctX64_r.exe+10F30B: C7 85 18 01 00 00 0A D7 A3 3D  - mov [rbp+00000118],3DA3D70A
+KillerInstinctX64_r.exe+10F315: 33 FF                          - xor edi,edi
+KillerInstinctX64_r.exe+10F317: 48 39 BD 18 02 00 00           - cmp [rbp+00000218],rdi
+KillerInstinctX64_r.exe+10F31E: 74 69                          - je KillerInstinctX64_r.exe+10F389
+KillerInstinctX64_r.exe+10F320: 48 8B 05 B1 E1 D2 02           - mov rax,[KillerInstinctX64_r.exe+2E3D4D8]
+KillerInstinctX64_r.exe+10F327: 39 78 10                       - cmp [rax+10],edi
+KillerInstinctX64_r.exe+10F32A: 0F 8F B2 00 00 00              - jg KillerInstinctX64_r.exe+10F3E2
+KillerInstinctX64_r.exe+10F330: 48 8B 80 E8 00 00 00           - mov rax,[rax+000000E8]
+}"""
+
+[[cheat]]
+id = "ptr-gamespeed-val"
+name = "ptr_gameSpeed_val"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_gameSpeed_val"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "free-cam-numpad-div"
+name = "Free Cam (NumPad DIV)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Killer Instinct
+  Version:
+  Date   : 2024-04-22
+  Author : lamain
+
+  Free-Camera
+
+  Alpha is the Vertical angle
+  Beta is the horizontal one
+}
+
+
+
+define(addr_hook_cam_matrix,"KillerInstinctX64_r.exe"+DE16F)
+define(bytes_hook_cam_matrix, 0F 29 A7 D0 02 00 00 )
+
+//-------------------------------
+//-------------------------------
+[ENABLE]
+
+//-------
+// basics
+assert(addr_hook_cam_matrix,bytes_hook_cam_matrix)
+alloc(newmem_hook,$3000,"KillerInstinctX64_r.exe"+DE16F)
+
+
+//-------
+// Decl Code
+label(code_hook_cam_matrix)
+label(cod_hookCamMx_skip)
+label(cod_hookCamMx_exit)
+label(fct_cos)
+label(fct_sin)
+label(fct_fill_mtx_alpha_tx)
+label(fct_fill_mtx_inv_beta_tx)
+label(fct_mul_mtxS_col_row)
+label(restrain_dx)
+
+
+//-------
+// Variables
+label(ptr_cam_matrix)
+label(b_init_done)
+
+label(tgt_pos_x)
+label(tgt_pos_y)
+label(tgt_pos_z)
+label(tgt_alpha_val)
+label(tgt_beta_val)
+
+label(curr_pos_x)
+label(curr_pos_y)
+label(curr_pos_z)
+label(curr_alpha_val)
+label(curr_beta_val)
+
+label(cst_d_alpha_max)
+label(cst_d_beta_max)
+label(cst_d_xyz_max)
+
+label(cst_fl_zero)
+label(cst_fl_one)
+label(cst_fl_minusOne)
+label(cst_fl_90)
+label(cst_fl_m90)
+label(cst_fl_180)
+label(cst_fl_360)
+label(cst_fl_30)
+label(cst_fl_60)
+
+label(mtx_alpha_tx)
+label(mtx_inv_beta_tx)
+
+label(xmm1_bkup)
+label(xmm2_bkup)
+label(xmm6_bkup)
+label(xmm7_bkup)
+
+
+registerSymbol(ptr_cam_matrix)
+registerSymbol(tgt_pos_x)
+registerSymbol(tgt_pos_y)
+registerSymbol(tgt_pos_z)
+registerSymbol(tgt_alpha_val)
+registerSymbol(tgt_beta_val)
+
+
+
+//----------------------------
+// Code
+//----------------------------
+
+newmem_hook:
+
+//-------------------------------
+code_hook_cam_matrix:
+\tpushfq // save flags register
+\tpush RAX
+\t//---
+\tmov RAX, rdi
+\tadd RAX, 000002D0
+\tcmp RAX  5B000000
+\t// test if do not modify // else, mess up with players coords ...
+\tjg cod_hookCamMx_skip
+
+\t//---
+\tpush RBX
+\tpush RCX
+\tpush RDX
+\tmovaps [xmm1_bkup], xmm1
+\tmovaps [xmm2_bkup], xmm2
+\tmovaps [xmm6_bkup], xmm6
+\tmovaps [xmm7_bkup], xmm7
+
+\t//---
+\tmov [ptr_cam_matrix], RAX
+
+\tmov RBX, [b_init_done]
+\tcmp RBX, 1
+\tje cod_after_init
+
+\t// Copy Cam Coords
+\tadd RAX, C
+\tmov EBX, [RAX]
+\tmov [tgt_pos_x], EBX
+\tmov [curr_pos_x], EBX
+\tadd RAX, 10
+\tmov EBX, [RAX]
+\tmov [tgt_pos_y], EBX
+\tmov [curr_pos_y], EBX
+\tadd RAX, 10
+\tmov EBX, [RAX]
+\tmov [tgt_pos_z], EBX
+\tmov [curr_pos_z], EBX
+\t// Reset Cam Angles
+\tmovss xmm1, [cst_fl_zero]
+\tmovss [tgt_alpha_val], xmm1
+\tmovss [curr_alpha_val], xmm1
+\tmovss xmm1, [cst_fl_180]
+\tmovss [tgt_beta_val], xmm1
+\tmovss [curr_beta_val], xmm1
+\t// init done
+\tmov [b_init_done], 1
+
+cod_after_init:
+
+
+\t//---
+\t// update 'curr' values
+\t//---
+\tmovss xmm1, [tgt_beta_val]
+\tmovss xmm2, [curr_beta_val]
+\tsubss xmm2, xmm1
+\tucomiss xmm2, [cst_fl_90]
+\tjb cod_beta_not_too_pos_diff
+\taddss xmm1, [cst_fl_360]
+\tmovss [tgt_beta_val], xmm1
+\tjmp cod_beta_diff_ok
+cod_beta_not_too_pos_diff:
+\tmovss xmm2, [curr_beta_val]
+\tsubss xmm2, xmm1
+\tucomiss xmm2, [cst_fl_m90]
+\tja cod_beta_diff_ok
+\tsubss xmm1, [cst_fl_360]
+\tmovss [tgt_beta_val], xmm1
+
+cod_beta_diff_ok:
+\tmovss xmm1, [tgt_beta_val]
+\tmovss xmm2, [curr_beta_val]
+\tmovss xmm6, [cst_d_beta_max]
+\tcall restrain_dx
+\tmovss [curr_beta_val], xmm1
+
+\tmovss xmm1, [tgt_alpha_val]
+\tmovss xmm2, [curr_alpha_val]
+\tmovss xmm6, [cst_d_alpha_max]
+\tcall restrain_dx
+\tmovss [curr_alpha_val], xmm1
+
+\tmovss xmm1, [tgt_pos_x]
+\tmovss xmm2, [curr_pos_x]
+\tmovss xmm6, [cst_d_xyz_max]
+\tcall restrain_dx
+\tmovss [curr_pos_x], xmm1
+
+\tmovss xmm1, [tgt_pos_y]
+\tmovss xmm2, [curr_pos_y]
+\tmovss xmm6, [cst_d_xyz_max]
+\tcall restrain_dx
+\tmovss [curr_pos_y], xmm1
+
+\tmovss xmm1, [tgt_pos_z]
+\tmovss xmm2, [curr_pos_z]
+\tmovss xmm6, [cst_d_xyz_max]
+\tcall restrain_dx
+\tmovss [curr_pos_z], xmm1
+
+
+\t//---
+\t// compute new rotation matrix
+\t//---
+\tmovss xmm1, [curr_beta_val]
+\tcall fct_fill_mtx_inv_beta_tx
+\tmovss xmm1, [curr_alpha_val]
+\tcall fct_fill_mtx_alpha_tx
+
+
+\t//---
+\t// mult rotation matrix into new cam matrix
+\t//---
+\t// RAX => row_num, RBX => col_Num
+\tmov RAX, 0
+\tmov RBX, 0
+\tmov RCX, [ptr_cam_matrix]
+
+\t//--
+\t//--
+\t// Row ZERO
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 4
+
+\t//--
+\tINC RBX
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 4
+
+\t//--
+\tINC RBX
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 8 // next row
+
+\t//--
+\t//--
+\t// Row ONE
+\tINC RAX // next row
+\tmov RBX, 0 // next ro
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 4
+
+\t//--
+\tINC RBX
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 4
+
+\t//--
+\tINC RBX
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 8 // next row
+
+\t//--
+\t//--
+\t// Row TWO
+\tINC RAX // next row
+\tmov RBX, 0 // next ro
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 4
+
+\t//--
+\tINC RBX
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+\tADD RCX, 4
+
+\t//--
+\tINC RBX
+\tcall fct_mul_mtxS_col_row
+\tmovss [RCX], xmm1
+
+
+\t//---
+\t// Set Camera Position
+\t//---
+\tmov RAX, [ptr_cam_matrix]
+\t//---
+\t// Set X position
+\tmov ECX, [curr_pos_x]
+\tmov [RAX+C], ECX
+\tmovaps xmm4, [RAX]
+\tmovaps [rdi+000002D0],xmm4
+\t//---
+\tADD RAX, 10
+\tmov ECX, [curr_pos_y]
+\tmov [RAX+C], ECX
+\tmovaps xmm4, [RAX]
+\tmovaps [rdi+000002E0],xmm4
+\t//---
+\t// build Z-xmm3 vector line
+\tADD RAX, 10
+\tmov ECX, [curr_pos_z]
+\tmov [RAX+C], ECX
+\tmovaps xmm4, [RAX]
+\tmovaps [rdi+000002F0],xmm4
+
+
+\t// movaps [rdi+000002D0],xmm4
+\t// movaps [rdi+000002E0],xmm5
+\t// movaps [rdi+000002F0],xmm3
+
+\t//---
+\tmovaps xmm1, [xmm1_bkup]
+\tmovaps xmm2, [xmm2_bkup]
+\tmovaps xmm6, [xmm6_bkup]
+\tmovaps xmm7, [xmm7_bkup]
+\tpop RDX
+\tpop RCX
+\tpop RBX
+
+\t//---
+\tjmp cod_hookCamMx_exit
+
+//---
+// Cos: Table + Interpolation
+// xmm1 : alpha
+// xmm2 : res cos(alpha)
+// xmm3 : used
+// xmm4 : used
+fct_cos:
+\t//---
+\tmovss xmm2, [cst_fl_180]
+\tucomiss xmm1, xmm2
+\tja cod_max_cos
+\tmulss xmm2, [cst_fl_minusOne]
+\tucomiss xmm1, xmm2
+\tjb cod_min_cos
+\tucomiss xmm1, [cst_fl_zero]
+\tjb cod_neg_cos
+\t//---
+\tpush RAX
+\tpush RBX
+\troundss xmm2, xmm1, 1\t// 1 => round down xmm1 => xmm2
+\tcvtss2si EAX, xmm2\t\t// float -> int
+\tmov RBX, 4 // sizeof float
+\tMUL RBX
+\tMOV RBX, tble_cos
+\tADD RAX, RBX
+\tmovss xmm3,[RAX]
+\t//---
+\t// RAX => table address cos(floor(alpha)), xmm1 => alpha, xmm2 => floor(alpha), xmm3 => cos(floor(alpha))
+\tmovss xmm4, xmm1
+\tsubss xmm4, xmm2
+\tucomiss xmm4, [cst_fl_zero]
+\tje cod_cos_exact
+\t// RAX => table address cos(floor(alpha)), xmm1 => alpha, xmm2 => floor(alpha), xmm3 => cos(floor(alpha)), xmm4 => [ratio cos(floor(alpha)), cos(ceil(alpha))]
+\tADD RAX, 4
+\tmovss xmm2, [RAX]
+\t// xmm1 => alpha, xmm2 => cos(ceil(alpha)), xmm3 => cos(floor(alpha)), xmm4 => [ratio cos(floor(alpha)), cos(ceil(alpha))]
+\tmulss xmm2, xmm4
+\tmovd EAX, xmm2
+\tmovss xmm2, [cst_fl_one]
+\tsubss xmm2, xmm4
+\tmulss xmm3, xmm2
+\tmovd xmm2, EAX
+\taddss xmm2, xmm3
+\tpop RBX
+\tpop RAX
+\tret
+cod_cos_exact:
+\tpop RBX
+\tpop RAX
+\tmovss xmm2, xmm3
+\tret
+
+// xmm1 => alpha, xmm2 => 180
+cod_max_cos:
+\tpush RAX
+\tmovd EAX, xmm1
+\tmovss xmm3, [cst_fl_360]
+cod_shrink_alpha:
+\tsubss xmm1, xmm3
+\tucomiss xmm1, xmm2
+\tja cod_shrink_alpha
+\tcall fct_cos
+\tmovd xmm1, EAX
+\tpop RAX
+\tret
+
+// xmm1 => alpha, xmm2 => -180
+cod_min_cos:
+\tpush RAX
+\tmovd EAX, xmm1
+\tmovss xmm3, [cst_fl_360]
+cod_biggen_alpha:
+\taddss xmm1, xmm3
+\tucomiss xmm1, xmm2
+\tjb cod_biggen_alpha
+\tcall fct_cos
+\tmovd xmm1, EAX
+\tpop RAX
+\tret
+
+cod_neg_cos:
+\tmovd EAX, xmm1
+\tmulss xmm1, [cst_fl_minusOne]
+\tcall fct_cos
+\tmovd xmm1, EAX
+\tret
+
+//---
+// xmm1 : alpha
+// xmm2 : res cos(alpha)
+// xmm3 : used
+// xmm4 : used
+fct_sin:
+\tpush RAX
+\tmovd EAX, xmm1
+\t//---
+\tmovss xmm2, [cst_fl_90]
+\tsubss xmm2, xmm1
+\tmovss xmm1, xmm2
+\tcall fct_cos
+\t//---
+\tmovd xmm1, EAX
+\tpop RAX
+\tret
+
+//---
+// xmm1 : alpha
+// xmm2 : used
+// xmm3 : used
+// xmm4 : used
+// xmm5 : used
+fct_fill_mtx_alpha_tx:
+\tcall fct_cos
+\tmovss xmm5, xmm2
+\tcall fct_sin
+\tmovss xmm1, xmm2
+\tmovss xmm2, xmm5
+\tmovss xmm3, xmm1
+\tmulss xmm3, [cst_fl_minusOne]
+\tmovss xmm4, xmm2
+\tmulss xmm4, [cst_fl_minusOne]
+\t// xmm1 => sin(alpha), xmm2 => cos(alpha), xmm3 => -sin(alpha), xmm4 => -cos(alpha)
+
+\tmov RAX, mtx_alpha_tx
+\tmovss [RAX+14], xmm2
+\tmovss [RAX+18], xmm3
+\tmovss [RAX+24], xmm1
+\tmovss [RAX+28], xmm2
+\tret
+
+//---
+// xmm1 : beta
+// xmm2 : used
+// xmm3 : used
+// xmm4 : used
+// xmm5 : used
+fct_fill_mtx_inv_beta_tx:
+\tcall fct_cos
+\tmovss xmm5, xmm2
+\tcall fct_sin
+\tmovss xmm1, xmm2
+\tmovss xmm2, xmm5
+\tmovss xmm3, xmm1
+\tmulss xmm3, [cst_fl_minusOne]
+\tmovss xmm4, xmm2
+\tmulss xmm4, [cst_fl_minusOne]
+\t// xmm1 => sin(beta), xmm2 => cos(beta), xmm3 => -sin(beta), xmm4 => -cos(beta)
+\tmov RAX, mtx_inv_beta_tx
+\tmovss [RAX+0], xmm2
+\tmovss [RAX+8], xmm3
+\tmovss [RAX+20], xmm1
+\tmovss [RAX+28], xmm2
+\tret
+
+//---
+// RAX : row_num
+// RBX : col_num
+// xmm1 : result
+// xmm2 : used
+fct_mul_mtxS_col_row:
+\tpush RAX
+\tpush RBX
+\tpush RCX
+\tpush RDX
+\tmov RDX, 10
+\tMUL RDX
+\tmov RCX, mtx_inv_beta_tx
+\tadd RAX, RCX
+\tmov RCX, RAX
+\t// RCX => mtx_beta row addr
+\tmov RAX, RBX
+\tmov RDX, 10
+\tMUL RDX
+\tmov RDX, mtx_alpha_tx
+\tadd RAX, RDX
+\t// RAX => mtx_alpha row addr
+\tmovaps xmm1, [RCX]
+\tmovaps xmm2, [RAX]
+\tmulps  xmm1, xmm2
+\tXORPS  xmm2, xmm2
+\tHADDPS xmm1, xmm2
+\tHADDPS xmm1, xmm2
+\tpop RDX
+\tpop RCX
+\tpop RBX
+\tpop RAX
+\tret
+
+//---
+// xmm1 : tgt value
+// xmm2 : curr value
+// xmm6 : delta max
+restrain_dx:
+\tmovss xmm3, xmm1
+\tsubss xmm1, xmm2
+\tucomiss xmm1, xmm6
+\tjbe cod_tgt_in_positiv_range
+\t// here dist(target value - curr value) > MAX
+\tmovss xmm1, xmm2
+\taddss xmm1, xmm6
+\tret
+cod_tgt_in_positiv_range:
+\tmulss xmm1, [cst_fl_minusOne]
+\tucomiss xmm1, xmm6
+\tjbe cod_tgt_in_range
+\t// here dist(curr value - target value) > MAX
+\tmulss xmm6, [cst_fl_minusOne]
+\tmovss xmm1, xmm2
+\taddss xmm1, xmm6
+\tret
+cod_tgt_in_range:
+\t// here dist(curr value, target value) <= MAX
+\tmovss xmm1, xmm3
+\tret
+
+
+//---
+cod_hookCamMx_skip:
+\tmovaps [rdi+000002D0],xmm4
+\tmovaps [rdi+000002E0],xmm5
+\tmovaps [rdi+000002F0],xmm3
+\tjmp cod_hookCamMx_exit
+
+cod_hookCamMx_exit:
+\tpop RAX
+\tpopfq // restore flags register
+\tjmp "KillerInstinctX64_r.exe"+DE184 // after the 3 movaps
+
+
+
+//----------------------------
+// Variables
+//----------------------------
+
+ptr_cam_matrix:
+\tdq 0
+
+b_init_done:
+\tdq 0
+
+tgt_pos_x:
+\tdd (float)1
+tgt_pos_y:
+\tdd (float)2
+tgt_pos_z:
+\tdd (float)0
+tgt_alpha_val:
+\tdd (float)0
+tgt_beta_val:
+\tdd (float)0
+
+curr_pos_x:
+\tdd (float)0
+curr_pos_y:
+\tdd (float)0
+curr_pos_z:
+\tdd (float)0
+curr_alpha_val:
+\tdd (float)0
+curr_beta_val:
+\tdd (float)0
+
+cst_d_alpha_max:
+\tdd (float)6
+cst_d_beta_max:
+\tdd (float)6
+cst_d_xyz_max:
+\tdd (float)0.6
+
+cst_fl_zero:
+\tdd (float)0
+cst_fl_one:
+\tdd (float)1
+cst_fl_minusOne:
+\tdd (float)-1
+cst_fl_90:
+\tdd (float)90
+cst_fl_m90:
+\tdd (float)-90
+cst_fl_180:
+\tdd (float)180
+cst_fl_360:
+\tdd (float)360
+cst_fl_30:
+\tdd (float)30
+cst_fl_60:
+\tdd (float)60
+
+
+
+align 10
+mtx_alpha_tx:
+\tdd (float)1
+\tdd (float)0
+\tdd (float)0
+\tdd (float)0 // padding
+\tdd (float)0
+\tdd (float)0.3
+\tdd (float)-0.5
+\tdd (float)0 // padding
+\tdd (float)0
+\tdd (float)0.5
+\tdd (float)0.3
+\tdd (float)0 // padding
+
+align 10
+mtx_inv_beta_tx:
+\tdd (float)0.3
+\tdd (float)0
+\tdd (float)-0.5
+\tdd (float)0 // padding
+\tdd (float)0
+\tdd (float)1
+\tdd (float)0
+\tdd (float)0 // padding
+\tdd (float)0.5
+\tdd (float)0
+\tdd (float)0.3
+\tdd (float)0 // padding
+
+
+
+
+
+align 10
+xmm1_bkup:
+\tdb 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+align 10
+xmm2_bkup:
+\tdb 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+align 10
+xmm6_bkup:
+\tdb 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+align 10
+xmm7_bkup:
+\tdb 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+
+
+
+
+// Cos Value 0 to PI
+align 10
+tble_cos:
+\tdd (float)1
+\tdd (float)0.999848
+\tdd (float)0.999391
+\tdd (float)0.99863
+\tdd (float)0.997564
+\tdd (float)0.996195
+\tdd (float)0.994522
+\tdd (float)0.992546
+\tdd (float)0.990268
+\tdd (float)0.987688
+\tdd (float)0.984808
+\tdd (float)0.981627
+\tdd (float)0.978148
+\tdd (float)0.97437
+\tdd (float)0.970296
+\tdd (float)0.965926
+\tdd (float)0.961262
+\tdd (float)0.956305
+\tdd (float)0.951057
+\tdd (float)0.945519
+\tdd (float)0.939693
+\tdd (float)0.93358
+\tdd (float)0.927184
+\tdd (float)0.920505
+\tdd (float)0.913545
+\tdd (float)0.906308
+\tdd (float)0.898794
+\tdd (float)0.891007
+\tdd (float)0.882948
+\tdd (float)0.87462
+\tdd (float)0.866025
+\tdd (float)0.857167
+\tdd (float)0.848048
+\tdd (float)0.838671
+\tdd (float)0.829038
+\tdd (float)0.819152
+\tdd (float)0.809017
+\tdd (float)0.798636
+\tdd (float)0.788011
+\tdd (float)0.777146
+\tdd (float)0.766044
+\tdd (float)0.75471
+\tdd (float)0.743145
+\tdd (float)0.731354
+\tdd (float)0.71934
+\tdd (float)0.707107
+\tdd (float)0.694658
+\tdd (float)0.681998
+\tdd (float)0.669131
+\tdd (float)0.656059
+\tdd (float)0.642788
+\tdd (float)0.62932
+\tdd (float)0.615661
+\tdd (float)0.601815
+\tdd (float)0.587785
+\tdd (float)0.573576
+\tdd (float)0.559193
+\tdd (float)0.544639
+\tdd (float)0.529919
+\tdd (float)0.515038
+\tdd (float)0.5
+\tdd (float)0.48481
+\tdd (float)0.469472
+\tdd (float)0.45399
+\tdd (float)0.438371
+\tdd (float)0.422618
+\tdd (float)0.406737
+\tdd (float)0.390731
+\tdd (float)0.374607
+\tdd (float)0.358368
+\tdd (float)0.34202
+\tdd (float)0.325568
+\tdd (float)0.309017
+\tdd (float)0.292372
+\tdd (float)0.275637
+\tdd (float)0.258819
+\tdd (float)0.241922
+\tdd (float)0.224951
+\tdd (float)0.207912
+\tdd (float)0.190809
+\tdd (float)0.173648
+\tdd (float)0.156434
+\tdd (float)0.139173
+\tdd (float)0.121869
+\tdd (float)0.104528
+\tdd (float)0.087156
+\tdd (float)0.069756
+\tdd (float)0.052336
+\tdd (float)0.034899
+\tdd (float)0.017452
+\tdd (float)0
+\tdd (float)-0.017452
+\tdd (float)-0.034899
+\tdd (float)-0.052336
+\tdd (float)-0.069756
+\tdd (float)-0.087156
+\tdd (float)-0.104528
+\tdd (float)-0.121869
+\tdd (float)-0.139173
+\tdd (float)-0.156434
+\tdd (float)-0.173648
+\tdd (float)-0.190809
+\tdd (float)-0.207912
+\tdd (float)-0.224951
+\tdd (float)-0.241922
+\tdd (float)-0.258819
+\tdd (float)-0.275637
+\tdd (float)-0.292372
+\tdd (float)-0.309017
+\tdd (float)-0.325568
+\tdd (float)-0.34202
+\tdd (float)-0.358368
+\tdd (float)-0.374607
+\tdd (float)-0.390731
+\tdd (float)-0.406737
+\tdd (float)-0.422618
+\tdd (float)-0.438371
+\tdd (float)-0.45399
+\tdd (float)-0.469472
+\tdd (float)-0.48481
+\tdd (float)-0.5
+\tdd (float)-0.515038
+\tdd (float)-0.529919
+\tdd (float)-0.544639
+\tdd (float)-0.559193
+\tdd (float)-0.573576
+\tdd (float)-0.587785
+\tdd (float)-0.601815
+\tdd (float)-0.615661
+\tdd (float)-0.62932
+\tdd (float)-0.642788
+\tdd (float)-0.656059
+\tdd (float)-0.669131
+\tdd (float)-0.681998
+\tdd (float)-0.694658
+\tdd (float)-0.707107
+\tdd (float)-0.71934
+\tdd (float)-0.731354
+\tdd (float)-0.743145
+\tdd (float)-0.75471
+\tdd (float)-0.766044
+\tdd (float)-0.777146
+\tdd (float)-0.788011
+\tdd (float)-0.798636
+\tdd (float)-0.809017
+\tdd (float)-0.819152
+\tdd (float)-0.829038
+\tdd (float)-0.838671
+\tdd (float)-0.848048
+\tdd (float)-0.857167
+\tdd (float)-0.866025
+\tdd (float)-0.87462
+\tdd (float)-0.882948
+\tdd (float)-0.891007
+\tdd (float)-0.898794
+\tdd (float)-0.906308
+\tdd (float)-0.913545
+\tdd (float)-0.920505
+\tdd (float)-0.927184
+\tdd (float)-0.93358
+\tdd (float)-0.939693
+\tdd (float)-0.945519
+\tdd (float)-0.951057
+\tdd (float)-0.956305
+\tdd (float)-0.961262
+\tdd (float)-0.965926
+\tdd (float)-0.970296
+\tdd (float)-0.97437
+\tdd (float)-0.978148
+\tdd (float)-0.981627
+\tdd (float)-0.984808
+\tdd (float)-0.987688
+\tdd (float)-0.990268
+\tdd (float)-0.992546
+\tdd (float)-0.994522
+\tdd (float)-0.996195
+\tdd (float)-0.997564
+\tdd (float)-0.99863
+\tdd (float)-0.999391
+\tdd (float)-0.999848
+\tdd (float)-1
+
+
+
+
+//----------------------------
+// Hook
+//----------------------------
+
+addr_hook_cam_matrix:
+  jmp code_hook_cam_matrix
+  nop
+  nop
+
+return:
+
+
+
+//-------------------------------------------------------------------
+//-------------------------------------------------------------------
+[DISABLE]
+
+addr_hook_cam_matrix:
+\tdb bytes_hook_cam_matrix
+
+
+unregisterSymbol(ptr_cam_matrix)
+unregisterSymbol(tgt_pos_x)
+unregisterSymbol(tgt_pos_y)
+unregisterSymbol(tgt_pos_z)
+unregisterSymbol(tgt_alpha_val)
+unregisterSymbol(tgt_beta_val)
+
+dealloc(newmem_hook)"""
+
+[[cheat]]
+id = "ptr-cam-matrix"
+name = "ptr_cam_matrix"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_cam_matrix"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "tgt-pos-x"
+name = "tgt_pos_x"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tgt_pos_x"
+hops = []
+
+[[cheat]]
+id = "tgt-pos-y"
+name = "tgt_pos_y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tgt_pos_y"
+hops = []
+
+[[cheat]]
+id = "tgt-pos-z"
+name = "tgt_pos_z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tgt_pos_z"
+hops = []
+
+[[cheat]]
+id = "tgt-alpha-val"
+name = "tgt_alpha_val"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tgt_alpha_val"
+hops = []
+
+[[cheat]]
+id = "tgt-beta-val"
+name = "tgt_beta_val"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tgt_beta_val"
+hops = []
+
+[[cheat]]
+id = "free-cam-old"
+name = "Free Cam OLD"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Killer Instinct
+  Version:
+  Date   : 2024-04-20
+  Author : lamain
+
+  Allow Free-Camera
+}
+
+// Access to real camera 1D0CF0
+
+
+define(addr_hook_cam,"KillerInstinctX64_r.exe"+1D1A78)
+define(bytes_hook_cam,\t\t  0F 29 99 A0 03 00 00)
+
+define(addr_mute_cod_A_00,"KillerInstinctX64_r.exe"+A85CE3)
+define(bytes_mute_cod_A_00,0F 29 4F 10 )// 4 nop
+define(addr_mute_cod_A_01,"KillerInstinctX64_r.exe"+A85D24)
+define(bytes_mute_cod_A_01, 0F 29 47 10 ) // 4 nop
+define(addr_mute_cod_A_02,"KillerInstinctX64_r.exe"+A866DE)
+define(bytes_mute_cod_A_02, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_03,"KillerInstinctX64_r.exe"+A86ADA)
+define(bytes_mute_cod_A_03, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_04,"KillerInstinctX64_r.exe"+A86B90)
+define(bytes_mute_cod_A_04, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_05,"KillerInstinctX64_r.exe"+A86C5A)
+define(bytes_mute_cod_A_05, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_06,"KillerInstinctX64_r.exe"+A86E45)
+define(bytes_mute_cod_A_06, 41 0F 29 5F 10 ) // 5 nop
+define(addr_mute_cod_A_07,"KillerInstinctX64_r.exe"+A86E91)
+define(bytes_mute_cod_A_07, 41 0F 29 57 10 ) // 5 nop
+define(addr_mute_cod_A_08,"KillerInstinctX64_r.exe"+A87276)
+define(bytes_mute_cod_A_08, 41 0F 29 47 10 ) // 5 nop
+define(addr_mute_cod_A_09,"KillerInstinctX64_r.exe"+A87BC5)
+define(bytes_mute_cod_A_09, 41 0F 29 6F 10 ) // 5 nop
+define(addr_mute_cod_A_10,"KillerInstinctX64_r.exe"+A87E68)
+define(bytes_mute_cod_A_10, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_11,"KillerInstinctX64_r.exe"+A87EA6)
+define(bytes_mute_cod_A_11, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_12,"KillerInstinctX64_r.exe"+A8815E)
+define(bytes_mute_cod_A_12, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_13,"KillerInstinctX64_r.exe"+A8819C)
+define(bytes_mute_cod_A_13, 41 0F 29 4F 10 ) // 5 nop
+define(addr_mute_cod_A_14,"KillerInstinctX64_r.exe"+A84C7A)
+define(bytes_mute_cod_A_14, 0F 29 43 10 ) // 4 nop
+define(addr_mute_cod_A_15,"KillerInstinctX64_r.exe"+A84CB2)
+define(bytes_mute_cod_A_15, 0F 29 43 10 ) // 4 nop
+
+
+define(addr_mute_cod_B_0,"KillerInstinctX64_r.exe"+A85D44)
+define(bytes_mute_cod_B_0,0F 29 57 20)
+define(addr_mute_cod_B_1,"KillerInstinctX64_r.exe"+A85D74)
+define(bytes_mute_cod_B_1,0F 29 47 20)
+define(addr_mute_cod_B_2,"KillerInstinctX64_r.exe"+A8670C)
+define(bytes_mute_cod_B_2,41 0F 29 4F 20)
+define(addr_mute_cod_B_3,"KillerInstinctX64_r.exe"+A869F1)
+define(bytes_mute_cod_B_3,41 0F 29 4F 20)
+define(addr_mute_cod_B_4,"KillerInstinctX64_r.exe"+A86C3B)
+define(bytes_mute_cod_B_4,41 0F 29 47 20)
+define(addr_mute_cod_B_5,"KillerInstinctX64_r.exe"+A872A4)
+define(bytes_mute_cod_B_5,41 0F 29 47 20)
+define(addr_mute_cod_B_6,"KillerInstinctX64_r.exe"+A87BE2)
+define(bytes_mute_cod_B_6,41 0F 29 4F 20)
+define(addr_mute_cod_B_7,"KillerInstinctX64_r.exe"+A87E87)
+define(bytes_mute_cod_B_7,41 0F 29 4F 20)
+define(addr_mute_cod_B_8,"KillerInstinctX64_r.exe"+A87EC5)
+define(bytes_mute_cod_B_8,41 0F 29 4F 20)
+define(addr_mute_cod_B_9,"KillerInstinctX64_r.exe"+A85E72)
+define(bytes_mute_cod_B_9,89 42 30)
+
+define(addr_mute_cod_C_0,"KillerInstinctX64_r.exe"+A8817D)
+define(bytes_mute_cod_C_0,41 0F 29 4F 20)
+define(addr_mute_cod_C_1,"KillerInstinctX64_r.exe"+A881BB)
+define(bytes_mute_cod_C_1,41 0F 29 4F 20)
+define(addr_mute_cod_C_2,"KillerInstinctX64_r.exe"+A84C5E)
+define(bytes_mute_cod_C_2,0F 29 43 20)
+define(addr_mute_cod_C_3,"KillerInstinctX64_r.exe"+A84C96)
+define(bytes_mute_cod_C_3,0F 29 43 20)
+
+
+//-------------------------------
+//-------------------------------
+[ENABLE]
+
+//-------
+// basics
+assert(addr_hook_cam,bytes_hook_cam)
+assert(addr_mute_cod_A_00,bytes_mute_cod_A_00)
+assert(addr_mute_cod_A_01,bytes_mute_cod_A_01)
+assert(addr_mute_cod_A_02,bytes_mute_cod_A_02)
+assert(addr_mute_cod_A_03,bytes_mute_cod_A_03)
+assert(addr_mute_cod_A_04,bytes_mute_cod_A_04)
+assert(addr_mute_cod_A_05,bytes_mute_cod_A_05)
+assert(addr_mute_cod_A_06,bytes_mute_cod_A_06)
+assert(addr_mute_cod_A_07,bytes_mute_cod_A_07)
+assert(addr_mute_cod_A_08,bytes_mute_cod_A_08)
+assert(addr_mute_cod_A_09,bytes_mute_cod_A_09)
+assert(addr_mute_cod_A_10,bytes_mute_cod_A_10)
+assert(addr_mute_cod_A_11,bytes_mute_cod_A_11)
+assert(addr_mute_cod_A_12,bytes_mute_cod_A_12)
+assert(addr_mute_cod_A_13,bytes_mute_cod_A_13)
+assert(addr_mute_cod_A_14,bytes_mute_cod_A_14)
+assert(addr_mute_cod_A_15,bytes_mute_cod_A_15)
+assert(addr_mute_cod_B_0,bytes_mute_cod_B_0)
+assert(addr_mute_cod_B_1,bytes_mute_cod_B_1)
+assert(addr_mute_cod_B_2,bytes_mute_cod_B_2)
+assert(addr_mute_cod_B_3,bytes_mute_cod_B_3)
+assert(addr_mute_cod_B_4,bytes_mute_cod_B_4)
+assert(addr_mute_cod_B_5,bytes_mute_cod_B_5)
+assert(addr_mute_cod_B_6,bytes_mute_cod_B_6)
+assert(addr_mute_cod_B_7,bytes_mute_cod_B_7)
+assert(addr_mute_cod_B_8,bytes_mute_cod_B_8)
+assert(addr_mute_cod_C_0,bytes_mute_cod_C_0)
+assert(addr_mute_cod_C_1,bytes_mute_cod_C_1)
+assert(addr_mute_cod_C_2,bytes_mute_cod_C_2)
+assert(addr_mute_cod_C_3,bytes_mute_cod_C_3)
+
+alloc(hook_cam_start,$1000,"KillerInstinctX64_r.exe"+1D1A78)
+
+//-------
+// decl code
+label(hook_cam_main)
+label(hook_exit)
+label(init_do)
+
+
+//-------
+// Variables
+label(m_dx)
+label(m_dy)
+
+label(b_cam_init_done)
+
+label(ptr_coord_X_A_addr)
+label(ptr_Y_alpha_AA_addr)
+label(ptr_Z_AA)
+label(ptr_Z_BB)
+label(ptr_coord_X_B_addr)
+label(ptr_Y_alpha_BB_addr)
+label(ptr_Z_CC)
+label(ptr_Z_DD)
+label(ptr_unkn_GG_addr)
+label(ptr_tilt_addr)
+label(ptr_f_cam_follow_speed)
+
+label(dbg_v_A)
+label(dbg_v_B)
+
+registerSymbol(m_dx)
+registerSymbol(m_dy)
+
+registerSymbol(b_cam_init_done)
+
+registerSymbol(ptr_coord_X_A_addr)
+registerSymbol(ptr_Y_alpha_AA_addr)
+registerSymbol(ptr_Z_AA)
+registerSymbol(ptr_Z_BB)
+registerSymbol(ptr_coord_X_B_addr)
+registerSymbol(ptr_Y_alpha_BB_addr)
+registerSymbol(ptr_Z_CC)
+registerSymbol(ptr_Z_DD)
+registerSymbol(ptr_unkn_GG_addr)
+registerSymbol(ptr_tilt_addr)
+registerSymbol(ptr_f_cam_follow_speed)
+
+registerSymbol(dbg_v_A)
+registerSymbol(dbg_v_B)
+
+
+label(return)
+
+
+
+//----------------------------
+// Code
+//----------------------------
+
+//-------
+hook_cam_start:
+\tpushfq // save flags register
+
+//-------
+hook_cam_main:
+\tcmp [b_cam_init_done], 0
+\tje init_do
+\tjmp hook_exit
+
+hook_exit:
+\tpopfq // restore flags register
+\tjmp return
+
+
+//-------
+init_do:
+\tpush RCX
+\tpush EAX
+
+\t// ---
+\tadd RCX, 0x00000390
+\tmov [ptr_coord_X_A_addr], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_Y_alpha_AA_addr], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_Z_AA], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_Z_BB], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_coord_X_B_addr], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_Y_alpha_BB_addr], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_Z_CC], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_Z_DD], RCX
+
+\t// ---
+\tadd RCX, 0x000004
+\tmov [ptr_unkn_GG_addr], RCX
+
+\t// ---
+\tadd RCX, 0x0000010
+\tmov [ptr_tilt_addr], RCX
+
+
+\t// ---
+\tadd RCX, 0x2C
+\tmov [ptr_f_cam_follow_speed], RCX
+
+\t// ---
+\tpop EAX
+\tpop RCX
+
+\t// Flag init as done
+\tmov [b_cam_init_done], 1
+\tjmp hook_cam_main
+
+
+
+//-------
+align 10 CC // align next memory
+
+m_dx:
+\tdd (int)0
+m_dy:
+\tdd (int)0
+
+b_cam_init_done:
+\tdd (int)0
+
+ptr_coord_X_A_addr:
+\tdq 0
+ptr_Y_alpha_AA_addr:
+\tdq 0
+ptr_Z_AA:
+\tdq 0
+ptr_Z_BB:
+\tdq 0
+ptr_coord_X_B_addr:
+\tdq 0
+ptr_Y_alpha_BB_addr:
+\tdq 0
+ptr_Z_CC:
+\tdq 0
+ptr_Z_DD:
+\tdq 0
+ptr_unkn_GG_addr:
+\tdq 0
+ptr_tilt_addr:
+\tdq 0
+ptr_f_cam_follow_speed:
+\tdq 0
+
+
+dbg_v_A:
+\tdd (float)0
+dbg_v_B:
+\tdd (float)0
+
+
+//-------
+addr_mute_cod_A_00:
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_01:
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_02:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_03:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_04:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_05:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_06:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_07:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_08:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_09:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_10:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_11:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_12:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_13:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_14:
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_A_15:
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_0:
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_1:
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_2:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_3:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_4:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_5:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_6:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_7:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_8:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_B_9:
+  nop
+  nop
+  nop
+
+addr_mute_cod_C_0:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_C_1:
+  nop
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_C_2:
+  nop
+  nop
+  nop
+  nop
+addr_mute_cod_C_3:
+  nop
+  nop
+  nop
+  nop
+
+addr_hook_cam:
+  jmp hook_cam_start
+  nop
+  nop
+
+return:
+
+
+
+
+//-------------------------------
+//-------------------------------
+[DISABLE]
+
+addr_hook_cam:
+  db bytes_hook_cam
+addr_mute_cod_A_00:
+  db bytes_mute_cod_A_00
+addr_mute_cod_A_01:
+  db bytes_mute_cod_A_01
+addr_mute_cod_A_02:
+  db bytes_mute_cod_A_02
+addr_mute_cod_A_03:
+  db bytes_mute_cod_A_03
+addr_mute_cod_A_04:
+  db bytes_mute_cod_A_04
+addr_mute_cod_A_05:
+  db bytes_mute_cod_A_05
+addr_mute_cod_A_06:
+  db bytes_mute_cod_A_06
+addr_mute_cod_A_07:
+  db bytes_mute_cod_A_07
+addr_mute_cod_A_08:
+  db bytes_mute_cod_A_08
+addr_mute_cod_A_09:
+  db bytes_mute_cod_A_09
+addr_mute_cod_A_10:
+  db bytes_mute_cod_A_10
+addr_mute_cod_A_11:
+  db bytes_mute_cod_A_11
+addr_mute_cod_A_12:
+  db bytes_mute_cod_A_12
+addr_mute_cod_A_13:
+  db bytes_mute_cod_A_13
+addr_mute_cod_A_14:
+  db bytes_mute_cod_A_14
+addr_mute_cod_A_15:
+  db bytes_mute_cod_A_15
+addr_mute_cod_B_0:
+  db bytes_mute_cod_B_0
+addr_mute_cod_B_1:
+  db bytes_mute_cod_B_1
+addr_mute_cod_B_2:
+  db bytes_mute_cod_B_2
+addr_mute_cod_B_3:
+  db bytes_mute_cod_B_3
+addr_mute_cod_B_4:
+  db bytes_mute_cod_B_4
+addr_mute_cod_B_5:
+  db bytes_mute_cod_B_5
+addr_mute_cod_B_6:
+  db bytes_mute_cod_B_6
+addr_mute_cod_B_7:
+  db bytes_mute_cod_B_7
+addr_mute_cod_B_8:
+  db bytes_mute_cod_B_8
+addr_mute_cod_B_9:
+  db bytes_mute_cod_B_9
+addr_mute_cod_C_0:
+  db bytes_mute_cod_C_0
+addr_mute_cod_C_1:
+  db bytes_mute_cod_C_1
+addr_mute_cod_C_2:
+  db bytes_mute_cod_C_2
+addr_mute_cod_C_3:
+  db bytes_mute_cod_C_3
+
+unregisterSymbol(m_dx)
+unregisterSymbol(m_dy)
+unregisterSymbol(b_cam_init_done)
+unregisterSymbol(ptr_coord_X_A_addr)
+unregisterSymbol(ptr_Y_alpha_AA_addr)
+unregisterSymbol(ptr_Z_AA)
+unregisterSymbol(ptr_Z_BB)
+unregisterSymbol(ptr_coord_X_B_addr)
+unregisterSymbol(ptr_Y_alpha_BB_addr)
+unregisterSymbol(ptr_Z_CC)
+unregisterSymbol(ptr_Z_DD)
+unregisterSymbol(ptr_unkn_GG_addr)
+unregisterSymbol(ptr_tilt_addr)
+unregisterSymbol(ptr_f_cam_follow_speed)
+unregisterSymbol(dbg_v_A)
+unregisterSymbol(dbg_v_B)
+dealloc(hook_cam_start)
+
+{
+// ORIGINAL CODE - INJECTION POINT: KillerInstinctX64_r.exe+1D1A78
+
+KillerInstinctX64_r.exe+1D1A55: 0F 59 CB              - mulps xmm1,xmm3
+KillerInstinctX64_r.exe+1D1A58: 0F 28 C1              - movaps xmm0,xmm1
+KillerInstinctX64_r.exe+1D1A5B: 0F C6 C1 55           - shufps xmm0,xmm1,55
+KillerInstinctX64_r.exe+1D1A5F: F3 0F 58 C1           - addss xmm0,xmm1
+KillerInstinctX64_r.exe+1D1A63: 0F C6 C9 AA           - shufps xmm1,xmm1,-56
+KillerInstinctX64_r.exe+1D1A67: F3 0F 58 C8           - addss xmm1,xmm0
+KillerInstinctX64_r.exe+1D1A6B: 0F C6 C9 00           - shufps xmm1,xmm1,00
+KillerInstinctX64_r.exe+1D1A6F: 0F 51 C1              - sqrtps xmm0,xmm1
+KillerInstinctX64_r.exe+1D1A72: 0F 5E D8              - divps xmm3,xmm0
+KillerInstinctX64_r.exe+1D1A75: 0F 58 DA              - addps xmm3,xmm2
+// ---------- INJECTING HERE ----------
+KillerInstinctX64_r.exe+1D1A78: 0F 29 99 A0 03 00 00  - movaps [rcx+000003A0],xmm3
+// ---------- DONE INJECTING  ----------
+KillerInstinctX64_r.exe+1D1A7F: 48 8B CB              - mov rcx,rbx
+KillerInstinctX64_r.exe+1D1A82: E8 49 53 FF 00        - call KillerInstinctX64_r.exe+11C6DD0
+KillerInstinctX64_r.exe+1D1A87: 0F 28 00              - movaps xmm0,[rax]
+KillerInstinctX64_r.exe+1D1A8A: 0F 29 03              - movaps [rbx],xmm0
+KillerInstinctX64_r.exe+1D1A8D: 0F 28 48 10           - movaps xmm1,[rax+10]
+KillerInstinctX64_r.exe+1D1A91: 0F 29 4B 10           - movaps [rbx+10],xmm1
+KillerInstinctX64_r.exe+1D1A95: 0F 28 40 20           - movaps xmm0,[rax+20]
+KillerInstinctX64_r.exe+1D1A99: 0F 29 43 20           - movaps [rbx+20],xmm0
+KillerInstinctX64_r.exe+1D1A9D: 48 8B 4C 24 50        - mov rcx,[rsp+50]
+KillerInstinctX64_r.exe+1D1AA2: 48 33 CC              - xor rcx,rsp
+}"""
+
+[[cheat]]
+id = "ptr-y-alpha-aa-addr"
+name = "ptr_Y_alpha_AA_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_Y_alpha_AA_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptr-y-alpha-bb-addr"
+name = "ptr_Y_alpha_BB_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_Y_alpha_BB_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptr-z-aa"
+name = "ptr_Z_AA"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_Z_AA"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "0-5"
+name = "0.5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_Z_BB"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptr-coord-x-a-addr"
+name = "ptr_coord_X_A_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_coord_X_A_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptr-coord-x-b-addr"
+name = "ptr_coord_X_B_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_coord_X_B_addr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptr-z-cc"
+name = "ptr_Z_CC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_Z_CC"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptr-z-dd"
+name = "ptr_Z_DD"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_Z_DD"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "ptr-tilt-addr"
+name = "ptr_tilt_addr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_tilt_addr"
+hops = ["+0x0"]

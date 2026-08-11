@@ -1,0 +1,138 @@
+[game]
+name = "Outbound table v: 1.0 CT"
+exe = "outbound.exe"
+notes = "Converted from a Cheat Engine table by ModZero. Source: https://fearlessrevolution.com/viewtopic.php?t=39688"
+verified = []
+author = "ModZero"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "get-player-vehicle"
+name = "Get Player & Vehicle"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Player.Update)
+define(bytes,40 55 56 48 8D 6C 24 B1)
+
+define(address2,VehicleNeeds.Update)
+define(bytes2,48 8B C4 48 89 58 10)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Player.Update)
+registersymbol(GetPlayer)
+label(code return GetPlayer)
+
+newmem:
+mov [GetPlayer],rcx
+
+code:
+  push rbp
+  push rsi
+  lea rbp,[rsp-4F]
+  jmp return
+
+GetPlayer:
+dq 0
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+assert(address2,bytes2)
+alloc(newmem2,$1000,VehicleNeeds.Update)
+registersymbol(GetVehicle)
+label(code2 return2 GetVehicle)
+
+newmem2:
+mov [GetVehicle],rcx
+
+code2:
+  mov rax,rsp
+  mov [rax+10],rbx
+  jmp return2
+
+GetVehicle:
+dq 0
+
+address2:
+  jmp newmem2
+  nop 2
+return2:
+
+[DISABLE]
+
+address:
+  db bytes
+
+address2:
+  db bytes2
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "rapid-stamina-refill"
+name = "Rapid Stamina Refill"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(UnlimitedStamina,GameAssembly.dll,F3 0F 59 86 DC 00 00 00)
+alloc(newmem,$1000,UnlimitedStamina)
+
+label(code)
+label(return)
+
+newmem:
+mov [rsi+DC],(float)99999999
+code:
+  mulss xmm0,[rsi+000000DC]
+  jmp return
+
+UnlimitedStamina:
+  jmp newmem
+  nop 3
+return:
+registersymbol(UnlimitedStamina)
+
+aobscanmodule(StaminaRefillRate,GameAssembly.dll,89 86 DC 00 00 00 8B 8E)
+alloc(newmem2,$1000,StaminaRefillRate)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  mov [rsi+000000DC],(float)99999999
+  jmp return2
+
+StaminaRefillRate:
+  jmp newmem2
+  nop
+return2:
+registersymbol(StaminaRefillRate)
+
+[DISABLE]
+
+UnlimitedStamina:
+  db F3 0F 59 86 DC 00 00 00
+
+StaminaRefillRate:
+  db 89 86 DC 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""

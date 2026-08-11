@@ -1,0 +1,526 @@
+[game]
+name = "Hidden Deep AOB"
+exe = "hdeep.exe"
+notes = "Converted from a Cheat Engine table by reverser69. Source: https://fearlessrevolution.com/viewtopic.php?t=33536"
+verified = []
+author = "reverser69"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "current-weapon-ammo"
+name = "Current Weapon Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(ammoCurrWpn,$process,8B ?? ?? 18 8B ?? 48 8b ?? 08 8b ?? 68 02 00 00 8b)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+mov ecx,[ammoAmount]
+mov [edx+eax*4+18],ecx
+
+code:
+  mov eax,[edx+eax*4+18]
+  mov edx,[edi+48]
+  jmp return
+
+ammoAmount:
+dd #300
+
+ammoCurrWpn:
+  jmp newmem
+  nop 2
+return:
+registersymbol(ammoCurrWpn)
+registersymbol(ammoAmount)
+
+[DISABLE]
+ammoCurrWpn:
+  db 8B 44 82 18 8B 57 48
+
+unregistersymbol(ammoCurrWpn)
+unregistersymbol(ammoAmount)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: hdeep.exe+3B38FD
+
+hdeep.exe+3B38D6: 56                             - push esi
+hdeep.exe+3B38D7: 57                             - push edi
+hdeep.exe+3B38D8: 8B 7D 08                       - mov edi,[ebp+08]
+hdeep.exe+3B38DB: 8B 47 08                       - mov eax,[edi+08]
+hdeep.exe+3B38DE: 81 B8 68 02 00 00 00 28 8F 00  - cmp [eax+00000268],hdeep.exe+4F2800
+hdeep.exe+3B38E8: 0F 84 53 01 00 00              - je hdeep.exe+3B3A41
+hdeep.exe+3B38EE: 8B 57 44                       - mov edx,[edi+44]
+hdeep.exe+3B38F1: 8B 47 08                       - mov eax,[edi+08]
+hdeep.exe+3B38F4: 8B 80 68 02 00 00              - mov eax,[eax+00000268]
+hdeep.exe+3B38FA: 8B 40 44                       - mov eax,[eax+44]
+// ---------- INJECTING HERE ----------
+hdeep.exe+3B38FD: 8B 44 82 18                    - mov eax,[edx+eax*4+18]
+// ---------- DONE INJECTING  ----------
+hdeep.exe+3B3901: 8B 57 48                       - mov edx,[edi+48]
+hdeep.exe+3B3904: 8B 4F 08                       - mov ecx,[edi+08]
+hdeep.exe+3B3907: 8B 89 68 02 00 00              - mov ecx,[ecx+00000268]
+hdeep.exe+3B390D: 8B 49 44                       - mov ecx,[ecx+44]
+hdeep.exe+3B3910: 2B 44 8A 18                    - sub eax,[edx+ecx*4+18]
+hdeep.exe+3B3914: 89 C6                          - mov esi,eax
+hdeep.exe+3B3916: 83 FE 00                       - cmp esi,00
+hdeep.exe+3B3919: 0F 84 9D 00 00 00              - je hdeep.exe+3B39BC
+hdeep.exe+3B391F: 89 75 FC                       - mov [ebp-04],esi
+hdeep.exe+3B3922: DB 45 FC                       - fild dword ptr [ebp-04]
+}"""
+
+[[cheat]]
+id = "amount"
+name = "Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ammoAmount"
+hops = []
+
+[[cheat]]
+id = "give-weapon"
+name = "Give Weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(classRead,$process,8B ?? FF ?? CC 00 00 00 83 C4 04 C7 ?? e8 02 00 00)
+aobscanmodule(wpnGiver,$process,55 89 e5 ?? ?? ?? 8b ?? 0c 8b ?? 10 ?? ?? ?? ?? ?? 83 ?? 00 0f 8e ?? ?? ?? ?? 8b ?? 08) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(argList)
+label(clean)
+label(loopCall)
+label(doExecChk)
+label(classBak)
+
+newmem:
+cmp [GiveAll],00
+je doExecChk
+
+pushad
+pushfd
+
+xor ebx,ebx
+mov [classBak], eax
+
+loopCall:
+mov ecx, [argList+ebx*4]
+cmp ecx,FFFFFFFF
+je @F
+mov eax, [classBak]
+
+push 0
+push ecx
+push eax
+call wpnGiver
+add esp,0C
+
+inc ebx
+jmp loopCall
+
+@@:
+mov [GiveAll],00
+jmp clean
+
+
+
+doExecChk:
+cmp [doExec],00
+je code
+
+pushad
+pushfd
+
+push 0
+push [_ID]
+push eax
+call wpnGiver
+add esp,0C
+
+
+mov [doExec],00
+
+clean:
+  popfd
+  popad
+
+code:
+  mov eax,[eax]
+  call dword ptr [eax+000000CC]
+  jmp return
+
+doExec:
+dd 0
+
+GiveAll:
+dd 0
+
+_ID:
+dd 8 // pkm
+
+classBak:
+dd 0
+
+argList:
+dd 1, 2, 3, 5, 6, 7, 8, 9, #11, #12, #13, #14, FFFFFFFF
+
+classRead:
+  jmp newmem
+  nop 3
+return:
+registersymbol(classRead)
+registersymbol(wpnGiver)
+registersymbol(doExec)
+registersymbol(GiveAll)
+registersymbol(_ID)
+
+[DISABLE]
+classRead:
+  db 8B 00 FF 90 CC 00 00 00
+
+unregistersymbol(classRead)
+unregistersymbol(wpnGiver)
+unregistersymbol(doExec)
+unregistersymbol(GiveAll)
+unregistersymbol(_ID)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: hdeep.exe+414DB1
+
+hdeep.exe+414D8D: 83 F8 00                       - cmp eax,00
+hdeep.exe+414D90: 75 12                          - jne hdeep.exe+414DA4
+hdeep.exe+414D92: 8B 87 0C 01 00 00              - mov eax,[edi+0000010C]
+hdeep.exe+414D98: 8B 40 20                       - mov eax,[eax+20]
+hdeep.exe+414D9B: 83 F8 26                       - cmp eax,26
+hdeep.exe+414D9E: 0F 94 C0                       - sete al
+hdeep.exe+414DA1: 0F B6 C0                       - movzx eax,al
+hdeep.exe+414DA4: 89 87 6C 02 00 00              - mov [edi+0000026C],eax
+hdeep.exe+414DAA: 8B 87 E4 01 00 00              - mov eax,[edi+000001E4]
+hdeep.exe+414DB0: 50                             - push eax
+// ---------- INJECTING HERE ----------
+hdeep.exe+414DB1: 8B 00                          - mov eax,[eax]
+// ---------- DONE INJECTING  ----------
+hdeep.exe+414DB3: FF 90 CC 00 00 00              - call dword ptr [eax+000000CC]
+hdeep.exe+414DB9: 83 C4 04                       - add esp,04
+hdeep.exe+414DBC: C7 87 E8 02 00 00 00 00 00 00  - mov [edi+000002E8],00000000
+hdeep.exe+414DC6: A1 08 21 94 00                 - mov eax,[hdeep.exe+542108]
+hdeep.exe+414DCB: D9 05 3C 4F 9D 00              - fld dword ptr [hdeep.exe+5D4F3C]
+hdeep.exe+414DD1: D9 58 0C                       - fstp dword ptr [eax+0C]
+hdeep.exe+414DD4: 89 F8                          - mov eax,edi
+hdeep.exe+414DD6: 68 00 28 8F 00                 - push hdeep.exe+4F2800
+hdeep.exe+414DDB: 50                             - push eax
+hdeep.exe+414DDC: 8B 00                          - mov eax,[eax]
+}
+
+
+// wpn giver
+
+{
+// ORIGINAL CODE - INJECTION POINT: hdeep.exe+3B2BD3
+
+hdeep.exe+3B2BC0: D9 EE              - fldz
+hdeep.exe+3B2BC2: D9 5E 70           - fstp dword ptr [esi+70]
+hdeep.exe+3B2BC5: B8 00 00 00 00     - mov eax,00000000
+hdeep.exe+3B2BCA: EB 00              - jmp hdeep.exe+3B2BCC
+hdeep.exe+3B2BCC: 5F                 - pop edi
+hdeep.exe+3B2BCD: 5E                 - pop esi
+hdeep.exe+3B2BCE: 5B                 - pop ebx
+hdeep.exe+3B2BCF: 89 EC              - mov esp,ebp
+hdeep.exe+3B2BD1: 5D                 - pop ebp
+hdeep.exe+3B2BD2: C3                 - ret
+// ---------- INJECTING HERE ----------
+hdeep.exe+3B2BD3: 55                 - push ebp
+// ---------- DONE INJECTING  ----------
+hdeep.exe+3B2BD4: 89 E5              - mov ebp,esp
+hdeep.exe+3B2BD6: 53                 - push ebx
+hdeep.exe+3B2BD7: 56                 - push esi
+hdeep.exe+3B2BD8: 57                 - push edi
+hdeep.exe+3B2BD9: 8B 7D 0C           - mov edi,[ebp+0C]
+hdeep.exe+3B2BDC: 8B 45 10           - mov eax,[ebp+10]
+hdeep.exe+3B2BDF: BB 00 28 8F 00     - mov ebx,hdeep.exe+4F2800
+hdeep.exe+3B2BE4: 83 FF 00           - cmp edi,00
+hdeep.exe+3B2BE7: 0F 8E DC 00 00 00  - jng hdeep.exe+3B2CC9
+hdeep.exe+3B2BED: 8B 45 08           - mov eax,[ebp+08]
+}"""
+
+[[cheat]]
+id = "id"
+name = "ID"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 14
+choices = [
+    "14:Beam Emitter",
+    "13:Light Pistol",
+    "12:Assault Rile gr-762",
+    "11:Elephant Gun",
+    "9:MicroUzi",
+    "8:PKM",
+    "7:Shock-Baton",
+    "6:Flamethrower",
+    "5:Shotgun",
+    "3:Assault Rile cs-56",
+    "2:Powerful Pistol",
+    "1:Crowbar",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "_ID"
+hops = []
+
+[[cheat]]
+id = "execute-set-to-1"
+name = "Execute (set to 1)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "doExec"
+hops = []
+
+[[cheat]]
+id = "giveall-set-to-1"
+name = "GiveAll (set to 1)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GiveAll"
+hops = []
+
+[[cheat]]
+id = "teleport"
+name = "Teleport"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(teleport,$process,0f ?? ?? 83 ?? 00 0F 84 ?? ?? ?? ?? C7 ?? ?? ?? ?? ?? 01 00 00 00 a1 ?? ?? ?? ?? c7 ?? 1c 01 00 00 00 c7 ?? ?? ?? ?? ?? 00 00 00 00)
+registersymbol(teleport)
+
+[DISABLE]
+unregistersymbol(teleport)
+
+{
+// ORIGINAL CODE - INJECTION POINT: hdeep.exe.code+A4471
+
+hdeep.exe.code+A444F: 0F 9F C0                       - setg al
+hdeep.exe.code+A4452: 0F B6 C0                       - movzx eax,al
+hdeep.exe.code+A4455: 83 F8 00                       - cmp eax,00
+hdeep.exe.code+A4458: 74 14                          - je hdeep.exe.code+A446E
+hdeep.exe.code+A445A: A1 34 BD 9E 00                 - mov eax,[hdeep.exe.data+F3D34]
+hdeep.exe.code+A445F: 8B 80 A0 02 00 00              - mov eax,[eax+000002A0]
+hdeep.exe.code+A4465: 83 F8 78                       - cmp eax,78
+hdeep.exe.code+A4468: 0F 9F C0                       - setg al
+hdeep.exe.code+A446B: 0F B6 C0                       - movzx eax,al
+hdeep.exe.code+A446E: 83 F8 00                       - cmp eax,00
+// ---------- INJECTING HERE ----------
+hdeep.exe.code+A4471: 0F 84 AD 00 00 00              - je hdeep.exe.code+A4524
+// ---------- DONE INJECTING  ----------
+hdeep.exe.code+A4477: C7 05 E4 06 9F 00 01 00 00 00  - mov [hdeep.exe.data+F86E4],00000001
+hdeep.exe.code+A4481: A1 20 03 9A 00                 - mov eax,[hdeep.exe.data+A8320]
+hdeep.exe.code+A4486: C7 40 1C 01 00 00 00           - mov [eax+1C],00000001
+hdeep.exe.code+A448D: C7 05 E0 07 9F 00 00 00 00 00  - mov [hdeep.exe.data+F87E0],00000000
+hdeep.exe.code+A4497: A1 28 07 9F 00                 - mov eax,[hdeep.exe.data+F8728]
+hdeep.exe.code+A449C: 83 F8 00                       - cmp eax,00
+hdeep.exe.code+A449F: 0F 94 C0                       - sete al
+hdeep.exe.code+A44A2: 0F B6 C0                       - movzx eax,al
+hdeep.exe.code+A44A5: 83 F8 00                       - cmp eax,00
+hdeep.exe.code+A44A8: 74 0E                          - je hdeep.exe.code+A44B8
+}"""
+
+[[cheat]]
+id = "current-crew"
+name = "Current Crew"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(currCrew,$process,74 ?? 8B ?? 08 D9 ?? F8 01 00 00 d9 ?? ?? ?? ?? ?? d9 c9 da e9 df e0 9e 0f 96 ?? 0f b6 ?? 83 ?? 00 75 ?? 8b ?? 10 83 ?? 00)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+mov [crewBase], eax
+
+code:
+  fld dword ptr [eax+000001F8]
+  jmp return
+
+crewBase:
+dd 00
+
+currCrew+05:
+  jmp newmem
+  nop
+return:
+registersymbol(currCrew)
+registersymbol(crewBase)
+
+[DISABLE]
+currCrew+05:
+  db D9 80 F8 01 00 00
+
+unregistersymbol(currCrew)
+unregistersymbol(crewBase)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: hdeep.exe.code+1D6FFE
+
+hdeep.exe.code+1D6FDF: 83 F8 00           - cmp eax,00
+hdeep.exe.code+1D6FE2: 74 44              - je hdeep.exe.code+1D7028
+hdeep.exe.code+1D6FE4: 8B 43 08           - mov eax,[ebx+08]
+hdeep.exe.code+1D6FE7: 8B 80 54 01 00 00  - mov eax,[eax+00000154]
+hdeep.exe.code+1D6FED: 83 F8 00           - cmp eax,00
+hdeep.exe.code+1D6FF0: 0F 94 C0           - sete al
+hdeep.exe.code+1D6FF3: 0F B6 C0           - movzx eax,al
+hdeep.exe.code+1D6FF6: 83 F8 00           - cmp eax,00
+hdeep.exe.code+1D6FF9: 74 1C              - je hdeep.exe.code+1D7017
+hdeep.exe.code+1D6FFB: 8B 43 08           - mov eax,[ebx+08]
+// ---------- INJECTING HERE ----------
+hdeep.exe.code+1D6FFE: D9 80 F8 01 00 00  - fld dword ptr [eax+000001F8]
+// ---------- DONE INJECTING  ----------
+hdeep.exe.code+1D7004: D9 05 E0 D6 9C 00  - fld dword ptr [hdeep.exe.data+D56E0]
+hdeep.exe.code+1D700A: D9 C9              - fxch st(1)
+hdeep.exe.code+1D700C: DA E9              - fucompp 
+hdeep.exe.code+1D700E: DF E0              - fnstsw ax
+hdeep.exe.code+1D7010: 9E                 - sahf 
+hdeep.exe.code+1D7011: 0F 96 C0           - setbe al
+hdeep.exe.code+1D7014: 0F B6 C0           - movzx eax,al
+hdeep.exe.code+1D7017: 83 F8 00           - cmp eax,00
+hdeep.exe.code+1D701A: 75 0C              - jne hdeep.exe.code+1D7028
+hdeep.exe.code+1D701C: 8B 43 10           - mov eax,[ebx+10]
+}"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(godModeTgl,$process,0F B6 C0 83 F8 00 0F 84 ?? ?? ?? ?? 83 ?? ?? ?? ?? ?? 00 75 ?? c7 ?? ?? ?? ?? ?? 01 00 00 00 c7 ?? ?? ?? ?? ?? 01 00 00 00 c7 ?? ?? ?? ?? ?? 01 00 00 00 6a)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+cmp [do_godModeTgl], 0
+je code
+mov al, 1
+
+code:
+  cmp eax,00
+
+  mov [do_godModeTgl], 0
+
+  je return+e4
+
+  jmp return
+
+do_godModeTgl:
+dd 00
+
+godModeTgl+3:
+  jmp newmem
+  nop 4
+return:
+registersymbol(godModeTgl)
+registersymbol(do_godModeTgl)
+
+[DISABLE]
+godModeTgl+3:
+  cmp eax,00
+  db 0F 84 E4 00 00 00 // je 006713F1
+
+unregistersymbol(godModeTgl)
+unregistersymbol(do_godModeTgl)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: hdeep.exe+271301
+
+hdeep.exe+2712DC: 8B 80 00 02 00 00              - mov eax,[eax+00000200]
+hdeep.exe+2712E2: 83 F8 3C                       - cmp eax,3C
+hdeep.exe+2712E5: 0F 9F C0                       - setg al
+hdeep.exe+2712E8: 0F B6 C0                       - movzx eax,al
+hdeep.exe+2712EB: 83 F8 00                       - cmp eax,00
+hdeep.exe+2712EE: 74 14                          - je hdeep.exe+271304
+hdeep.exe+2712F0: A1 34 BD 9E 00                 - mov eax,[hdeep.exe+5EBD34]
+hdeep.exe+2712F5: 8B 80 9C 02 00 00              - mov eax,[eax+0000029C]
+hdeep.exe+2712FB: 83 F8 3C                       - cmp eax,3C
+hdeep.exe+2712FE: 0F 9F C0                       - setg al
+hdeep.exe+271301: 0F B6 C0                       - movzx eax,al
+// ---------- INJECTING HERE ----------
+hdeep.exe+271304: 83 F8 00                       - cmp eax,00
+hdeep.exe+271307: 0F 84 E4 00 00 00              - je hdeep.exe+2713F1
+// ---------- DONE INJECTING  ----------
+hdeep.exe+27130D: 83 3D A0 07 9F 00 00           - cmp dword ptr [hdeep.exe+5F07A0],00
+hdeep.exe+271314: 75 4D                          - jne hdeep.exe+271363
+hdeep.exe+271316: C7 05 A0 07 9F 00 01 00 00 00  - mov [hdeep.exe+5F07A0],00000001
+hdeep.exe+271320: C7 05 9C 07 9F 00 01 00 00 00  - mov [hdeep.exe+5F079C],00000001
+hdeep.exe+27132A: C7 05 A8 07 9F 00 01 00 00 00  - mov [hdeep.exe+5F07A8],00000001
+hdeep.exe+271334: 6A 01                          - push 01
+hdeep.exe+271336: 68 79 57 92 00                 - push hdeep.exe+525779
+hdeep.exe+27133B: E8 B0 5E F4 FF                 - call hdeep.exe+1B71F0
+}"""
+
+[[cheat]]
+id = "toggle-set-to-1"
+name = "Toggle (set to 1)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "do_godModeTgl"
+hops = []

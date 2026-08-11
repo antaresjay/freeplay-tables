@@ -1,0 +1,398 @@
+[game]
+name = "Frontline Attack - War over Europe"
+exe = "fa.exe"
+notes = "Converted from a Cheat Engine table by Recifense. Source: https://fearlessrevolution.com/viewtopic.php?t=622"
+verified = []
+author = "Recifense"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-frontline-attack-woe-v1-1-7-script"
+name = "[X]<== Frontline Attack - WoE v1.1.7 Script"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Game Title    : Frontline Attack: War over Europe
+ Game Version  : 1.1.7 (UK)
+ Script Version: 1.0
+ CE Version    : 6.1
+ Release date  : 02-Jul-2011
+ Author        : Recifense
+ Features:
+ - God Mode
+ - Unlimited Ammo
+ - Unlimited Support
+ - Unlimited Money
+===========================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert("FA.ex2"+0799d0,8b 11 57 ff 52 1c)
+assert("FA.ex2"+1619cc,ba 00 00 00 00)
+assert("FA.ex2"+060323,8b 93 a0 00 00 00)
+assert("FA.ex2"+0f7e06,8d 44 17 04 49)
+assert("FA.ex2"+087ff3,66 8b b1 24 01 00 00)
+
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+// Declaration section
+label(_MonPlayer)
+label(_BackMP)
+label(_ExitMP)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonAmmo)
+label(_BackMA)
+label(_ExitMA)
+label(_MonSup)
+label(_BackMS)
+label(_ExitMS)
+label(_GodModeS)
+label(_BackGMS)
+label(_ExitGMS)
+label(pUnit)
+label(pPlayer)
+label(iEnableGM)
+label(iEnableMA)
+label(iEnableMS)
+label(iEnableMM)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pUnit)
+registersymbol(pPlayer)
+registersymbol(iEnableGM)
+registersymbol(iEnableMA)
+registersymbol(iEnableMS)
+registersymbol(iEnableMM)
+
+//=========================================
+MyCode:
+//=========================================
+_MonPlayer:
+ mov edx,[ecx+08]                  // get pPlayer
+ test edx,edx
+ jz _ExitMP
+
+ cmp dword ptr [edx+18],1
+ jne _ExitMP
+
+ mov [pPlayer],edx
+
+ cmp dword ptr [iEnableMM],0
+ je _ExitMP                        // Jump if feature is disabled
+
+ push ebx
+ mov ebx,[edx+00000350]            // Get Max Money
+ mov [edx+00000344],ebx            // Update current money value
+ pop ebx
+
+_ExitMP:
+ mov edx,[ecx]                     // Original code
+ push edi                          // Original code
+ call dword ptr [edx+1C]           // Original code
+ jmp _BackMP                       // Back to main code
+
+//=========================================
+// Vehicles
+_GodMode:
+ mov [pUnit],esi                    // Save ptr for debugging
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                        // Jump if feature is disabled
+
+ mov edx,[esi+78]                  //
+ cmp edx,[pPlayer]
+ jne _ExitGM
+
+ xor edi,edi                       // value2decrease = 0
+
+ mov dx,[esi+4e]                   // Get max HP
+ mov [esi+4c],dx                   // Make current HP = max
+
+_ExitGM:
+ mov edx,00000000                  // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonAmmo:
+ cmp dword ptr [iEnableMA],0
+ je _ExitMA                        // Jump if feature is disabled
+
+ mov edx,[ebx+3c]
+ test edx,edx
+ jz _ExitMA
+
+ mov edx,[edx+78]
+ cmp edx,[pPlayer]
+ jne _ExitMA
+
+ xor ecx,ecx                       // value2decrease = 0
+
+_ExitMA:
+ mov edx,[ebx+000000A0]            // Original code
+ jmp _BackMA                       // Back to main code
+
+//=========================================
+_MonSup:
+ cmp dword ptr [iEnableMS],0
+ je _ExitMS                        // Jump if feature is disabled
+
+ cmp esi,[pPlayer]
+ jne _ExitMS
+
+ inc ecx
+
+_ExitMS:
+ lea eax,[edi+edx+04]              // Original code
+ dec ecx                           // Original code
+ jmp _BackMS                       // Back to main code
+
+//=========================================
+// Soldiers: But they can still die when overrun by a vehicle
+_GodModeS:
+ cmp dword ptr [iEnableGM],0
+ je _ExitGMS                       // Jump if feature is disabled
+
+ mov edi,[ecx+3c]                  // Get ptr to troop
+ test edi,edi
+ jz _ExitGMS
+
+ mov edi,[edi+78]                  // get ptr to owner
+ cmp edi,[pPlayer]
+ jne _ExitGMS
+
+ mov edi,[ecx+10]                  // Get ptr to typeinfo
+ test edi,edi
+ jz _ExitGMS
+
+ mov si,[edi+000000cc]             // Get maximum HP
+ mov [ecx+00000124],si             // Cur HP = max
+
+ mov edi,[ebp+08]
+ mov dword ptr [edi],0             //
+
+_ExitGMS:
+ mov si,[ecx+00000124]             // Original code
+ jmp _BackGMS                      // Back to main code
+
+//=========================================
+ db '===========>'
+ db 'CE6.1 Script by Recifense 070211'
+//=========================================
+// Variables
+iEnableGM:
+ dd 1
+iEnableMA:
+ dd 1
+iEnableMS:
+ dd 1
+iEnableMM:
+ dd 1
+pUnit:
+ dd 0
+pPlayer:
+ dd 0
+
+//=========================================
+// Hacking Points
+"FA.ex2"+0799d0:
+ jmp _MonPlayer
+ nop
+_BackMP:
+
+"FA.ex2"+1619cc:
+ jmp _GodMode
+_BackGM:
+
+"FA.ex2"+060323:
+ jmp _MonAmmo
+ nop
+_BackMA:
+
+"FA.ex2"+0f7e06:
+ jmp _MonSup
+_BackMS:
+
+"FA.ex2"+087ff3:
+ jmp _GodModeS
+ nop
+ nop
+_BackGMS:
+
+//=========================================
+// Original Codes
+[DISABLE]
+"FA.ex2"+0799d0:
+// mov edx,[ecx]
+// push edi
+// call dword ptr [edx+1C]
+ db 8b 11 57 ff 52 1c
+
+"FA.ex2"+1619cc:
+// mov edx,00000000
+ db ba 00 00 00 00
+
+"FA.ex2"+060323:
+// mov edx,[ebx+000000A0]
+ db 8b 93 a0 00 00 00
+
+"FA.ex2"+0f7e06:
+// lea eax,[edi+edx+04]
+// dec ecx
+ db 8d 44 17 04 49
+
+"FA.ex2"+087ff3:
+// mov si,[ecx+00000124]
+ db 66 8b b1 24 01 00 00
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pUnit)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMA)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableMM)
+unregistersymbol(pPlayer)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+struct PLAYER:
+0000 = 0081A504
+0004 = i0
+0018 = i1 (player)
+0330 = pAirSupport
+0344 = icMoney
+0350 = imMoney
+
+struct AIRSUPPORT:
+0004 = iLightBombers
+0024 = puName
+0030 = iBombers
+0050 = puName
+005c = iRecon
+007c = puName
+0088 = iHeavyArtillery
+00A8 = puName
+...
+
+struct VEHICLE/TROOP:
+0000 = 00816a30
+0004 = 00800047
+004c = wcHP
+004e = wmHP
+0078 = pPlayer
+0080 = pAmmo
+0090 = pSoldier1
+0094 = pSoldier2
+0098 = pSoldier3
+009c = pSoldier4
+00A0 = pSoldier5
+00A4 = pSoldier6
+00A8 = pSoldier7
+00Ac = pSoldier8
+00B0 = pSoldier9
+00d5 = bcSoldiers
+00d6 = bmSoldiers
+01b4 = pFocusedEnemy
+
+struct AMMO:
+0000 = 00813768
+003c = pVehicle/Troop
+0064 = pVehicle/Troop
+00A0 = iAmmo
+
+struct SOLDIER:
+0000 = 00816428
+0010 = pType
+003c = pVehicle/Troop
+0064 = pVehicle/Troop
+0124 = wcHP
+
+struct SOLDIER_TYPE:
+00CC = wmHP
+00D0 = wRecover
+}"""
+
+[[cheat]]
+id = "enable-disable-god-mode-1-0"
+name = "Enable/Disable God Mode ==> (1/0)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-ammo-1-0"
+name = "Enable/Disable Unlimited Ammo ==> (1/0)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMA"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-support-1-0"
+name = "Enable/Disable Unlimited Support ==> (1/0)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMS"
+hops = []
+
+[[cheat]]
+id = "enable-disable-unlimited-money-1-0"
+name = "Enable/Disable Unlimited Money ==> (1/0)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMM"
+hops = []

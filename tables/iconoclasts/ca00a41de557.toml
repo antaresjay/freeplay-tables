@@ -1,0 +1,1135 @@
+[game]
+name = "Iconoclast"
+exe = "iconoclasts.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=6060"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_invincibilityset_enable)
+registersymbol(playerstats_jumpset_enable)
+registersymbol(playerstats_jumpset_value)
+registersymbol(playerstats_jumpset_counter)
+registersymbol(playerstats_healthset_enable)
+registersymbol(playerstats_airset_enable)
+registersymbol(playerstats_gunset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_invincibilityset_enable, 4)
+alloc(playerstats_jumpset_enable, 4)
+alloc(playerstats_jumpset_value, 4)
+alloc(playerstats_jumpset_counter, 4)
+alloc(playerstats_healthset_enable, 4)
+alloc(playerstats_airset_enable, 4)
+alloc(playerstats_gunset_enable, 4)
+
+playerstats_jumpset_value:
+dd #5
+
+playerstats_jumpset_counter:
+dd #0
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_invincibilityset_enable)
+unregistersymbol(playerstats_jumpset_enable)
+unregistersymbol(playerstats_jumpset_value)
+unregistersymbol(playerstats_jumpset_counter)
+unregistersymbol(playerstats_healthset_enable)
+unregistersymbol(playerstats_airset_enable)
+unregistersymbol(playerstats_gunset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_invincibilityset_enable)
+dealloc(playerstats_jumpset_enable)
+dealloc(playerstats_jumpset_value)
+dealloc(playerstats_jumpset_counter)
+dealloc(playerstats_healthset_enable)
+dealloc(playerstats_airset_enable)
+dealloc(playerstats_gunset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_invincibilityset_exit)
+label(playerstats_jumpset_exit)
+label(playerstats_healthset_exit)
+label(playerstats_airset_exit)
+label(playerstats_gunset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//Iconoclasts.exe+5F0986 - 0F84 92000000         - je Iconoclasts.exe+5F0A1E
+//Iconoclasts.exe+5F098C - F2 0F10 05 C0941A01   - movsd xmm0,[Iconoclasts.exe+8694C0]
+//Iconoclasts.exe+5F0994 - 8B 83 28080000        - mov eax,[ebx+00000828]
+//Iconoclasts.exe+5F099A - 8B 40 28              - mov eax,[eax+28]
+// Accesses Health
+//Iconoclasts.exe+5F099D - F2 0F10 88 50060000   - movsd xmm1,[eax+00000650]
+//Iconoclasts.exe+5F09A5 - 66 0F2F C8            - comisd xmm1,xmm0
+//Iconoclasts.exe+5F09A9 - 77 07                 - ja Iconoclasts.exe+5F09B2
+//Iconoclasts.exe+5F09AB - 0F57 C0               - xorps xmm0,xmm0
+//Iconoclasts.exe+5F09AE - F2 0F5F C1            - maxsd xmm0,xmm1
+aobscan(playerstats_searchedAOB, 8B 83 28 08 00 00 8B 40 28 F2 0F 10 88 50 06 00 00 66 0F 2F C8 77 07)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+alloc(playerstats_temp5, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], ebx
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_invincibilityset_enable], #0
+je playerstats_invincibilityset_exit
+mov eax, [ebx+4a8]
+test eax, eax
+je playerstats_invincibilityset_exit
+mov eax, [eax+28]
+test eax, eax
+je playerstats_invincibilityset_exit
+mov [playerstats_temp5], #9
+fild [playerstats_temp5]
+fstp qword [eax+6d8]
+playerstats_invincibilityset_exit:
+
+cmp dword ptr [playerstats_jumpset_enable], #0
+je playerstats_jumpset_exit
+mov eax, [ebx+4a8]
+test eax, eax
+je playerstats_jumpset_exit
+mov eax, [eax+28]
+test eax, eax
+je playerstats_jumpset_exit
+cmp dword ptr [eax+66c], #0
+jne playerstats_jumpset_exit
+mov ecx, [playerstats_jumpset_counter]
+dec ecx
+mov [playerstats_jumpset_counter], ecx
+cmp dword ptr [playerstats_jumpset_counter], #0
+jge playerstats_jumpset_exit
+mov ecx, [playerstats_jumpset_value]
+mov [playerstats_jumpset_counter], ecx
+mov [playerstats_temp5], #0
+fild [playerstats_temp5]
+fstp qword [eax+658]
+playerstats_jumpset_exit:
+
+cmp dword ptr [playerstats_healthset_enable], #0
+je playerstats_healthset_exit
+mov eax, [ebx+828]
+test eax, eax
+je playerstats_healthset_exit
+mov eax, [eax+28]
+test eax, eax
+je playerstats_healthset_exit
+mov [playerstats_temp5], #999
+fild [playerstats_temp5]
+fstp qword [eax+650]
+playerstats_healthset_exit:
+
+cmp dword ptr [playerstats_airset_enable], #0
+je playerstats_airset_exit
+mov eax, [ebx+838]
+test eax, eax
+je playerstats_airset_exit
+mov eax, [eax+28]
+test eax, eax
+je playerstats_airset_exit
+mov [playerstats_temp5], #9999
+fild [playerstats_temp5]
+fstp qword [eax+698]
+playerstats_airset_exit:
+
+cmp dword ptr [playerstats_gunset_enable], #0
+je playerstats_gunset_exit
+mov eax, [ebx+918]
+test eax, eax
+je playerstats_gunset_exit
+mov eax, [eax+28]
+test eax, eax
+je playerstats_gunset_exit
+mov [playerstats_temp5], #0
+fild [playerstats_temp5]
+fst qword [eax+610]
+fstp qword [eax+658]
+playerstats_gunset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+db 8B 83 28 08 00 00
+//mov eax,[ebx+00000828]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 8B 83 28 08 00 00
+//mov eax,[ebx+00000828]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "invincibility-set-to-massive"
+name = "Invincibility Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_invincibilityset_enable"
+hops = []
+
+[[cheat]]
+id = "jump-status-set-to-always-jump"
+name = "Jump Status Set to Always Jump?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_jumpset_enable"
+hops = []
+
+[[cheat]]
+id = "jump-value"
+name = "Jump Value"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_jumpset_value"
+hops = []
+
+[[cheat]]
+id = "health-set-to-massive"
+name = "Health Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "air-set-to-massive"
+name = "Air Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_airset_enable"
+hops = []
+
+[[cheat]]
+id = "stun-gun-set-to-massive"
+name = "Stun-Gun Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_gunset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x3b8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x3b8",
+    "+0x3e0",
+    "+0x0",
+]
+
+[[cheat]]
+id = "tweak-slots"
+name = "Tweak Slots"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x3b8",
+    "+0x3e0",
+    "+0x8",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "horizontal-force"
+name = "Horizontal Force"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x628",
+]
+
+[[cheat]]
+id = "vertical-force-hotkey"
+name = "Vertical Force (Hotkey)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x630",
+]
+
+[[cheat]]
+id = "crouch-force"
+name = "Crouch Force"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x638",
+]
+
+[[cheat]]
+id = "horizontal-position-hotkey"
+name = "Horizontal Position (Hotkey)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x648",
+]
+
+[[cheat]]
+id = "vertical-position-hotkey"
+name = "Vertical Position (Hotkey)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x650",
+]
+
+[[cheat]]
+id = "crouch-status"
+name = "Crouch Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x668",
+]
+
+[[cheat]]
+id = "jump-status-0-not-jumping-1-jumping-2-falling"
+name = "Jump Status (0 = Not Jumping, 1 = Jumping, 2 = Falling)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x658",
+]
+
+[[cheat]]
+id = "ground-status"
+name = "Ground Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x6c0",
+]
+
+[[cheat]]
+id = "invincibility-time"
+name = "Invincibility Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x6d8",
+]
+
+[[cheat]]
+id = "underwater-status"
+name = "Underwater Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x708",
+]
+
+[[cheat]]
+id = "air-status"
+name = "Air Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x4a8",
+    "+0x28",
+    "+0x778",
+]
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x828",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x828",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x828",
+    "+0x28",
+    "+0x650",
+]
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x838",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-9"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x838",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "air"
+name = "Air"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x838",
+    "+0x28",
+    "+0x698",
+]
+
+[[cheat]]
+id = "electric-charge-status"
+name = "Electric Charge Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x838",
+    "+0x28",
+    "+0x6d0",
+]
+
+[[cheat]]
+id = "electric-charge"
+name = "Electric Charge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x838",
+    "+0x28",
+    "+0x6d8",
+]
+
+[[cheat]]
+id = "electric-charge-2"
+name = "Electric Charge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x838",
+    "+0x28",
+    "+0x6e0",
+]
+
+[[cheat]]
+id = "base-address-10"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x918",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-11"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x918",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "shoot-cooldown"
+name = "Shoot Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x918",
+    "+0x28",
+    "+0x610",
+]
+
+[[cheat]]
+id = "shoot-status"
+name = "Shoot Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x918",
+    "+0x28",
+    "+0x620",
+]
+
+[[cheat]]
+id = "charge"
+name = "Charge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x918",
+    "+0x28",
+    "+0x648",
+]
+
+[[cheat]]
+id = "charge-cooldown"
+name = "Charge Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x918",
+    "+0x28",
+    "+0x658",
+]
+
+[[cheat]]
+id = "charge-cooldown-status"
+name = "Charge Cooldown Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x918",
+    "+0x28",
+    "+0x668",
+]
+
+[[cheat]]
+id = "base-address-12"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-13"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-14"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x34",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-15"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x34",
+    "+0x34",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-16"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x34",
+    "+0x34",
+    "+0x600",
+    "+0x0",
+]
+
+[[cheat]]
+id = "improvium"
+name = "Improvium"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x34",
+    "+0x34",
+    "+0x600",
+    "+0x38",
+]
+
+[[cheat]]
+id = "metallium"
+name = "Metallium"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x34",
+    "+0x34",
+    "+0x600",
+    "+0xc8",
+]
+
+[[cheat]]
+id = "technium"
+name = "Technium"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x34",
+    "+0x34",
+    "+0x600",
+    "+0x158",
+]
+
+[[cheat]]
+id = "ivory-oil"
+name = "Ivory Oil"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x101c",
+    "+0x28",
+    "+0x34",
+    "+0x34",
+    "+0x600",
+    "+0x1e8",
+]

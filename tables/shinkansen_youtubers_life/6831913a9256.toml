@@ -1,0 +1,3741 @@
+[game]
+name = "Youtubers Life"
+exe = "shinkansen_youtubers_life.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=987"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "engine-base-address-scan-initialization-activate-this-first"
+name = "Engine Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Engine_basepointer)
+registersymbol(Engine_update_enable)
+registersymbol(Engine_set_enable)
+registersymbol(Engine_moneyset_enable)
+registersymbol(Engine_hungerfatigueset_enable)
+registersymbol(Engine_scriptsset_enable)
+
+alloc(Engine_basepointer, 4)
+alloc(Engine_update_enable, 4)
+alloc(Engine_set_enable, 4)
+alloc(Engine_moneyset_enable, 4)
+alloc(Engine_hungerfatigueset_enable, 4)
+alloc(Engine_scriptsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Engine_basepointer)
+unregistersymbol(Engine_update_enable)
+unregistersymbol(Engine_set_enable)
+unregistersymbol(Engine_moneyset_enable)
+unregistersymbol(Engine_hungerfatigueset_enable)
+unregistersymbol(Engine_scriptsset_enable)
+
+dealloc(Engine_basepointer)
+dealloc(Engine_update_enable)
+dealloc(Engine_set_enable)
+dealloc(Engine_moneyset_enable)
+dealloc(Engine_hungerfatigueset_enable)
+dealloc(Engine_scriptsset_enable)"""
+
+[[cheat]]
+id = "engine-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Engine Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Engine_savedAOB)
+label(Engine_returnhere)
+label(Engine_originalcode)
+label(Engine_exit)
+
+label(Engine_update_exit)
+label(Engine_set_exit)
+label(Engine_moneyset_exit)
+label(Engine_hungerfatigueset_exit)
+label(Engine_scriptsset_exit)
+
+registersymbol(Engine_savedAOB)
+
+//350BC31E - 83 EC 2C              - sub esp,2C
+//350BC321 - 8B 7D 08              - mov edi,[ebp+08]
+// Engine:Update+c
+//350BC324 - 8B 47 2C              - mov eax,[edi+2C]
+//350BC327 - 83 EC 0C              - sub esp,0C
+//350BC32A - 50                    - push eax
+//350BC32B - 39 00                 - cmp [eax],eax
+//350BC32D - E8 0E060000           - call 350BC940
+//350BC332 - 83 C4 10              - add esp,10
+//350BC335 - 0FB6 87 BC000000      - movzx eax,byte ptr [edi+000000BC]
+//350BC33C - 85 C0                 - test eax,eax
+//350BC33E - 0F85 A9050000         - jne 350BC8ED
+aobscan(Engine_searchedAOB, 8B 47 2C 83 EC 0C 50 39 00 * * * * * 83 C4 10 0F B6 87 BC 00 00)
+
+alloc(Engine_newmem, 2048, Engine_searchedAOB)
+alloc(Engine_temp1, 4, Engine_searchedAOB)
+alloc(Engine_temp2, 4, Engine_searchedAOB)
+alloc(Engine_temp3, 4, Engine_searchedAOB)
+alloc(Engine_temp4, 4, Engine_searchedAOB)
+
+
+Engine_newmem:
+mov [Engine_temp1], eax
+mov [Engine_temp2], ebx
+mov [Engine_temp3], ecx
+mov [Engine_temp4], edx
+
+cmp dword ptr [Engine_update_enable], #0
+je Engine_update_exit
+mov [Engine_basepointer], edi
+Engine_update_exit:
+
+cmp dword ptr [Engine_set_enable], #0
+je Engine_set_exit
+Engine_set_exit:
+
+cmp dword ptr [Engine_moneyset_enable], #0
+je Engine_moneyset_exit
+mov [edi+90], (float)9999999
+Engine_moneyset_exit:
+
+cmp dword ptr [edi+c], #0
+je Engine_scriptsset_exit
+mov eax, [edi+c]
+cmp dword ptr [eax+2c], #0
+je Engine_scriptsset_exit
+mov eax, [eax+2c]
+
+cmp dword ptr [Engine_hungerfatigueset_enable], #0
+je Engine_hungerfatigueset_exit
+mov [eax+38], (float)100
+mov [eax+3c], (float)100
+Engine_hungerfatigueset_exit:
+
+cmp dword ptr [Engine_scriptsset_enable], #0
+je Engine_scriptsset_exit
+mov [eax+48], (float)9999999
+mov [eax+4c], (float)9999999
+mov [eax+50], (float)9999999
+mov [eax+54], (float)9999999
+mov [eax+58], (float)9999999
+Engine_scriptsset_exit:
+
+mov eax, [Engine_temp1]
+mov ebx, [Engine_temp2]
+mov ecx, [Engine_temp3]
+mov edx, [Engine_temp4]
+
+
+Engine_originalcode:
+db 8B 47 2C 83 EC 0C
+//mov eax,[edi+2C]
+//sub esp,0C
+
+
+Engine_exit:
+jmp Engine_returnhere
+
+
+Engine_searchedAOB:
+Engine_savedAOB:
+jmp Engine_newmem
+nop
+Engine_returnhere:
+
+
+[DISABLE]
+Engine_savedAOB:
+db 8B 47 2C 83 EC 0C
+//mov eax,[edi+2C]
+//sub esp,0C
+
+unregistersymbol(Engine_savedAOB)
+
+dealloc(Engine_newmem)
+dealloc(Engine_temp1)
+dealloc(Engine_temp2)
+dealloc(Engine_temp3)
+dealloc(Engine_temp4)"""
+
+[[cheat]]
+id = "money-set-to-massive"
+name = "Money Set to Massive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_moneyset_enable"
+hops = []
+
+[[cheat]]
+id = "hunger-fatigue-set-to-0"
+name = "Hunger, Fatigue Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_hungerfatigueset_enable"
+hops = []
+
+[[cheat]]
+id = "professional-scripts-set-to-massive"
+name = "Professional Scripts Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_scriptsset_enable"
+hops = []
+
+[[cheat]]
+id = "engine-update-base-address"
+name = "Engine Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "fatigue"
+name = "Fatigue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x38",
+]
+
+[[cheat]]
+id = "hunger"
+name = "Hunger"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "script"
+name = "Script"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x48",
+]
+
+[[cheat]]
+id = "performance"
+name = "Performance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "sound"
+name = "Sound"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x50",
+]
+
+[[cheat]]
+id = "video-editing"
+name = "Video Editing"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x54",
+]
+
+[[cheat]]
+id = "post-production"
+name = "Post-production"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0x58",
+]
+
+[[cheat]]
+id = "experience"
+name = "Experience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x2c",
+    "+0xb8",
+]
+
+[[cheat]]
+id = "ospvoooikhl"
+name = "OSPVOOOIKHL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x60",
+]
+
+[[cheat]]
+id = "nniutqtmtqj"
+name = "NNIUTQTMTQJ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x64",
+]
+
+[[cheat]]
+id = "lkhustnimvo"
+name = "LKHUSTNIMVO"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x68",
+]
+
+[[cheat]]
+id = "nnulurkqsjv"
+name = "NNULURKQSJV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "qilsjoptqsu"
+name = "QILSJOPTQSU"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x70",
+]
+
+[[cheat]]
+id = "trivjushgpq"
+name = "TRIVJUSHGPQ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x74",
+]
+
+[[cheat]]
+id = "jprtvrkhgnr"
+name = "JPRTVRKHGNR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x78",
+]
+
+[[cheat]]
+id = "hkunmngptgo"
+name = "HKUNMNGPTGO"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "tujtgktktit"
+name = "TUJTGKTKTIT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x80",
+]
+
+[[cheat]]
+id = "tqthusigtjm-level"
+name = "TQTHUSIGTJM Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x84",
+]
+
+[[cheat]]
+id = "psgnuioklop-talent-points"
+name = "PSGNUIOKLOP Talent Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x88",
+]
+
+[[cheat]]
+id = "jinlpopgpmr"
+name = "JINLPOPGPMR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "qkknjgnhgqn"
+name = "QKKNJGNHGQN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x90",
+]
+
+[[cheat]]
+id = "jvrgrgopvtt"
+name = "JVRGRGOPVTT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x94",
+]
+
+[[cheat]]
+id = "uvnlmquosul"
+name = "UVNLMQUOSUL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0x98",
+]
+
+[[cheat]]
+id = "nmjutqtirsi"
+name = "NMJUTQTIRSI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xa4",
+]
+
+[[cheat]]
+id = "gupvtitllpn"
+name = "GUPVTITLLPN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xa8",
+]
+
+[[cheat]]
+id = "tloomhpvoru"
+name = "TLOOMHPVORU"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xac",
+]
+
+[[cheat]]
+id = "prjmurijukv"
+name = "PRJMURIJUKV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xb0",
+]
+
+[[cheat]]
+id = "jkhslkigors"
+name = "JKHSLKIGORS"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xb4",
+]
+
+[[cheat]]
+id = "vsvoqnputol"
+name = "VSVOQNPUTOL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xb8",
+]
+
+[[cheat]]
+id = "hokpgpjitjl"
+name = "HOKPGPJITJL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xbc",
+]
+
+[[cheat]]
+id = "hhmpugqnilm"
+name = "HHMPUGQNILM"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xc0",
+]
+
+[[cheat]]
+id = "hrqkljoumum"
+name = "HRQKLJOUMUM"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xc8",
+]
+
+[[cheat]]
+id = "rrroshhprlj"
+name = "RRROSHHPRLJ"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xcc",
+]
+
+[[cheat]]
+id = "suqqpklplmg"
+name = "SUQQPKLPLMG"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xcd",
+]
+
+[[cheat]]
+id = "spkntikgsqr"
+name = "SPKNTIKGSQR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = [
+    "+0xc",
+    "+0xce",
+]
+
+[[cheat]]
+id = "ogkpqvugrvn"
+name = "OGKPQVUGRVN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "vsovvjiogvo-money"
+name = "VSOVVJIOGVO Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "uiuvphmljpi"
+name = "UIUVPHMLJPI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "otisrjropou"
+name = "OTISRJROPOU"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "gtnnosmrvir"
+name = "GTNNOSMRVIR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "voigvsrkirv"
+name = "VOIGVSRKIRV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "nmjutqtirsi-2"
+name = "NMJUTQTIRSI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "ttklghsokvo"
+name = "TTKLGHSOKVO"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "ktnnjtmiiqn"
+name = "KTNNJTMIIQN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "qonumspgrnh"
+name = "QONUMSPGRNH"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "gmgmjqjgmvl"
+name = "GMGMJQJGMVL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "snkqggiovtj"
+name = "SNKQGGIOVTJ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "iivjksronnu"
+name = "IIVJKSRONNU"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "gmnnmntqunj"
+name = "GMNNMNTQUNJ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "kstvpoqhjnj"
+name = "KSTVPOQHJNJ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "ghnnltuigsk"
+name = "GHNNLTUIGSK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Engine_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "channel-base-address-scan-initialization-activate-this-first"
+name = "Channel Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Channel_basepointer)
+registersymbol(Channel_update_enable)
+registersymbol(Channel_set_enable)
+registersymbol(Channel_statusset_enable)
+registersymbol(Channel_subscribersset_enable)
+
+alloc(Channel_basepointer, 4)
+alloc(Channel_update_enable, 4)
+alloc(Channel_set_enable, 4)
+alloc(Channel_statusset_enable, 4)
+alloc(Channel_subscribersset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Channel_basepointer)
+unregistersymbol(Channel_update_enable)
+unregistersymbol(Channel_set_enable)
+unregistersymbol(Channel_statusset_enable)
+unregistersymbol(Channel_subscribersset_enable)
+
+dealloc(Channel_basepointer)
+dealloc(Channel_update_enable)
+dealloc(Channel_set_enable)
+dealloc(Channel_statusset_enable)
+dealloc(Channel_subscribersset_enable)"""
+
+[[cheat]]
+id = "channel-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Channel Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Channel_savedAOB)
+label(Channel_returnhere)
+label(Channel_originalcode)
+label(Channel_exit)
+
+label(Channel_update_exit)
+label(Channel_set_exit)
+label(Channel_statusset_exit)
+label(Channel_subscribersset_exit)
+
+registersymbol(Channel_savedAOB)
+
+//05225C95 - 89 47 3C              - mov [edi+3C],eax
+//05225C98 - 8B 45 0C              - mov eax,[ebp+0C]
+// DAOData:Channel:set_Subscribers+13
+//05225C9B - 89 47 38              - mov [edi+38],eax
+//05225C9E - C6 87 38010000 01     - mov byte ptr [edi+00000138],01
+//05225CA5 - 83 EC 08              - sub esp,08
+//05225CA8 - 6A 04                 - push 04
+//05225CAA - 57                    - push edi
+aobscan(Channel_searchedAOB, 0F B6 80 38 01 00 00 85 C0 * * * * * * 8B 45 08)
+
+alloc(Channel_newmem, 2048, Channel_searchedAOB)
+alloc(Channel_temp1, 4, Channel_searchedAOB)
+alloc(Channel_temp2, 4, Channel_searchedAOB)
+alloc(Channel_temp3, 4, Channel_searchedAOB)
+alloc(Channel_temp4, 4, Channel_searchedAOB)
+
+
+Channel_newmem:
+mov [Channel_temp1], eax
+mov [Channel_temp2], ebx
+mov [Channel_temp3], ecx
+mov [Channel_temp4], edx
+
+cmp dword ptr [eax+f8], #1
+jne Channel_subscribersset_exit
+
+cmp dword ptr [Channel_update_enable], #0
+je Channel_update_exit
+mov [Channel_basepointer], eax
+Channel_update_exit:
+
+cmp dword ptr [Channel_set_enable], #0
+je Channel_set_exit
+Channel_set_exit:
+
+cmp dword ptr [Channel_statusset_enable], #0
+je Channel_statusset_exit
+mov [eax+40], (float)100
+Channel_statusset_exit:
+
+cmp dword ptr [Channel_subscribersset_enable], #0
+je Channel_subscribersset_exit
+mov [eax+30], #999999999
+mov [eax+38], #999999999
+Channel_subscribersset_exit:
+
+mov eax, [Channel_temp1]
+mov ebx, [Channel_temp2]
+mov ecx, [Channel_temp3]
+mov edx, [Channel_temp4]
+
+
+Channel_originalcode:
+db 0F B6 80 38 01 00 00
+//movzx eax,byte ptr [eax+00000138]
+
+
+Channel_exit:
+jmp Channel_returnhere
+
+
+Channel_searchedAOB:
+Channel_savedAOB:
+jmp Channel_newmem
+nop
+nop
+Channel_returnhere:
+
+
+[DISABLE]
+Channel_savedAOB:
+db 0F B6 80 38 01 00 00
+//movzx eax,byte ptr [eax+00000138]
+
+unregistersymbol(Channel_savedAOB)
+
+dealloc(Channel_newmem)
+dealloc(Channel_temp1)
+dealloc(Channel_temp2)
+dealloc(Channel_temp3)
+dealloc(Channel_temp4)"""
+
+[[cheat]]
+id = "status-set-to-massive"
+name = "Status Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_statusset_enable"
+hops = []
+
+[[cheat]]
+id = "views-subscribers-set-to-massive"
+name = "Views, Subscribers Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_subscribersset_enable"
+hops = []
+
+[[cheat]]
+id = "channel-update-base-address"
+name = "Channel Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "id"
+name = "_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "type"
+name = "_type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "views"
+name = "_views"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "subscribers"
+name = "_subscribers"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "status"
+name = "_status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "id-savegame"
+name = "_id_savegame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "language"
+name = "_language"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "seriuous0"
+name = "_seriuous0"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "seriuous1"
+name = "_seriuous1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "seriuous2"
+name = "_seriuous2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "seriuous3"
+name = "_seriuous3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "seriuous4"
+name = "_seriuous4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "know0"
+name = "_know0"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "know1"
+name = "_know1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "know2"
+name = "_know2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "know3"
+name = "_know3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "know4"
+name = "_know4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "age0"
+name = "_age0"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "age1"
+name = "_age1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "age2"
+name = "_age2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "age3"
+name = "_age3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "age4"
+name = "_age4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "sex0"
+name = "_sex0"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "sex1"
+name = "_sex1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "sex2"
+name = "_sex2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "sex3"
+name = "_sex3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "sex4"
+name = "_sex4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "id-youtuber"
+name = "_id_youtuber"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "last-video-views"
+name = "_last_video_views"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "last-video-date"
+name = "_last_video_date"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "creation-date"
+name = "_creation_date"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "num-videos"
+name = "_num_videos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "video-needed"
+name = "_video_needed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "record-creativity"
+name = "_record_creativity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "record-recording"
+name = "_record_recording"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "record-edition"
+name = "_record_edition"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "isdirty"
+name = "_isDirty"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "isupdate"
+name = "_isUpdate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x139"]
+
+[[cheat]]
+id = "isreadonly"
+name = "_isReadOnly"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x13a"]
+
+[[cheat]]
+id = "oldprimarykeyvalue"
+name = "_oldPrimaryKeyValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Channel_basepointer"
+hops = ["+0x140"]
+
+[[cheat]]
+id = "uivideocardsgame-base-address-scan-initialization-activate-this-first"
+name = "UIVideoCardsGame Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(UIVideoCardsGame_basepointer)
+registersymbol(UIVideoCardsGame_update_enable)
+registersymbol(UIVideoCardsGame_set_enable)
+registersymbol(UIVideoCardsGame_ideasset_enable)
+registersymbol(UIVideoCardsGame_cliptimeset_enable)
+
+alloc(UIVideoCardsGame_basepointer, 4)
+alloc(UIVideoCardsGame_update_enable, 4)
+alloc(UIVideoCardsGame_set_enable, 4)
+alloc(UIVideoCardsGame_ideasset_enable, 4)
+alloc(UIVideoCardsGame_cliptimeset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(UIVideoCardsGame_basepointer)
+unregistersymbol(UIVideoCardsGame_update_enable)
+unregistersymbol(UIVideoCardsGame_set_enable)
+unregistersymbol(UIVideoCardsGame_ideasset_enable)
+unregistersymbol(UIVideoCardsGame_cliptimeset_enable)
+
+dealloc(UIVideoCardsGame_basepointer)
+dealloc(UIVideoCardsGame_update_enable)
+dealloc(UIVideoCardsGame_set_enable)
+dealloc(UIVideoCardsGame_ideasset_enable)
+dealloc(UIVideoCardsGame_cliptimeset_enable)"""
+
+[[cheat]]
+id = "uivideocardsgame-base-address-scan-to-activate-create-video-to-update-create-video"
+name = "UIVideoCardsGame Base Address Scan (To Activate: Create Video, To Update: Create Video)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(UIVideoCardsGame_savedAOB)
+label(UIVideoCardsGame_returnhere)
+label(UIVideoCardsGame_originalcode)
+label(UIVideoCardsGame_exit)
+
+label(UIVideoCardsGame_update_exit)
+label(UIVideoCardsGame_set_exit)
+label(UIVideoCardsGame_ideasset_exit)
+label(UIVideoCardsGame_cliptimeset_exit)
+
+registersymbol(UIVideoCardsGame_savedAOB)
+
+//3070F4F5 - 85 C0                 - test eax,eax
+//3070F4F7 - 0F85 C4040000         - jne 3070F9C1
+// UIVideoCardsGame:Update+95
+//3070F4FD - D9 87 08010000        - fld dword ptr [edi+00000108]
+//3070F503 - D9EE                  - fldz
+//3070F505 - DFF1                  - fcomip st(0),st(1)
+//3070F507 - DDD8                  - fstp st(0)
+//3070F509 - 0F8A B2040000         - jp 3070F9C1
+aobscan(UIVideoCardsGame_searchedAOB, D9 87 08 01 00 00 D9 EE DF F1)
+
+alloc(UIVideoCardsGame_newmem, 2048, UIVideoCardsGame_searchedAOB)
+alloc(UIVideoCardsGame_temp1, 4, UIVideoCardsGame_searchedAOB)
+alloc(UIVideoCardsGame_temp2, 4, UIVideoCardsGame_searchedAOB)
+alloc(UIVideoCardsGame_temp3, 4, UIVideoCardsGame_searchedAOB)
+alloc(UIVideoCardsGame_temp4, 4, UIVideoCardsGame_searchedAOB)
+
+
+UIVideoCardsGame_newmem:
+mov [UIVideoCardsGame_temp1], eax
+mov [UIVideoCardsGame_temp2], ebx
+mov [UIVideoCardsGame_temp3], ecx
+mov [UIVideoCardsGame_temp4], edx
+
+cmp dword ptr [UIVideoCardsGame_update_enable], #0
+je UIVideoCardsGame_update_exit
+mov [UIVideoCardsGame_basepointer], edi
+UIVideoCardsGame_update_exit:
+
+cmp dword ptr [UIVideoCardsGame_set_enable], #0
+je UIVideoCardsGame_set_exit
+UIVideoCardsGame_set_exit:
+
+cmp dword ptr [UIVideoCardsGame_ideasset_enable], #0
+je UIVideoCardsGame_ideasset_exit
+mov ebx, [edi+100]
+mov [edi+f8], ebx
+UIVideoCardsGame_ideasset_exit:
+
+cmp dword ptr [UIVideoCardsGame_cliptimeset_enable], #0
+je UIVideoCardsGame_cliptimeset_exit
+mov [edi+108], (float)10
+UIVideoCardsGame_cliptimeset_exit:
+
+mov eax, [UIVideoCardsGame_temp1]
+mov ebx, [UIVideoCardsGame_temp2]
+mov ecx, [UIVideoCardsGame_temp3]
+mov edx, [UIVideoCardsGame_temp4]
+
+
+UIVideoCardsGame_originalcode:
+db D9 87 08 01 00 00
+//fld dword ptr [edi+00000108]
+
+
+UIVideoCardsGame_exit:
+jmp UIVideoCardsGame_returnhere
+
+
+UIVideoCardsGame_searchedAOB:
+UIVideoCardsGame_savedAOB:
+jmp UIVideoCardsGame_newmem
+nop
+UIVideoCardsGame_returnhere:
+
+
+[DISABLE]
+UIVideoCardsGame_savedAOB:
+db D9 87 08 01 00 00
+//fld dword ptr [edi+00000108]
+
+unregistersymbol(UIVideoCardsGame_savedAOB)
+
+dealloc(UIVideoCardsGame_newmem)
+dealloc(UIVideoCardsGame_temp1)
+dealloc(UIVideoCardsGame_temp2)
+dealloc(UIVideoCardsGame_temp3)
+dealloc(UIVideoCardsGame_temp4)"""
+
+[[cheat]]
+id = "ideas-set-to-max"
+name = "Ideas Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_ideasset_enable"
+hops = []
+
+[[cheat]]
+id = "clip-time-set-to-10-seconds"
+name = "Clip Time Set to 10 Seconds?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_cliptimeset_enable"
+hops = []
+
+[[cheat]]
+id = "uivideocardsgame-update-base-address"
+name = "UIVideoCardsGame Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "osmprvtpvpv"
+name = "OSMPRVTPVPV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "jnksghngsip"
+name = "JNKSGHNGSIP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "uqlsvonopkq"
+name = "UQLSVONOPKQ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "sgoihiknuoq"
+name = "SGOIHIKNUOQ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "oksgmhqsrls-maximum-clips"
+name = "OKSGMHQSRLS Maximum Clips"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "qmpiujhqgqq"
+name = "QMPIUJHQGQQ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "ttjtnktjkhh"
+name = "TTJTNKTJKHH"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "nvmuljrhvlv"
+name = "NVMULJRHVLV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "ntmuiutrhpu-ideas"
+name = "NTMUIUTRHPU Ideas"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "tgvsihpmllp-maximum-ideas"
+name = "TGVSIHPMLLP Maximum Ideas"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "kjuvpnrrisi-clip-time"
+name = "KJUVPNRRISI Clip Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "rjvtqmnnlvg"
+name = "RJVTQMNNLVG"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "ogppgtlvtkq"
+name = "OGPPGTLVTKQ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "qkomjootgjj"
+name = "QKOMJOOTGJJ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "sovsrmrsmqn"
+name = "SOVSRMRSMQN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "kvmjprtkkmk"
+name = "KVMJPRTKKMK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "hsrnhjsrogm"
+name = "HSRNHJSROGM"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x161"]
+
+[[cheat]]
+id = "sgukmvqpknj"
+name = "SGUKMVQPKNJ"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UIVideoCardsGame_basepointer"
+hops = ["+0x162"]
+
+[[cheat]]
+id = "video-base-address-scan-initialization-activate-this-first"
+name = "Video Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Video_basepointer)
+registersymbol(Video_update_enable)
+registersymbol(Video_set_enable)
+registersymbol(Video_renderset_enable)
+registersymbol(Video_uploadset_enable)
+
+alloc(Video_basepointer, 4)
+alloc(Video_update_enable, 4)
+alloc(Video_set_enable, 4)
+alloc(Video_renderset_enable, 4)
+alloc(Video_uploadset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Video_basepointer)
+unregistersymbol(Video_update_enable)
+unregistersymbol(Video_set_enable)
+unregistersymbol(Video_renderset_enable)
+unregistersymbol(Video_uploadset_enable)
+
+dealloc(Video_basepointer)
+dealloc(Video_update_enable)
+dealloc(Video_set_enable)
+dealloc(Video_renderset_enable)
+dealloc(Video_uploadset_enable)"""
+
+[[cheat]]
+id = "video-base-address-scan-to-activate-edit-video-upload-to-update-edit-video-upload"
+name = "Video Base Address Scan (To Activate: Edit Video Upload, To Update: Edit Video Upload)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Video_savedAOB)
+label(Video_returnhere)
+label(Video_originalcode)
+label(Video_exit)
+
+label(Video_update_exit)
+label(Video_set_exit)
+label(Video_renderset_exit)
+label(Video_uploadset_exit)
+
+registersymbol(Video_savedAOB)
+
+//297CE38E - D9 45 0C              - fld dword ptr [ebp+0C]
+//297CE391 - 8B 45 08              - mov eax,[ebp+08]
+// DAOData:Video:set_Upload_time+c
+//297CE394 - D9 98 A4000000        - fstp dword ptr [eax+000000A4]
+//297CE39A - C6 80 08020000 01     - mov byte ptr [eax+00000208],01
+//297CE3A1 - 83 EC 08              - sub esp,08
+//297CE3A4 - 6A 14                 - push 14
+aobscan(Video_searchedAOB, D9 98 A4 00 00 00 C6 80 08 02 00 00 01)
+
+alloc(Video_newmem, 2048, Video_searchedAOB)
+alloc(Video_temp1, 4, Video_searchedAOB)
+alloc(Video_temp2, 4, Video_searchedAOB)
+alloc(Video_temp3, 4, Video_searchedAOB)
+alloc(Video_temp4, 4, Video_searchedAOB)
+
+
+Video_newmem:
+mov [Video_temp1], eax
+mov [Video_temp2], ebx
+mov [Video_temp3], ecx
+mov [Video_temp4], edx
+
+cmp dword ptr [Video_update_enable], #0
+je Video_update_exit
+mov [Video_basepointer], eax
+Video_update_exit:
+
+cmp dword ptr [Video_set_enable], #0
+je Video_set_exit
+Video_set_exit:
+
+cmp dword ptr [Video_renderset_enable], #0
+je Video_renderset_exit
+mov [eax+a0], (float)0
+Video_renderset_exit:
+
+cmp dword ptr [Video_uploadset_enable], #0
+je Video_uploadset_exit
+mov [eax+a4], (float)0
+Video_uploadset_exit:
+
+mov eax, [Video_temp1]
+mov ebx, [Video_temp2]
+mov ecx, [Video_temp3]
+mov edx, [Video_temp4]
+
+
+Video_originalcode:
+db C6 80 08 02 00 00 01
+//mov byte ptr [eax+00000208],01
+
+
+Video_exit:
+jmp Video_returnhere
+
+
+Video_searchedAOB + 6:
+Video_savedAOB:
+jmp Video_newmem
+nop
+nop
+Video_returnhere:
+
+
+[DISABLE]
+Video_savedAOB:
+db C6 80 08 02 00 00 01
+//mov byte ptr [eax+00000208],01
+
+unregistersymbol(Video_savedAOB)
+
+dealloc(Video_newmem)
+dealloc(Video_temp1)
+dealloc(Video_temp2)
+dealloc(Video_temp3)
+dealloc(Video_temp4)"""
+
+[[cheat]]
+id = "render-time-set-to-0"
+name = "Render Time Set to 0?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_renderset_enable"
+hops = []
+
+[[cheat]]
+id = "upload-time-set-to-0"
+name = "Upload Time Set to 0?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_uploadset_enable"
+hops = []
+
+[[cheat]]
+id = "video-update-base-address"
+name = "Video Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "id-2"
+name = "_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "id-savegame-2"
+name = "_id_savegame"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "id-channel"
+name = "_id_channel"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "id-youtuber-2"
+name = "_id_youtuber"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "video-type"
+name = "_video_type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "status-2"
+name = "_status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "views-2"
+name = "_views"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "subscribers-2"
+name = "_subscribers"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "likes"
+name = "_likes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "dislikes"
+name = "_dislikes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "extra-id"
+name = "_extra_id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "channel-type"
+name = "_channel_type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "money"
+name = "_money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "score-script"
+name = "_score_script"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "score-acting"
+name = "_score_acting"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "score-audio"
+name = "_score_audio"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "score-video"
+name = "_score_video"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "score-edition"
+name = "_score_edition"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "render-time"
+name = "_render_time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "upload-time"
+name = "_upload_time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "published-time"
+name = "_published_time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "start-phase-time"
+name = "_start_phase_time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "subscribers-views"
+name = "_subscribers_views"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "like-ratio-external-factor"
+name = "_like_ratio_external_factor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "like-ratio"
+name = "_like_ratio"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "video-age"
+name = "_video_age"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "last-total-views"
+name = "_last_total_views"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "video-effects"
+name = "_video_effects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "audio-effects"
+name = "_audio_effects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "num-clips"
+name = "_num_clips"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "id-group-pc"
+name = "_id_group_pc"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "puntos-puzzle-edicion"
+name = "_puntos_puzzle_edicion"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "virality"
+name = "_virality"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "starting-trending-1"
+name = "_starting_trending_1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "starting-trending-2"
+name = "_starting_trending_2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "trending-video-type"
+name = "_trending_video_type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "last-subscribers-views"
+name = "_last_subscribers_views"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "promo-factor"
+name = "_promo_factor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "target-knowledge-entertainment"
+name = "_target_knowledge_entertainment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "target-serious-humour"
+name = "_target_serious_humour"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "target-age"
+name = "_target_age"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x124"]
+
+[[cheat]]
+id = "target-sex"
+name = "_target_sex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "target-adequation"
+name = "_target_adequation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x12c"]
+
+[[cheat]]
+id = "cam-resolution"
+name = "_cam_resolution"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "mic-filter"
+name = "_mic_filter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "mic-recording"
+name = "_mic_recording"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x140"]
+
+[[cheat]]
+id = "energy-points"
+name = "_energy_points"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "render-points"
+name = "_render_points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "total-score-contents"
+name = "_total_score_contents"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "total-score-quality"
+name = "_total_score_quality"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x15c"]
+
+[[cheat]]
+id = "total-score-edition"
+name = "_total_score_edition"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "rendered-time"
+name = "_rendered_time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x164"]
+
+[[cheat]]
+id = "uploaded-time"
+name = "_uploaded_time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "money-crowdfunding"
+name = "_money_crowdfunding"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x16c"]
+
+[[cheat]]
+id = "interest"
+name = "_interest"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x170"]
+
+[[cheat]]
+id = "automatic"
+name = "_automatic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "publish-asap"
+name = "_publish_asap"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "copyright"
+name = "_copyright"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "strike"
+name = "_strike"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "strike-fixed"
+name = "_strike_fixed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "views-organic"
+name = "_views_organic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "views-subcribers"
+name = "_views_subcribers"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "id-interviewed"
+name = "_id_interviewed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "scene"
+name = "_scene"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "publish-date"
+name = "_publish_date"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "absolute-score"
+name = "_absolute_score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "percent-score"
+name = "_percent_score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "extra-id2"
+name = "_extra_id2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "croma"
+name = "_croma"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1d8"]
+
+[[cheat]]
+id = "extra-id3"
+name = "_extra_id3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1e0"]
+
+[[cheat]]
+id = "collaborator-extra"
+name = "_collaborator_extra"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1e8"]
+
+[[cheat]]
+id = "num-likes-comments"
+name = "_num_likes_comments"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1f0"]
+
+[[cheat]]
+id = "colab-interest"
+name = "_colab_interest"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "money-spent"
+name = "_money_spent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x200"]
+
+[[cheat]]
+id = "isdirty-2"
+name = "_isDirty"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "isupdate-2"
+name = "_isUpdate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x209"]
+
+[[cheat]]
+id = "isreadonly-2"
+name = "_isReadOnly"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x20a"]
+
+[[cheat]]
+id = "concurrency-type-dao-video-concurrencyoptions-unknown"
+name = "_concurrency (type: DAO.Video.ConcurrencyOptions) UNKNOWN"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x20c"]
+
+[[cheat]]
+id = "oldprimarykeyvalue-2"
+name = "_oldPrimaryKeyValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Video_basepointer"
+hops = ["+0x210"]

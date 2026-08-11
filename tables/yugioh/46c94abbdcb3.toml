@@ -1,0 +1,1508 @@
+[game]
+name = "Yu-Gi-Oh! Legacy of the Duelist: Link Evolution [Steam Build 4815132]"
+exe = "yugioh.exe"
+notes = "Converted from a Cheat Engine table by Nikolaos1519. Source: https://fearlessrevolution.com/viewtopic.php?t=39729"
+verified = []
+author = "Nikolaos1519"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-normal-summons"
+name = "Infinite Normal Summons"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Infinite Normal Summon/Set
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+NS = Normal Summon
+NSet = Normal Set
+H1 = Hook 1 is responsible for this feature.
+
+Description:
+- Allows the player to Normal Summon or Normal Set multiple times per turn.
+- Prevents the player-side 0x80 NS/NSet restriction bit from being set.
+- Preserves all other player action/state flags.
+- Opponent NS/NSet restriction remains unchanged.
+}
+
+[ENABLE]
+
+// =====================================
+// H1 - Infinite Normal Summon/Set
+// Skip Player 0x80 Restriction Bit
+// =====================================
+
+define(PlayerActionState,YuGiOh.exe+3497DD8)
+define(OpponentActionState,YuGiOh.exe+3498B6C)
+
+aobscanmodule(NSBit80Writer,YuGiOh.exe,0F BA E8 07 89 84 11 98 01 00 00 48 83 C4 30 5B C3)
+alloc(newmem_ns,$1000,NSBit80Writer)
+
+label(original_ns)
+label(writeState_ns)
+label(return_ns)
+
+newmem_ns:
+
+// ===================================================
+// NS/NSet Side Check Section
+// ===================================================
+
+{
+ Original instruction sequence:
+
+ bts eax,07
+ mov [rcx+rdx+00000198],eax
+
+ This sets bit 7, which adds the 0x80 NS/NSet restriction flag.
+
+ Effective action-state address being written:
+
+ [rcx+rdx+198]
+
+ Observed side/register behavior at this hook:
+
+ Player:
+   EBX = 0
+   RCX = 0
+   [RCX+RDX+198] = PlayerActionState
+
+ Opponent:
+   EBX = 1
+   RCX = D94
+   [RCX+RDX+198] = OpponentActionState
+}
+
+ test ebx,1
+ jne original_ns
+
+// =====================================
+// Modified Code:
+// Player side skips 0x80 restriction bit
+// =====================================
+
+{
+ Player side:
+
+ Skip bts eax,07 so the 0x80 NS/NSet restriction bit is not set.
+ Then run the original write with all other flags preserved.
+}
+
+ jmp writeState_ns
+
+
+// =====================================
+// Original Code:
+// Opponent side sets 0x80 normally
+// =====================================
+
+original_ns:
+
+ bts eax,07
+
+
+// =====================================
+// Shared Write:
+// Store final action-state value
+// =====================================
+
+writeState_ns:
+
+ mov [rcx+rdx+00000198],eax
+ jmp return_ns
+
+
+// Return to game code, padded out gap till next instruction.
+
+NSBit80Writer:
+ jmp newmem_ns
+ nop 6
+
+return_ns:
+
+registersymbol(NSBit80Writer)
+
+[DISABLE]
+
+// Restore H1
+
+NSBit80Writer:
+ db 0F BA E8 07 89 84 11 98 01 00 00
+
+unregistersymbol(NSBit80Writer)
+dealloc(newmem_ns)"""
+
+[[cheat]]
+id = "core-monster-bp-hooks"
+name = "Core Monster BP Hooks"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Monster BP Core Hooks
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+BP = Battle Position
+BP_CORE_ACTIVE = Shared flag set by this core script.
+BP_INF_ACTIVE = Shared flag set by Infinite Atk/Def Position Changes.
+BP_MULTI_ATTACK_ACTIVE = Shared flag set by Infinite Monster Attacks.
+INSTANT_BP_ACTIVE = Shared flag set by Instant Monster Flip/Summon Position Changes.
+INSTANT_BP_44_USED = Per-slot latch used by Instant BP for one-time 41h / 44h handling.
+
+Description:
+- Shared core hook script for monster BP features.
+- Owns the standard BP restriction writer hook used by both Instant BP and Infinite BP.
+- Owns the MP2 post-attack cleanup hook used by Infinite BP.
+- Owns the final attack-used writer hook used by Infinite Monster Attacks.
+- Owns the Instant BP legality hook used by Instant Monster Flip/Summon Position Changes.
+- Does not enable Instant BP, Infinite BP, or Infinite Monster Attacks by itself.
+- Must be enabled before using the child feature scripts.
+
+H1:
+- Watches the actual BP-change restriction writer.
+- If Infinite BP is active, suppresses the standard 0x40 BP lock write for player monsters.
+- If Instant BP is active, marks the per-slot face-up latch when a real BP change occurs
+  from 41h or 44h so those states can be allowed once but not infinitely.
+
+H2:
+- Runs during MP2 transition.
+- If Infinite BP is active, clears only the 0x40 BP restriction bit from player monsters.
+- Preserves the 0x80 attack-state bit so monsters do not regain attacks from Infinite BP.
+
+H3:
+- Runs after the game sets bit 7 using:
+    bts eax,07
+    mov [rbx+rbp+60],eax
+- If Infinite Monster Attacks is active, clears only the 0x80 attack-used bit
+  from player monster zones.
+- Preserves 0x40 so BP restriction behaviour remains separate from attack behaviour.
+
+H4:
+- Runs at the BP legality check.
+- If Instant BP is active, bypasses fresh summon/set/flip BP restrictions for player monsters.
+- Allows 4Ah, 50h, and 54h states immediately.
+- Allows 41h and 44h once per slot using INSTANT_BP_44_USED.
+- Allows 5Ah only when Infinite BP and Core Hooks are active.
+- Preserves original TEST flags, JE behaviour, registers, FLIP effects, and summon processing.
+}
+
+[ENABLE]
+
+// =====================================
+// Shared Feature Flags / Latches
+// =====================================
+
+globalalloc(BP_CORE_ACTIVE,1)
+globalalloc(BP_INF_ACTIVE,1)
+globalalloc(BP_MULTI_ATTACK_ACTIVE,1)
+globalalloc(INSTANT_BP_ACTIVE,1)
+globalalloc(INSTANT_BP_44_USED,5)
+
+// =====================================
+// Player Monster Slot Flag Addresses
+// =====================================
+
+define(PlayerMonsterSlot1Flags,YuGiOh.exe+3497CA0)
+define(PlayerMonsterSlot2Flags,YuGiOh.exe+3497CB8)
+define(PlayerMonsterSlot3Flags,YuGiOh.exe+3497CD0)
+define(PlayerMonsterSlot4Flags,YuGiOh.exe+3497CE8)
+define(PlayerMonsterSlot5Flags,YuGiOh.exe+3497D00)
+
+// =====================================
+// Enable Core Hooks
+// =====================================
+
+BP_CORE_ACTIVE:
+  db 01
+
+
+// =====================================
+// H1 - Shared Standard BP Switch Hook
+//
+// Original instruction:
+//   or dword ptr [rax+rsi+03497CA0],40
+//
+// Responsibilities:
+// - Infinite BP:
+//   Suppress 0x40 lock writes for player
+//   monster zones only.
+//
+// - Instant BP:
+//   Mark face-up one-time latch when a real
+//   BP change occurs from 41h or 44h.
+// =====================================
+
+aobscanmodule(INJECT_BP_CORE_H1,YuGiOh.exe,83 8C 30 A0 7C 49 03 40)
+alloc(newmem_bp_core_h1,$1000,INJECT_BP_CORE_H1)
+
+label(player_bp_core_h1)
+label(mark44used_bp_core_h1)
+label(checkinf_bp_core_h1)
+label(original_bp_core_h1)
+label(skip_bp_core_h1)
+label(return_bp_core_h1)
+
+label(slot1_bp_core_h1)
+label(slot2_bp_core_h1)
+label(slot3_bp_core_h1)
+label(slot4_bp_core_h1)
+label(slot5_bp_core_h1)
+
+newmem_bp_core_h1:
+
+  // Preserve CPU state
+  pushfq
+  push rax
+  push rcx
+  push rdx
+  push r8
+
+  // Effective slot flag address
+  lea rdx,[rax+rsi+03497CA0]
+
+  // Match exact player monster slot
+  mov rax,PlayerMonsterSlot1Flags
+  cmp rdx,rax
+  je slot1_bp_core_h1
+
+  mov rax,PlayerMonsterSlot2Flags
+  cmp rdx,rax
+  je slot2_bp_core_h1
+
+  mov rax,PlayerMonsterSlot3Flags
+  cmp rdx,rax
+  je slot3_bp_core_h1
+
+  mov rax,PlayerMonsterSlot4Flags
+  cmp rdx,rax
+  je slot4_bp_core_h1
+
+  mov rax,PlayerMonsterSlot5Flags
+  cmp rdx,rax
+  je slot5_bp_core_h1
+
+  // Not a player monster slot
+  jmp original_bp_core_h1
+
+
+slot1_bp_core_h1:
+  mov r8,INSTANT_BP_44_USED
+  jmp player_bp_core_h1
+
+slot2_bp_core_h1:
+  mov r8,INSTANT_BP_44_USED+1
+  jmp player_bp_core_h1
+
+slot3_bp_core_h1:
+  mov r8,INSTANT_BP_44_USED+2
+  jmp player_bp_core_h1
+
+slot4_bp_core_h1:
+  mov r8,INSTANT_BP_44_USED+3
+  jmp player_bp_core_h1
+
+slot5_bp_core_h1:
+  mov r8,INSTANT_BP_44_USED+4
+  jmp player_bp_core_h1
+
+
+player_bp_core_h1:
+
+  // Instant BP support:
+  // If a real BP change occurs from 41h or 44h,
+  // mark this slot's face-up latch as used.
+  cmp byte ptr [INSTANT_BP_ACTIVE],1
+  jne checkinf_bp_core_h1
+
+  mov ecx,[rdx]
+
+  // Fresh Face-Up Summon
+  cmp ecx,41
+  je mark44used_bp_core_h1
+
+  // Fresh Face-Up Special Summon / 44h state
+  cmp ecx,44
+  je mark44used_bp_core_h1
+
+  jmp checkinf_bp_core_h1
+
+
+mark44used_bp_core_h1:
+
+  mov byte ptr [r8],1
+
+
+checkinf_bp_core_h1:
+
+  // Infinite BP support:
+  // If Infinite BP is active, skip the normal 0x40 lock write.
+  cmp byte ptr [BP_INF_ACTIVE],1
+  je skip_bp_core_h1
+
+  jmp original_bp_core_h1
+
+
+skip_bp_core_h1:
+
+  // Restore CPU state
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+  popfq
+
+  // Player slot + Infinite BP active:
+  // Skip standard 0x40 restriction write.
+  jmp return_bp_core_h1
+
+
+original_bp_core_h1:
+
+  // Restore CPU state
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+  popfq
+
+  // Original instruction
+  or dword ptr [rax+rsi+03497CA0],40
+
+  jmp return_bp_core_h1
+
+
+INJECT_BP_CORE_H1:
+  jmp newmem_bp_core_h1
+  nop 3
+
+return_bp_core_h1:
+
+registersymbol(INJECT_BP_CORE_H1)
+
+
+// =====================================
+// H2 - Shared MP2 Post-Attack Hook
+//
+// Original instruction:
+//   and dword ptr [rax+rdi+60],FFFFFDFF
+//
+// Infinite BP support only.
+// Preserves the game's original cleanup,
+// then clears only 0x40 for player monster
+// zones when Infinite BP is active.
+// =====================================
+
+aobscanmodule(INJECT_BP_CORE_H2,YuGiOh.exe,81 64 38 60 FF FD FF FF)
+alloc(newmem_bp_core_h2,$1000,INJECT_BP_CORE_H2)
+
+label(clear40_bp_core_h2)
+label(skip_bp_core_h2)
+label(return_bp_core_h2)
+
+newmem_bp_core_h2:
+
+  // Original instruction
+  and dword ptr [rax+rdi+60],FFFFFDFF
+
+  // Preserve CPU state after original flags are produced
+  pushfq
+  push rax
+  push rcx
+  push rdx
+
+  // Only apply MP2 BP cleanup if Infinite BP is active
+  cmp byte ptr [BP_INF_ACTIVE],1
+  jne skip_bp_core_h2
+
+  // Effective slot flag address
+  lea rdx,[rax+rdi+60]
+
+  // Match exact player monster slot
+  mov rcx,PlayerMonsterSlot1Flags
+  cmp rdx,rcx
+  je clear40_bp_core_h2
+
+  mov rcx,PlayerMonsterSlot2Flags
+  cmp rdx,rcx
+  je clear40_bp_core_h2
+
+  mov rcx,PlayerMonsterSlot3Flags
+  cmp rdx,rcx
+  je clear40_bp_core_h2
+
+  mov rcx,PlayerMonsterSlot4Flags
+  cmp rdx,rcx
+  je clear40_bp_core_h2
+
+  mov rcx,PlayerMonsterSlot5Flags
+  cmp rdx,rcx
+  je clear40_bp_core_h2
+
+  jmp skip_bp_core_h2
+
+
+clear40_bp_core_h2:
+
+  // Clear only 0x40 BP restriction bit.
+  // Keep 0x80 so Infinite BP does not regain attack access.
+  and dword ptr [rdx],FFFFFFBF
+
+
+skip_bp_core_h2:
+
+  // Restore CPU state
+  pop rdx
+  pop rcx
+  pop rax
+  popfq
+
+  jmp return_bp_core_h2
+
+
+INJECT_BP_CORE_H2:
+  jmp newmem_bp_core_h2
+  nop 3
+
+return_bp_core_h2:
+
+registersymbol(INJECT_BP_CORE_H2)
+
+
+// =====================================
+// H3 - Shared Multi-Attack Hook
+//
+// Original instructions:
+//   mov [rbx+rbp+60],eax
+//   jmp YuGiOh.exe+146DEC
+//
+// This hook runs after the game sets bit 7:
+//   bts eax,07
+//
+// Infinite Monster Attacks support only.
+// If active, clears only the 0x80 attack-used
+// bit from player monster zones.
+// =====================================
+
+aobscanmodule(INJECT_BP_CORE_H3,YuGiOh.exe,89 44 2B 60 E9 A0 00 00 00)
+alloc(newmem_bp_core_h3,$1000,INJECT_BP_CORE_H3)
+
+label(clear80_bp_core_h3)
+label(skip_bp_core_h3)
+label(return_bp_core_h3)
+
+newmem_bp_core_h3:
+
+  // Original write after bts eax,07
+  mov [rbx+rbp+60],eax
+
+  // Preserve CPU state
+  pushfq
+  push rax
+  push rcx
+  push rdx
+
+  // Only apply multi-attack cleanup if Infinite Monster Attacks is active
+  cmp byte ptr [BP_MULTI_ATTACK_ACTIVE],1
+  jne skip_bp_core_h3
+
+  // Effective slot flag address
+  lea rdx,[rbx+rbp+60]
+
+  // Match exact player monster slot
+  mov rcx,PlayerMonsterSlot1Flags
+  cmp rdx,rcx
+  je clear80_bp_core_h3
+
+  mov rcx,PlayerMonsterSlot2Flags
+  cmp rdx,rcx
+  je clear80_bp_core_h3
+
+  mov rcx,PlayerMonsterSlot3Flags
+  cmp rdx,rcx
+  je clear80_bp_core_h3
+
+  mov rcx,PlayerMonsterSlot4Flags
+  cmp rdx,rcx
+  je clear80_bp_core_h3
+
+  mov rcx,PlayerMonsterSlot5Flags
+  cmp rdx,rcx
+  je clear80_bp_core_h3
+
+  jmp skip_bp_core_h3
+
+
+clear80_bp_core_h3:
+
+  // Clear only 0x80 attack-used bit.
+  // Keep 0x40 so BP restriction behaviour stays separate.
+  and dword ptr [rdx],FFFFFF7F
+
+
+skip_bp_core_h3:
+
+  // Restore CPU state
+  pop rdx
+  pop rcx
+  pop rax
+  popfq
+
+  // Original overwritten jump destination
+  jmp YuGiOh.exe+146DEC
+
+
+INJECT_BP_CORE_H3:
+  jmp newmem_bp_core_h3
+  nop 4
+
+return_bp_core_h3:
+
+registersymbol(INJECT_BP_CORE_H3)
+
+
+// =====================================
+// H4 - Instant BP Legality Check Hook
+//
+// Original bytes:
+//   je YuGiOh.exe+??????
+//   mov eax,[YuGiOh.exe+3330284]
+//
+// Responsibilities:
+// - If Instant BP is active, allow player
+//   monsters through specific fresh summon,
+//   set, flip, and flip-resolved BP checks.
+// - Uses INSTANT_BP_44_USED for safe one-time
+//   41h / 44h handling.
+// - Preserves original TEST flags and JE logic.
+// =====================================
+
+aobscanmodule(INJECT_BP_CORE_H4,YuGiOh.exe,74 20 8B 05 2F 03 31 03)
+alloc(newmem_bp_core_h4,$1000,INJECT_BP_CORE_H4)
+
+label(original_bp_core_h4)
+label(forceallow_bp_core_h4)
+label(jumpallow_bp_core_h4)
+label(return_bp_core_h4)
+
+label(slotfound_bp_core_h4)
+label(check5A_bp_core_h4)
+label(not5A_bp_core_h4)
+label(check41_bp_core_h4)
+label(check44_bp_core_h4)
+label(check_faceup_one_time_bp_core_h4)
+label(check_faceup_core_bp_core_h4)
+
+label(slot1_bp_core_h4)
+label(slot2_bp_core_h4)
+label(slot3_bp_core_h4)
+label(slot4_bp_core_h4)
+label(slot5_bp_core_h4)
+
+newmem_bp_core_h4:
+
+  // Preserve CPU state
+  pushfq
+  push rax
+  push rcx
+  push rdx
+
+  // Only apply Instant BP legality bypass if Instant BP is active
+  cmp byte ptr [INSTANT_BP_ACTIVE],1
+  jne original_bp_core_h4
+
+  // Effective slot flag address
+  lea rax,[r12+r13+03497CA0]
+
+  // Match exact player monster slot
+  mov rcx,PlayerMonsterSlot1Flags
+  cmp rax,rcx
+  je slot1_bp_core_h4
+
+  mov rcx,PlayerMonsterSlot2Flags
+  cmp rax,rcx
+  je slot2_bp_core_h4
+
+  mov rcx,PlayerMonsterSlot3Flags
+  cmp rax,rcx
+  je slot3_bp_core_h4
+
+  mov rcx,PlayerMonsterSlot4Flags
+  cmp rax,rcx
+  je slot4_bp_core_h4
+
+  mov rcx,PlayerMonsterSlot5Flags
+  cmp rax,rcx
+  je slot5_bp_core_h4
+
+  // Not a player monster slot
+  jmp original_bp_core_h4
+
+
+slot1_bp_core_h4:
+  mov rdx,INSTANT_BP_44_USED
+  jmp slotfound_bp_core_h4
+
+slot2_bp_core_h4:
+  mov rdx,INSTANT_BP_44_USED+1
+  jmp slotfound_bp_core_h4
+
+slot3_bp_core_h4:
+  mov rdx,INSTANT_BP_44_USED+2
+  jmp slotfound_bp_core_h4
+
+slot4_bp_core_h4:
+  mov rdx,INSTANT_BP_44_USED+3
+  jmp slotfound_bp_core_h4
+
+slot5_bp_core_h4:
+  mov rdx,INSTANT_BP_44_USED+4
+  jmp slotfound_bp_core_h4
+
+
+slotfound_bp_core_h4:
+
+  // Read slot flags
+  mov ecx,[rax]
+
+  // Do not reset the face-up latch while the monster is still in
+  // a face-up instant BP state.
+  cmp ecx,41
+  je check5A_bp_core_h4
+
+  cmp ecx,44
+  je check5A_bp_core_h4
+
+  // Reset this slot's face-up latch when it leaves 41h / 44h states.
+  // This prevents stale latch data carrying into future summons.
+  mov byte ptr [rdx],00
+
+
+check5A_bp_core_h4:
+
+  // Flip Resolved: 5Ah
+  // Only bypass if Infinite BP and Core Hooks are active.
+  cmp ecx,5A
+  jne not5A_bp_core_h4
+
+  cmp byte ptr [BP_INF_ACTIVE],1
+  jne original_bp_core_h4
+
+  cmp byte ptr [BP_CORE_ACTIVE],1
+  je forceallow_bp_core_h4
+
+  jmp original_bp_core_h4
+
+
+not5A_bp_core_h4:
+
+  // Fresh Flip: 4Ah
+  cmp ecx,4A
+  je forceallow_bp_core_h4
+
+  // Fresh Set: 50h
+  cmp ecx,50
+  je forceallow_bp_core_h4
+
+  // Fresh Face-Down Special Summon from Graveyard: 54h
+  cmp ecx,54
+  je forceallow_bp_core_h4
+
+
+check41_bp_core_h4:
+
+  // Fresh Face-Up Summon: 41h
+  cmp ecx,41
+  je check_faceup_one_time_bp_core_h4
+
+
+check44_bp_core_h4:
+
+  // Fresh Face-Up Special Summon / BP-restricted state: 44h
+  cmp ecx,44
+  jne original_bp_core_h4
+
+
+check_faceup_one_time_bp_core_h4:
+
+  // If Infinite BP is active, allow 41h / 44h freely.
+  cmp byte ptr [BP_INF_ACTIVE],1
+  jne check_faceup_core_bp_core_h4
+
+  cmp byte ptr [BP_CORE_ACTIVE],1
+  je forceallow_bp_core_h4
+
+
+check_faceup_core_bp_core_h4:
+
+  // Safe one-time 41h / 44h support requires Core Hooks.
+  // H1 marks this latch after the real BP change occurs.
+  cmp byte ptr [BP_CORE_ACTIVE],1
+  jne original_bp_core_h4
+
+  // If this slot's face-up instant BP change has not been used yet,
+  // allow it once.
+  cmp byte ptr [rdx],00
+  je forceallow_bp_core_h4
+
+  // 41h / 44h already used for this slot.
+  jmp original_bp_core_h4
+
+
+original_bp_core_h4:
+
+  // Restore registers
+  pop rdx
+  pop rcx
+  pop rax
+
+  // Restore original TEST flags
+  popfq
+
+  // Original JE behaviour
+  je jumpallow_bp_core_h4
+
+  // Original overwritten instruction
+  mov eax,[YuGiOh.exe+3330284]
+
+  jmp return_bp_core_h4
+
+
+forceallow_bp_core_h4:
+
+  // Restore registers
+  pop rdx
+  pop rcx
+  pop rax
+
+  // Restore original TEST flags
+  popfq
+
+  // Force original JE destination
+  jmp jumpallow_bp_core_h4
+
+
+jumpallow_bp_core_h4:
+
+  // Original JE destination
+  jmp INJECT_BP_CORE_H4+22
+
+
+INJECT_BP_CORE_H4:
+  jmp newmem_bp_core_h4
+  nop 3
+
+return_bp_core_h4:
+
+registersymbol(INJECT_BP_CORE_H4)
+
+
+[DISABLE]
+
+// =====================================
+// Disable Core Hooks
+// =====================================
+
+BP_CORE_ACTIVE:
+  db 00
+
+
+// Restore H1
+
+INJECT_BP_CORE_H1:
+  db 83 8C 30 A0 7C 49 03 40
+
+unregistersymbol(INJECT_BP_CORE_H1)
+dealloc(newmem_bp_core_h1)
+
+
+// Restore H2
+
+INJECT_BP_CORE_H2:
+  db 81 64 38 60 FF FD FF FF
+
+unregistersymbol(INJECT_BP_CORE_H2)
+dealloc(newmem_bp_core_h2)
+
+
+// Restore H3
+
+INJECT_BP_CORE_H3:
+  db 89 44 2B 60 E9 A0 00 00 00
+
+unregistersymbol(INJECT_BP_CORE_H3)
+dealloc(newmem_bp_core_h3)
+
+
+// Restore H4
+
+INJECT_BP_CORE_H4:
+  db 74 20 8B 05 2F 03 31 03
+
+unregistersymbol(INJECT_BP_CORE_H4)
+dealloc(newmem_bp_core_h4)"""
+
+[[cheat]]
+id = "infinite-attacks"
+name = "Infinite Attacks"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Infinite Monster Attacks
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+BP = Battle Position
+BP_CORE_ACTIVE = Shared flag set by Monster BP Core Hooks.
+BP_MULTI_ATTACK_ACTIVE = Shared flag read by Monster BP Core Hooks.
+
+Description:
+- Feature toggle for allowing player monsters to attack more than once.
+- Requires Monster BP Core Hooks to be enabled.
+- Does not place hooks directly.
+- Sets BP_MULTI_ATTACK_ACTIVE so the Core script can clear only the 0x80
+  attack-used bit from player monster zones.
+- Preserves BP restriction behaviour unless Infinite BP is also enabled.
+
+}
+
+[ENABLE]
+
+globalalloc(BP_CORE_ACTIVE,1)
+globalalloc(BP_MULTI_ATTACK_ACTIVE,1)
+
+BP_MULTI_ATTACK_ACTIVE:
+  db 01
+
+
+[DISABLE]
+
+BP_MULTI_ATTACK_ACTIVE:
+  db 00"""
+
+[[cheat]]
+id = "instant-bp-changes"
+name = "Instant BP Changes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Instant Monster Flip/Summon Position Changes
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+BP = Battle Position
+BP_CORE_ACTIVE = Shared flag set by Monster BP Core Hooks.
+BP_INF_ACTIVE = Shared flag set by Infinite Atk/Def Position Changes.
+INSTANT_BP_ACTIVE = Shared flag set by this script.
+INSTANT_BP_44_USED = Per-slot face-up instant BP latch used by Monster BP Core
+Hooks.
+
+Requirements:
+- Monster BP Core Hooks v1.1 or newer must be enabled.
+
+Description:
+- Requires Monster BP Core Hooks to be enabled.
+- Does not place hooks directly.
+- Sets INSTANT_BP_ACTIVE so Monster BP Core Hooks can enable Instant BP logic.
+- After a monster is Summoned face-up, its BP can be changed once immediately.
+- After a monster is Set face-down, it may be Flip Summoned immediately.
+- After a monster is Special Summoned face-up from the Graveyard it may change
+  BP once without enabling infinite BP changes.
+- After a monster is Special Summoned face-down from the Graveyard, it may be
+  Flip Summoned immediately.
+- Preserves normal FLIP effects and summon processing through the core hook.
+- Applies only to player monster zones through the core hook.
+- Does not independently grant infinite BP changes.
+- If the Infinite BP script is active, freshly Flip Summoned monsters in 5Ah
+  state may continue changing BP through the core legality check.
+
+
+}
+
+[ENABLE]
+
+// =====================================
+// H1 - Instant BP Feature Flag
+// Enable Instant BP Logic In Core Hooks
+// =====================================
+
+{
+ This script does not inject or modify game code directly.
+
+ Monster BP Core Hooks contains the actual hook logic.
+ This script only sets INSTANT_BP_ACTIVE, which tells the core hooks to enable
+ Instant Monster Flip/Summon Position Change behaviour.
+
+ INSTANT_BP_ACTIVE = 01 means Instant BP logic is active.
+ INSTANT_BP_ACTIVE = 00 means Instant BP logic is inactive.
+
+ INSTANT_BP_44_USED is reset when this script is enabled so stale per-slot
+ latch data does not carry across activations.
+}
+
+globalalloc(BP_CORE_ACTIVE,1)
+globalalloc(BP_INF_ACTIVE,1)
+globalalloc(INSTANT_BP_ACTIVE,1)
+globalalloc(INSTANT_BP_44_USED,5)
+
+// =====================================
+// Modified Code:
+// Enable Instant BP handling
+// =====================================
+
+INSTANT_BP_ACTIVE:
+  db 01
+
+INSTANT_BP_44_USED:
+  db 00 00 00 00 00
+
+[DISABLE]
+
+// =====================================
+// Restore H1
+// Disable Instant BP handling
+// =====================================
+
+INSTANT_BP_ACTIVE:
+  db 00
+
+INSTANT_BP_44_USED:
+  db 00 00 00 00 00"""
+
+[[cheat]]
+id = "infinite-bp-changes"
+name = "Infinite BP Changes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Infinite Atk/Def Position Changes
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+BP = Battle Position
+BP_CORE_ACTIVE = Shared flag set by Monster BP Core Hooks.
+BP_INF_ACTIVE = Shared flag read by Monster BP Core Hooks and
+                Instant Monster Flip/Summon Position Changes.
+
+Requirements:
+- Monster BP Core Hooks v1.1 or newer must be enabled.
+
+Description:
+- When a monster is no longer freshly placed, it can change BP as
+  many times as you want.
+- After a monster attacks, it can change BP as many times as you want.
+- Does not place hooks directly.
+- Sets BP_INF_ACTIVE so Monster BP Core Hooks can:
+  - suppress standard 0x40 BP lock writes,
+  - clear only 0x40 from post-attack MP2 states,
+  - preserve 0x80 so monsters do not regain attacks.
+- Also allows the Instant BP script to permit 5Ah flip-resolved BP changes
+  while Infinite BP is active.
+}
+
+[ENABLE]
+
+// =====================================
+// H1 - Infinite BP Feature Flag
+// Enable Infinite BP Logic In Core Hooks
+// =====================================
+
+{
+ This script does not inject or modify game code directly.
+
+ Monster BP Core Hooks contains the actual hook logic.
+ This script only sets BP_INF_ACTIVE, which tells the core hooks to enable
+ Infinite Atk/Def Position Change behavior.
+
+ BP_INF_ACTIVE = 01 means Infinite BP logic is active.
+ BP_INF_ACTIVE = 00 means Infinite BP logic is inactive.
+}
+
+globalalloc(BP_CORE_ACTIVE,1)
+globalalloc(BP_INF_ACTIVE,1)
+
+// =====================================
+// Modified Code:
+// Enable Infinite BP handling
+// =====================================
+
+BP_INF_ACTIVE:
+  db 01
+
+[DISABLE]
+
+// =====================================
+// Restore H1
+// Disable Infinite BP handling
+// =====================================
+
+BP_INF_ACTIVE:
+  db 00"""
+
+[[cheat]]
+id = "instant-set-quickplay-spells-traps"
+name = "Instant Set Quickplay Spells & Traps"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Same Turn - Set Quickplay Spell & Trap Activation
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+STTA = Same Turn Trap Activation
+
+Description:
+- When a player sets a Quickplay Spell or Trap, it can be activated on the turn
+  it is played.
+- This will not bypass card specific restrictions, i.e., if another card needs,
+  to be present, or a specifc condition outside of the stadard fresh play
+  restriction.
+}
+
+[ENABLE]
+
+// =====================================
+// H1 - Same Turn Trap Activation
+// Prevent Player Fresh-Play Flag Set
+// =====================================
+
+define(PlayerSpellSlot1FreshFlag,YuGiOh.exe+3497D48)
+define(PlayerSpellSlot2FreshFlag,YuGiOh.exe+3497D60)
+define(PlayerSpellSlot3FreshFlag,YuGiOh.exe+3497D78)
+define(PlayerSpellSlot4FreshFlag,YuGiOh.exe+3497D90)
+define(PlayerSpellSlot5FreshFlag,YuGiOh.exe+3497DA8)
+
+aobscanmodule(FreshSTFlagWrite,YuGiOh.exe,83 C9 10 83 E0 EF 85 ED 0F 45 C8 42 89 4C 26 60)
+alloc(newmem,1024,FreshSTFlagWrite)
+
+label(code)
+label(checkSpellSlot)
+label(skipFreshFlag)
+label(return)
+
+newmem:
+
+// ===================================================
+// Fresh Spell/Trap Flag Address Section
+// ===================================================
+
+{
+ Target fresh-play flag address being written:
+ [rsi+r12+60]
+
+ Fresh-play flag bit:
+ 0x10
+}
+
+ lea r11,[rsi+r12+60]
+
+// ===================================================
+// Player Spell/Trap Fresh-Flag Compare Section
+// ===================================================
+
+checkSpellSlot:
+
+{
+ If the target fresh-play flag address matches one of the player's
+ spell/trap slot fresh flags, skip adding the 0x10 fresh-play flag.
+}
+
+ mov r10,PlayerSpellSlot1FreshFlag
+ cmp r11,r10
+ je skipFreshFlag
+
+ mov r10,PlayerSpellSlot2FreshFlag
+ cmp r11,r10
+ je skipFreshFlag
+
+ mov r10,PlayerSpellSlot3FreshFlag
+ cmp r11,r10
+ je skipFreshFlag
+
+ mov r10,PlayerSpellSlot4FreshFlag
+ cmp r11,r10
+ je skipFreshFlag
+
+ mov r10,PlayerSpellSlot5FreshFlag
+ cmp r11,r10
+ je skipFreshFlag
+
+// =====================================
+// Original Code:
+// Add fresh-play flag normally
+// =====================================
+
+code:
+ or ecx,10
+ and eax,-11
+ jmp return
+
+// =====================================
+// Modified Code:
+// Skip fresh-play flag for player slots
+// =====================================
+
+skipFreshFlag:
+ and eax,-11
+ jmp return
+
+// Return to game code.
+
+FreshSTFlagWrite:
+ jmp newmem
+ nop
+
+return:
+
+registersymbol(FreshSTFlagWrite)
+
+[DISABLE]
+
+// Restore H1
+
+FreshSTFlagWrite:
+ db 83 C9 10 83 E0 EF
+
+unregistersymbol(FreshSTFlagWrite)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-swords-of-revealing-light-sorl"
+name = "Infinite Swords of Revealing Light (SORL)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Infinite Swords of Revealing Light
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+SORL = Swords of Revealing Light
+
+Description:
+- When player-controlled SORL is played, it will last infinite turns
+  unless destroyed.
+- Opponent-controlled SORL is unaffected.
+}
+
+[ENABLE]
+
+// =====================================
+// H1 - Infinite SORL
+// Prevent Player SORL Counter Increment
+// =====================================
+
+define(PlayerSpellSlot1Counter,YuGiOh.exe+3497D40)
+define(PlayerSpellSlot2Counter,YuGiOh.exe+3497D58)
+define(PlayerSpellSlot3Counter,YuGiOh.exe+3497D70)
+define(PlayerSpellSlot4Counter,YuGiOh.exe+3497D88)
+define(PlayerSpellSlot5Counter,YuGiOh.exe+3497DA0)
+
+aobscanmodule(SwordsCounterIncrement,YuGiOh.exe,FF 44 08 58 8B 54 08 4C)
+alloc(newmem,1024,SwordsCounterIncrement)
+
+label(code)
+label(checkSpellSlot)
+label(skipIncrement)
+label(return)
+
+newmem:
+
+// ===================================================
+// SORL Spell ID Compare Section
+// ===================================================
+
+{
+ Effective counter address being incremented:
+ [rax+rcx+58]
+
+ The spell ID / flags field is located at:
+ [counter address - 0C]
+
+ SORL slot ID: 1102
+}
+
+ lea r11,[rax+rcx+58]
+
+ mov r10d,[r11-0C]
+ and r10d,0000FFFF
+
+ cmp r10d,1102
+ jne code
+
+// ===================================================
+// Player Spell/Trap Slot Counter Compare Section
+// ===================================================
+
+checkSpellSlot:
+
+{
+ If this counter address matches one of the player's spell/trap slot counters,
+ skip the increment.
+}
+
+ mov r10,PlayerSpellSlot1Counter
+ cmp r11,r10
+ je skipIncrement
+
+ mov r10,PlayerSpellSlot2Counter
+ cmp r11,r10
+ je skipIncrement
+
+ mov r10,PlayerSpellSlot3Counter
+ cmp r11,r10
+ je skipIncrement
+
+ mov r10,PlayerSpellSlot4Counter
+ cmp r11,r10
+ je skipIncrement
+
+ mov r10,PlayerSpellSlot5Counter
+ cmp r11,r10
+ je skipIncrement
+
+// =====================================
+// Original Code:
+// Increment timer counter normally
+// =====================================
+
+code:
+ inc [rax+rcx+58]
+ mov edx,[rax+rcx+4C]
+ jmp return
+
+// =====================================
+// Modified Code:
+// Skip increment for player SORL
+// =====================================
+
+skipIncrement:
+ mov edx,[rax+rcx+4C]
+ jmp return
+
+// Return to game code, padded out gap till next instruction.
+
+SwordsCounterIncrement:
+ jmp newmem
+ nop
+ nop
+ nop
+
+return:
+
+registersymbol(SwordsCounterIncrement)
+
+[DISABLE]
+
+// Restore H1
+
+SwordsCounterIncrement:
+ db FF 44 08 58 8B 54 08 4C
+
+unregistersymbol(SwordsCounterIncrement)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "instant-shards-of-greed-sog"
+name = "Instant Shards of Greed (SOG)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Game:               Yugioh Legacy of The Duelist: Link Evolution (Steam)
+Game Version:       4815132 (Steam - Build ID)
+Game Patch:         25 March 2020
+Script Title:       Instant Shard of Greed
+Script Version:     v1.0 (Stable)
+Date:               13 June 2026
+Author:             Nikolaos
+
+Acronyms:
+SOG = Shard of Greed
+
+Description:
+- When player-controlled SOG is played, it will initialize with 2 counters,
+  and can be discarded immediately to draw 2 cards.
+- Opponent-controlled SOG is unaffected.
+- Other counter-based spell/trap cards are unaffected.
+}
+
+[ENABLE]
+
+// =====================================
+// H1 - Instant SOG
+// Initialize Player SOG Counter to 2
+// =====================================
+
+define(PlayerSpellSlot1Counter,YuGiOh.exe+3497D40)
+define(PlayerSpellSlot2Counter,YuGiOh.exe+3497D58)
+define(PlayerSpellSlot3Counter,YuGiOh.exe+3497D70)
+define(PlayerSpellSlot4Counter,YuGiOh.exe+3497D88)
+define(PlayerSpellSlot5Counter,YuGiOh.exe+3497DA0)
+
+aobscanmodule(ShardCounterInit,YuGiOh.exe,C7 47 58 00 00 00 00 42)
+alloc(newmem,1024,ShardCounterInit)
+
+label(code)
+label(checkSpellSlot)
+label(setCounter)
+label(return)
+
+newmem:
+
+// ===================================================
+// SOG Spell ID Compare Section
+// ===================================================
+
+{
+ R9 points to the spell ID / flags field for the card being initialized.
+
+ The actual spell ID is stored in the lower 16 bits.
+
+ SOG slot ID: 262F
+}
+
+ mov eax,[r9]
+ and eax,0000FFFF
+
+ cmp eax,262F
+ jne code
+
+// ===================================================
+// Player Spell/Trap Slot Counter Compare Section
+// ===================================================
+
+checkSpellSlot:
+
+{
+ Effective counter address being initialized:
+ [rdi+58]
+
+ If this counter address matches one of the player's spell/trap slot counters,
+ initialize the counter to 2.
+}
+
+ lea r11,[rdi+58]
+
+ mov r10,PlayerSpellSlot1Counter
+ cmp r11,r10
+ je setCounter
+
+ mov r10,PlayerSpellSlot2Counter
+ cmp r11,r10
+ je setCounter
+
+ mov r10,PlayerSpellSlot3Counter
+ cmp r11,r10
+ je setCounter
+
+ mov r10,PlayerSpellSlot4Counter
+ cmp r11,r10
+ je setCounter
+
+ mov r10,PlayerSpellSlot5Counter
+ cmp r11,r10
+ je setCounter
+
+// =====================================
+// Original Code:
+// Initialize counter normally
+// =====================================
+
+code:
+ mov dword ptr [rdi+58],0
+ jmp return
+
+// =====================================
+// Modified Code:
+// Initialize player SOG counter to 2
+// =====================================
+
+setCounter:
+ mov dword ptr [rdi+58],2
+ jmp return
+
+// Return to game code, padded out gap till next instruction.
+
+ShardCounterInit:
+ jmp newmem
+ nop
+ nop
+
+return:
+
+registersymbol(ShardCounterInit)
+
+[DISABLE]
+
+// Restore H1
+
+ShardCounterInit:
+ db C7 47 58 00 00 00 00
+
+unregistersymbol(ShardCounterInit)
+dealloc(newmem)"""

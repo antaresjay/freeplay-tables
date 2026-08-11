@@ -1,0 +1,459 @@
+[game]
+name = "Dino Crisis 2 (SourceNext)"
+exe = "dino2.exe"
+notes = "Converted from a Cheat Engine table by EyeOfTheMind86. Source: https://fearlessrevolution.com/viewtopic.php?t=29349"
+verified = []
+author = "EyeOfTheMind86"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(Health,$process,0F BF 97 08 01 00 00) // should be unique
+aobscanmodule(Health_Ship,$process,66 8B 35 AA FF 73 00) // should be unique
+aobscanmodule(Ally_Health,$process,66 8B 8A 28 09 00 00) // should be unique
+aobscanmodule(Ammo,$process,66 29 84 8E C4 10 00 00) // should be unique
+aobscanmodule(Sub_Ammo,$process,66 29 B4 82 C4 10 00 00) // should be unique
+aobscanmodule(Items,$process,66 FF 49 08 66 39 59 08) // should be unique
+aobscanmodule(Coords_scan,$process,0F BF 0E 0F BF 07) // should be unique
+
+alloc(health_mem,2048)
+alloc(mem_health_ship,2048)
+alloc(mem_health_ally,2048)
+alloc(player_health,4)
+alloc(ship_health,4)
+alloc(ammo_mem,2048)
+alloc(subammo_mem,2048)
+alloc(item_mem,2048)
+alloc(coords_mem,2048)
+alloc(coords,4)
+alloc(infinite_health,2)
+alloc(infinite_ammo,2)
+alloc(infinite_items,2)
+
+registersymbol(player_health)
+registersymbol(ship_health)
+registersymbol(coords)
+registersymbol(infinite_health)
+registersymbol(infinite_ammo)
+registersymbol(infinite_items)
+
+// Health Code
+
+player_health:
+dw 00
+
+ship_health:
+dw 00
+
+infinite_health:
+db 00
+
+infinite_ammo:
+db 00
+
+infinite_items:
+db 00
+
+health_mem:
+cmp edi,#0
+je code_health
+mov [player_health],edi
+cmp byte ptr [infinite_health],01
+jne code_health
+jmp code_max_health
+
+code_max_health:
+push eax
+movsx eax,word ptr [edi+0000010A]
+mov [edi+00000108],ax
+mov word ptr [edi+0000017E],#0
+pop eax
+jmp code_health
+
+code_health:
+  movsx edx,word ptr [edi+00000108]
+  jmp return_health
+
+Health:
+  jmp health_mem
+  nop 2
+return_health:
+registersymbol(Health)
+
+// Ship Health
+
+mem_health_ship:
+cmp byte ptr [infinite_health],01
+jne code_ship
+mov word ptr [$process+33FFAA],00B4
+jmp code_ship
+
+code_ship:
+  mov si,[$process+33FFAA]
+  jmp return_ship
+
+Health_Ship:
+  jmp mem_health_ship
+  nop 2
+return_ship:
+registersymbol(Health_Ship)
+
+// Ally's Health
+
+mem_health_ally:
+cmp byte ptr [infinite_health],01
+jne code_ally
+push eax
+mov eax,[edx+0000092A]
+mov [edx+00000928],ax
+pop eax
+jmp code_ally
+
+code_ally:
+  mov cx,[edx+00000928]
+  jmp return_ally
+
+Ally_Health:
+  jmp mem_health_ally
+  nop 2
+return_ally:
+registersymbol(Ally_Health)
+
+// Infinite Main Ammo Code
+
+ammo_mem:
+cmp byte ptr [infinite_ammo],01
+jne code_ammo
+jmp code_max_ammo
+
+code_max_ammo:
+mov ax,word ptr [esi+ecx*4+000010C6]
+mov [esi+ecx*4+000010C4],ax
+jmp return_ammo
+
+code_ammo:
+  sub [esi+ecx*4+000010C4],ax
+  jmp return_ammo
+
+Ammo:
+  jmp ammo_mem
+  nop 3
+return_ammo:
+registersymbol(Ammo)
+
+// Infinite Sub Ammo Code
+
+subammo_mem:
+cmp byte ptr [infinite_ammo],01
+jne code_subammo
+jmp code_max_subammo
+
+code_max_subammo:
+mov si, word ptr [edx+eax*4+000010C6]
+mov [edx+eax*4+000010C4],si
+jmp return_subammo
+
+code_subammo:
+  sub [edx+eax*4+000010C4],si
+  jmp return_subammo
+
+Sub_Ammo:
+  jmp subammo_mem
+  nop 3
+return_subammo:
+registersymbol(Sub_Ammo)
+
+// Infinite Items
+
+item_mem:
+cmp byte ptr [infinite_items],01
+jne code_items
+jmp code_max_items
+
+code_max_items:
+push eax
+mov ax,[ecx+0A]
+mov [ecx+08],ax
+pop eax
+cmp [ecx+08],bx
+jmp return_items
+
+code_items:
+  dec word ptr [ecx+08]
+  cmp [ecx+08],bx
+  jmp return_items
+
+Items:
+  jmp item_mem
+  nop 3
+return_items:
+registersymbol(Items)
+
+// Find Player's Coordinates
+
+coords:
+dw 00
+
+coords_mem:
+mov [coords],esi
+
+code_coords:
+  movsx ecx,word ptr [esi]
+  movsx eax,word ptr [edi]
+  jmp return_coords
+
+Coords_scan:
+  jmp coords_mem
+  nop
+return_coords:
+registersymbol(Coords_scan)
+
+[DISABLE]
+
+Health:
+  db 0F BF 97 08 01 00 00
+
+unregistersymbol(Health)
+dealloc(health_mem)
+dealloc(player_health)
+dealloc(infinite_health)
+unregistersymbol(player_health)
+unregistersymbol(infinite_health)
+
+Health_Ship:
+  db 66 8B 35 AA FF 73 00
+
+unregistersymbol(Health_Ship)
+dealloc(mem_health_ship)
+dealloc(ship_health)
+unregistersymbol(ship_health)
+
+Ally_Health:
+  db 66 8B 8A 28 09 00 00
+
+unregistersymbol(Ally_Health)
+dealloc(mem_health_ally)
+
+Ammo:
+  db 66 29 84 8E C4 10 00 00
+
+unregistersymbol(Ammo)
+dealloc(ammo_mem)
+dealloc(infinite_ammo)
+unregistersymbol(infinite_ammo)
+
+Sub_Ammo:
+  db 66 29 B4 82 C4 10 00 00
+
+unregistersymbol(Sub_Ammo)
+dealloc(subammo_mem)
+
+Items:
+  db 66 FF 49 08 66 39 59 08
+
+unregistersymbol(Items)
+dealloc(item_mem)
+dealloc(infinite_items)
+unregistersymbol(infinite_items)
+
+Coords_scan:
+  db 0F BF 0E 0F BF 07
+
+unregistersymbol(Coords_scan)
+dealloc(coords_mem)
+dealloc(coords)
+unregistersymbol(coords)"""
+
+[[cheat]]
+id = "toggle-infinite-health"
+name = "Toggle Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+infinite_health:
+db 01
+$process+7DA0E:
+db 90 90 90 90 90 90 90
+$process+6029:
+db 90 90 90 90 90 90 90
+$process+7189:
+db 90 90 90 90 90 90 90
+$process+623D:
+db 90 90 90 90 90 90 90
+$process+477534:
+db 00
+
+
+
+[DISABLE]
+infinite_health:
+db 00
+$process+7DA0E:
+db 66 29 86 08 01 00 00
+$process+6029:
+db C6 80 C8 00 00 00 01
+$process+7189:
+db C6 86 C8 00 00 00 01
+$process+623D:
+db C6 86 C8 00 00 00 01
+$process+477534:
+db 01"""
+
+[[cheat]]
+id = "max-ammo-when-shooting"
+name = "Max Ammo When Shooting"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+infinite_ammo:
+db 01
+$process+53DD:
+db 90 90 90 90 90 90 90
+$process+96596:
+db 90 90 90 90 90 90 90
+$process+5375:
+db 90 90 90 90 90 90 90
+
+
+
+[DISABLE]
+infinite_ammo:
+db 00
+$process+53DD:
+db C6 86 CE 00 00 00 01
+$process+96596:
+db C6 80 5A 07 00 00 64
+$process+5375:
+db C6 86 CE 00 00 00 01"""
+
+[[cheat]]
+id = "toggle-infinite-items"
+name = "Toggle Infinite Items"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+infinite_items:
+db 01
+
+[DISABLE]
+infinite_items:
+db 00"""
+
+[[cheat]]
+id = "toggle-time-always-0"
+name = "Toggle Time Always 0"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+DDRAW.dll+96E65:
+db 90 90 90 90 90
+$process+477E78:
+db 00 00 00 00
+
+[DISABLE]
+DDRAW.dll+96E65:
+db A3 78 7E 87 00"""
+
+[[cheat]]
+id = "game-fps-from-rebirth-mod"
+name = "Game FPS (From Rebirth mod)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "DDRAW.dll"
+offset = "0x498d14"
+hops = []
+
+[[cheat]]
+id = "pad-buttons-static-2"
+name = "Pad Buttons Static 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "Dino2.exe"
+offset = "0x34733c"
+hops = []
+
+[[cheat]]
+id = "pad-buttons-static-3"
+name = "Pad Buttons Static 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "Dino2.exe"
+offset = "0x476bd4"
+hops = []
+
+[[cheat]]
+id = "pad-buttons-static-4"
+name = "Pad Buttons Static 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "Dino2.exe"
+offset = "0x476be4"
+hops = []
+
+[[cheat]]
+id = "pad-buttons-static-6"
+name = "Pad Buttons Static 6"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "Dino2.exe"
+offset = "0x347338"
+hops = []

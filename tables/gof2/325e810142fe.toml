@@ -1,0 +1,1207 @@
+[game]
+name = "Galaxy on Fire 2 HD"
+exe = "gof2.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4027"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "readme"
+name = "=====>>>>> README <<<<<====="
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+ Click the '=====>>>>> CHEATS <<<<<=====' box to expand the cheats
+
+ Keyboard:
+     SHIFT->FAST makes you go 4x max speed
+     SHIFT->No Inventory Change (Shop) - Hold shift while buying/selling
+     SHIFT->No Inventory Change (Blueprint) - Hold shift while creating blueprint
+     CTRL->Crosshair ship loves you, ALT->Heal constant as ships under crosshairs
+ Fast On Autopilot - Just what it says, 4x boost to waypoints, station, jump gates
+ Everybody likes me! - Enter Status screen to reset faction like/dislike
+ Abuse them all you want - Yellow ships don't get mad by damage (still mad at EMP)
+ Cargo: 100k - Who doesn't want more space?
+ Health: 10k ship, armor, shields - set when leaving station
+ Computer Drilling - drill bit always centered
+ Missiles, Missiles, Missiles! - 250ms load time, special damage (see script)
+ Lasers, Lasers, Lasers! - 200ms fire delay, tear them up!
+ Cloak Charging - Instant cloak when you need it
+ One Hit Kill And God:
+     God - Player doesn't take damage
+     GodFriends - Green ships don't take damage
+     OneHitKill - Red ships die after any damage (player or not)
+
+
+The rest are for if you are interested in writing your own table or cheats:
+
+Find Pointers:
+    Investigate Lock - script I used to find the pointers for targetting ships
+        and asteroids
+
+Experimental: - actually just trash items I was working with for testing
+
+----->Misc<-----: Just some things I found debugging injection points
+
+----->Known Statics<-----: Static pointers I know and might be useful
+    Scan Structure-Locked Ship-ShipHealth - locked ship ShipHealth pointer,
+        use in structure dissector if you want to investigate more
+
+FIND: Don't remember, can use to put addresses you're investigating to keep the table uncluttered
+
+Statics: Some various statics I found and chains I can see when looking at a
+    pointer to maybe see more easily where it came from
+
+Finding Statics: Script that should do an AOB scan through code and find the
+    current address of the static that is at GoF2.exe+20AD6C in version 1.0.3.
+    It sets the user-defined symbol STATIC_20AD6C to point to the address where
+    the actual value can be found in code.  You can use it to reset
+    the statics if the game code changes in a newer version.
+}
+[ENABLE]
+[DISABLE]"""
+
+[[cheat]]
+id = "static-20ad6c"
+name = "STATIC_20AD6C"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "STATIC_20AD6C"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "computer-drilling"
+name = "Computer Drilling"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//=============================================================================
+// Thanks to unknown_k for his table with this address!
+//=============================================================================
+{
+ Game Name   : Galaxy on Fire 2 HD
+ Game Version: 1.0.3
+ Author      : jgoemat (based off unknown_k's code)
+
+ This script keeps your drill from moving, and since it starts out centered
+ it remains that way.
+
+ Basically at these two locations the FPU stack has the offset to add this
+ frame at the top and instead of adding it to the current offset, this just
+ loads the current offset to store right back on itself.
+
+ If the game version changes, use the "bytes1" and "bytes2" AOBs to do scans,
+ the code below will help you verify you have the right spot, the AOBs are only
+ in one location in version 1.0.3.
+}
+
+
+DEFINE(address1,GOF2.EXE+9818D)
+DEFINE(bytes1,D8 47 10 D9 5F 10)
+
+DEFINE(address2,GOF2.EXE+981A5)
+DEFINE(bytes2,D8 47 14 D9 5F 14)
+
+[ENABLE]
+ASSERT(address1,bytes1)
+ASSERT(address2,bytes2)
+
+// change this: fadd dword ptr [edi+10] // D8 47 10
+// to this:     fld dword ptr [edi+10]  // D9 47 10
+address1:
+ db D9
+
+// change this: fadd dword ptr [edi+14] // D8 47 14
+// to this:     fld dword ptr [edi+14]  // D9 47 14
+address2:
+ db D9
+
+[DISABLE]
+ASSERT(address1,D9)
+ASSERT(address2,D9)
+
+address1:
+ db D8
+
+address2:
+ db D8
+
+{
+GoF2.exe+98176 - DB 45 08              - fild dword ptr [ebp+08]
+GoF2.exe+98179 - D9 5D 08              - fstp dword ptr [ebp+08]
+GoF2.exe+9817C - D9 47 08              - fld dword ptr [edi+08]
+GoF2.exe+9817F - D8 07                 - fadd dword ptr [edi]
+GoF2.exe+98181 - D9 5D F4              - fstp dword ptr [ebp-0C]
+GoF2.exe+98184 - D9 45 F4              - fld dword ptr [ebp-0C]
+GoF2.exe+98187 - D8 75 F8              - fdiv dword ptr [ebp-08]
+GoF2.exe+9818A - D8 4D 08              - fmul dword ptr [ebp+08]
+GoF2.exe+9818D - D8 47 10              - fadd dword ptr [edi+10] << load to make it do nothing, leaving cursor in the center
+GoF2.exe+98190 - D9 5F 10              - fstp dword ptr [edi+10]
+GoF2.exe+98193 - D9 47 0C              - fld dword ptr [edi+0C]
+GoF2.exe+98196 - D8 47 04              - fadd dword ptr [edi+04]
+GoF2.exe+98199 - D9 5D F4              - fstp dword ptr [ebp-0C]
+GoF2.exe+9819C - D9 45 F4              - fld dword ptr [ebp-0C]
+GoF2.exe+9819F - D8 75 F8              - fdiv dword ptr [ebp-08]
+GoF2.exe+981A2 - D8 4D 08              - fmul dword ptr [ebp+08]
+GoF2.exe+981A5 - D8 47 14              - fadd dword ptr [edi+14] << load to make it do nothing, leaving cursor in the center
+GoF2.exe+981A8 - D9 5F 14              - fstp dword ptr [edi+14]
+GoF2.exe+981AB - E8 88BBFEFF           - call GoF2.exe+83D38
+GoF2.exe+981B0 - 8B B7 8C000000        - mov esi,[edi+0000008C]
+GoF2.exe+981B6 - 53                    - push ebx
+GoF2.exe+981B7 - E8 7CBBFEFF           - call GoF2.exe+83D38
+GoF2.exe+981BC - 8B 47 78              - mov eax,[edi+78]
+GoF2.exe+981BF - D9 04 85 F4835C00     - fld dword ptr [eax*4+GoF2.exe+1C83F4] >> sound change, that's all: increasing numbers, 5, 8, ..11?, ..17?, .., 32?
+GoF2.exe+981C6 - 51                    - push ecx
+GoF2.exe+981C7 - DC 25 C8055500        - fsub qword ptr [GoF2.exe+1505C8]
+
+}"""
+
+[[cheat]]
+id = "god"
+name = "God"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bGod:
+ dd 1
+
+[DISABLE]
+bGod:
+ dd 0"""
+
+[[cheat]]
+id = "godfriends"
+name = "GodFriends"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bGodFriends:
+ dd 1
+
+[DISABLE]
+bGodFriends:
+ dd 0"""
+
+[[cheat]]
+id = "onehitkill-any-damage-to-enemies"
+name = "OneHitKill (ANY damage to ENEMIES)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bOneHitKill:
+ dd 1
+
+[DISABLE]
+bOneHitKill:
+ dd 0"""
+
+[[cheat]]
+id = "test-ebx"
+name = "TEST_EBX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "TESTPOINTERS"
+hops = []
+
+[[cheat]]
+id = "test-esi"
+name = "TEST_ESI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "TESTPOINTERS"
+hops = []
+
+[[cheat]]
+id = "test-counter"
+name = "TEST_COUNTER"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "TESTPOINTERS"
+hops = []
+
+[[cheat]]
+id = "instant-locks"
+name = "Instant Locks"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+ASSERT(GoF2.exe+BBF53,7E 72) // asteroids
+ASSERT(GoF2.exe+BBFD4,0F 8E 8E 01 00 00) // asteroids pre-timer
+ASSERT(GoF2.exe+BAB29,7E 25) // station
+ASSERT(GoF2.exe+BAF69,7E 53) // planet
+ASSERT(GoF2.exe+BB818,0F 8E 9D 01 00 00) // ship
+
+GoF2.exe+BBF53:
+ db 90 90
+
+GoF2.exe+BBFD4:
+ db 90 90 90 90 90 90
+
+GoF2.exe+BAB29:
+ db 90 90
+
+GoF2.exe+BAF69:
+ db 90 90
+
+GoF2.exe+BB818:
+ db 90 90 90 90 90 90
+
+[DISABLE]
+ASSERT(GoF2.exe+BBF53,90 90)
+ASSERT(GoF2.exe+BBFD4,90 90 90 90 90 90)
+ASSERT(GoF2.exe+BAB29,90 90)
+ASSERT(GoF2.exe+BAF69,90 90)
+ASSERT(GoF2.exe+BB818,90 90 90 90 90 90)
+
+GoF2.exe+BBF53:
+ db 7E 72
+
+GoF2.exe+BBFD4:
+ db 0F 8E 8E 01 00 00
+
+GoF2.exe+BAB29:
+ db 7E 25
+
+GoF2.exe+BAF69:
+ db 7E 53
+
+GoF2.exe+BB818:
+ db 0F 8E 9D 01 00 00
+
+{
+GoF2.exe+BBF32 - 0F85 39010000         - jne GoF2.exe+BC071
+GoF2.exe+BBF38 - 8B 45 14              - mov eax,[ebp+14]           // ms for current frame
+GoF2.exe+BBF3B - 01 83 78010000        - add [ebx+00000178],eax     // add to total ms spent scanning object
+GoF2.exe+BBF41 - 8B 93 94010000        - mov edx,[ebx+00000194]     // this the current scanner's time required?
+GoF2.exe+BBF47 - 81 EA C8000000        - sub edx,000000C8
+GoF2.exe+BBF4D - 39 93 78010000        - cmp [ebx+00000178],edx     // compare time spent scanning so far
+GoF2.exe+BBF53 - 7E 72                 - jle GoF2.exe+BBFC7 \t\t<< NOP for instant scan
+GoF2.exe+BBF55 - 38 4D 0F              - cmp [ebp+0F],cl
+GoF2.exe+BBF58 - 74 1D                 - je GoF2.exe+BBF77
+GoF2.exe+BBF5A - 38 8B 89010000        - cmp [ebx+00000189],cl
+GoF2.exe+BBF60 - 75 0D                 - jne GoF2.exe+BBF6F
+GoF2.exe+BBF62 - 8B 03                 - mov eax,[ebx]
+GoF2.exe+BBF64 - 51                    - push ecx
+
+
+GoF2.exe+BBFC1 - 8B 43 10              - mov eax,[ebx+10]
+GoF2.exe+BBFC4 - 89 43 0C              - mov [ebx+0C],eax
+GoF2.exe+BBFC7 - 8B 93 78010000        - mov edx,[ebx+00000178]     // time spent scanning so far
+GoF2.exe+BBFCD - B9 F4010000           - mov ecx,000001F4           // compare with 500 ms
+GoF2.exe+BBFD2 - 3B D1                 - cmp edx,ecx
+GoF2.exe+BBFD4 - 0F8E 8E010000         - jng GoF2.exe+BC168\t\t\t<< NOP to not wait 500 ms to show scan going on
+GoF2.exe+BBFDA - 8B 73 10              - mov esi,[ebx+10]
+GoF2.exe+BBFDD - 85 F6                 - test esi,esi
+GoF2.exe+BBFDF - 74 4D                 - je GoF2.exe+BC02E
+GoF2.exe+BBFE1 - 80 7D 0F 00           - cmp byte ptr [ebp+0F],00
+GoF2.exe+BBFE5 - 74 05                 - je GoF2.exe+BBFEC
+
+--------------------------------------------------------------------------------
+- Each frame while locking on to planet
+--------------------------------------------------------------------------------
+GoF2.exe+BAF3F - 8B 0B                 - mov ecx,[ebx]
+GoF2.exe+BAF41 - 8B 81 C8000000        - mov eax,[ecx+000000C8]
+GoF2.exe+BAF47 - E8 975BFFFF           - call GoF2.exe+B0AE3
+GoF2.exe+BAF4C - 84 C0                 - test al,al
+GoF2.exe+BAF4E - 0F85 2A010000         - jne GoF2.exe+BB07E
+GoF2.exe+BAF54 - 8B 45 14              - mov eax,[ebp+14]
+GoF2.exe+BAF57 - 01 83 7C010000        - add [ebx+0000017C],eax \t<----- add current frame ms
+GoF2.exe+BAF5D - 8B 83 7C010000        - mov eax,[ebx+0000017C]
+GoF2.exe+BAF63 - 3B 83 94010000        - cmp eax,[ebx+00000194]
+GoF2.exe+BAF69 - 7E 53                 - jle GoF2.exe+BAFBE
+GoF2.exe+BAF6B - 38 55 EA              - cmp [ebp-16],dl
+GoF2.exe+BAF6E - 74 15                 - je GoF2.exe+BAF85
+GoF2.exe+BAF70 - 8B 89 C8000000        - mov ecx,[ecx+000000C8]
+GoF2.exe+BAF76 - 6A 00                 - push 00
+GoF2.exe+BAF78 - 51                    - push ecx
+GoF2.exe+BAF79 - 6A 15                 - push 15
+GoF2.exe+BAF7B - FF 75 10              - push [ebp+10]
+GoF2.exe+BAF7E - E8 4904FAFF           - call GoF2.exe+5B3CC
+GoF2.exe+BAF83 - EB 39                 - jmp GoF2.exe+BAFBE
+GoF2.exe+BAF85 - 38 93 F4010000        - cmp [ebx+000001F4],dl
+GoF2.exe+BAF8B - 75 15                 - jne GoF2.exe+BAFA2
+GoF2.exe+BAF8D - D9EE                  - fldz
+GoF2.exe+BAF8F - 8B 35 70AF6000        - mov esi,[GoF2.exe+20AF70]
+GoF2.exe+BAF95 - 51                    - push ecx
+GoF2.exe+BAF96 - D9 1C 24              - fstp dword ptr [esp]
+GoF2.exe+BAF99 - 6A 00                 - push 00
+GoF2.exe+BAF9B - 6A 1A                 - push 1A
+GoF2.exe+BAF9D - E8 BB7B0200           - call GoF2.exe+E2B5D
+GoF2.exe+BAFA2 - 80 BB 84010000 00     - cmp byte ptr [ebx+00000184],00
+GoF2.exe+BAFA9 - 8B 43 18              - mov eax,[ebx+18]
+GoF2.exe+BAFAC - 89 43 14              - mov [ebx+14],eax
+GoF2.exe+BAFAF - 74 0D                 - je GoF2.exe+BAFBE
+GoF2.exe+BAFB1 - 8B 03                 - mov eax,[ebx]
+GoF2.exe+BAFB3 - 8B B8 C8000000        - mov edi,[eax+000000C8]
+GoF2.exe+BAFB9 - E8 3E5BFFFF           - call GoF2.exe+B0AFC
+GoF2.exe+BAFBE - 8B 83 7C010000        - mov eax,[ebx+0000017C]\t\t<----- current value
+GoF2.exe+BAFC4 - 89 45 08              - mov [ebp+08],eax
+GoF2.exe+BAFC7 - 85 C0                 - test eax,eax
+GoF2.exe+BAFC9 - 0F8E BD000000         - jng GoF2.exe+BB08C
+GoF2.exe+BAFCF - 80 7D EA 00           - cmp byte ptr [ebp-16],00
+GoF2.exe+BAFD3 - 0F85 B3000000         - jne GoF2.exe+BB08C
+GoF2.exe+BAFD9 - 8B 43 18              - mov eax,[ebx+18]
+GoF2.exe+BAFDC - 85 C0                 - test eax,eax
+
+--------------------------------------------------------------------------------
+- Each frame while locking on to Station
+--------------------------------------------------------------------------------
+GoF2.exe+BAB17 - 01 83 80010000        - add [ebx+00000180],eax
+GoF2.exe+BAB1D - 8B 83 80010000        - mov eax,[ebx+00000180]
+GoF2.exe+BAB23 - 3B 83 94010000        - cmp eax,[ebx+00000194]
+GoF2.exe+BAB29 - 7E 25                 - jle GoF2.exe+BAB50
+GoF2.exe+BAB2B - 38 93 F4010000        - cmp [ebx+000001F4],dl
+GoF2.exe+BAB31 - 75 17                 - jne GoF2.exe+BAB4A
+GoF2.exe+BAB33 - D9EE                  - fldz
+GoF2.exe+BAB35 - 8B 35 70AF6000        - mov esi,[GoF2.exe+20AF70]
+GoF2.exe+BAB3B - 51                    - push ecx
+GoF2.exe+BAB3C - D9 1C 24              - fstp dword ptr [esp]
+GoF2.exe+BAB3F - 6A 00                 - push 00
+GoF2.exe+BAB41 - 6A 1A                 - push 1A
+GoF2.exe+BAB43 - E8 15800200           - call GoF2.exe+E2B5D
+GoF2.exe+BAB48 - 33 D2                 - xor edx,edx
+GoF2.exe+BAB4A - 8B 43 28              - mov eax,[ebx+28]
+GoF2.exe+BAB4D - 89 43 24              - mov [ebx+24],eax
+GoF2.exe+BAB50 - 8B 83 80010000        - mov eax,[ebx+00000180]
+
+--------------------------------------------------------------------------------
+- Each frame while locking on to ships (yellow at least)
+--------------------------------------------------------------------------------
+GoF2.exe+BB7F0 - 01 8B 74010000        - add [ebx+00000174],ecx
+GoF2.exe+BB7F6 - 80 7D 0B 00           - cmp byte ptr [ebp+0B],00
+GoF2.exe+BB7FA - 8B B3 74010000        - mov esi,[ebx+00000174]
+GoF2.exe+BB800 - 75 0E                 - jne GoF2.exe+BB810
+GoF2.exe+BB802 - 80 78 1C 00           - cmp byte ptr [eax+1C],00
+GoF2.exe+BB806 - 75 08                 - jne GoF2.exe+BB810
+GoF2.exe+BB808 - 8B 8B 94010000        - mov ecx,[ebx+00000194]
+GoF2.exe+BB80E - EB 06                 - jmp GoF2.exe+BB816
+GoF2.exe+BB810 - 8B 8B 90010000        - mov ecx,[ebx+00000190]
+GoF2.exe+BB816 - 3B F1                 - cmp esi,ecx
+GoF2.exe+BB818 - 0F8E 9D010000         - jng GoF2.exe+BB9BB
+
+}"""
+
+[[cheat]]
+id = "used-in-increasing-order-as-drilled"
+name = "Used in increasing order as drilled"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x981c2"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "no-description"
+name = "No description"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x981c2"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "no-description-2"
+name = "No description"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x981c2"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "no-description-3"
+name = "No description"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x981c2"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "no-description-4"
+name = "No description"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x981c2"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "no-description-5"
+name = "No description"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x981c2"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "no-description-6"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x150170"
+hops = []
+
+[[cheat]]
+id = "mouse-y"
+name = "Mouse Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20fa0c"
+hops = []
+
+[[cheat]]
+id = "current-armor-20ad6c-170-108-58-0-70"
+name = "Current Armor: 20AD6C+170+108+58+0+70"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x170",
+    "+0x108",
+    "+0x58",
+    "+0x0",
+    "+0x70",
+]
+
+[[cheat]]
+id = "current-shields-20ad6c-180-108-58-0-80"
+name = "Current Shields: 20AD6C+180+108+58+0+80"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x170",
+    "+0x108",
+    "+0x58",
+    "+0x0",
+    "+0x80",
+]
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "scan-structure-locked-ship-shiphealth"
+name = "Scan Structure-Locked Ship-ShipHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20aefc"
+hops = [
+    "+0x5c",
+    "+0x7c",
+    "+0x4",
+    "+0x4",
+]
+
+[[cheat]]
+id = "current-armor"
+name = "Current Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20af78"
+hops = []
+
+[[cheat]]
+id = "cloak-base-20ad6c-170-108-58"
+name = "Cloak Base: 20AD6C+170+108+58"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x170",
+    "+0x108",
+    "+0x58",
+]
+
+[[cheat]]
+id = "ship-max-armor-20ad6c-154-4"
+name = "Ship Max Armor: 20AD6C+154+4"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x154",
+    "+0x4",
+]
+
+[[cheat]]
+id = "ship-max-cargo-20ad6c-154-c"
+name = "Ship Max Cargo: 20AD6C+154+C"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x154",
+    "+0xc",
+]
+
+[[cheat]]
+id = "current-armor-20ad6c-170-108-58-0-70-2"
+name = "Current Armor: 20AD6C+170+108+58+0+70"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x170",
+    "+0x108",
+    "+0x58",
+    "+0x0",
+    "+0x70",
+]
+
+[[cheat]]
+id = "current-armor-20ad6c-170-108-58-0-70-3"
+name = "Current Armor: 20AD6C+170+108+58+0+70"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x170",
+    "+0x108",
+    "+0x58",
+    "+0x0",
+    "+0x70",
+]
+
+[[cheat]]
+id = "current-armor-20ad6c-16c-180-58-0-70"
+name = "Current Armor: 20AD6C+16C+180+58+0+70"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x16c",
+    "+0x180",
+    "+0x58",
+    "+0x0",
+    "+0x70",
+]
+
+[[cheat]]
+id = "current-shiphealth-20ad6c-170-108-58-0"
+name = "Current ShipHealth: 20AD6C+170+108+58+0"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x170",
+    "+0x108",
+    "+0x58",
+    "+0x0",
+]
+
+[[cheat]]
+id = "scan-structure"
+name = "Scan Structure"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20aefc"
+hops = [
+    "+0x5c",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "scan-structure-hover-ship"
+name = "Scan Structure-Hover Ship"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20aefc"
+hops = [
+    "+0x5c",
+    "+0x7c",
+    "+0x8",
+]
+
+[[cheat]]
+id = "scan-structure-locked-ship"
+name = "Scan Structure-Locked Ship"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20aefc"
+hops = [
+    "+0x5c",
+    "+0x7c",
+    "+0x4",
+]
+
+[[cheat]]
+id = "scan-structure-locked-ship-alternate"
+name = "Scan Structure-Locked Ship (ALTERNATE)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20aefc"
+hops = [
+    "+0x5c",
+    "+0x58",
+    "+0x14",
+    "+0x4",
+]
+
+[[cheat]]
+id = "gof2-exe-20ad6c"
+name = "GoF2.exe+20AD6C"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = []
+
+[[cheat]]
+id = "gof2-exe-20ad6c-154"
+name = "GoF2.exe+20AD6C+154"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-154-70"
+name = "GoF2.exe+20AD6C+154+70"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x154",
+    "+0x70",
+]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-154-70-4"
+name = "GoF2.exe+20AD6C+154+70+4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x154",
+    "+0x70",
+    "+0x4",
+]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-154-70-4-18a-item-65"
+name = "GoF2.exe+20AD6C+154+70+4+18A (Item $65)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x154",
+    "+0x70",
+    "+0x4",
+    "+0x194",
+]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-154-70-4-18a-34"
+name = "GoF2.exe+20AD6C+154+70+4+18A+34"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x154",
+    "+0x70",
+    "+0x4",
+    "+0x1a0",
+    "+0x34",
+]
+
+[[cheat]]
+id = "no-description-7"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "no-description-8"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = ["+0x184"]
+
+[[cheat]]
+id = "gof2-exe-20ade0-58"
+name = "[GoF2.exe+20ADE0]+58"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ade0"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "gof2-exe-20af78-mining-ptr"
+name = "GOF2.exe+20AF78 (mining ptr)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GOF2.exe"
+offset = "0x20af78"
+hops = []
+
+[[cheat]]
+id = "current-shiphealth-20ad6c-170-108-58-0-2"
+name = "Current ShipHealth: 20AD6C+170+108+58+0"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x170",
+    "+0x108",
+    "+0x58",
+    "+0x0",
+]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-2"
+name = "GoF2.exe+20AD6C"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = []
+
+[[cheat]]
+id = "gof2-exe-20ad6c-160"
+name = "GoF2.exe+20AD6C+160"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-160-58"
+name = "GoF2.exe+20AD6C+160+58"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x160",
+    "+0x58",
+]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-3"
+name = "GoF2.exe+20AD6C"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = []
+
+[[cheat]]
+id = "gof2-exe-20ad6c-158"
+name = "GoF2.exe+20AD6C+158"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "gof2-exe-20ad6c-158-8"
+name = "GoF2.exe+20AD6C+158+8"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "GoF2.exe"
+offset = "0x20ad6c"
+hops = [
+    "+0x158",
+    "+0x8",
+]
+
+[[cheat]]
+id = "finding-statics"
+name = "Finding Statics"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Finding statics
+
+}
+[ENABLE]
+// GoF2.exe+20AD6C
+// Actually found in two spots, but both are the correct value
+AOBSCAN(AOB_20AD6C,* * * * 8B 80 68 01 00 00 83 78 1C 01 8B 35)
+LABEL(STATIC_20AD6C)
+REGISTERSYMBOL(STATIC_20AD6C)
+AOB_20AD6C:
+STATIC_20AD6C:
+
+[DISABLE]
+UNREGISTERSYMBOL(STATIC_20AD6C)"""
+
+[[cheat]]
+id = "static-20ad6c-2"
+name = "STATIC_20AD6C"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "STATIC_20AD6C"
+hops = ["+0x0"]

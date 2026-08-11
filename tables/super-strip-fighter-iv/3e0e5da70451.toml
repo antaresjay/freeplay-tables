@@ -1,0 +1,232 @@
+[game]
+name = "Super Strip Fighter IV"
+exe = "super strip fighter iv.exe"
+notes = "Converted from a Cheat Engine table by abystus. Source: https://fearlessrevolution.com/viewtopic.php?t=374"
+verified = []
+author = "abystus"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-1-health-max-65280"
+name = "Player 1 Health (Max=65280)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Super Strip Fighter IV.exe"
+offset = "0xdfc84"
+hops = []
+
+[[cheat]]
+id = "player-2-health-max-225"
+name = "Player 2 Health (Max=225)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Super Strip Fighter IV.exe"
+offset = "0xedcc4"
+hops = []
+
+[[cheat]]
+id = "infinite-health-p1"
+name = "Infinite Health P1"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+label(InfiniteHealthP1)
+label(originalcode)
+label(Exit)
+registersymbol(InfiniteHealthP1)
+aobscan(Hook, 7E 06 89 BE 05 DF 00 00)
+aobscan(NotP1, 5F 5E 5D 5B C3 90 90)
+
+newmem:
+cmp [esi+00002220],03
+je originalcode
+jmp NotP1
+
+originalcode:
+mov [esi+0000DF05],edi
+jmp Exit
+
+Hook:
+InfiniteHealthP1:
+jmp newmem
+nop
+nop
+nop
+
+Exit:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+InfiniteHealthP1:
+db 7E 06 89 BE 05 DF 00 00
+unregistersymbol(InfiniteHealthP1)"""
+
+[[cheat]]
+id = "hit-anywhere-both-players"
+name = "Hit Anywhere (Both Players)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//Register Symbol
+label(HitAnywhere) //Define Label to use for Symbol
+registersymbol(HitAnywhere) //Register Symbol to find it later
+
+//Find Hook/JumpTo AOBs
+aobscan(Hook_AOB,7E 34 8B 4C 24 28 8B 5C 24 30) //Find Hook Spot
+
+Hook_AOB: //Hook Address
+HitAnywhere:
+db EB 56 //Apply JMP
+
+[DISABLE]
+HitAnywhere:
+db 7E 34 //Restore Original Instruction
+unregistersymbol(HitAnywhere)  //Remove Symbol"""
+
+[[cheat]]
+id = "disable-blocking-both-players"
+name = "Disable Blocking (Both Players)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(BlockJump1) //Create Symbol Label 1
+label(BlockJump2) //Create Symbol Label 2
+label(BlockJump3) //Create Symbol Label 3
+label(BlockJump4) //Create Symbol Label 4
+aobscan(BlockKill1,EB 55 8B 83 B6 7C 00 00 A8 08) //Find Jump Address 1
+aobscan(BlockKill2,75 23 A8 01 74 27 8B 44 24 1C) //Find Jump Address 2
+aobscan(BlockKill3,EB 15 8B 54 24 1C 85 CA 75 0D) //Find Jump Address 3
+aobscan(BlockKill4,75 0D A8 01 74 11 8B C2 A9 F7) //Find Jump Address 4
+registersymbol(BlockJump1) //Register Symbol 1
+registersymbol(BlockJump2) //Register Symbol 2
+registersymbol(BlockJump3) //Register Symbol 3
+registersymbol(BlockJump4) //Register Symbol 4
+
+BlockKill1:
+BlockJump1:
+db 90 90 //Nop Jump 1
+
+BlockKill2:
+BlockJump2:
+db 90 90 //Nop Jump 2
+
+BlockKill3:
+BlockJump3:
+db 90 90 //Nop Jump 3
+
+BlockKill4:
+BlockJump4:
+db 90 90 //Nop Jump 4
+
+[DISABLE]
+BlockJump1:
+db EB 55 //Restore Jump 1
+
+BlockJump2:
+db 75 23 //Restore Jump 2
+
+BlockJump3:
+db EB 15 //Restore Jump 3
+
+BlockJump4:
+db 75 0D //Restore Jump 4
+
+//Unregister Symbols Used
+unregistersymbol(BlockJump1)
+unregistersymbol(BlockJump2)
+unregistersymbol(BlockJump3)
+unregistersymbol(BlockJump4)"""
+
+[[cheat]]
+id = "one-hit-kills-p2-might-take-2-hits-with-normal-attacks"
+name = "One Hit Kills P2 (Might take 2 hits with normal attacks.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048) //2kb should be enough
+aobscan(Hook, 89 8E 05 DF 00 00 2B D0 C7 86 29 DF 00 00 14 00 00 00)
+label(originalcode) //Original Code
+label(OneHitKill) //Label for Symbol
+label(exit) //Return
+registersymbol(OneHitKill) //Register Symbol
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [esi+00002220],03 //Compare to see if this is player 1
+je originalcode //If it is lets run original code
+mov [esi+0000DF05],00 //Otherwise lets kill player 2 now
+jmp exit //Jump to Return
+
+originalcode:
+mov [esi+0000DF05],ecx //Execute Original Code
+jmp exit //Jump to Return
+
+Hook:
+OneHitKill:
+jmp newmem //Call Custom Routine
+nop //Balance Instruction
+
+exit: //Lets get out of here
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem) //Destroy Custom Routine
+OneHitKill:
+db 89 8E 05 DF 00 00 //Restore Original Instruction
+unregistersymbol(OneHitKill) //Unregister Symbol"""
+
+[[cheat]]
+id = "fill-strip-power-on-attack"
+name = "Fill Strip Power On Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(StripPower)
+registersymbol(StripPower) //Register Symbol
+aobscan(JumpToCancel, 7C 0C 89 88 95 FC 4D 00) //Find that jump
+
+JumpToCancel:
+StripPower:
+db 90 90 //Nop Jump
+
+[DISABLE]
+StripPower:
+db 7C 0C //Restore Jump
+unregistersymbol(StripPower) //Remove Symbol"""

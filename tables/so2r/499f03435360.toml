@@ -1,0 +1,1297 @@
+[game]
+name = "Star Ocean The Second Story R"
+exe = "so2r.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=25794"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-trainer-3-controls-pointers"
+name = "Activate Trainer 3 (Controls Pointers)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+//aobscanregion(ParameterManagerAOB1,Game.UICampWindow.OnUpdate,Game.UICampWindow.OnUpdate+200,48 8B 80 D8 07 00 00 48 85 C0 74 76)
+aobscanregion(ParameterManagerAOB1,Game.UICampWindow.OnUpdate,Game.UICampWindow.OnUpdate+200,48 8B 80 E0 07 00 00 48 85 C0 74 76)
+registersymbol(ParameterManagerAOB1)
+alloc(newmem,1024,ParameterManagerAOB1)
+
+///
+label(return)
+label(ParameterManagerAOB1Save)
+registersymbol(ParameterManagerAOB1Save)
+label(ParameterManagerPtr)
+registersymbol(ParameterManagerPtr)
+
+///
+newmem:
+  mov [ParameterManagerPtr],rax
+  jmp originalcode
+  
+originalcode:
+ParameterManagerAOB1Save:
+  readmem(ParameterManagerAOB1,7)
+  jmp ParameterManagerAOB1+07
+
+ParameterManagerPtr:
+dq 0
+
+///
+ParameterManagerAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+ParameterManagerAOB1:
+  readmem(ParameterManagerAOB1Save,7)
+
+///  
+unregistersymbol(ParameterManagerAOB1)
+unregistersymbol(ParameterManagerAOB1Save)
+unregistersymbol(ParameterManagerPtr)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-hp"
+name = "Hero Damage Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die"
+name = "Hero Cannot Die"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-hp"
+name = "Enemy Damage Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enable-mp-damage-modifier-options-infinite-mp-etc"
+name = "Enable MP Damage Modifier Options (Infinite MP, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanmodule(MPDamageModAOB1,"GameAssembly.dll",8B 48 60 29 F9 78 17 8B 50 5C)
+registersymbol(MPDamageModAOB1)
+alloc(newmem,1024,MPDamageModAOB1)
+
+///
+label(return)
+label(MPDamageModAOB1Save)
+registersymbol(MPDamageModAOB1Save)
+label(InfiniteMP)
+registersymbol(InfiniteMP)
+label(fEnemyMPDamageMult)
+registersymbol(fEnemyMPDamageMult)
+label(fHeroMPDamageMult)
+registersymbol(fHeroMPDamageMult)
+
+newmem:
+  mov [RAXSave],rax
+  mov [RBXSave],rbx
+  mov [RCXSave],rcx
+  mov [RDXSave],rdx
+  mov [R8Save],r8
+  mov [R9Save],r9
+  mov [R10Save],r10
+  mov [R11Save],r11
+  // Hack way of determining ally vs Enemy
+  // We use lua to get class name (this depends on an Activate Trainer timer)
+  mov r10,pAddressToCheckClassName
+  mov [r10],rbx
+  mov r10,bDoClassNameCheck
+  mov [r10],1
+StartCheckLoop:
+  sub rsp,20
+  mov rcx,5
+  call sleep
+  add rsp,20
+  mov r10,bDoClassNameCheck
+  cmp dword ptr [r10],0
+  jne StartCheckLoop
+  // Clean up some registers
+  mov rax,[RAXSave]
+  mov rbx,[RBXSave]
+  mov rcx,[RCXSave]
+  mov rdx,[RDXSave]
+  mov r8,[R8Save]
+  mov r9,[R9Save]
+  // Got Class Name, bIsAlly should be valid
+  mov r10,bIsAlly
+  cmp dword ptr [r10],1
+  je HeroHit
+  jmp EnemyHit
+HeroHit:
+HeroDamageHit:
+  cmp [fHeroMPDamageMult],(float)0.0
+  je CheckInfiniteMP
+  push edi
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroMPDamageMult]
+  fistp dword ptr [rsp]
+  pop edi
+CheckInfiniteMP:
+  cmp [InfiniteMP],1
+  jne MyCleanUp1
+  xor edi,edi
+  jmp MyCleanUp1
+EnemyHit:
+EnemyDamageHit:
+  cmp [fEnemyMPDamageMult],(float)0.0
+  je MyCleanUp1
+  push edi
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyMPDamageMult]
+  fistp dword ptr [rsp]
+  pop edi
+  jmp MyCleanUp1
+
+MyCleanUp1:  
+  mov r10,[R10Save]
+  mov r11,[R11Save]
+MPDamageModAOB1Save:
+  readmem(MPDamageModAOB1,5)
+  jmp MPDamageModAOB1+05
+
+RAXSave:
+dq 0
+RBXSave:
+dq 0
+RCXSave:
+dq 0
+RDXSave:
+dq 0
+R8Save:
+dq 0
+R9Save:
+dq 0
+R10Save:
+dq 0
+R11Save:
+dq 0
+InfiniteMP:
+dq 0
+fEnemyMPDamageMult:
+dq (float)2.0
+fHeroMPDamageMult:
+dq (float)0.25
+
+MPDamageModAOB1:
+  jmp newmem
+return:
+
+[DISABLE]
+
+MPDamageModAOB1:
+  readmem(MPDamageModAOB1Save,5)
+
+unregistersymbol(MPDamageModAOB1)
+unregistersymbol(MPDamageModAOB1Save)
+unregistersymbol(InfiniteMP)
+unregistersymbol(fEnemyMPDamageMult)
+unregistersymbol(fHeroMPDamageMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteMP"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-mp"
+name = "Hero Damage Multiplier MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-mp"
+name = "Enemy Damage Multiplier MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "enable-fol-money-multiplier-loss-and-gain"
+name = "Enable Fol (Money) Multiplier (Loss and Gain)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(FolMultiplierAOB1,Game.UserParameter.IncreaseMoney,Game.UserParameter.IncreaseMoney+50,48 89 5C 24 10 57 48 83 EC *)
+registersymbol(FolMultiplierAOB1)
+alloc(newmem,1024,FolMultiplierAOB1)
+
+///
+aobscanregion(FolMultiplierAOB2,Game.UserParameter.DecreaseMoney,Game.UserParameter.DecreaseMoney+50,48 89 5C 24 08 48 89 74 24 10 57 48 83 EC *)
+registersymbol(FolMultiplierAOB2)
+alloc(newmem2,1024)
+
+///
+label(return)
+label(fFolGainMult)
+registersymbol(fFolGainMult)
+label(FolMultiplierAOB1Save)
+registersymbol(FolMultiplierAOB1Save)
+
+///
+label(return2)
+label(fFolLossMult)
+registersymbol(fFolLossMult)
+label(FolMultiplierAOB2Save)
+registersymbol(FolMultiplierAOB2Save)
+
+///
+newmem:
+DoGainMult:
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fFolGainMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp originalcode
+    
+originalcode:
+FolMultiplierAOB1Save:
+  readmem(FolMultiplierAOB1,10)
+  jmp FolMultiplierAOB1+0A
+
+fFolGainMult:
+dq (float)10.0
+
+///
+newmem2:
+DoLossMult:
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fFolLossMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp originalcode2
+    
+originalcode2:
+FolMultiplierAOB2Save:
+  readmem(FolMultiplierAOB2,15)
+  jmp FolMultiplierAOB2+0F
+
+fFolLossMult:
+dq (float)0.25
+  
+///
+FolMultiplierAOB1:
+  jmp newmem
+  return:
+
+///
+FolMultiplierAOB2:
+  jmp newmem2
+  return2:
+    
+[DISABLE]
+
+///
+FolMultiplierAOB1:
+  readmem(FolMultiplierAOB1Save,15)
+  
+unregistersymbol(fFolGainMult)
+unregistersymbol(FolMultiplierAOB1)
+unregistersymbol(FolMultiplierAOB1Save)
+
+///
+FolMultiplierAOB2:
+  readmem(FolMultiplierAOB2Save,15)
+
+unregistersymbol(fFolLossMult)
+unregistersymbol(FolMultiplierAOB2)
+unregistersymbol(FolMultiplierAOB2Save)
+
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "fol-gain-multiplier"
+name = "Fol Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fFolGainMult"
+hops = []
+
+[[cheat]]
+id = "fol-loss-multiplier"
+name = "Fol Loss Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fFolLossMult"
+hops = []
+
+[[cheat]]
+id = "enable-bp-gain-multiplier"
+name = "Enable BP Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(BPMultiplierAOB1,Game.CharacterParameter.IncreaseCombatSkillPoint,Game.CharacterParameter.IncreaseCombatSkillPoint+50,48 89 5C 24 08 48 89 74 24 10 57 48 83 EC *)
+registersymbol(BPMultiplierAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(fBPGainMult)
+registersymbol(fBPGainMult)
+label(BPMultiplierAOB1Save)
+registersymbol(BPMultiplierAOB1Save)
+
+///
+newmem:
+DoGainMult:
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fBPGainMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp originalcode
+    
+originalcode:
+BPMultiplierAOB1Save:
+  readmem(BPMultiplierAOB1,15)
+  jmp BPMultiplierAOB1+0F
+
+fBPGainMult:
+dq (float)5.0
+  
+///
+BPMultiplierAOB1:
+  jmp newmem
+  return:
+    
+[DISABLE]
+
+///
+BPMultiplierAOB1:
+  readmem(BPMultiplierAOB1Save,15)
+  
+unregistersymbol(fBPGainMult)
+unregistersymbol(BPMultiplierAOB1)
+unregistersymbol(BPMultiplierAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bp-gain-multiplier"
+name = "BP Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fBPGainMult"
+hops = []
+
+[[cheat]]
+id = "enable-sp-gain-multiplier"
+name = "Enable SP Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(SPMultiplierAOB1,Game.CharacterParameter.IncreaseSkillPoint,Game.CharacterParameter.IncreaseSkillPoint+50,48 89 5C 24 08 48 89 74 24 10 57 48 83 EC *)
+registersymbol(SPMultiplierAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(fSPGainMult)
+registersymbol(fSPGainMult)
+label(SPMultiplierAOB1Save)
+registersymbol(SPMultiplierAOB1Save)
+
+///
+newmem:
+DoGainMult:
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fSPGainMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp originalcode
+    
+originalcode:
+SPMultiplierAOB1Save:
+  readmem(SPMultiplierAOB1,15)
+  jmp SPMultiplierAOB1+0F
+
+fSPGainMult:
+dq (float)5.0
+  
+///
+SPMultiplierAOB1:
+  jmp newmem
+  return:
+    
+[DISABLE]
+
+///
+SPMultiplierAOB1:
+  readmem(SPMultiplierAOB1Save,15)
+  
+unregistersymbol(fSPGainMult)
+unregistersymbol(SPMultiplierAOB1)
+unregistersymbol(SPMultiplierAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "sp-gain-multiplier"
+name = "SP Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fSPGainMult"
+hops = []
+
+[[cheat]]
+id = "enable-exp-multiplier"
+name = "Enable EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(EXPMultiplierAOB1,Game.CharacterParameter.IncreaseExperience,Game.CharacterParameter.IncreaseExperience+50,48 89 5C 24 08 48 89 74 24 10 57 48 83 EC *)
+registersymbol(EXPMultiplierAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(fEXPGainMult)
+registersymbol(fEXPGainMult)
+label(EXPMultiplierAOB1Save)
+registersymbol(EXPMultiplierAOB1Save)
+
+///
+newmem:
+DoGainMult:
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fEXPGainMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp originalcode
+    
+originalcode:
+EXPMultiplierAOB1Save:
+  readmem(EXPMultiplierAOB1,15)
+  jmp EXPMultiplierAOB1+0F
+
+fEXPGainMult:
+dq (float)2.0
+  
+///
+EXPMultiplierAOB1:
+  jmp newmem
+  return:
+    
+[DISABLE]
+
+///
+EXPMultiplierAOB1:
+  readmem(EXPMultiplierAOB1Save,15)
+  
+unregistersymbol(fEXPGainMult)
+unregistersymbol(EXPMultiplierAOB1)
+unregistersymbol(EXPMultiplierAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEXPGainMult"
+hops = []
+
+[[cheat]]
+id = "enable-bonus-gauge-multiplier"
+name = "Enable Bonus Gauge Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(BonusGaugeMultiplierAOB1,Game.BattleManager.IncreaseSphereBonusPoint,Game.BattleManager.IncreaseSphereBonusPoint+50,48 89 5C 24 10 48 89 4C 24 08 56 57 41 54 41 56)
+registersymbol(BonusGaugeMultiplierAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(fBonusGaugeGainMult)
+registersymbol(fBonusGaugeGainMult)
+label(BonusGaugeMultiplierAOB1Save)
+registersymbol(BonusGaugeMultiplierAOB1Save)
+
+///
+newmem:
+DoGainMult:
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fBonusGaugeGainMult]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp originalcode
+    
+originalcode:
+BonusGaugeMultiplierAOB1Save:
+  readmem(BonusGaugeMultiplierAOB1,16)
+  jmp BonusGaugeMultiplierAOB1+10
+
+fBonusGaugeGainMult:
+dq (float)25.0
+  
+///
+BonusGaugeMultiplierAOB1:
+  jmp newmem
+  return:
+    
+[DISABLE]
+
+///
+BonusGaugeMultiplierAOB1:
+  readmem(BonusGaugeMultiplierAOB1Save,16)
+  
+unregistersymbol(fBonusGaugeGainMult)
+unregistersymbol(BonusGaugeMultiplierAOB1)
+unregistersymbol(BonusGaugeMultiplierAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bonus-gauge-multiplier"
+name = "Bonus Gauge Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fBonusGaugeGainMult"
+hops = []
+
+[[cheat]]
+id = "always-drop-all-items"
+name = "Always Drop All Items"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(DropAllItemsAOB1,Game.BattleResultInfo.AddDropItem,Game.BattleResultInfo.AddDropItem+400,8D 0C 2B 3B C1 7D 22 48 8B 84 24 A0 00 00 00)
+registersymbol(DropAllItemsAOB1)
+  
+///
+DropAllItemsAOB1+5:
+  db 90 90
+
+///
+DropAllItemsAOB1+28:
+  db 00
+    
+[DISABLE]
+
+///
+DropAllItemsAOB1+5:
+  db 7D 22
+
+///
+DropAllItemsAOB1+28:
+  db 01
+  
+unregistersymbol(DropAllItemsAOB1)"""
+
+[[cheat]]
+id = "drop-every-item-after-battle"
+name = "Drop Every Item After Battle"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(DropEveryItemAOB1,Game.BattleResultInfo.AddDropItem,Game.BattleResultInfo.AddDropItem+400,4C 89 44 24 18 48 89 4C 24 08 55 57 41 55 41 56 48 83 EC *)
+registersymbol(DropEveryItemAOB1)
+alloc(newmem,4096)
+
+///
+aobscanregion(DropEveryItemAOB2,Game.BattleResultInfo.AddDropItem,Game.BattleResultInfo.AddDropItem+400,8D 0C 2B 3B C1 7D 22 48 8B 84 24 A0 00 00 00)
+registersymbol(DropEveryItemAOB2)
+
+///
+aobscanregion(DropEveryItemAOB3,Game.BattleResultInfo.AddDropItem,Game.BattleResultInfo.AddDropItem+400,44 0F 28 44 24 30 48 83 C4 78 41 5E 41 5D 5F 5D C3)
+registersymbol(DropEveryItemAOB3)
+alloc(newmem3,1024)
+
+///
+aobscanregion(DropEveryItemAOB4,Game.BattleResultInfo.AddDropItem,Game.BattleResultInfo.AddDropItem+400,48 63 C7 8B 74 81 20 48 8B 0D * * * *)
+registersymbol(DropEveryItemAOB4)
+alloc(newmem4,1024,DropEveryItemAOB4)
+
+///
+label(return)
+label(DropEveryItemAOB1Save)
+registersymbol(DropEveryItemAOB1Save)
+
+///
+label(return3)
+label(DropEveryItemAOB3Save)
+registersymbol(DropEveryItemAOB3Save)
+
+///
+label(return4)
+label(DropEveryItemAOB4Save)
+registersymbol(DropEveryItemAOB4Save)
+
+newmem:
+  cmp [NumTimesExecuted],0
+  jne SkipSavingRegisters
+  mov [RAXSave],rax
+  mov [RBXSave],rbx
+  mov [RCXSave],rcx
+  mov [RDXSave],rdx
+  mov [RDISave],rdi
+  mov [RSISave],rsi
+  mov [R8Save],r8
+  mov [R9Save],r9
+  mov [R10Save],r10
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+SkipSavingRegisters:
+  mov rax,[RAXSave]
+  mov rbx,[RBXSave]
+  mov rcx,[RCXSave]
+  mov rdx,[RDXSave]
+  mov rdi,[RDISave]
+  mov rsi,[RSISave]
+  mov r8,[R8Save]
+  mov r9,[R9Save]
+  mov r10,[R10Save]
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  // Check If We Already Dropped These Items Once
+  mov r15,bPerformedDropAllItem
+  cmp dword ptr [r15],1
+  mov r15,[R15Save]
+  je SkipDroppingAgain  
+  // Update First Drop Item ID
+  mov [R13Save2],r13
+  mov [R14Save2],r14  
+  mov [R15Save2],r15
+  mov r15,NumTimesExecuted
+  mov r15,[r15]
+ValidCategory:
+  mov r14,PossibleItemIDList
+  movsxd r14,dword ptr [r14+r15*4]
+  mov [CurrentItemID],r14d
+  jmp MyCleanUp1
+SkipDroppingAgain:
+  mov [NumTimesExecuted],#1256
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  inc [NumTimesExecuted]
+  mov r13,[R13Save2]
+  mov r14,[R14Save2]  
+  mov r15,[R15Save2]
+  jmp originalcode
+  
+originalcode:
+DropEveryItemAOB1Save:
+  readmem(DropEveryItemAOB1,20)
+  jmp DropEveryItemAOB1+14
+  
+NumTimesExecuted:
+dq 0
+CurrentItemID:
+dq 0
+RAXSave:
+dq 0
+RBXSave:
+dq 0
+RCXSave:
+dq 0
+RDXSave:
+dq 0
+RDISave:
+dq 0
+RSISave:
+dq 0
+R8Save:
+dq 0
+R9Save:
+dq 0
+R10Save:
+dq 0
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+R13Save2:
+dq 0
+R14Save2:
+dq 0
+R15Save2:
+dq 0
+
+newmem3:
+  readmem(DropEveryItemAOB3,16)
+  cmp [NumTimesExecuted],#1157
+  jl DoItAgain
+  mov qword ptr [NumTimesExecuted],0
+  mov [R15Save3],r15
+  mov r15,bPerformedDropAllItem
+  mov qword ptr [r15],1
+  mov r15,[R15Save3]
+  ret
+DoItAgain:
+  jmp DropEveryItemAOB1
+
+DropEveryItemAOB3Save:
+  readmem(DropEveryItemAOB3,17)
+  
+R15Save3:
+dq 0
+
+newmem4:
+  mov rax,CurrentItemID
+  mov rax,[rax]
+  mov esi,eax
+  movsxd rax,edi
+  jmp DropEveryItemAOB4+07
+
+DropEveryItemAOB4Save:
+  readmem(DropEveryItemAOB4,7)
+  
+///
+DropEveryItemAOB1:
+  jmp newmem
+  return:
+  
+///
+DropEveryItemAOB2+5:
+  db 90 90
+
+///
+DropEveryItemAOB3:
+  jmp newmem3
+  return3:
+
+///
+DropEveryItemAOB4:
+  jmp newmem4
+  return4:
+  
+[DISABLE]
+
+///
+DropEveryItemAOB1:
+  readmem(DropEveryItemAOB1Save,20)
+
+unregistersymbol(DropEveryItemAOB1)
+unregistersymbol(DropEveryItemAOB1Save)
+
+///
+DropEveryItemAOB2+5:
+  db 7D 22
+  
+unregistersymbol(DropEveryItemAOB2)
+
+///
+DropEveryItemAOB3:
+  readmem(DropEveryItemAOB3Save,17)
+
+unregistersymbol(DropEveryItemAOB3)
+unregistersymbol(DropEveryItemAOB3Save)
+
+///
+DropEveryItemAOB4:
+  readmem(DropEveryItemAOB4Save,7)
+
+unregistersymbol(DropEveryItemAOB4)
+unregistersymbol(DropEveryItemAOB4Save)
+  
+///
+dealloc(newmem)
+dealloc(newmem3)
+dealloc(newmem4)"""
+
+[[cheat]]
+id = "infinite-item-usage-set-minimum-amount"
+name = "Infinite Item Usage / Set Minimum Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(InfiniteItemUsageAOB1,Game.ItemManager.DecreaseItemFromItemID,Game.ItemManager.DecreaseItemFromItemID+50,48 89 5C 24 08 48 89 74 24 10 57 48 83 EC *)
+registersymbol(InfiniteItemUsageAOB1)
+alloc(newmem,1024)
+
+///
+aobscanregion(InfiniteItemUsageAOB2,Game.ItemManager.DecreaseItemFromUniqueItemID,Game.ItemManager.DecreaseItemFromUniqueItemID+50,48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18)
+registersymbol(InfiniteItemUsageAOB2)
+alloc(newmem2,1024)
+
+///
+aobscanregion(InfiniteItemUsageAOB3,Game.ItemManager.DecreaseItem,Game.ItemManager.DecreaseItem+50,48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18)
+registersymbol(InfiniteItemUsageAOB3)
+alloc(newmem3,1024)
+
+///
+aobscanregion(InfiniteItemUsageAOB4,Game.UIItemListSelectorBase.UpdateItemData,Game.UIItemListSelectorBase.UpdateItemData+50,48 89 4C 24 08 53 57 41 54 41 57 48 83 EC *)
+registersymbol(InfiniteItemUsageAOB4)
+alloc(newmem4,1024)
+
+///
+label(return)
+label(InfiniteItemUsageAOB1Save)
+registersymbol(InfiniteItemUsageAOB1Save)
+
+///
+label(return2)
+label(InfiniteItemUsageAOB2Save)
+registersymbol(InfiniteItemUsageAOB2Save)
+
+///
+label(return3)
+label(InfiniteItemUsageAOB3Save)
+registersymbol(InfiniteItemUsageAOB3Save)
+
+///
+label(return4)
+label(InfiniteItemUsageAOB4Save)
+registersymbol(InfiniteItemUsageAOB4Save)
+label(iSetMinAmount)
+registersymbol(iSetMinAmount)
+
+///
+newmem:
+  xor r8,r8
+  jmp originalcode
+    
+originalcode:
+InfiniteItemUsageAOB1Save:
+  readmem(InfiniteItemUsageAOB1,15)
+  jmp InfiniteItemUsageAOB1+0F
+
+///
+newmem2:
+  xor r8,r8
+  jmp originalcode2
+    
+originalcode2:
+InfiniteItemUsageAOB2Save:
+  readmem(InfiniteItemUsageAOB2,15)
+  jmp InfiniteItemUsageAOB2+0F
+
+///
+newmem3:
+  xor r8,r8
+  jmp originalcode3
+    
+originalcode3:
+InfiniteItemUsageAOB3Save:
+  readmem(InfiniteItemUsageAOB3,15)
+  jmp InfiniteItemUsageAOB3+0F
+
+///
+newmem4:
+  mov [R15Save4],r15
+  xor r15,r15
+  mov r15d,[r8+14]
+  cmp r15d,[iSetMinAmount]
+  jge SkipSetMinAmount
+  mov r15d,[iSetMinAmount]
+  mov [r8+14],r15d
+SkipSetMinAmount:
+  mov r15,[R15Save4]
+  jmp originalcode4
+    
+originalcode4:
+InfiniteItemUsageAOB4Save:
+  readmem(InfiniteItemUsageAOB4,15)
+  jmp InfiniteItemUsageAOB4+0F
+
+R15Save4:
+dq 0
+iSetMinAmount:
+dq #20
+  
+///
+InfiniteItemUsageAOB1:
+  jmp newmem
+  return:
+
+///
+InfiniteItemUsageAOB2:
+  jmp newmem2
+  return2:
+
+///
+InfiniteItemUsageAOB3:
+  jmp newmem3
+  return3:
+
+///
+InfiniteItemUsageAOB4:
+  jmp newmem4
+  return4:
+    
+[DISABLE]
+
+///
+InfiniteItemUsageAOB1:
+  readmem(InfiniteItemUsageAOB1Save,16)
+  
+unregistersymbol(InfiniteItemUsageAOB1)
+unregistersymbol(InfiniteItemUsageAOB1Save)
+
+///
+InfiniteItemUsageAOB2:
+  readmem(InfiniteItemUsageAOB2Save,15)
+  
+unregistersymbol(InfiniteItemUsageAOB2)
+unregistersymbol(InfiniteItemUsageAOB2Save)
+
+///
+InfiniteItemUsageAOB3:
+  readmem(InfiniteItemUsageAOB3Save,15)
+  
+unregistersymbol(InfiniteItemUsageAOB3)
+unregistersymbol(InfiniteItemUsageAOB3Save)
+
+///
+InfiniteItemUsageAOB4:
+  readmem(InfiniteItemUsageAOB4Save,15)
+  
+unregistersymbol(InfiniteItemUsageAOB4)
+unregistersymbol(InfiniteItemUsageAOB4Save)
+unregistersymbol(iSetMinAmount)
+
+///
+dealloc(newmem)
+dealloc(newmem2)
+dealloc(newmem3)
+dealloc(newmem4)"""
+
+[[cheat]]
+id = "minimum-item-amount-healing-food-items"
+name = "Minimum Item Amount (Healing/Food Items)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iSetMinAmount"
+hops = []
+
+[[cheat]]
+id = "bloody-armor-doesn-t-take-away-hp"
+name = "Bloody Armor Doesn't Take Away HP"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanregion(NoBloodyArmorEffectAOB1,Game.ItemSpecialEffectsUtility.UpdateBloodyArmorEffects,Game.ItemSpecialEffectsUtility.UpdateBloodyArmorEffects+800,0F 86 EC 00 00 00 8B 43 54 2B 82 D0 02 00 00 78 0B)
+registersymbol(NoBloodyArmorEffectAOB1)
+alloc(newmem,1024,NoBloodyArmorEffectAOB1)
+
+///
+aobscanregion(NoBloodyArmorEffectAOB2,Game.ItemSpecialEffectsUtility.UpdateBloodyArmorEffects,Game.ItemSpecialEffectsUtility.UpdateBloodyArmorEffects+800,0F 86 88 00 00 00 8B 43 54 2B 82 D0 02 00 00 78 0B)
+registersymbol(NoBloodyArmorEffectAOB2)
+alloc(newmem2,1024,NoBloodyArmorEffectAOB2)
+
+///
+label(return)
+label(NoBloodyArmorEffectAOB1Save)
+registersymbol(NoBloodyArmorEffectAOB1Save)
+
+///
+label(return2)
+label(NoBloodyArmorEffectAOB2Save)
+registersymbol(NoBloodyArmorEffectAOB2Save)
+
+newmem:
+  mov eax,[rbx+54]
+  sub eax,0
+  jmp NoBloodyArmorEffectAOB1+0F
+
+NoBloodyArmorEffectAOB1Save:
+  readmem(NoBloodyArmorEffectAOB1+6,9)
+
+newmem2:
+  mov eax,[rbx+54]
+  sub eax,0
+  jmp NoBloodyArmorEffectAOB2+0F
+
+NoBloodyArmorEffectAOB2Save:
+  readmem(NoBloodyArmorEffectAOB2+6,9)
+  
+///
+NoBloodyArmorEffectAOB1+6:
+  jmp newmem
+  return:
+
+///
+NoBloodyArmorEffectAOB2+6:
+  jmp newmem2
+  return2:
+    
+[DISABLE]
+
+///
+NoBloodyArmorEffectAOB1+6:
+  readmem(NoBloodyArmorEffectAOB1Save,9)
+
+unregistersymbol(NoBloodyArmorEffectAOB1)
+unregistersymbol(NoBloodyArmorEffectAOB1Save)
+
+///
+NoBloodyArmorEffectAOB2+6:
+  readmem(NoBloodyArmorEffectAOB2Save,9)
+
+unregistersymbol(NoBloodyArmorEffectAOB2)
+unregistersymbol(NoBloodyArmorEffectAOB2Save)
+
+///
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "fol-view-main-menu"
+name = "Fol (View Main Menu)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ParameterManagerPtr"
+hops = [
+    "+0x7d8",
+    "+0x14",
+]
+
+[[cheat]]
+id = "play-time-in-seconds"
+name = "Play Time (In Seconds)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ParameterManagerPtr"
+hops = [
+    "+0x7d8",
+    "+0x18",
+]

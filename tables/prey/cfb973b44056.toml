@@ -1,0 +1,854 @@
+[game]
+name = "Prey +Mooncrash"
+exe = "prey.exe"
+notes = "Converted from a Cheat Engine table by cfemen. Source: https://fearlessrevolution.com/viewtopic.php?t=22266"
+verified = []
+author = "cfemen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-egs-1-8"
+name = "Enable [EGS 1.8]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-10
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+alloc(GetCVar,$1000,PreyDll.dll)
+registersymbol(GetCVar)
+
+GetCVar:
+sub rsp,28
+mov rdi,rcx
+mov rcx,PreyDll.dll+22419A0 // gEnv
+mov rcx,[rcx]
+////////////
+///// CSytem::GetIConsole
+mov rax,[rcx+18]
+mov rax,[rax+C0]
+/////
+/////////////
+mov rdx,rdi
+mov rcx,rax
+mov r8,[rax]
+call qword ptr [r8+000000B8] // CXConsole::GetCVar
+add rsp,28
+ret
+
+//
+
+aobscanmodule(aobDlcSystemUpdate,PreyDll.dll,80 79 08 00 74 0A 48) // should be unique
+alloc(newmem,$1000,aobDlcSystemUpdate)
+
+label(code)
+label(return)
+label(bSpawn)
+registersymbol(bSpawn)
+label(pArkPlayer)
+registersymbol(pArkPlayer)
+label(pPlayerHealthExt)
+registersymbol(pPlayerHealthExt)
+label(pStringName)
+registersymbol(pStringName)
+label(iAmount)
+registersymbol(iAmount)
+newmem:
+
+code:
+  cmp byte ptr [rcx+08],00
+  je short @f
+   mov rax,[rcx]
+   jmp qword ptr[rax+98]
+  @@:
+  push rax
+  push rbx
+  push rcx
+  push rdx
+  sub rsp,78
+
+  //ACtorSystem::GetActor(CActorSystem* this,0x7777)
+  call PreyDll.dll+154FA60 // ArkPlayer::GetInstance
+  test rax,rax
+  jne short @f
+   // No player, do nothing
+    add rsp,78
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+  @@:
+  mov [pArkPlayer],rax
+  call PreyDll.dll+154FA40 // ArkPlayer::GetHealth
+  mov [pPlayerHealthExt],rax
+  cmp byte ptr[bSpawn],1
+  je short @f
+    mov byte ptr[bSpawn],0
+    add rsp,78
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+  @@:
+
+  //////////////////////////////////////
+  // Needs to be done on the main thread:
+  //////////////////////////////////////
+
+  mov rcx,[PreyDll.dll+2C09010]// g_PGame
+  ////////
+  //GetArkItemSystem:
+  mov rcx,[rcx+440]
+  mov rax,[rcx+148]
+  //
+  ////////
+  mov rcx,[PreyDll.dll+2241978] // gEnv
+  mov rdx,pStringName
+  mov rbx,rax
+  mov r8,[rcx]
+  call qword ptr [r8+000001A0] // getArcheType
+  test rax,rax
+  jne @f
+    // string not found, do nothing
+    mov byte ptr[bSpawn],0
+    add rsp,78
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+  @@:
+  mov r9,rax // item
+  mov eax,[iAmount]
+  mov [rsp+20],eax /// qty
+  mov r8d,7777 // pickerID
+  lea rdx,[rsp+30] // vector* result
+  mov rcx,rbx // ArkItemSystem
+  call PreyDll.dll+1441AB0 // giveArchetype
+  mov byte ptr[bSpawn],0
+  add rsp,78
+  pop rdx
+  pop rcx
+  pop rbx
+  pop rax
+  ret
+bSpawn:
+db 0
+pArkPlayer:
+dq 0
+pPlayerHealthExt:
+dq 0
+iAmount:
+dd 1
+pStringName:
+db 0
+//db 'ArkPickups.Ammo.ShotgunShells',0
+//db 'ArkPickups.Weapons.Shotgun',0
+aobDlcSystemUpdate:
+  jmp newmem
+  nop
+return:
+registersymbol(aobDlcSystemUpdate)
+
+[DISABLE]
+
+aobDlcSystemUpdate:
+  db 80 79 08 00 74 0A
+
+dealloc(newmem)
+dealloc(GetCVar)
+
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "no-psi-consume"
+name = "No Psi Consume"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-12
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(aobConsumePsiOrHealth,PreyDll.dll,48 89 5C 24 08 57 48 83 EC 40 0F 29 74 24 30 48 8B D9 0F) // should be unique
+alloc(newmem,$1000,aobConsumePsiOrHealth)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  xorps xmm1,xmm1
+  mov [rsp+08],rbx
+  jmp return
+
+aobConsumePsiOrHealth:
+  jmp newmem
+return:
+registersymbol(aobConsumePsiOrHealth)
+
+[DISABLE]
+
+aobConsumePsiOrHealth:
+  db 48 89 5C 24 08
+
+unregistersymbol(aobConsumePsiOrHealth)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "ignore-key-card-requirement"
+name = "Ignore Key-Card Requirement"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobArkKeyCardReader_Update,PreyDll.dll,74 75 83 F9 01 0F 85 81 00 00 00) // should be unique
+
+aobArkKeyCardReader_Update:
+  db EB
+
+registersymbol(aobArkKeyCardReader_Update)
+
+[DISABLE]
+
+aobArkKeyCardReader_Update:
+  db 74
+
+unregistersymbol(aobArkKeyCardReader_Update)"""
+
+[[cheat]]
+id = "ignore-key-pad-codes"
+name = "Ignore Key-Pad Codes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(aobArkKeyCodeComponent_Validate,PreyDll.dll,75 18 E8 ** ** ** **  84 C0 75 0F) // should be unique
+
+aobArkKeyCodeComponent_Validate:
+  db EB
+
+registersymbol(aobArkKeyCodeComponent_Validate)
+
+[DISABLE]
+
+aobArkKeyCodeComponent_Validate:
+  db 75
+
+unregistersymbol(aobArkKeyCodeComponent_Validate)"""
+
+[[cheat]]
+id = "ignore-computer-passwords"
+name = "Ignore Computer Passwords"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobArkPasswordProtected_PlayerHasPassword,PreyDll.dll,48 89 5C 24 08 55 56 57 48 83 EC 40 48 8B F1) // should be unique
+
+aobArkPasswordProtected_PlayerHasPassword:
+  mov al,1
+  ret
+  nop 2
+
+registersymbol(aobArkPasswordProtected_PlayerHasPassword)
+
+[DISABLE]
+
+aobArkPasswordProtected_PlayerHasPassword:
+  db 48 89 5C 24 08
+
+unregistersymbol(aobArkPasswordProtected_PlayerHasPassword)"""
+
+[[cheat]]
+id = "accuracy"
+name = "Accuracy"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-12
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobSkipResult,PreyDll.dll,0F 29 B4 24 80 00 00 00 E8 ** ** ** ** 48 8D 88 ** ** 00 00) // should be unique
+
+aobSkipResult-5:
+  db 84
+registersymbol(aobSkipResult)
+
+[DISABLE]
+
+aobSkipResult-5:
+  db 85
+
+unregistersymbol(aobSkipResult)"""
+
+[[cheat]]
+id = "no-recoil"
+name = "No Recoil"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-12
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(aobRecoil,PreyDll.dll,48 8B C4 55 53 56 57 41 54 41 56 41 57 48 8D A8 18) // should be unique
+
+aobRecoil:
+  db C3
+
+registersymbol(aobRecoil)
+
+[DISABLE]
+
+aobRecoil:
+  db 48
+
+unregistersymbol(aobRecoil)"""
+
+[[cheat]]
+id = "healthext-m-health"
+name = "[HealthExt] m_health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerHealthExt"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "enable-mooncrash-egs-1-8"
+name = "Enable Mooncrash [EGS 1.8]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-10
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+alloc(GetCVar,$1000,PreyDll.dll)
+registersymbol(GetCVar)
+
+GetCVar:
+sub rsp,28
+mov rdi,rcx
+mov rcx,PreyDll.dll+23AE9A8// gEnv
+mov rcx,[rcx]
+////////////
+///// CSytem::GetIConsole
+mov rax,[rcx+18]
+mov rax,[rax+C8]
+/////
+/////////////
+mov rdx,rdi
+mov rcx,rax
+mov r8,[rax]
+call qword ptr [r8+000000B8] // CXConsole::GetCVar
+add rsp,28
+ret
+
+//
+
+aobscanmodule(aobDlcSystemUpdate,PreyDll.dll,80 79 08 00 74 0A 48) // should be unique
+alloc(newmem,$1000,aobDlcSystemUpdate)
+
+label(code)
+label(return)
+label(bSpawn)
+registersymbol(bSpawn)
+label(pArkPlayer)
+registersymbol(pArkPlayer)
+label(pPlayerHealthExt)
+registersymbol(pPlayerHealthExt)
+label(pStringName)
+registersymbol(pStringName)
+label(iAmount)
+registersymbol(iAmount)
+newmem:
+
+code:
+  cmp byte ptr [rcx+08],00
+  je short @f
+   mov rax,[rcx]
+   jmp qword ptr[rax+98]
+  @@:
+  push rax
+  push rbx
+  push rcx
+  push rdx
+  sub rsp,78
+
+  call PreyDll.dll+1674AE0 // GetPlayer
+  test rax,rax
+  jne short @f
+    // no player,do nothing
+    add rsp,78
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+  @@:
+
+  cmp byte ptr[bSpawn],1
+  je short @f
+    mov byte ptr[bSpawn],0
+    add rsp,78
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+  @@:
+
+  //////////////////////////////////////
+  // Needs to be done on the main thread:
+  //////////////////////////////////////
+
+  mov rcx,[PreyDll.dll+2D83140]// g_PGame
+  ////////
+  //GetArkItemSystem:
+  mov rcx,[rcx+460]
+  mov rax,[rcx+E8]
+  //
+  ////////
+  mov rcx,[PreyDll.dll+23AE980] // gEnv
+  mov rdx,pStringName
+  mov rbx,rax
+  mov r8,[rcx]
+  call qword ptr [r8+000001A8] // getArcheType
+  test rax,rax
+  jne @f
+    // string not found, do nothing
+    mov byte ptr[bSpawn],0
+    add rsp,78
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    ret
+  @@:
+  mov r9,rax // item
+  mov eax,[iAmount]
+  mov [rsp+20],eax /// qty
+  mov r8d,7777 // pickerID
+  lea rdx,[rsp+30] // vector* result
+  mov rcx,rbx // ArkItemSystem
+  call PreyDll.dll+1556DF0 // giveArchetype
+  mov byte ptr[bSpawn],0
+  add rsp,78
+  pop rdx
+  pop rcx
+  pop rbx
+  pop rax
+  ret
+bSpawn:
+db 0
+pArkPlayer:
+dq 0
+pPlayerHealthExt:
+dq 0
+iAmount:
+dd 1
+pStringName:
+db 0
+//db 'ArkPickups.Ammo.ShotgunShells',0
+//db 'ArkPickups.Weapons.Shotgun',0
+aobDlcSystemUpdate:
+  jmp newmem
+  nop
+return:
+registersymbol(aobDlcSystemUpdate)
+
+[DISABLE]
+
+aobDlcSystemUpdate:
+  db 80 79 08 00 74 0A
+
+dealloc(newmem)
+dealloc(GetCVar)
+
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "no-psi-consume-2"
+name = "No Psi Consume"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-12
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobConsumePSIOrHealth,PreyDll.dll,48 89 5C 24 08 57 48 83 EC 60 0F 29 74 24 50 48 8B D9 0F 29 7C 24 40 F3) // should be unique
+alloc(newmem,$1000,aobConsumePSIOrHealth)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  xorps xmm1,xmm1
+  mov [rsp+08],rbx
+  jmp return
+
+aobConsumePSIOrHealth:
+  jmp newmem
+return:
+registersymbol(aobConsumePSIOrHealth)
+
+[DISABLE]
+
+aobConsumePSIOrHealth:
+  db 48 89 5C 24 08
+
+unregistersymbol(aobConsumePSIOrHealth)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "ignore-key-card-requirement-2"
+name = "Ignore Key-Card Requirement"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobArkKeyCardReader_Update,PreyDll.dll,74 75 83 F9 01 0F 85 81 00 00 00) // should be unique
+
+aobArkKeyCardReader_Update:
+  db EB
+
+registersymbol(aobArkKeyCardReader_Update)
+
+[DISABLE]
+
+aobArkKeyCardReader_Update:
+  db 74
+
+unregistersymbol(aobArkKeyCardReader_Update)"""
+
+[[cheat]]
+id = "ignore-key-pad-codes-2"
+name = "Ignore Key-Pad Codes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(aobArkKeyCodeComponent_Validate,PreyDll.dll,75 18 E8 ** ** ** **  84 C0 75 0F) // should be unique
+
+aobArkKeyCodeComponent_Validate:
+  db EB
+
+registersymbol(aobArkKeyCodeComponent_Validate)
+
+[DISABLE]
+
+aobArkKeyCodeComponent_Validate:
+  db 75
+
+unregistersymbol(aobArkKeyCodeComponent_Validate)"""
+
+[[cheat]]
+id = "accuracy-2"
+name = "Accuracy"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-12
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(aobSkipResult,PreyDll.dll,0F 29 B4 24 80 00 00 00 E8 ** ** ** ** 48 8D 88 ** ** 00 00) // should be unique
+
+aobSkipResult-5:
+  db 84
+registersymbol(aobSkipResult)
+
+[DISABLE]
+
+aobSkipResult-5:
+  db 85
+
+unregistersymbol(aobSkipResult)"""
+
+[[cheat]]
+id = "no-recoil-2"
+name = "No Recoil"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-12
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(aobRecoil,PreyDll.dll,48 8B C4 55 53 56 57 41 54 41 56 41 57 48 8D A8 18) // should be unique
+
+aobRecoil:
+  db C3
+
+registersymbol(aobRecoil)
+
+[DISABLE]
+
+aobRecoil:
+  db 48
+
+unregistersymbol(aobRecoil)"""
+
+[[cheat]]
+id = "mooncrash-accuracy-shotgun-tight-spread"
+name = "Mooncrash Accuracy +Shotgun Tight Spread"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(aobArkWeaponUtils_GetRadiusOfCone,PreyDll.dll,48 83 EC 38 0F 29 74 24 20 0F 28 F1 E8 ** ** ** ** F3) // should be unique
+alloc(newmem,$1000,aobArkWeaponUtils_GetRadiusOfCone)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  sub rsp,38
+  movaps [rsp+20],xmm6
+  movaps xmm6,xmm1
+  call ucrtbase.tanf
+  mulss xmm0,xmm6
+  mov eax,5
+  cvtsi2ss xmm6,eax
+  shufps xmm6,xmm6,0
+  divps xmm0,xmm6
+  movaps xmm6,[rsp+20]
+  add rsp,38
+  ret
+
+aobArkWeaponUtils_GetRadiusOfCone:
+  jmp newmem
+  nop 4
+return:
+registersymbol(aobArkWeaponUtils_GetRadiusOfCone)
+
+[DISABLE]
+
+aobArkWeaponUtils_GetRadiusOfCone:
+  db 48 83 EC 38 0F 29 74 24 20
+
+unregistersymbol(aobArkWeaponUtils_GetRadiusOfCone)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "accuracy-shotgun-tight-spread"
+name = "Accuracy +Shotgun Tight Spread"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Prey.exe
+  Version: 
+  Date   : 2022-12-11
+  Author : cfe
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanmodule(aobArkWeaponUtils_GetRadiusOfCone,PreyDll.dll,48 83 EC 38 0F 29 74 24 20 0F 28 F1 E8 99) // should be unique
+alloc(newmem,$1000,aobArkWeaponUtils_GetRadiusOfCone)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  sub rsp,38
+  movaps [rsp+20],xmm6
+  movaps xmm6,xmm1
+  call ucrtbase.tanf
+  mulss xmm0,xmm6
+  mov eax,5
+  cvtsi2ss xmm6,eax
+  shufps xmm6,xmm6,0
+  divps xmm0,xmm6
+  movaps xmm6,[rsp+20]
+  add rsp,38
+  ret
+
+aobArkWeaponUtils_GetRadiusOfCone:
+  jmp newmem
+  nop 4
+return:
+registersymbol(aobArkWeaponUtils_GetRadiusOfCone)
+
+[DISABLE]
+
+aobArkWeaponUtils_GetRadiusOfCone:
+  db 48 83 EC 38 0F 29 74 24 20
+
+unregistersymbol(aobArkWeaponUtils_GetRadiusOfCone)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "increase-value"
+name = "Increase Value:"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fSpreadReduce"
+hops = []

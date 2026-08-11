@@ -1,0 +1,341 @@
+[game]
+name = "FEROCIOUS Playtest"
+exe = "ferocious.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=35184"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlimited-health"
+name = "Unlimited Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,PlayerController.UpdateStance)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,PlayerController.UpdateStance)
+
+label(code)
+label(return)
+
+newmem:
+push r9
+mov r9,[rcx+30]
+mov r9,[r9+60]
+mov [r9+44],(float)999999
+mov [r9+4C],(float)999999
+pop r9
+
+code:
+  mov [rsp+08],rbx
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "unlimited-stamina"
+name = "Unlimited Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(playerStamina,GameAssembly.dll,F3 0F 11 83 B8 00 00 00 48 85 C0)
+alloc(newmem,$1000,playerStamina)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss xmm0,[setStamina]
+  movss [rbx+000000B8],xmm0
+  jmp return
+
+setStamina:
+dd (float)150
+
+playerStamina:
+  jmp newmem
+  nop 3
+return:
+registersymbol(playerStamina)
+
+[DISABLE]
+
+playerStamina:
+  db F3 0F 11 83 B8 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-reload"
+name = "No Reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(FirearmRounds,GameAssembly.dll,41 FF 8E 18 02 00 00)
+
+FirearmRounds:
+  db 90 90 90 90 90 90 90
+registersymbol(FirearmRounds)
+
+[DISABLE]
+
+FirearmRounds:
+  db 41 FF 8E 18 02 00 00
+
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "disable-weapon-jam"
+name = "Disable Weapon Jam"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(Firearm_canJam,GameAssembly.dll,44 38 AF F4 01 00 00)
+alloc(newmem,$1000,Firearm_canJam)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [rdi+000001F4],0
+  jmp return
+
+Firearm_canJam:
+  jmp newmem
+  nop 2
+return:
+registersymbol(Firearm_canJam)
+
+[DISABLE]
+
+Firearm_canJam:
+  db 44 38 AF F4 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "items-don-t-decrease"
+name = "Items Don't Decrease"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(itemDecrease,GameAssembly.dll,2B FA 4C 8B 56 48)
+
+itemDecrease:
+  db 90 90
+registersymbol(itemDecrease)
+
+[DISABLE]
+
+itemDecrease:
+  db 2B FA 4C 8B 56 48
+
+unregistersymbol(itemDecrease)"""
+
+[[cheat]]
+id = "player-movement"
+name = "→ Player Movement"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(playerSpeed,GameAssembly.dll,8B 40 14 89 83 D4 00 00 00 41)
+alloc(newmem,$1000,playerSpeed)
+registersymbol(setSpeed)
+label(code return setSpeed)
+
+newmem:
+xorps xmm14,xmm14
+movss xmm14,[setSpeed]
+movss [rax+14],xmm14
+
+code:
+  mov eax,[rax+14]
+  mov [rbx+000000D4],eax
+  jmp return
+
+setSpeed:
+dd (float)3
+
+playerSpeed:
+  jmp newmem
+  nop 4
+return:
+registersymbol(playerSpeed)
+
+aobscanmodule(playerSpeedForward,GameAssembly.dll,00 8B 40 10 89 83 D4 00 00 00)
+alloc(newmem2,$1000,playerSpeedForward)
+
+label(code2)
+label(return2)
+
+newmem2:
+movss xmm14,[setSpeed]
+movss [rax+10],xmm14
+
+code2:
+  mov eax,[rax+10]
+  mov [rbx+000000D4],eax
+  jmp return2
+
+playerSpeedForward+01:
+  jmp newmem2
+  nop 4
+return2:
+registersymbol(playerSpeedForward)
+
+[DISABLE]
+
+playerSpeed:
+  db 8B 40 14 89 83 D4 00 00 00
+
+
+playerSpeedForward+01:
+  db 8B 40 10 89 83 D4 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-movement-speed"
+name = "Set Movement Speed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "setSpeed"
+hops = []
+
+[[cheat]]
+id = "firearm-settings"
+name = "→ Firearm Settings"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Firearm.get_Settings)
+define(bytes,40 53 48 83 EC 20)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Firearm.get_Settings)
+registersymbol(playerFirearm)
+label(code return playerFirearm)
+
+newmem:
+cmp [rcx+50],1
+jne code
+mov [playerFirearm],rcx
+
+code:
+  push rbx
+  sub rsp,20
+  jmp return
+
+playerFirearm:
+dw
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "hovered-item"
+name = "→ Hovered Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(hoveredItemAmount,GameAssembly.dll,44 8B 78 18 33 D2 44)
+alloc(newmem,$1000,hoveredItemAmount)
+registersymbol(hoveredAmount)
+label(code return hoveredAmount)
+
+newmem:
+mov [hoveredAmount],rax
+
+code:
+  mov r15d,[rax+18]
+  xor edx,edx
+  jmp return
+
+hoveredAmount:
+dw
+
+hoveredItemAmount:
+  jmp newmem
+  nop
+return:
+registersymbol(hoveredItemAmount)
+
+[DISABLE]
+
+hoveredItemAmount:
+  db 44 8B 78 18 33 D2
+//InventorySystem.Inventory.AddItemInternal
+//DiegeticItemFolder
+unregistersymbol(*)
+dealloc(*)"""

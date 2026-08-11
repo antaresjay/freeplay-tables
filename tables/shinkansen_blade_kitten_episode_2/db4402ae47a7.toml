@@ -1,0 +1,823 @@
+[game]
+name = "Blade Kitten: Episode 2"
+exe = "shinkansen_blade_kitten_episode_2.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2870"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_staminaset_enable)
+registersymbol(playerstats_healthset_enable)
+registersymbol(playerstats_timeset_enable)
+registersymbol(playerstats_criticalset_enable)
+
+alloc(playerstats_basepointer,4)
+alloc(playerstats_update_enable,4)
+alloc(playerstats_set_enable,4)
+alloc(playerstats_staminaset_enable,4)
+alloc(playerstats_healthset_enable,4)
+alloc(playerstats_timeset_enable,4)
+alloc(playerstats_criticalset_enable,4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_staminaset_enable)
+unregistersymbol(playerstats_healthset_enable)
+unregistersymbol(playerstats_timeset_enable)
+unregistersymbol(playerstats_criticalset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_staminaset_enable)
+dealloc(playerstats_healthset_enable)
+dealloc(playerstats_timeset_enable)
+dealloc(playerstats_criticalset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play"
+name = "Player Stats Base Address Scan (To Update: Play)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_staminaset_exit)
+label(playerstats_healthset_exit)
+label(playerstats_timeset_exit)
+label(playerstats_criticalset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+aobscan(playerstats_searchedAOB,8B 81 B4 02 00 00 85 C0 74 08 8B 40 18 D9 40 14)
+
+alloc(playerstats_newmem,2048)
+alloc(playerstats_temp1,4)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], ebx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], ecx
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_staminaset_enable], #0
+je playerstats_staminaset_exit
+cmp dword ptr [ecx+2b4], #0
+je playerstats_staminaset_exit
+mov ebx, [ecx+2b4]
+cmp dword ptr [ebx+18], #0
+je playerstats_staminaset_exit
+mov ebx, [ebx+18]
+fld [ebx+18]
+fstp [ecx+658]
+playerstats_staminaset_exit:
+
+cmp dword ptr [playerstats_healthset_enable], #0
+je playerstats_healthset_exit
+// Death check
+cmp dword ptr [ecx+664], #0
+je playerstats_healthset_exit
+cmp dword ptr [ecx+2b4], #0
+je playerstats_healthset_exit
+mov ebx, [ecx+2b4]
+cmp dword ptr [ebx+18], #0
+je playerstats_healthset_exit
+mov ebx, [ebx+18]
+fld [ebx+14]
+fstp [ecx+664]
+playerstats_healthset_exit:
+
+cmp dword ptr [playerstats_timeset_enable], #0
+je playerstats_timeset_exit
+cmp dword ptr [ecx+2b4], #0
+je playerstats_timeset_exit
+mov ebx, [ecx+2b4]
+cmp dword ptr [ebx+18], #0
+je playerstats_timeset_exit
+mov ebx, [ebx+18]
+mov [ebx+4c], (float)0
+playerstats_timeset_exit:
+
+cmp dword ptr [playerstats_criticalset_enable], #0
+je playerstats_criticalset_exit
+cmp dword ptr [ecx+2b4], #0
+je playerstats_criticalset_exit
+mov ebx, [ecx+2b4]
+cmp dword ptr [ebx+18], #0
+je playerstats_criticalset_exit
+mov ebx, [ebx+18]
+mov [ebx+964], (float)100
+playerstats_criticalset_exit:
+
+mov ebx, [playerstats_temp1]
+
+
+playerstats_originalcode:
+db 8B 81 B4 02 00 00
+//mov eax,[ecx+000002B4]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 8B 81 B4 02 00 00
+//mov eax,[ecx+000002B4]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)"""
+
+[[cheat]]
+id = "stamina-set-to-max"
+name = "Stamina Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_staminaset_enable"
+hops = []
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "critical-set-to-max"
+name = "Critical Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_criticalset_enable"
+hops = []
+
+[[cheat]]
+id = "elapsed-time-set-to-0"
+name = "Elapsed Time Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_timeset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "hex"
+name = "Hex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "costume"
+name = "Costume"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Breaker Gear",
+    "1:Flight Suit",
+    "2:Pajamas",
+    "3:Dress",
+    "4:Justice",
+    "5:Magasse",
+    "6:Sun Dae",
+    "7:Hologram",
+    "8:Mascot",
+    "9:Lucy",
+    "10:Justice Jumpsuit",
+    "11:Classic Kit",
+    "12:Squamatan armor",
+    "13:Sol Armor",
+    "14:Darque",
+    "15:Skiffy",
+    "16:Space Pirate",
+    "17:Gothique",
+    "18:Stealth Suit",
+    "19:Flight Suit",
+    "20:Night Breaker",
+    "21:Ginger Bunny",
+    "22:Sol ARmor",
+    "23:Jumpsuit",
+    "24:Gattling Riddeen",
+    "25:Strike Armor",
+    "26:Candy Kit",
+    "27:Zarr",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x8",
+]
+
+[[cheat]]
+id = "maximum-health"
+name = "Maximum Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x14",
+]
+
+[[cheat]]
+id = "maximum-stamina"
+name = "Maximum Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x18",
+]
+
+[[cheat]]
+id = "elapsed-time"
+name = "Elapsed Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:War on Terra",
+    "1:Skiff Happens",
+    "2:Chasing Justice",
+    "3:Urb Ex",
+    "4:Exodus",
+    "5:Collaborator",
+    "6:Acland",
+    "7:Darque Nights",
+    "8:Berserk",
+    "9:Sisterhood",
+    "10:Vor Hunting",
+    "11:Hidden Fortress",
+    "12:Dreadnought",
+    "13:Awakenings",
+    "14:Siege Mentality",
+    "15:Incursion",
+    "16:Excursion",
+    "17:Revelations",
+    "18:Hybrid",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x58",
+]
+
+[[cheat]]
+id = "blade"
+name = "Blade"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Free Blade",
+    "2:Gladion",
+    "3:Bastar",
+    "4:Grengis",
+    "5:Darque Blade",
+    "6:Gylus",
+    "7:Styggius",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "critical"
+name = "Critical"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x964",
+]
+
+[[cheat]]
+id = "chests"
+name = "Chests"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x68",
+]
+
+[[cheat]]
+id = "skiffs"
+name = "Skiffs"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "datapaks"
+name = "Datapaks"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x70",
+]
+
+[[cheat]]
+id = "elapsed-time-2"
+name = "Elapsed Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x78",
+]
+
+[[cheat]]
+id = "chests-2"
+name = "Chests"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x98",
+]
+
+[[cheat]]
+id = "skiffs-2"
+name = "Skiffs"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "datapaks-2"
+name = "Datapaks"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0xa0",
+]
+
+[[cheat]]
+id = "elapsed-time-3"
+name = "Elapsed Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0xa8",
+]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0xad8",
+]
+
+[[cheat]]
+id = "stamina"
+name = "Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0xadc",
+]
+
+[[cheat]]
+id = "cheat"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0xae0",
+]
+
+[[cheat]]
+id = "costumes"
+name = "Costumes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0xae4",
+]
+
+[[cheat]]
+id = "blades"
+name = "Blades"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b4",
+    "+0x18",
+    "+0xae8",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "horizontal"
+name = "Horizontal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b8",
+    "+0x20",
+]
+
+[[cheat]]
+id = "vertical"
+name = "Vertical"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x2b8",
+    "+0x24",
+]
+
+[[cheat]]
+id = "stamina-2"
+name = "Stamina"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x658"]
+
+[[cheat]]
+id = "health-2"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x664"]

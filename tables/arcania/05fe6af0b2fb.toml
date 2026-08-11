@@ -1,0 +1,487 @@
+[game]
+name = "Arcania: Fall of Setariff"
+exe = "arcania.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4434"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "arcania-fall-of-setariff-script"
+name = "Arcania: Fall of Setariff Script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Arcania: Fall of Setariff
+ Game Version  : 1.1496.0.0
+ Script Version: 1.1
+ CE Version    : 6.1
+ GodMode, XP, Stamina, Mana, stats
+ 19-Oct-2010
+ 27-Dec-2010 Offset changed for version 1.1.0.1433
+ 28-Dec-2010 AOB Version
+ 23-Dec-2011 Minimum stats + 1.1496.0.0 AOB
+===========================================
+}
+
+[ENABLE]
+//=========================================
+alloc(MyCode,1024)
+//=========================================
+aobscan(aobGodMode,d9 9c 0a fc 00 00 00 51 d9 45 0c)
+aobscan(aobMonXP,89 4d fc 8b 45 fc d9 80 98 01 00 00 8b e5) //+06
+aobscan(aobMonGold,83 be ac 00 00 00 00 8b 80 ac 01 00 00)  //+07
+aobscan(aob_StatUpdater,D9 9C 0A 00 01 00 00 8B 45 ?? 89 45 ?? 83)
+
+//=========================================
+// Declaration section
+label(pGodMode)
+label(pMonXP)
+label(pMonGold)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_GodM0)
+label(_GodM1)
+label(_GodM2)
+label(_MonXP)
+label(_BackMX)
+label(_ExitMX)
+label(_MonGold)
+label(_BackMG)
+label(_ExitMG)
+label(pHero)
+label(iEnableGM)
+label(iEnableMS)
+label(iEnableMM)
+label(iEnableMX)
+label(iEnableMG)
+label(iMinGold)
+label(cStatDoPatch)
+label(cStatDoPatchSkip)
+label(cStatPatcher)
+label(cStatPatcherBaseStat)
+label(cStatPatcherRegen)
+label(cStatPatcherPower)
+label(cStatPatcherArmor)
+label(cStatPatcherFinish)
+label(cStatPatcherSkip)
+label(aob_StatUpdater_r)
+label(iEnableStatHack)
+label(pMinBaseStats)
+label(pMinRegen)
+label(pMinPowerStats)
+label(pMinBaseArmor)
+
+registersymbol(MyCode)
+registersymbol(pHero)
+registersymbol(iEnableGM)
+registersymbol(iEnableMX)
+registersymbol(iEnableMS)
+registersymbol(iEnableMM)
+registersymbol(iEnableMG)
+registersymbol(iMinGold)
+registersymbol(pGodMode)
+registersymbol(pMonXP)
+registersymbol(pMonGold)
+registersymbol(aob_StatUpdater_r)
+registersymbol(iEnableStatHack)
+registersymbol(pMinBaseStats)
+registersymbol(pMinRegen)
+registersymbol(pMinPowerStats)
+registersymbol(pMinBaseArmor)
+
+//=========================================
+MyCode:
+//=========================================
+_GodMode:
+ cmp dword ptr [edx+0000003c],1    // Player´s hero?
+ jne _ExitGM                       // Jump if false
+
+ cmp dword ptr [iEnableGM],0
+ je _GodM0                         // Jump if feature is disabled
+
+ or ecx,ecx                        // HP ?
+ je _GodM2                         // Jump if true
+
+_GodM0:
+ cmp dword ptr [iEnableMS],0
+ je _GodM1                         // Jump if feature is disabled
+ 
+ cmp ecx,0000000c                  // Stamina ?
+ je _GodM2                         // Jump if true
+
+_GodM1:
+ cmp dword ptr [iEnableMM],0
+ je _ExitGM                        // Jump if feature is disabled
+ 
+ cmp ecx,00000018                  // Mana ?
+ jne _ExitGM                       // Jump if false
+
+_GodM2:
+ fstp st(0)                        // Discard value  
+ fld dword ptr [edx+ecx+00000104]  // Get max Value
+
+_ExitGM:
+ fstp dword ptr [edx+ecx+000000fc] // Original code
+ jmp _BackGM                       // Back to main code
+
+//=========================================
+_MonXP:
+ push ecx
+ 
+ mov [pHero],eax                   // Save pointer for debugging
+
+ cmp dword ptr [iEnableMX],0
+ je _ExitMX                        // Jump if feature is disabled
+
+ cmp dword ptr [eax+0000003c],1    // Player´s hero?
+ jne _ExitMX                       // Jump if false
+
+ mov ecx,[eax+000001a0]            // Get XP needed for next level
+ cmp ecx,[eax+00000198]            // Current XP >= XP Needed?
+ jle _ExitMX
+ 
+ mov [eax+00000198],ecx            // Update current XP
+
+_ExitMX:
+ pop ecx
+ fld dword ptr [eax+00000198]      // Original code
+ jmp _BackMX                       // Back to main code
+
+//=========================================
+// Activated in inventory
+_MonGold:
+ pushfd
+ push ecx
+ 
+ cmp dword ptr [iEnableMG],0
+ je _ExitMG                        // Jump if feature is disabled
+
+ cmp dword ptr [eax+0000003c],1    // Player´s hero?
+ jne _ExitMG                       // Jump if false
+
+ mov ecx,[iMinGold]                // Get minimum gold
+ cmp ecx,[eax+000001ac]            // Current gold >= minimum
+ jle _ExitMG
+ 
+ mov [eax+000001ac],ecx            // Make Current gold = minimum
+
+_ExitMG:
+ pop ecx
+ popfd
+ 
+ mov eax,[eax+000001ac]            // Original code
+ jmp _BackMG                       // Back to main code
+
+//=========================================
+// Needs to open inventory to grab pHero
+cStatPatcher:
+fstp dword ptr [edx+ecx+00000100] // Original code
+pushad
+cmp dword ptr [iEnableStatHack],1
+jne short cStatPatcherSkip
+cmp edx,[pHero]
+jne short cStatPatcherSkip
+cmp dword ptr [edx+3C],1
+jne short cStatPatcherSkip
+lea ebx, [edx+ecx+00000100]
+test ecx,ecx
+jz short cStatPatcherBaseStat
+cmp ecx,0C
+je short cStatPatcherBaseStat
+cmp ecx,18
+je short cStatPatcherBaseStat
+cmp ecx,24
+je short cStatPatcherArmor
+cmp ecx,30
+je short cStatPatcherRegen
+cmp ecx,3C
+je short cStatPatcherRegen
+cmp ecx,48
+je short cStatPatcherRegen
+cmp ecx,54
+je short cStatPatcherPower
+cmp ecx,60
+je short cStatPatcherPower
+cmp ecx,6C
+je short cStatPatcherPower
+jmp short cStatPatcherSkip
+cStatPatcherBaseStat:
+fld dword ptr [pMinBaseStats]
+jmp short cStatPatcherFinish
+cStatPatcherArmor:
+fld dword ptr [pMinBaseArmor]
+jmp short cStatPatcherFinish
+cStatPatcherRegen:
+fld dword ptr [pMinRegen]
+jmp short cStatPatcherFinish
+cStatPatcherPower:
+fld dword ptr [pMinPowerStats]
+cStatPatcherFinish:
+call cStatDoPatch
+fstp st(0)
+cStatPatcherSkip:
+popad
+ret
+cStatDoPatch:
+fld dword ptr [ebx]
+fcomip st(0),st(1)
+jnc short cStatDoPatchSkip
+fst dword ptr [ebx]
+cStatDoPatchSkip:
+ret
+
+//=========================================
+// Variables
+pHero:
+ dd 0
+iEnableGM:
+ dd 1
+iEnableMX:
+ dd 1
+iEnableMS:
+ dd 1
+iEnableMM:
+ dd 1
+iEnableMG:
+ dd 1
+iMinGold:
+ dd #15000
+iEnableStatHack:
+dd 1
+pMinBaseStats:
+dd (float)1000
+pMinRegen:
+dd (float)1
+pMinPowerStats:
+dd (float)100
+pMinBaseArmor:
+dd (float)50
+
+//=========================================
+// Hacking Points
+//Arcania.exe+1c937f:
+//Arcania.exe+1c38ef:
+aobGodMode:
+pGodMode:
+ jmp _GodMode
+ nop
+ nop
+_BackGM:
+
+//Arcania.exe+1ca54a:
+//Arcania.exe+1c4aba:
+aobMonXP+06:
+pMonXP:
+ jmp _MonXP
+ nop
+_BackMX:
+
+//Arcania.exe+70fb3a:
+//Arcania.exe+7086da:
+aobMonGold+07:
+pMonGold:
+ jmp _MonGold
+ nop
+_BackMG:
+
+//"Arcania Addon.exe"+1B5C3D:
+aob_StatUpdater:
+aob_StatUpdater_r:
+call cStatPatcher
+nop
+nop
+
+//=========================================
+// Original Codes
+[DISABLE]
+//Arcania.exe+1c937f:
+//Arcania.exe+1c38ef:
+pGodMode:
+//Alt: fstp dword ptr [edx+ecx+000000fc]
+db D9 9C 0A FC 00 00 00
+
+//Arcania.exe+1ca54a:
+//Arcania.exe+1c4aba:
+pMonXP:
+ fld dword ptr [eax+00000198]
+
+//Arcania.exe+70fb3a:
+//Arcania.exe+7086da:
+pMonGold:
+ mov eax,[eax+000001ac]
+ 
+//"Arcania Addon.exe"+1B5C3D:
+aob_StatUpdater_r:
+//Alt: fstp dword ptr [edx+ecx+00000100]
+db D9 9C 0A 00 01 00 00
+
+unregistersymbol(MyCode)
+unregistersymbol(pHero)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMX)
+unregistersymbol(iEnableMS)
+unregistersymbol(iEnableMM)
+unregistersymbol(iEnableMG)
+unregistersymbol(iMinGold)
+unregistersymbol(pGodMode)
+unregistersymbol(pMonXP)
+unregistersymbol(pMonGold)
+unregistersymbol(aob_StatUpdater_r)
+unregistersymbol(iEnableStatHack)
+unregistersymbol(pMinBaseStats)
+unregistersymbol(pMinRegen)
+unregistersymbol(pMinPowerStats)
+unregistersymbol(pMinBaseArmor)
+dealloc(MyCode)"""
+
+[[cheat]]
+id = "enable-disable-god-mode"
+name = "Enable/Disable God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-quick-level-up"
+name = "Enable/Disable Quick Level Up"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMX"
+hops = []
+
+[[cheat]]
+id = "enable-disable-full-stamina"
+name = "Enable/Disable Full Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMS"
+hops = []
+
+[[cheat]]
+id = "enable-disable-full-mana"
+name = "Enable/Disable Full Mana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMM"
+hops = []
+
+[[cheat]]
+id = "minimum-gold-value"
+name = "Minimum Gold Value"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinGold"
+hops = []
+
+[[cheat]]
+id = "phero-fskillpoints"
+name = "pHero->fSkillPoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHero"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "pminbasestats"
+name = "pMinBaseStats"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMinBaseStats"
+hops = []
+
+[[cheat]]
+id = "pminregen"
+name = "pMinRegen"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMinRegen"
+hops = []
+
+[[cheat]]
+id = "pminpowerstats"
+name = "pMinPowerStats"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMinPowerStats"
+hops = []
+
+[[cheat]]
+id = "pminbasearmor"
+name = "pMinBaseArmor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMinBaseArmor"
+hops = []

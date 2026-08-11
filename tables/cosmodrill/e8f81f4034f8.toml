@@ -1,0 +1,77 @@
+[game]
+name = "Cosmodrill 星际深钻"
+exe = "cosmodrill.exe"
+notes = "Converted from a Cheat Engine table by FreyaChen. Source: https://fearlessrevolution.com/viewtopic.php?t=40000"
+verified = []
+author = "FreyaChen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "increase-mineral"
+name = "Increase mineral"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(oreChangeAOB,PlayerCurrency:ChangeCurrency+80,PlayerCurrency:ChangeCurrency+c0,F2 0F 58 C1 F2 0F 5A E8 F3 41 0F 11 6F 28)
+alloc(newmem,2048,oreChangeAOB)
+
+label(returnhere)
+label(gain)
+label(consume)
+label(finish)
+
+registersymbol(oreChangeAOB)
+
+newmem:
+  // 保存 xmm2，避免破坏后续逻辑
+  sub rsp,10
+  movdqu [rsp],xmm2
+
+  // xmm1 = 本次矿石变化量，double 格式
+  // xmm1 < 0 代表消耗；xmm1 >= 0 代表获得
+  xorpd xmm2,xmm2
+  comisd xmm1,xmm2
+  jb consume
+
+gain:
+  // 获得矿石：xmm1 * 4
+  addsd xmm1,xmm1
+  addsd xmm1,xmm1
+  addsd xmm0,xmm1
+  jmp finish
+
+consume:
+  // 消耗矿石：走 subsd 逻辑
+  // xmm2 = 0 - xmm1 = abs(xmm1)
+  subsd xmm2,xmm1
+  addsd xmm0,xmm2
+
+finish:
+  movdqu xmm2,[rsp]
+  add rsp,10
+
+  // 原代码第二条
+  cvtsd2ss xmm5,xmm0
+  jmp returnhere
+
+oreChangeAOB:
+  jmp newmem
+  nop 3
+returnhere:
+
+[DISABLE]
+
+oreChangeAOB:
+  db F2 0F 58 C1 F2 0F 5A E8
+
+unregistersymbol(oreChangeAOB)
+dealloc(newmem)"""

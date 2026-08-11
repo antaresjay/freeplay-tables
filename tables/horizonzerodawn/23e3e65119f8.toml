@@ -1,0 +1,659 @@
+[game]
+name = "Horizon Zero Dawn : Free camera, teleport, no fall damage, and misc"
+exe = "horizonzerodawn.exe"
+notes = "Converted from a Cheat Engine table by Esophagus. Source: https://fearlessrevolution.com/viewtopic.php?t=17037"
+verified = []
+author = "Esophagus"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "speed-multiplier"
+name = "Speed multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameSpeedScale"
+hops = []
+
+[[cheat]]
+id = "paused-if-0"
+name = "Paused (if >0)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameModulePtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "frame-step-auto-resets"
+name = "Frame step (auto-resets)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameModulePtr"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "dof-disable"
+name = "DOF disable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Disables depth-of-field blurring in cutscenes and the near-field blurring
+in normal gameplay. Also makes the DOF controls in photo mode nonfunctional.
+}
+
+[ENABLE]
+aobscanmodule(DOFDisable,HorizonZeroDawn.exe,45 85 C0 74 64 41)
+DOFDisable:
+  xor r8d,r8d
+registersymbol(DOFDisable)
+
+[DISABLE]
+DOFDisable:
+  test r8d,r8d
+
+{
+// ORIGINAL CODE - INJECTION POINT: HorizonZeroDawn.exe+719B38
+
+HorizonZeroDawn.exe+719B23: 8B 48 14                    - mov ecx,[rax+14]
+HorizonZeroDawn.exe+719B26: 41 89 4E 14                 - mov [r14+14],ecx
+HorizonZeroDawn.exe+719B2A: 8B 40 18                    - mov eax,[rax+18]
+HorizonZeroDawn.exe+719B2D: 41 89 46 18                 - mov [r14+18],eax
+HorizonZeroDawn.exe+719B31: 4C 63 83 40 06 00 00        - movsxd  r8,dword ptr [rbx+00000640]
+// ---------- INJECTING HERE ----------
+HorizonZeroDawn.exe+719B38: 45 85 C0                    - test r8d,r8d
+// ---------- DONE INJECTING  ----------
+HorizonZeroDawn.exe+719B3B: 74 64                       - je HorizonZeroDawn.exe+719BA1
+HorizonZeroDawn.exe+719B3D: 41 83 F8 01                 - cmp r8d,01
+HorizonZeroDawn.exe+719B41: 7E 2C                       - jle HorizonZeroDawn.exe+719B6F
+HorizonZeroDawn.exe+719B43: 48 8B 8B 48 06 00 00        - mov rcx,[rbx+00000648]
+HorizonZeroDawn.exe+719B4A: 4B 8D 14 C0                 - lea rdx,[r8+r8*8]
+}"""
+
+[[cheat]]
+id = "no-fall-damage"
+name = "No fall damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(FallDistanceCheck,HorizonZeroDawn.exe,F2 0F 10 87 30 02 00 00 F2 0F 5C 80 30 01 00 00)
+
+FallDistanceCheck+8:
+  subsd xmm0,xmm0
+  nop 4
+
+registersymbol(FallDistanceCheck)
+
+[DISABLE]
+
+FallDistanceCheck+8:
+  db F2 0F 5C 80 30 01 00 00
+
+unregistersymbol(FallDistanceCheck)
+
+{
+// ORIGINAL CODE - INJECTION POINT: HorizonZeroDawn.exe+114FC39
+
+HorizonZeroDawn.exe+114FC05: F3 44 0F 10 15 32 9E 92 00  - movss xmm10,[HorizonZeroDawn.exe+1A79A40]
+HorizonZeroDawn.exe+114FC0E: 0F 2F FE                    - comiss xmm7,xmm6
+HorizonZeroDawn.exe+114FC11: 0F 28 BC 24 50 01 00 00     - movaps xmm7,[rsp+00000150]
+HorizonZeroDawn.exe+114FC19: 0F 28 B4 24 60 01 00 00     - movaps xmm6,[rsp+00000160]
+HorizonZeroDawn.exe+114FC21: 76 7C                       - jna HorizonZeroDawn.exe+114FC9F
+HorizonZeroDawn.exe+114FC23: 48 85 DB                    - test rbx,rbx
+HorizonZeroDawn.exe+114FC26: 74 4D                       - je HorizonZeroDawn.exe+114FC75
+HorizonZeroDawn.exe+114FC28: 40 84 ED                    - test bpl,bpl
+HorizonZeroDawn.exe+114FC2B: 74 48                       - je HorizonZeroDawn.exe+114FC75
+HorizonZeroDawn.exe+114FC2D: 48 8B 47 48                 - mov rax,[rdi+48]
+HorizonZeroDawn.exe+114FC31: F2 0F 10 87 30 02 00 00     - movsd xmm0,[rdi+00000230]
+// ---------- INJECTING HERE ----------
+HorizonZeroDawn.exe+114FC39: F2 0F 5C 80 30 01 00 00     - subsd xmm0,[rax+00000130]
+// ---------- DONE INJECTING  ----------
+HorizonZeroDawn.exe+114FC41: 48 8B 43 30                 - mov rax,[rbx+30]
+HorizonZeroDawn.exe+114FC45: 66 0F 5A C8                 - cvtpd2ps xmm1,xmm0
+HorizonZeroDawn.exe+114FC49: F3 0F 5F 8F EC 00 00 00     - maxss xmm1,[rdi+000000EC]
+HorizonZeroDawn.exe+114FC51: 0F 2F 08                    - comiss xmm1,[rax]
+HorizonZeroDawn.exe+114FC54: 72 49                       - jb HorizonZeroDawn.exe+114FC9F
+HorizonZeroDawn.exe+114FC56: 48 8D 4B 28                 - lea rcx,[rbx+28]
+HorizonZeroDawn.exe+114FC5A: E8 E1 6B 72 FF              - call HorizonZeroDawn.exe+876840
+HorizonZeroDawn.exe+114FC5F: 44 0F 2F C0                 - comiss xmm8,xmm0
+HorizonZeroDawn.exe+114FC63: 77 09                       - ja HorizonZeroDawn.exe+114FC6E
+}"""
+
+[[cheat]]
+id = "quick-night"
+name = "Quick night"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Makes the time of day advance faster between the dusk and dawn hours.
+The defaults of dusk=21:00, dawn=5:00, factor=8 makes the night last one
+in-game hour instead of eight.
+
+Also lets you set the time of day directly.
+
+Issues: Setting the time of day doesn't work in cutscenes that force a
+particular time. (Workaround: use Cheat Engine to find the instructions
+that write to the time, and nop them out.)
+}
+
+[ENABLE]
+aobscanmodule(QuickNightHook,HorizonZeroDawn.exe,F3 0F 58 89 98 00 00 00 0F 2F C8)
+alloc(newmem,$100,QuickNightHook)
+
+label(QuickNightDawn)
+label(QuickNightDusk)
+label(QuickNightSpeed)
+label(WorldStatePtr)
+
+newmem:
+  mov [WorldStatePtr],rcx
+  movss xmm2,[rcx+00000098]
+  comiss xmm2,[QuickNightDawn]
+  jb night
+  comiss xmm2,[QuickNightDusk]
+  jb day
+night:
+  mulss xmm1,[QuickNightSpeed]
+day:
+  addss xmm1,xmm2
+  jmp return
+  align 8
+WorldStatePtr:
+  dq 0
+QuickNightDawn:
+  dd (float)5
+QuickNightDusk:
+  dd (float)21
+QuickNightSpeed:
+  dd (float)8
+
+QuickNightHook:
+  jmp newmem
+  nop 3
+return:
+
+registersymbol(QuickNightHook)
+registersymbol(QuickNightDawn)
+registersymbol(QuickNightDusk)
+registersymbol(QuickNightSpeed)
+registersymbol(WorldStatePtr)
+
+[DISABLE]
+QuickNightHook:
+  db F3 0F 58 89 98 00 00 00
+
+unregistersymbol(QuickNightHook)
+unregistersymbol(QuickNightDawn)
+unregistersymbol(QuickNightDusk)
+unregistersymbol(QuickNightSpeed)
+unregistersymbol(WorldStatePtr)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: HorizonZeroDawn.exe+11ABD10
+
+HorizonZeroDawn.exe+11ABCFF: CC                       - int 3
+HorizonZeroDawn.exe+11ABD00: F3 0F 5E 0D 74 B7 C4 00  - divss xmm1,[HorizonZeroDawn.exe+1DF747C]
+HorizonZeroDawn.exe+11ABD08: F3 0F 10 05 24 C6 A9 00  - movss xmm0,[HorizonZeroDawn.exe+1C48334]
+// ---------- INJECTING HERE ----------
+HorizonZeroDawn.exe+11ABD10: F3 0F 58 89 98 00 00 00  - addss xmm1,[rcx+00000098]
+// ---------- DONE INJECTING  ----------
+HorizonZeroDawn.exe+11ABD18: 0F 2F C8                 - comiss xmm1,xmm0
+HorizonZeroDawn.exe+11ABD1B: F3 0F 11 89 98 00 00 00  - movss [rcx+00000098],xmm1
+HorizonZeroDawn.exe+11ABD23: 72 27                    - jb HorizonZeroDawn.exe+11ABD4C
+}"""
+
+[[cheat]]
+id = "dusk"
+name = "Dusk"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "QuickNightDusk"
+hops = []
+
+[[cheat]]
+id = "dawn"
+name = "Dawn"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "QuickNightDawn"
+hops = []
+
+[[cheat]]
+id = "speedup-factor"
+name = "Speedup factor"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "QuickNightSpeed"
+hops = []
+
+[[cheat]]
+id = "current-time-check-box-to-freeze"
+name = "Current time (check box to freeze)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WorldStatePtr"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "faster-focus-panning-gamepad-only"
+name = "Faster focus panning (gamepad only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+This makes right-stick camera rotation in focus mode faster. The default
+factor of 2 makes it the same speed as non-focus rotation.
+}
+
+[ENABLE]
+aobscanmodule(FocusPanHook,HorizonZeroDawn.exe,F3 41 0F 59 4C CB 04)
+alloc(focuspanpatch,$100,FocusPanHook)
+
+focuspanpatch:
+  // Hack alert. This code is used for many purposes. I assume the multiplier
+  // is for focus mode rotation when it's 70.0, since it's an uncommon value.
+  mulss xmm1,[r11+rcx*8+4]
+  cmp [r11+rcx*8+4],428c0000  // 70.0
+  jne focuspanpatch_return
+  mulss xmm1,[FocusPanFactor]
+  jmp focuspanpatch_return
+  align 4
+FocusPanFactor:
+  dd (float)2.0
+
+FocusPanHook:
+  jmp focuspanpatch
+  nop 2
+focuspanpatch_return:
+
+registersymbol(FocusPanHook)
+registersymbol(FocusPanFactor)
+
+[DISABLE]
+FocusPanHook:
+  db F3 41 0F 59 4C CB 04
+unregistersymbol(FocusPanHook)
+unregistersymbol(FocusPanFactor)
+dealloc(focuspanpatch)
+
+{
+// ORIGINAL CODE - INJECTION POINT: HorizonZeroDawn.exe+8769E8
+
+HorizonZeroDawn.exe+8769D1: F3 0F 5C D9              - subss xmm3,xmm1
+HorizonZeroDawn.exe+8769D5: F3 0F 5C C8              - subss xmm1,xmm0
+HorizonZeroDawn.exe+8769D9: 0F 28 C5                 - movaps xmm0,xmm5
+HorizonZeroDawn.exe+8769DC: F3 0F 58 C5              - addss xmm0,xmm5
+HorizonZeroDawn.exe+8769E0: F3 0F 58 1D 58 30 20 01  - addss xmm3,[HorizonZeroDawn.exe+1A79A40]
+// ---------- INJECTING HERE ----------
+HorizonZeroDawn.exe+8769E8: F3 41 0F 59 4C CB 04     - mulss xmm1,[r11+rcx*8+04]
+// ---------- DONE INJECTING  ----------
+HorizonZeroDawn.exe+8769EF: F3 0F 5C D0              - subss xmm2,xmm0
+HorizonZeroDawn.exe+8769F3: F3 41 0F 59 58 04        - mulss xmm3,[r8+04]
+HorizonZeroDawn.exe+8769F9: F3 0F 58 D7              - addss xmm2,xmm7
+HorizonZeroDawn.exe+8769FD: 0F 28 3C 24              - movaps xmm7,[rsp]
+HorizonZeroDawn.exe+876A01: F3 0F 58 D9              - addss xmm3,xmm1
+}"""
+
+[[cheat]]
+id = "speedup-factor-2-same-as-non-focus-mode"
+name = "Speedup factor (2=same as non-focus mode)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "FocusPanFactor"
+hops = []
+
+[[cheat]]
+id = "bird-s-eye-view"
+name = "Bird's eye view"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+Makes the camera pull back very far. The game is surprisingly playable even
+when Aloy is just a few pixels in the middle of the screen. I found this by
+accident and liked the effect.
+
+You can assign a hotkey to toggle this by right-clicking on the cheat and
+choosing "Set/Change hotkeys."
+}
+
+[ENABLE]
+aobscanmodule(BirdsEyePatch,HorizonZeroDawn.exe,E8 ** ** ** ** F3 0F 10 4F DC 48 8B CE F3 41 0F 59 C9 0F 28 F0 E8)
+
+BirdsEyePatch:
+  movss xmm0,xmm1
+  nop
+
+registersymbol(BirdsEyePatch)
+
+[DISABLE]
+
+BirdsEyePatch:
+  // there are two calls to the same subroutine, so I use the second to restore
+  // the first. I should probably just allocate some memory instead.
+  reassemble(BirdsEyePatch+15)
+
+unregistersymbol(BirdsEyePatch)
+
+{
+// ORIGINAL CODE - INJECTION POINT: HorizonZeroDawn.exe+13AAC1F
+
+HorizonZeroDawn.exe+13AAC08: F3 41 0F 58 CB  - addss xmm1,xmm11
+HorizonZeroDawn.exe+13AAC0D: 41 0F 54 CF     - andps xmm1,xmm15
+HorizonZeroDawn.exe+13AAC11: 49 8D 4D 28     - lea rcx,[r13+28]
+HorizonZeroDawn.exe+13AAC15: F3 41 0F 59 C9  - mulss xmm1,xmm9
+// ---------- INJECTING HERE ----------
+HorizonZeroDawn.exe+13AAC1A: E8 21 BC 4C FF  - call HorizonZeroDawn.exe+876840
+// ---------- DONE INJECTING  ----------
+HorizonZeroDawn.exe+13AAC1F: F3 0F 10 4F DC  - movss xmm1,[rdi-24]
+HorizonZeroDawn.exe+13AAC24: 48 8B CE        - mov rcx,rsi
+HorizonZeroDawn.exe+13AAC27: F3 41 0F 59 C9  - mulss xmm1,xmm9
+HorizonZeroDawn.exe+13AAC2C: 0F 28 F0        - movaps xmm6,xmm0
+HorizonZeroDawn.exe+13AAC2F: E8 0C BC 4C FF  - call HorizonZeroDawn.exe+876840
+}"""
+
+[[cheat]]
+id = "god-mode-v1-10-only-no-aob-0-off-1-no-death-2-no-damage"
+name = "God mode (v1.10 only, no AOB) (0=off, 1=no death, 2=no damage)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "static"
+module = "HorizonZeroDawn.exe"
+offset = "0x711bfe8"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "cameraoverridden"
+name = "CameraOverridden"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraOverridden"
+hops = []
+
+[[cheat]]
+id = "x"
+name = "X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "y"
+name = "Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "z"
+name = "Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "right-x"
+name = "right X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "right-y"
+name = "right Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "right-z"
+name = "right Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "forward-x"
+name = "forward X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "forward-y"
+name = "forward Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "forward-z"
+name = "forward Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "up-x"
+name = "up X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "up-y"
+name = "up Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "up-z"
+name = "up Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CameraStructOverride"
+hops = []
+
+[[cheat]]
+id = "x-2"
+name = "X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WaypointCoords"
+hops = []
+
+[[cheat]]
+id = "y-2"
+name = "Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WaypointCoords"
+hops = []
+
+[[cheat]]
+id = "z-2"
+name = "Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WaypointCoords"
+hops = []

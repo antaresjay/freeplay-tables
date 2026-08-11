@@ -1,0 +1,199 @@
+[game]
+name = "Pac-Man 256"
+exe = "pac-man256.exe"
+notes = "Converted from a Cheat Engine table by Marc. Source: https://fearlessrevolution.com/viewtopic.php?t=17112"
+verified = []
+author = "Marc"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "don-t-spend-coins-when-upgrading"
+name = "don't spend coins when upgrading"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,LM:RemoveGold+1f)
+define(bytes,2B 4D 0C 89 48 7C)
+
+[ENABLE]
+assert(address,bytes)
+
+address:
+  nop 3
+
+[DISABLE]
+address:
+  db bytes
+  // sub ecx,[ebp+0C]
+  // mov [eax+7C],ecx
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: LM:RemoveGold+1f
+
+LM:RemoveGold: 55              - push ebp
+LM:RemoveGold+1: 8B EC           - mov ebp,esp
+LM:RemoveGold+3: 83 EC 18        - sub esp,18
+LM:RemoveGold+6: E8 25 4B C2 EB  - call GM:get_inst
+LM:RemoveGold+b: 8B 40 30        - mov eax,[eax+30]
+LM:RemoveGold+e: 8B 40 7C        - mov eax,[eax+7C]
+LM:RemoveGold+11: 89 45 FC        - mov [ebp-04],eax
+LM:RemoveGold+14: E8 17 4B C2 EB  - call GM:get_inst
+LM:RemoveGold+19: 8B 40 30        - mov eax,[eax+30]
+LM:RemoveGold+1c: 8B 48 7C        - mov ecx,[eax+7C]
+// ---------- INJECTING HERE ----------
+LM:RemoveGold+1f: 2B 4D 0C        - sub ecx,[ebp+0C]
+// ---------- DONE INJECTING  ----------
+LM:RemoveGold+22: 89 48 7C        - mov [eax+7C],ecx
+LM:RemoveGold+25: D9 E8           - fld1 
+LM:RemoveGold+27: DD 5D F0        - fstp qword ptr [ebp-10]
+LM:RemoveGold+2a: E8 01 4B C2 EB  - call GM:get_inst
+LM:RemoveGold+2f: 8B C8           - mov ecx,eax
+LM:RemoveGold+31: 8B 45 FC        - mov eax,[ebp-04]
+LM:RemoveGold+34: DD 45 F0        - fld qword ptr [ebp-10]
+LM:RemoveGold+37: 8B 49 30        - mov ecx,[ecx+30]
+LM:RemoveGold+3a: 8B 49 7C        - mov ecx,[ecx+7C]
+LM:RemoveGold+3d: 6A 00           - push 00
+}"""
+
+[[cheat]]
+id = "get-100-coins-for-each-gathered-coin"
+name = "get 100 Coins for each gathered coin"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(coinbooster,8B 48 7C 03 4D 0C) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,[eax+7C]
+  push eax
+  mov eax,#100
+  add ecx,eax
+  pop eax
+  jmp return
+
+coinbooster:
+  jmp newmem
+  nop
+return:
+registersymbol(coinbooster)
+
+[DISABLE]
+
+coinbooster:
+  db 8B 48 7C 03 4D 0C
+
+unregistersymbol(coinbooster)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: LM:AwardGold+e
+
+Player:CollectCoins+11f: C9                 - leave 
+Player:CollectCoins+120: C3                 - ret 
+1BC870B1: 00 00              - add [eax],al
+1BC870B3: 00 00              - add [eax],al
+1BC870B5: 00 00              - add [eax],al
+1BC870B7: 00 55 8B           - add [ebp-75],dl
+LM:AwardGold+2: EC                 - in al,dx
+LM:AwardGold+3: 83 EC 08           - sub esp,08
+LM:AwardGold+6: E8 FD 8C C5 EB     - call GM:get_inst
+LM:AwardGold+b: 8B 40 30           - mov eax,[eax+30]
+// ---------- INJECTING HERE ----------
+LM:AwardGold+e: 8B 48 7C           - mov ecx,[eax+7C]
+// ---------- DONE INJECTING  ----------
+LM:AwardGold+11: 03 4D 0C           - add ecx,[ebp+0C]
+LM:AwardGold+14: 89 48 7C           - mov [eax+7C],ecx
+LM:AwardGold+17: 8B 05 94 8E 1E 07  - mov eax,[071E8E94]
+LM:AwardGold+1d: 85 C0              - test eax,eax
+LM:AwardGold+1f: 74 13              - je LM:AwardGold+34
+LM:AwardGold+21: 8B 05 94 8E 1E 07  - mov eax,[071E8E94]
+LM:AwardGold+27: 83 EC 0C           - sub esp,0C
+LM:AwardGold+2a: 50                 - push eax
+LM:AwardGold+2b: 90                 - nop 
+LM:AwardGold+2c: 90                 - nop 
+}"""
+
+[[cheat]]
+id = "get-adress-of-remaning-points-die-to-update"
+name = "Get Adress of remaning Points (die to update)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(remaining,8B 80 34 01 00 00 3D) // should be unique
+alloc(newmem,$1000)
+alloc(remain_adress,4)
+label(code)
+label(return)
+
+newmem:
+  mov [remain_adress],eax
+
+code:
+  mov eax,[eax+00000134]
+  jmp return
+
+remain_adress:
+  dd 0
+
+remaining:
+  jmp newmem
+  nop
+return:
+registersymbol(remaining remain_adress)
+
+[DISABLE]
+
+remaining:
+  db 8B 80 34 01 00 00
+
+unregistersymbol(*)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+ef
+
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+d2: 8B 40 0C           - mov eax,[eax+0C]
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+d5: 83 EC 0C           - sub esp,0C
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+d8: 50                 - push eax
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+d9: 39 00              - cmp [eax],eax
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+db: E8 C4 6F 1C E8     - call 070233D4
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+e0: 83 C4 10           - add esp,10
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+e3: 85 C0              - test eax,eax
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+e5: 75 C6              - jne Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+ad
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+e7: E8 A4 39 22 E8     - call GM:get_inst
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+ec: 8B 40 30           - mov eax,[eax+30]
+// ---------- INJECTING HERE ----------
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+ef: 8B 80 34 01 00 00  - mov eax,[eax+00000134]
+// ---------- DONE INJECTING  ----------
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+f5: 3D FF FF FF FF     - cmp eax,FFFFFFFF
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+fa: 74 13              - je Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+10f
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+fc: 8B 47 08           - mov eax,[edi+08]
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+ff: 83 EC 08           - sub esp,08
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+102: 6A FF              - push -01
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+104: 50                 - push eax
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+105: E8 76 00 00 00     - call Panel_PowerUpProgression:Recalculate
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+10a: 83 C4 10           - add esp,10
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+10d: EB 18              - jmp Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+127
+Panel_PowerUpProgression+<Process>c__Iterator0:MoveNext+10f: 8B 05 A0 BA 9B 06  - mov eax,[069BBAA0]
+}"""

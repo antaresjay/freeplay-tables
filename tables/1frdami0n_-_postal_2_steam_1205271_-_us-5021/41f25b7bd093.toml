@@ -1,0 +1,479 @@
+[game]
+name = "Postal 2"
+exe = "1frdami0n_-_postal_2_steam_1205271_-_us-5021.exe"
+notes = "Converted from a Cheat Engine table by CyberD3m0n. Source: https://fearlessrevolution.com/viewtopic.php?t=426"
+verified = []
+author = "CyberD3m0n"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "right-click-change-script-for-info"
+name = "RIGHT CLICK -> Change script for info"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+After long scans, sifting through data structures and various
+comparisons I think I've found a way to distinguish the player
+from all other entities, so the "true god mode" script should
+work, as well as the "1000 health for player".
+
+Finding the health value is a bit tricky, as the game might
+display "100" health, but in memory it is handled as a totally
+different number. The value you're searching is ROUGHLY your
+current health in game multiplied by 3; or as I put it:
+Health = Display value * 3+1. You WON'T get the exact value,
+it's just a hint at what you might be searching for. Your health
+is also saved as a 4 byte value, if you'd like to search for it
+yourself. The value of "1000 health" is displayed as "333" in the
+game, if that helps you.
+
+I can tell that the instruction I've used for the unlimited ammo
+cheat is used not only by the player, so it might cause all the
+NPCs to have unlimited ammo too; they don't go full retard with
+autofire however.
+
+Money is saved as a float value.
+
+I've included some old scripts to showcase what I've tried
+before being successful with the current god mode script.
+Just in case if you want to take a look. I'm going to
+get drunk now. Yeehaw!
+
+And the best thing:
+This table will work with "Paradise Lost" too!
+
+Thx for reading - Dami0N/CyberD3m0N
+}
+
+[ENABLE]
+[DISABLE]"""
+
+[[cheat]]
+id = "true-god-mode-for-player"
+name = "True god mode for player"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,2B 4D 08 5E 89 08 8B E5 5D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(npc)
+label(player)
+
+newmem:
+
+code:
+  cmp [eax+01C4],1
+  jne npc
+  cmp [eax+01C4],1
+  je player
+
+npc:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+player:
+  nop
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+INJECT+04:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+04:
+  db 89 08 8B E5 5D
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4F151:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp"""
+
+[[cheat]]
+id = "unlimited-ammo-for-all"
+name = "Unlimited ammo (for all?)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,29 07 8B 45 0C 8B 0F 5F 5E 89 08) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [edi],64
+  mov ecx,[edi]
+  pop edi
+  pop esi
+  mov [eax],ecx
+  jmp return
+
+INJECT+05:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+05:
+  db 8B 0F 5F 5E 89 08
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4FC5C:
+  mov ecx,[edi]
+  pop edi
+  pop esi
+  mov [eax],ecx"""
+
+[[cheat]]
+id = "unlimited-ammo-for-all-v2"
+name = "Unlimited ammo (for all?) V2"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,29 07 8B 45 0C) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  nop
+  mov eax,[ebp+0C]
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 29 07 8B 45 0C
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4FC57:
+  sub [edi],eax
+  mov eax,[ebp+0C]"""
+
+[[cheat]]
+id = "always-1000-health-for-player"
+name = "Always 1000 health for player"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,2B 4D 08 5E 89 08 8B E5 5D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(npc)
+label(player)
+
+newmem:
+
+code:
+  cmp [eax+01C4],1
+  jne npc
+  cmp [eax+01C4],1
+  je player
+
+npc:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+player:
+  mov [eax],(int)1000
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+INJECT+04:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+04:
+  db 89 08 8B E5 5D
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4F151:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp"""
+
+[[cheat]]
+id = "true-god-mode-for-player-graphics-glitch"
+name = "True god mode for player (graphics glitch)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,2B 4D 08 5E 89 08 8B E5 5D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(npc)
+label(player)
+
+newmem:
+
+code:
+  cmp [eax+0128],1
+  jne npc
+  cmp [eax+0128],1
+  je player
+
+npc:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+player:
+  nop
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+INJECT+04:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+04:
+  db 89 08 8B E5 5D
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4F151:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp"""
+
+[[cheat]]
+id = "true-god-mode-for-player-policemen"
+name = "True god mode for player (& policemen?)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,2B 4D 08 5E 89 08 8B E5 5D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(npc)
+label(player)
+
+newmem:
+
+code:
+  cmp [eax+0FCC],(float)131
+  jne npc
+  cmp [eax+0FCC],(float)131
+  je player
+
+npc:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+player:
+  nop
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+INJECT+04:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+04:
+  db 89 08 8B E5 5D
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4F151:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp"""
+
+[[cheat]]
+id = "always-1000-health-for-all"
+name = "Always 1000 health for all"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,2B 4D 08 5E 89 08 8B E5 5D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(npc)
+label(player)
+
+newmem:
+
+code:
+  cmp [eax+0024],0
+  jg npc
+  cmp [eax+0024],0
+  je player
+
+npc:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+player:
+  mov [eax],(int)1000
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+INJECT+04:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+04:
+  db 89 08 8B E5 5D
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4F151:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp"""
+
+[[cheat]]
+id = "god-mode-for-player-1-hit-kills-for-enemies-doors-won-t-work"
+name = "God mode for player, 1 hit kills for enemies (doors won't work)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT,Core.dll,2B 4D 08 5E 89 08 8B E5 5D) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(npc)
+label(player)
+
+newmem:
+
+code:
+  cmp [eax+01C4],1
+  jne npc
+  cmp [eax+01C4],1
+  je player
+
+npc:
+  mov [eax],0
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+player:
+  nop
+  mov esp,ebp
+  pop ebp
+  jmp return
+
+INJECT+04:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+04:
+  db 89 08 8B E5 5D
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+"Core.dll"+4F151:
+  mov [eax],ecx
+  mov esp,ebp
+  pop ebp"""

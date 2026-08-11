@@ -1,0 +1,875 @@
+[game]
+name = "Kunitsu-Gami: Path of the Goddess - Demo"
+exe = "kunitsugamidemo.exe"
+notes = "Converted from a Cheat Engine table by Leunsel. Source: https://fearlessrevolution.com/viewtopic.php?t=30067"
+verified = []
+author = "Leunsel"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "set-color-state"
+name = "[- Set Color State -] ()->"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(RedValue,1)
+alloc(GreenValue,1)
+alloc(BlueValue,1)
+alloc(ItemIndex,1)
+
+registersymbol(RedValue GreenValue BlueValue ItemIndex)
+
+RedValue:
+ db (int)0
+GreenValue:
+ db (int)0
+BlueValue:
+ db (int)0
+ItemIndex:
+ db (int)0
+
+[DISABLE]
+
+dealloc(*)
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "color-index"
+name = "Color Index:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:AddressList Backgrouns Color",
+    "1:AddressList Checkbox Color",
+    "2:ResultList Background Color",
+    "3:MainForm Background Color",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemIndex"
+hops = []
+
+[[cheat]]
+id = "red-value-dec"
+name = "Red Value - Dec"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "RedValue"
+hops = []
+
+[[cheat]]
+id = "red-value-hex"
+name = "Red Value - Hex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "RedValue"
+hops = []
+
+[[cheat]]
+id = "green-value-dec"
+name = "Green Value - Dec"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GreenValue"
+hops = []
+
+[[cheat]]
+id = "green-value-hex"
+name = "Green Value - Hex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "GreenValue"
+hops = []
+
+[[cheat]]
+id = "blue-value-dec"
+name = "Blue Value - Dec"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "BlueValue"
+hops = []
+
+[[cheat]]
+id = "blue-value-hex"
+name = "Blue Value - Hex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "BlueValue"
+hops = []
+
+[[cheat]]
+id = "on-required-hold-time-increase"
+name = "On Required Hold Time Increase ()->"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game\t : KunitsuGamiDemo.exe
+  Version: 1.0
+  Date\t : 05-07-2024
+  Author : Leunsel
+
+  Address of signature = KunitsuGamiDemo.exe + 0x0047B49C
+  "F2 0F ? ? 66 0F ? ? F3 0F ? ? ? ? ? ? 48 8B ? ? F3 0F ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 85 ? 74 ? 48 8B ? ? 48 8B ? F3 0F ? ? ? ? ? ? F3 0F ? ? ? ? ? ? E8 ? ? ? ? 44 8B ? ? ? ? ? 48 8B ? 48 8B ? ? ? ? ? E8 ? ? ? ? E9"
+  ---> KunitsuGamiDemo.exe+47B49C - F2 0F 58 D6 - addsd xmm2,xmm6
+  ---> KunitsuGamiDemo.exe+47B4A0 - 66 0F 5A C2 - cvtpd2ps xmm0,xmm2
+}
+
+[ENABLE]
+aobScanModule(CurrentRequireHoldSecondsHook,KunitsuGamiDemo.exe,F2 0F ? ? 66 0F ? ? F3 0F ? ? ? ? ? ? 48 8B ? ? F3 0F ? ? ? ? ? ? 48 8B ? ? ? ? ? 48 85 ? 74 ? 48 8B ? ? 48 8B ? F3 0F ? ? ? ? ? ? F3 0F ? ? ? ? ? ? E8 ? ? ? ? 44 8B ? ? ? ? ? 48 8B ? 48 8B ? ? ? ? ? E8 ? ? ? ? E9)
+alloc(newmem,$1000,CurrentRequireHoldSecondsHook)
+
+label(return)
+label(code)
+
+newmem:
+  mov [CurrentRequireHoldSeconds],rax
+  cmp byte ptr [CurrentRequireHoldSecondsFlag],0 // Disabled
+  je code
+  cmp byte ptr [CurrentRequireHoldSecondsFlag],1 // Instantly Finish Purge Timer
+  jne @f
+    movsd xmm0,[rax+000004E8]
+    cvtpd2ps xmm0,xmm2
+    jmp return
+  @@:
+  cmp byte ptr [CurrentRequireHoldSecondsFlag],2 // Increase Multiplier
+  jne @f
+    mulsd xmm2,[CurrentRequireHoldSecondsMultiplier]
+\tjmp code
+  @@:
+  mov byte ptr [CurrentRequireHoldSecondsFlag],0
+code:
+  addsd xmm2,xmm6
+  cvtpd2ps xmm0,xmm2
+  jmp return
+
+CurrentRequireHoldSeconds:
+ dq 0
+CurrentRequireHoldSecondsFlag:
+ db 2
+CurrentRequireHoldSecondsMultiplier:
+ dq (double)3
+
+CurrentRequireHoldSecondsHook:
+  jmp newmem
+  nop 3
+return:
+registersymbol(CurrentRequireHoldSecondsHook CurrentRequireHoldSeconds CurrentRequireHoldSecondsFlag CurrentRequireHoldSecondsMultiplier)
+
+[DISABLE]
+
+CurrentRequireHoldSecondsHook:
+  db F2 0F 58 D6 66 0F 5A C2
+
+unregisterSymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "multiplier"
+name = "Multiplier:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentRequireHoldSecondsMultiplier"
+hops = []
+
+[[cheat]]
+id = "04e8-current-required-hold-time"
+name = "[04E8] — Current Required Hold Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentRequireHoldSeconds"
+hops = ["+0x4e8"]
+
+[[cheat]]
+id = "04ec-current-hold-seconds"
+name = "[04EC] — Current Hold Seconds"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentRequireHoldSeconds"
+hops = ["+0x4ec"]
+
+[[cheat]]
+id = "on-health-decrease"
+name = "On Health Decrease ()->"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game\t : KunitsuGamiDemo.exe
+  Version: 1.0
+  Date\t : 05-07-2024
+  Author : Leunsel
+
+  Address of signature = KunitsuGamiDemo.exe + 0x01E14A1A
+  "44 2B ? 45 85 ? 45 0F"
+  ---> KunitsuGamiDemo.exe+1E14A1A - 44 2B C8 - sub r9d,eax
+  ---> KunitsuGamiDemo.exe+1E14A1D - 45 85 C9 - test r9d,r9d
+}
+
+[ENABLE]
+aobScanModule(HealthDecHook,KunitsuGamiDemo.exe,44 2B ? 45 85 ? 45 0F)
+alloc(newmem,$1000,HealthDecHook)
+
+label(return code)
+label(Player Yoshiro Entity)
+
+newmem:
+  push rdi
+  mov rdi,CharacterContext
+  mov rdi,[rdi]
+  test rdi,rdi
+  je code
+    mov rdi,[rdi+88]
+    test rdi,rdi
+    je code
+      mov rdi,[rdi+B0]
+      test rdi,rdi
+      jz code
+        cmp rdx,rdi
+        je Player
+          mov rdi,CharacterContext+8
+          mov rdi,[rdi]
+          test rdi,rdi
+          je code
+            mov rdi,[rdi+88]
+            test rdi,rdi
+            je code
+              mov rdi,[rdi+B0]
+              test rdi,rdi
+              jz code
+                cmp rdx,rdi
+                je Yoshiro
+                jmp Entity
+
+Player:
+  mov [HealthDec],rdx
+  cmp byte ptr [HealthDecFlag],0 // Disabled
+  je code
+  cmp byte ptr [HealthDecFlag],1 // No Damage
+  jne @f
+    xor eax,eax
+    jmp code
+  @@:
+  cmp byte ptr [HealthDecFlag],2 // Decrease Multiplier
+  jne @f
+    cvtsi2ss xmm10,eax
+    mulss xmm10,[HealthDecMultiplier]
+    cvtss2si eax,xmm10
+\tjmp code
+  @@:
+  mov byte ptr [HealthDecFlag],0
+  jmp code
+Yoshiro:
+  mov [HealthDec+10],rdx
+  cmp byte ptr [HealthDecFlag+2],0 // Disabled
+  je code
+  cmp byte ptr [HealthDecFlag+2],1 // No Damage
+  jne @f
+    xor eax,eax
+    jmp code
+  @@:
+  cmp byte ptr [HealthDecFlag+2],2 // Decrease Multiplier
+  jne @f
+    cvtsi2ss xmm10,eax
+    mulss xmm10,[HealthDecMultiplier+8]
+    cvtss2si eax,xmm10
+\tjmp code
+  @@:
+  mov byte ptr [HealthDecFlag+2],0
+  jmp code
+Entity:
+  mov [HealthDec+8],rdx
+  cmp byte ptr [HealthDecFlag+1],0 // Disabled
+  je code
+  cmp byte ptr [HealthDecFlag+1],1 // One Hit Kill
+  jne @f
+    mov eax,r9d
+    jmp code
+  @@:
+  cmp byte ptr [HealthDecFlag+1],2 // Decrease Multiplier
+  jne @f
+    cvtsi2ss xmm10,eax
+    mulss xmm10,[HealthDecMultiplier+4]
+    cvtss2si eax,xmm10
+\tjmp code
+  @@:
+  mov byte ptr [HealthDecFlag+1],0
+  jmp code
+
+code:
+  pop rdi
+  sub r9d,eax
+  test r9d,r9d
+  jmp return
+
+HealthDec:
+ dq 0
+ dq 0
+ dq 0
+HealthDecFlag:
+ db 2
+ db 2
+ db 2
+HealthDecMultiplier:
+ dd (float)0.25
+ dd (float)3.00
+ dd (float)0.25
+
+HealthDecHook:
+  jmp newmem
+  nop
+return:
+registersymbol(HealthDecHook HealthDec HealthDecFlag HealthDecMultiplier)
+
+[DISABLE]
+
+HealthDecHook:
+  db 44 2B C8 45 85 C9
+
+unregisterSymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "multiplier-2"
+name = "Multiplier:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDecMultiplier"
+hops = []
+
+[[cheat]]
+id = "003c-current-hit-points"
+name = "[003C] — Current Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDec"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "0048-default-hit-points"
+name = "[0048] — Default Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDec"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "multiplier-3"
+name = "Multiplier:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDecMultiplier"
+hops = []
+
+[[cheat]]
+id = "003c-current-hit-points-2"
+name = "[003C] — Current Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDec"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "0048-default-hit-points-2"
+name = "[0048] — Default Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDec"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "multiplier-4"
+name = "Multiplier:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDecMultiplier"
+hops = []
+
+[[cheat]]
+id = "003c-current-hit-points-3"
+name = "[003C] — Current Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDec"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "0048-default-hit-points-3"
+name = "[0048] — Default Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HealthDec"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "character-core-hook"
+name = "_[ Character Core Hook ]_"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+[DISABLE]"""
+
+[[cheat]]
+id = "003c-current-hit-points-4"
+name = "[003C] — Current Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0xb0",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "0048-default-hit-points-4"
+name = "[0048] — Default Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0xb0",
+    "+0x48",
+]
+
+[[cheat]]
+id = "0020-x-coordinate"
+name = "[0020] — X-Coordinate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0x20",
+]
+
+[[cheat]]
+id = "0024-y-coordinate"
+name = "[0024] — Y-Coordinate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0x24",
+]
+
+[[cheat]]
+id = "0028-z-coordinate"
+name = "[0028] — Z-Coordinate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0x28",
+]
+
+[[cheat]]
+id = "04d0-jump-heighest"
+name = "[04D0] — Jump Heighest"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x68",
+    "+0x4d0",
+]
+
+[[cheat]]
+id = "04f0-jump-distance"
+name = "[04F0] — Jump Distance"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x68",
+    "+0x4f0",
+]
+
+[[cheat]]
+id = "04f4-jump-height"
+name = "[04F4] — Jump Height"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x68",
+    "+0x4f4",
+]
+
+[[cheat]]
+id = "0098-character-kind-id"
+name = "[0098] — Character Kind Id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "003c-current-hit-points-5"
+name = "[003C] — Current Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0xb0",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "0048-default-hit-points-5"
+name = "[0048] — Default Hit Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0xb0",
+    "+0x48",
+]
+
+[[cheat]]
+id = "0020-x-coordinate-2"
+name = "[0020] — X-Coordinate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0x20",
+]
+
+[[cheat]]
+id = "0024-y-coordinate-2"
+name = "[0024] — Y-Coordinate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0x24",
+]
+
+[[cheat]]
+id = "0028-z-coordinate-2"
+name = "[0028] — Z-Coordinate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x88",
+    "+0x28",
+]
+
+[[cheat]]
+id = "04d0-jump-heighest-2"
+name = "[04D0] — Jump Heighest"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x68",
+    "+0x4d0",
+]
+
+[[cheat]]
+id = "04f0-jump-distance-2"
+name = "[04F0] — Jump Distance"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x68",
+    "+0x4f0",
+]
+
+[[cheat]]
+id = "04f4-jump-height-2"
+name = "[04F4] — Jump Height"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = [
+    "+0x68",
+    "+0x4f4",
+]
+
+[[cheat]]
+id = "0098-character-kind-id-2"
+name = "[0098] — Character Kind Id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterContext"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "002c-purge-crystal-point"
+name = "[002C] — Purge Crystal Point"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PurgeCrystalPoint"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "0030-max-purge-crystal-point"
+name = "[0030] — Max. Purge Crystal Point"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PurgeCrystalPoint"
+hops = ["+0x30"]

@@ -1,0 +1,1045 @@
+[game]
+name = "Project I.G.I 1 - I'm going in"
+exe = "igi.exe"
+notes = "Converted from a Cheat Engine table by Nio.b. Source: https://fearlessrevolution.com/viewtopic.php?t=18692"
+verified = []
+author = "Nio.b"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "invincible"
+name = "Invincible"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : IGI.exe
+  Version: 1.0.0.0
+  Date   : 2021-09
+  Author : Nb
+
+  Invincible(Infinite health) - script - AOB
+
+  Injection points: "IGI.exe"+864E  - For Fall damage
+                    "IGI.exe"+12502 - For Bullet damage
+                    "IGI.exe"+12C31 - For Explosion damage
+                    "IGI.exe"+12E52 - For enemys hit damage
+                    "IGI.exe"+5FC97 - For Truck & tank Hit damage
+}
+
+
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+[ENABLE]
+aobscanmodule(Fallproof,IGI.exe,D9 1F D9 44 24 60)   // These should be unique
+aobscanmodule(Bulletproof,IGI.exe,D9 5D 00 D9 45 00)
+aobscanmodule(Explosionproof,IGI.exe,D9 1B 8A 86 F5 0C 00 00)
+aobscanmodule(hitproof,IGI.exe,D9 1E 8A 87 F5 0C 00 00)
+aobscanmodule(Carhitproof,IGI.exe,D9 95 54 02 00 00)
+alloc(newmem_FP,$1000)
+alloc(newmem_BP,$1000)
+alloc(newmem_EP,$1000)
+alloc(newmem_HP,$1000)
+alloc(newmem_CP,$1000)
+label(return_FP)
+label(return_BP)
+label(return_EP)
+label(return_HP)
+label(return_CP)
+
+//--------------------------------------For falling damage protection
+newmem_FP:
+  mov [edi],(float)0
+  fld dword ptr [esp+60]
+  jmp return_FP
+
+Fallproof:
+  jmp newmem_FP
+  nop
+
+return_FP:
+registersymbol(Fallproof)
+
+//--------------------------------------For bullet damage protection
+newmem_BP:
+  mov [ebp+00],(float)0
+  fld dword ptr [ebp+00]
+  jmp return_BP
+
+Bulletproof:
+  jmp newmem_BP
+  nop
+
+return_BP:
+registersymbol(Bulletproof)
+
+//---------------------------------------For explosives damage protection
+
+newmem_EP:
+  mov [ebx],(float)0
+  mov al,[esi+00000CF5]
+  jmp return_EP
+
+Explosionproof:
+  jmp newmem_EP
+  nop 3
+
+return_EP:
+registersymbol(Explosionproof)
+
+//---------------------------------------For Enemy hit damage protection
+
+newmem_HP:
+  mov [esi],(float)0
+  mov al,[edi+00000CF5]
+  jmp return_HP
+
+hitproof:
+  jmp newmem_HP
+  nop 3
+
+return_HP:
+registersymbol(hitproof)
+
+//---------------------------------------For Car hit damage protection
+
+newmem_CP:
+  fst dword ptr [ebp+00000254]
+  jmp return_CP
+
+  Carhitproof:
+  jmp newmem_CP
+  nop
+
+return_CP:
+registersymbol(Carhitproof)
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
+
+//000000000000000000000000000000000000000000000000000000000000000000000000000000
+[DISABLE]
+Fallproof:
+  db D9 1F D9 44 24 60
+Bulletproof:
+  db D9 5D 00 D9 45 00
+Explosionproof:
+  db D9 1B 8A 86 F5 0C 00 00
+hitproof:
+  db D9 1E 8A 87 F5 0C 00 00
+Carhitproof:
+  db D9 95 54 02 00 00
+
+unregistersymbol(Fallproof)
+dealloc(newmem_FP)
+unregistersymbol(Bulletproof)
+dealloc(newmem_BP)
+unregistersymbol(Explosionproof)
+dealloc(newmem_EP)
+unregistersymbol(hitproof)
+dealloc(newmem_HP)
+unregistersymbol(Carhitproof)
+dealloc(newmem_CP)
+//000000000000000000000000000000000000000000000000000000000000000000000000000000"""
+
+[[cheat]]
+id = "ammo-options"
+name = "Ammo Options"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : IGI.exe
+  Version: 1.0.0.0
+  Date   : 2021-09
+  Author : Nb
+
+  Ammo Options - script - AOB
+  Injection points:
+}
+
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+[ENABLE]
+aobscanmodule(ammo,IGI.exe,89 48 04 8B 86 44 01 00 00)
+aobscanmodule(inclipammo,IGI.exe,89 85 44 01 00 00 E8)
+aobscanmodule(GLammo,IGI.exe,89 48 04 EB B0)
+alloc(ammo_newmem,$1000)
+alloc(inclipammo_newmem,$1000)
+alloc(GLammo_newmem,$1000)
+alloc(infammo,4)
+alloc(ammo_p,4)
+alloc(noreload,4)
+alloc(inclip_p,4)
+registersymbol(infammo)
+registersymbol(ammo_p)
+registersymbol(noreload)
+registersymbol(inclip_p)
+label(ammo_code)
+label(inclipammo_code)
+label(GLammo_code)
+label(return_a)
+label(return_ica)
+label(return_gla)
+
+//------------------------------------------------
+ammo_newmem:
+cmp [infammo],0
+je ammo_code
+mov ecx,#999
+ammo_code:
+  mov [ammo_p],eax
+  mov [eax+04],ecx
+  mov eax,[esi+00000144]
+  jmp return_a
+
+ammo:
+  jmp ammo_newmem
+  nop 4
+return_a:
+registersymbol(ammo)
+infammo:
+dd 0
+ammo_p:
+dd 0
+//------------------------------------------------
+inclipammo_newmem:
+cmp [noreload],0
+je inclipammo_code
+mov eax,#100
+inclipammo_code:
+  mov [inclip_p],ebp
+  mov [ebp+00000144],eax
+  jmp return_ica
+
+inclipammo:
+  jmp inclipammo_newmem
+  nop
+return_ica:
+registersymbol(inclipammo)
+noreload:
+dd 0
+inclip_p:
+dd 0
+//------------------------------------------------
+GLammo_newmem:
+cmp [infammo],0
+je GLammo_code
+mov ecx,#9
+
+GLammo_code:
+  mov [eax+04],ecx
+  jmp IGI.exe+ECBE
+  jmp return_gla
+
+GLammo:
+  jmp GLammo_newmem
+return_gla:
+registersymbol(GLammo)
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
+
+//000000000000000000000000000000000000000000000000000000000000000000000000000000
+[DISABLE]
+ammo:
+  db 89 48 04 8B 86 44 01 00 00
+inclipammo:
+  db 89 85 44 01 00 00
+GLammo:
+  db 89 48 04 EB B0
+unregistersymbol(ammo)
+unregistersymbol(infammo)
+unregistersymbol(ammo_p)
+dealloc(ammo_newmem)
+dealloc(infammo)
+dealloc(ammo_p)
+unregistersymbol(inclipammo)
+unregistersymbol(inclipammo_newmem)
+dealloc(inclipammo_newmem)
+unregistersymbol(noreload)
+unregistersymbol(inclip_p)
+dealloc(noreload)
+dealloc(inclip_p)
+unregistersymbol(GLammo)
+unregistersymbol(GLammo_newmem)
+//000000000000000000000000000000000000000000000000000000000000000000000000000000"""
+
+[[cheat]]
+id = "infinite-ammo-0-1"
+name = "Infinite Ammo (0/1)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "infammo"
+hops = []
+
+[[cheat]]
+id = "no-reload-0-1"
+name = "No Reload (0/1)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "noreload"
+hops = []
+
+[[cheat]]
+id = "ammo"
+name = "Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Ammo_p"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "in-clip-current-weapon"
+name = "in Clip - Current Weapon"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inclip_p"
+hops = ["+0x144"]
+
+[[cheat]]
+id = "teleport-options"
+name = "Teleport Options"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//--------------Enable Script starts from here-----------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+aobscanmodule(Teleporter,igi.exe,8B 55 14 89 57 44) //AOB Scan
+//-------------------------------------------------------------
+alloc(teleportxyz,2048)                             //Allocating memory
+//-------------------------------------------------------------
+label(return)                                       //Labels
+label(originalcode)
+label(exit)
+label(z_coordinate)
+label(x_coordinate)
+label(y_coordinate)
+label(current_coordinates)
+label(prev_x_coordinate)
+label(prev_y_coordinate)
+label(prev_z_coordinate)
+label(save_coordinate)
+label(loc_saved)
+label(prevloc_saved)
+label(load_coordinate)
+label(load_prev_coordinate)
+label(Save_tlp)
+label(Load_tlp)
+label(Prev_tlp)
+//-------------------------------------------------------------
+registersymbol(Teleporter)                          //Registering symbols
+registersymbol(Save_tlp)
+registersymbol(Load_tlp)
+registersymbol(Prev_tlp)
+registersymbol(current_coordinates)
+registersymbol(z_coordinate)
+registersymbol(x_coordinate)
+registersymbol(y_coordinate)
+registersymbol(prev_x_coordinate)
+registersymbol(prev_y_coordinate)
+registersymbol(prev_z_coordinate)
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+Teleporter:
+jmp teleportxyz
+nop
+return:
+//-------------------------------------------------------------
+teleportxyz:
+cmp [Save_tlp],1
+je save_coordinate
+
+cmp [Load_tlp],1
+je load_coordinate
+
+cmp [Prev_tlp],1
+je load_prev_coordinate
+
+jmp originalcode
+//-------------------------------------------------------------
+save_coordinate:
+cmp ebx,F2A
+jne originalcode
+push edx
+mov edx,[edi+2C]
+mov [x_coordinate],edx
+mov edx,[edi+24]
+mov [y_coordinate],edx
+mov edx,[edi+34]
+mov [z_coordinate],edx
+pop edx
+mov [Save_tlp],0
+mov [loc_saved],1
+jmp originalcode
+//-------------------------------------------------------------
+load_coordinate:
+cmp ebx,F2A
+jne originalcode
+cmp [loc_saved],1
+jne originalcode
+push edx
+mov edx,[edi+2C]
+mov [prev_x_coordinate],edx
+mov edx,[edi+24]
+mov [prev_y_coordinate],edx
+mov edx,[edi+34]
+mov [prev_z_coordinate],edx
+pop edx
+mov [prevloc_saved],1
+
+
+push edx
+mov edx,[x_coordinate]
+mov [edi+2C],edx
+mov edx,[y_coordinate]
+mov [edi+24],edx
+mov edx,[z_coordinate]
+mov [edi+34],edx
+pop edx
+mov [Load_tlp],0
+je originalcode
+//-------------------------------------------------------------
+load_prev_coordinate:
+cmp ebx,F2A
+jne originalcode
+cmp [prevloc_saved],1
+jne originalcode
+
+push edx
+mov edx,[prev_x_coordinate]
+mov [edi+2C],edx
+mov edx,[prev_y_coordinate]
+mov [edi+24],edx
+mov edx,[prev_z_coordinate]
+mov [edi+34],edx
+pop edx
+mov [Prev_tlp],0
+je originalcode
+
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+originalcode:
+mov edx,[ebp+14]
+mov [edi+44],edx
+
+cmp ebx,F2A
+jne exit
+mov [current_coordinates],edi
+
+exit:
+jmp return
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+x_coordinate:
+dd (float)0
+z_coordinate:
+dd (float)0
+y_coordinate:
+dd (float)0
+current_coordinates:
+dd (float)0
+prev_x_coordinate:
+dd (float)0
+prev_y_coordinate:
+dd (float)0
+prev_z_coordinate:
+dd (float)0
+Save_tlp:
+dd 0
+Load_tlp:
+dd 0
+Prev_tlp:
+dd 0
+loc_saved:
+dd 0
+prevloc_saved:
+dd 0
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//----------------Enable Script ends to here-------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+[DISABLE]
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//-------------Disable Script starts from here-----------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+Teleporter:
+  db 8B 55 14 89 57 44
+
+dealloc(teleportxyz)
+unregistersymbol(Teleporter)
+unregistersymbol(Save_tlp)
+unregistersymbol(Load_tlp)
+unregistersymbol(Prev_tlp)
+unregistersymbol(current_coordinates)
+unregistersymbol(x_coordinate)
+unregistersymbol(y_coordinate)
+unregistersymbol(z_coordinate)
+unregistersymbol(prev_x_coordinate)
+unregistersymbol(prev_y_coordinate)
+unregistersymbol(prev_z_coordinate)
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//---------------Disable Script ends to here-------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------"""
+
+[[cheat]]
+id = "save-location-1"
+name = "Save Location (1)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Save_tlp"
+hops = []
+
+[[cheat]]
+id = "teleport-to-saved-location-1"
+name = "Teleport to saved location (1)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Load_tlp"
+hops = []
+
+[[cheat]]
+id = "teleport-to-previous-location-1"
+name = "Teleport to previous location (1)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Prev_tlp"
+hops = []
+
+[[cheat]]
+id = "x"
+name = "X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "x_coordinate"
+hops = []
+
+[[cheat]]
+id = "y"
+name = "Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "y_coordinate"
+hops = []
+
+[[cheat]]
+id = "z"
+name = "Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "z_coordinate"
+hops = []
+
+[[cheat]]
+id = "x-2"
+name = "X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "prev_x_coordinate"
+hops = []
+
+[[cheat]]
+id = "y-2"
+name = "Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "prev_y_coordinate"
+hops = []
+
+[[cheat]]
+id = "z-2"
+name = "Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "prev_z_coordinate"
+hops = []
+
+[[cheat]]
+id = "x-3"
+name = "X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "current_coordinates"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "y-3"
+name = "Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "current_coordinates"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "z-3"
+name = "Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "current_coordinates"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "shooting-options"
+name = "Shooting Options"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : IGI.exe
+  Version: 1.0.0.0
+  Date   : 2021-09
+  Author : Nb
+
+  Shooting Options - script - AOB
+}
+
+[ENABLE]
+aobscanmodule(Rapidfire,IGI.exe,89 86 3C 01 00 00 8B) // should be unique
+aobscanmodule(CS,IGI.exe,89 8D 40 01 00 00 DC) // should be unique
+alloc(newmem,$1000)
+alloc(newmem_cs,$1000)
+alloc(player_shot,4)
+alloc(player_cs,4)
+alloc(enemy_shot,4)
+registersymbol(player_shot)
+registersymbol(player_cs)
+registersymbol(enemy_shot)
+label(code)
+label(player_fire)
+label(player_rapidfire)
+label(enemy_fire)
+label(disarm_enemy)
+label(return)
+label(code_cs)
+label(return_cs)
+
+//--------------------------------------------
+newmem:
+cmp [esi+EC],#0
+je short player_fire
+jne short enemy_fire
+//--------------------------------------------
+player_fire:
+cmp [player_shot],#1
+je short player_rapidfire
+jmp code
+
+player_rapidfire:
+mov eax,#0
+mov [player_cs],#1
+jmp code
+//--------------------------------------------
+enemy_fire:
+cmp [enemy_shot],#1
+je  short disarm_enemy
+jmp code
+
+disarm_enemy:
+mov eax,#70
+jmp code
+//--------------------------------------------
+code:
+  mov [esi+0000013C],eax
+  jmp return
+
+Rapidfire:
+  jmp newmem
+  nop
+//--------------------------------------------
+return:
+registersymbol(Rapidfire)
+player_shot:
+dd #0
+enemy_shot:
+dd #0
+
+//============================================================
+newmem_cs:
+cmp [player_cs],#0
+je code_cs
+mov ecx,#0
+
+code_cs:
+  mov [ebp+00000140],ecx
+  jmp return_cs
+
+CS:
+  jmp newmem_cs
+  nop
+return_cs:
+registersymbol(CS)
+
+player_cs:
+dd #0
+
+[DISABLE]
+Rapidfire:
+  db 89 86 3C 01 00 00
+CS:
+  db 89 8D 40 01 00 00
+unregistersymbol(Rapidfire)
+unregistersymbol(player_shot)
+unregistersymbol(enemy_shot)
+dealloc(newmem)
+unregistersymbol(CS)
+dealloc(newmem_cs)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "IGI.exe"+7868A
+}"""
+
+[[cheat]]
+id = "rapidfire-for-player-0-1"
+name = "Rapidfire for player (0/1)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_shot"
+hops = []
+
+[[cheat]]
+id = "contineuos-shots"
+name = "Contineuos shots"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_cs"
+hops = []
+
+[[cheat]]
+id = "disarm-enemy-0-1"
+name = "Disarm enemy (0/1)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemy_shot"
+hops = []
+
+[[cheat]]
+id = "super-jump"
+name = "Super jump"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : IGI.exe
+  Version: 1.0.0.0
+  Date   : 2021-09
+  Author : Nb
+
+  Superjump - script - AOB
+  Injection point: "IGI.exe"+BBB3
+}
+
+
+
+
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+[ENABLE]
+aobscanmodule(Superjump,IGI.exe,89 51 08 E8 15 77 05 00)
+alloc(newmem,$1000)
+alloc(jumpheight_val,4)
+registersymbol(jumpheight_val)
+label(return)
+
+newmem:
+  mov edx,[jumpheight_val]
+  mov [ecx+08],edx
+  call IGI.exe+632D0
+  jmp return
+
+Superjump:
+  jmp newmem
+  nop 3
+
+return:
+registersymbol(Superjump)
+jumpheight_val:
+dd (float)1500
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
+
+
+//000000000000000000000000000000000000000000000000000000000000000000000000000000
+[DISABLE]
+Superjump:
+  db 89 51 08 E8 15 77 05 00
+
+unregistersymbol(Superjump)
+dealloc(newmem)
+//000000000000000000000000000000000000000000000000000000000000000000000000000000"""
+
+[[cheat]]
+id = "jump-height"
+name = "Jump height"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "jumpheight_val"
+hops = []
+
+[[cheat]]
+id = "fast-lockpick-and-hack"
+name = "Fast lockpick and hack"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : IGI.exe
+  Version: 1.0.0.0
+  Date   : 2021-09
+  Author : Nb
+
+  Fast Lockpicking and computer hack - script - AOB
+  Injection Points: "IGI.exe"+C1A9 - Lockpick
+                    "IGI.exe"+C8B9 - ComputerHack
+}
+
+[ENABLE]
+aobscanmodule(fastlockpick,IGI.exe,89 86 64 0D 00 00 39 96 64 0D 00 00 74 0A 84 C9 0F 84 AB) // should be unique
+aobscanmodule(Fasthack,IGI.exe,89 86 64 0D 00 00 39 96 64 0D 00 00 74 0A) // should be unique
+alloc(flpnewmem,$1000)
+alloc(fhnewmem,$1000)
+label(flpcode)
+label(flpreturn)
+label(fhcode)
+label(fhreturn)
+
+//--------------------------------------
+flpnewmem:
+mov eax,#120
+
+flpcode:
+  mov [esi+00000D64],eax
+  jmp flpreturn
+
+fastlockpick:
+  jmp flpnewmem
+  nop
+flpreturn:
+registersymbol(fastlockpick)
+//--------------------------------------
+fhnewmem:
+mov eax,#150
+fhcode:
+  mov [esi+00000D64],eax
+  jmp fhreturn
+
+Fasthack:
+  jmp fhnewmem
+  nop
+fhreturn:
+registersymbol(Fasthack)
+
+[DISABLE]
+Fasthack:
+  db 89 86 64 0D 00 00
+fastlockpick:
+  db 89 86 64 0D 00 00
+
+unregistersymbol(fastlockpick)
+dealloc(flpnewmem)
+unregistersymbol(Fasthack)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "disable-all-cctv-s"
+name = "Disable All CCTV's"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : IGI.exe
+  Version: 1.0.0.0
+  Date   : 2021-09
+  Author : Nb
+
+  Disable all CCTVs permanently - script - AOB
+  Injection Point: "IGI.exe"+426A9
+}
+
+[ENABLE]
+
+aobscanmodule(CCTV,IGI.exe,88 8F 68 01 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+mov cl,#0
+code:
+  mov [edi+00000168],cl
+  jmp return
+
+CCTV:
+  jmp newmem
+  nop
+return:
+registersymbol(CCTV)
+
+[DISABLE]
+
+CCTV:
+  db 88 8F 68 01 00 00
+
+unregistersymbol(CCTV)
+dealloc(newmem)"""

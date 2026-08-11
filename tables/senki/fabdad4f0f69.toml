@@ -1,0 +1,1080 @@
+[game]
+name = "Eiyu*Senki – The World Conquest"
+exe = "senki.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=5700"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-initialization-activate-this-first"
+name = "Battle Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(battlestats_basepointer)
+registersymbol(battlestats_character_basepointer)
+registersymbol(battlestats_update_enable)
+registersymbol(battlestats_set_enable)
+registersymbol(battlestats_armsset_enable)
+registersymbol(battlestats_statsset_enable)
+registersymbol(battlestats_turnsset_enable)
+
+alloc(battlestats_basepointer, 4)
+alloc(battlestats_character_basepointer, 4)
+alloc(battlestats_update_enable, 4)
+alloc(battlestats_set_enable, 4)
+alloc(battlestats_armsset_enable, 4)
+alloc(battlestats_statsset_enable, 4)
+alloc(battlestats_turnsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestats_character_basepointer)
+unregistersymbol(battlestats_update_enable)
+unregistersymbol(battlestats_set_enable)
+unregistersymbol(battlestats_armsset_enable)
+unregistersymbol(battlestats_statsset_enable)
+unregistersymbol(battlestats_turnsset_enable)
+
+dealloc(battlestats_basepointer)
+dealloc(battlestats_character_basepointer)
+dealloc(battlestats_update_enable)
+dealloc(battlestats_set_enable)
+dealloc(battlestats_armsset_enable)
+dealloc(battlestats_statsset_enable)
+dealloc(battlestats_turnsset_enable)"""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-to-update-select-battle"
+name = "Battle Stats Base Address Scan (To Update: Select Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(battlestats_savedAOB)
+label(battlestats_returnhere)
+label(battlestats_originalcode)
+label(battlestats_exit)
+
+label(battlestats_update_exit)
+label(battlestats_set_exit)
+label(battlestats_armsset_exit)
+label(battlestats_statsset_exit)
+label(battlestats_turnsset_exit)
+
+registersymbol(battlestats_savedAOB)
+
+//Eiyu Senki.exe+148D99 - 8D 8E D4080000        - lea ecx,[esi+000008D4]
+//Eiyu Senki.exe+148D9F - E8 3C19F2FF           - call "Eiyu Senki.exe"+6A6E0
+//Eiyu Senki.exe+148DA4 - 8B CF                 - mov ecx,edi
+// Accesses Arms
+//Eiyu Senki.exe+148DA6 - 8B 50 3C              - mov edx,[eax+3C]
+//Eiyu Senki.exe+148DA9 - E8 62F7F1FF           - call "Eiyu Senki.exe"+68510
+//Eiyu Senki.exe+148DAE - 8B 55 EC              - mov edx,[ebp-14]
+//Eiyu Senki.exe+148DB1 - 83 FA 10              - cmp edx,10
+//Eiyu Senki.exe+148DB4 - 72 0E                 - jb "Eiyu Senki.exe"+148DC4
+aobscan(battlestats_searchedAOB, 8B CF 8B 50 3C * * * * * 8B 55 EC)
+
+alloc(battlestats_newmem, 2048, battlestats_searchedAOB)
+alloc(battlestats_temp1, 4, battlestats_searchedAOB)
+alloc(battlestats_temp2, 4, battlestats_searchedAOB)
+alloc(battlestats_temp3, 4, battlestats_searchedAOB)
+alloc(battlestats_temp4, 4, battlestats_searchedAOB)
+alloc(battlestats_temp5, 4, battlestats_searchedAOB)
+
+
+battlestats_newmem:
+mov [battlestats_temp1], eax
+mov [battlestats_temp2], ebx
+mov [battlestats_temp3], ecx
+mov [battlestats_temp4], edx
+
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_update_exit
+mov [battlestats_basepointer], esi
+mov [battlestats_character_basepointer], eax
+battlestats_update_exit:
+
+cmp byte ptr [eax+30], #1
+jne battlestats_turnsset_exit
+
+cmp dword ptr [battlestats_set_enable], #0
+je battlestats_set_exit
+battlestats_set_exit:
+
+cmp dword ptr [battlestats_armsset_enable], #0
+je battlestats_armsset_exit
+mov ebx, [eax+38]
+mov [eax+3c], ebx
+battlestats_armsset_exit:
+
+cmp dword ptr [battlestats_statsset_enable], #0
+je battlestats_statsset_exit
+mov [eax+40], #9999
+mov [eax+44], #9999
+mov [eax+48], #9999
+battlestats_statsset_exit:
+
+cmp dword ptr [battlestats_turnsset_enable], #0
+je battlestats_turnsset_exit
+mov [esi+9ac], #0
+battlestats_turnsset_exit:
+
+mov eax, [battlestats_temp1]
+mov ebx, [battlestats_temp2]
+mov ecx, [battlestats_temp3]
+mov edx, [battlestats_temp4]
+
+
+battlestats_originalcode:
+db 8B CF 8B 50 3C
+//mov ecx,edi
+//mov edx,[eax+3C]
+
+
+battlestats_exit:
+jmp battlestats_returnhere
+
+
+battlestats_searchedAOB:
+battlestats_savedAOB:
+jmp battlestats_newmem
+battlestats_returnhere:
+
+
+[DISABLE]
+battlestats_savedAOB:
+db 8B CF 8B 50 3C
+//mov ecx,edi
+//mov edx,[eax+3C]
+
+unregistersymbol(battlestats_savedAOB)
+
+dealloc(battlestats_newmem)
+dealloc(battlestats_temp1)
+dealloc(battlestats_temp2)
+dealloc(battlestats_temp3)
+dealloc(battlestats_temp4)
+dealloc(battlestats_temp5)"""
+
+[[cheat]]
+id = "arms-set-to-max"
+name = "Arms Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_armsset_enable"
+hops = []
+
+[[cheat]]
+id = "stats-set-to-massive"
+name = "Stats Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_statsset_enable"
+hops = []
+
+[[cheat]]
+id = "turns-elapsed-set-to-0"
+name = "Turns Elapsed Set to 0?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_turnsset_enable"
+hops = []
+
+[[cheat]]
+id = "battle-stats-update-base-address"
+name = "Battle Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "elapsed-turn"
+name = "Elapsed Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x9ac"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "friendly-flag"
+name = "Friendly Flag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "enemy-flag"
+name = "Enemy Flag"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x31"]
+
+[[cheat]]
+id = "max-arms"
+name = "Max Arms"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "arms"
+name = "Arms"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "at"
+name = "AT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "df"
+name = "DF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "sp"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_character_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-troops-management-restock-all"
+name = "Player Stats Base Address Scan (To Update: Troops Management Restock All)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//Eiyu Senki.exe+163EF7 - B9 A8404501           - mov ecx,"Eiyu Senki.exe"+4D40A8
+//Eiyu Senki.exe+163EFC - E8 6F87F1FF           - call "Eiyu Senki.exe"+7C670
+// Accesses money
+//Eiyu Senki.exe+163F01 - 8B 1D 20414501        - mov ebx,["Eiyu Senki.exe"+4D4120]
+//Eiyu Senki.exe+163F07 - 8D 4D 88              - lea ecx,[ebp-78]
+//Eiyu Senki.exe+163F0A - 68 D4813401           - push "Eiyu Senki.exe"+3C81D4
+//Eiyu Senki.exe+163F0F - 8B F0                 - mov esi,eax
+//Eiyu Senki.exe+163F11 - E8 DA551B00           - call "Eiyu Senki.exe"+3194F0
+//Eiyu Senki.exe+163F16 - 68 CC813401           - push "Eiyu Senki.exe"+3C81CC
+//Eiyu Senki.exe+163F1B - 8D 4D D4              - lea ecx,[ebp-2C]
+//Eiyu Senki.exe+163F1E - C7 45 FC 14000000     - mov [ebp-04],00000014
+//Eiyu Senki.exe+163F25 - E8 460BEFFF           - call "Eiyu Senki.exe"+54A70
+//Eiyu Senki.exe+163F2A - 56                    - push esi
+//Eiyu Senki.exe+163F2B - 8D 45 D4              - lea eax,[ebp-2C]
+//Eiyu Senki.exe+163F2E - C6 45 FC 15           - mov byte ptr [ebp-04],15
+//Eiyu Senki.exe+163F32 - 50                    - push eax
+aobscan(playerstats_searchedAOB, C7 45 FC 14 00 00 00 * * * * * 56 8D 45 D4)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+alloc(playerstats_temp5, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+mov ebx, [playerstats_savedAOB-1b]
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], ebx
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+db C7 45 FC 14 00 00 00
+//mov [ebp-04],00000014
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db C7 45 FC 14 00 00 00
+//mov [ebp-04],00000014
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "turn"
+name = "Turn"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xffffff9c"]
+
+[[cheat]]
+id = "action-points"
+name = "Action Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xfffffff8"]
+
+[[cheat]]
+id = "max-action-points"
+name = "Max Action Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xfffffffc"]
+
+[[cheat]]
+id = "funds"
+name = "Funds"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "character-stats-base-address-scan-initialization-activate-this-first"
+name = "Character Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(characterstats_basepointer)
+registersymbol(characterstats_update_enable)
+registersymbol(characterstats_set_enable)
+registersymbol(characterstats_busyset_enable)
+registersymbol(characterstats_maxtroopsset_enable)
+registersymbol(characterstats_troopset_enable)
+
+alloc(characterstats_basepointer, 4)
+alloc(characterstats_update_enable, 4)
+alloc(characterstats_set_enable, 4)
+alloc(characterstats_busyset_enable, 4)
+alloc(characterstats_maxtroopsset_enable, 4)
+alloc(characterstats_troopset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(characterstats_basepointer)
+unregistersymbol(characterstats_update_enable)
+unregistersymbol(characterstats_set_enable)
+unregistersymbol(characterstats_busyset_enable)
+unregistersymbol(characterstats_maxtroopsset_enable)
+unregistersymbol(characterstats_troopset_enable)
+
+dealloc(characterstats_basepointer)
+dealloc(characterstats_update_enable)
+dealloc(characterstats_set_enable)
+dealloc(characterstats_busyset_enable)
+dealloc(characterstats_maxtroopsset_enable)
+dealloc(characterstats_troopset_enable)"""
+
+[[cheat]]
+id = "character-stats-base-address-scan-to-update-view-troops-management-character"
+name = "Character Stats Base Address Scan (To Update: View Troops Management Character)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(characterstats_savedAOB)
+label(characterstats_returnhere)
+label(characterstats_originalcode)
+label(characterstats_exit)
+
+label(characterstats_update_exit)
+label(characterstats_set_exit)
+label(characterstats_busyset_exit)
+label(characterstats_maxtroopsset_exit)
+label(characterstats_troopset_exit)
+
+registersymbol(characterstats_savedAOB)
+
+//Eiyu Senki.exe+126FE5 - B9 A840D000           - mov ecx,"Eiyu Senki.exe"+4D40A8
+//Eiyu Senki.exe+126FEA - E8 31BCF5FF           - call "Eiyu Senki.exe"+82C20
+//Eiyu Senki.exe+126FEF - 8B CE                 - mov ecx,esi
+// Accesses Troops
+//Eiyu Senki.exe+126FF1 - 8B 50 24              - mov edx,[eax+24]
+//Eiyu Senki.exe+126FF4 - E8 1715F4FF           - call "Eiyu Senki.exe"+68510
+//Eiyu Senki.exe+126FF9 - 8B 55 EC              - mov edx,[ebp-14]
+//Eiyu Senki.exe+126FFC - 83 FA 10              - cmp edx,10
+//Eiyu Senki.exe+126FFF - 72 0E                 - jb "Eiyu Senki.exe"+12700F
+//Eiyu Senki.exe+127001 - 8B 4D D8              - mov ecx,[ebp-28]
+//Eiyu Senki.exe+127004 - 42                    - inc edx
+aobscan(characterstats_searchedAOB, 8B CE 8B 50 24 * * * * * 8B 55 EC 83 FA 10 72 0E)
+
+alloc(characterstats_newmem, 2048, characterstats_searchedAOB)
+alloc(characterstats_temp1, 4, characterstats_searchedAOB)
+alloc(characterstats_temp2, 4, characterstats_searchedAOB)
+alloc(characterstats_temp3, 4, characterstats_searchedAOB)
+alloc(characterstats_temp4, 4, characterstats_searchedAOB)
+alloc(characterstats_temp5, 4, characterstats_searchedAOB)
+
+
+characterstats_newmem:
+mov [characterstats_temp1], eax
+mov [characterstats_temp2], ebx
+mov [characterstats_temp3], ecx
+mov [characterstats_temp4], edx
+
+cmp dword ptr [characterstats_update_enable], #0
+je characterstats_update_exit
+mov [characterstats_basepointer], eax
+characterstats_update_exit:
+
+cmp dword ptr [characterstats_set_enable], #0
+je characterstats_set_exit
+characterstats_set_exit:
+
+cmp dword ptr [characterstats_busyset_enable], #0
+je characterstats_busyset_exit
+mov byte ptr [eax+1d], #0
+characterstats_busyset_exit:
+
+cmp dword ptr [characterstats_maxtroopsset_enable], #0
+je characterstats_maxtroopsset_exit
+mov [eax+28], #9999
+characterstats_maxtroopsset_exit:
+
+cmp dword ptr [characterstats_troopset_enable], #0
+je characterstats_troopset_exit
+mov ebx, [eax+28]
+mov [eax+24], ebx
+characterstats_troopset_exit:
+
+mov eax, [characterstats_temp1]
+mov ebx, [characterstats_temp2]
+mov ecx, [characterstats_temp3]
+mov edx, [characterstats_temp4]
+
+
+characterstats_originalcode:
+db 8B CE 8B 50 24
+//mov ecx,esi
+//mov edx,[eax+24]
+
+
+characterstats_exit:
+jmp characterstats_returnhere
+
+
+characterstats_searchedAOB:
+characterstats_savedAOB:
+jmp characterstats_newmem
+characterstats_returnhere:
+
+
+[DISABLE]
+characterstats_savedAOB:
+db 8B CE 8B 50 24
+//mov ecx,esi
+//mov edx,[eax+24]
+
+unregistersymbol(characterstats_savedAOB)
+
+dealloc(characterstats_newmem)
+dealloc(characterstats_temp1)
+dealloc(characterstats_temp2)
+dealloc(characterstats_temp3)
+dealloc(characterstats_temp4)
+dealloc(characterstats_temp5)"""
+
+[[cheat]]
+id = "character-stats-base-address-scan-to-update-view-mission-troops-management"
+name = "Character Stats Base Address Scan (To Update: View Mission / Troops Management)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(characterstats_mission_savedAOB)
+label(characterstats_mission_returnhere)
+label(characterstats_mission_originalcode)
+label(characterstats_mission_exit)
+
+label(characterstats_mission_update_exit)
+label(characterstats_mission_set_exit)
+label(characterstats_mission_busyset_exit)
+label(characterstats_mission_maxtroopsset_exit)
+label(characterstats_mission_troopset_exit)
+
+registersymbol(characterstats_mission_savedAOB)
+
+//Eiyu Senki.exe+126C85 - B9 A840D000           - mov ecx,"Eiyu Senki.exe"+4D40A8
+//Eiyu Senki.exe+126C8A - E8 91BFF5FF           - call "Eiyu Senki.exe"+82C20
+//Eiyu Senki.exe+126C8F - 8B CE                 - mov ecx,esi
+// Accesses Busy Flag
+//Eiyu Senki.exe+126C91 - 8A 50 1D              - mov dl,[eax+1D]
+//Eiyu Senki.exe+126C94 - E8 E793F3FF           - call "Eiyu Senki.exe"+60080
+//Eiyu Senki.exe+126C99 - 8B 55 EC              - mov edx,[ebp-14]
+//Eiyu Senki.exe+126C9C - 83 FA 10              - cmp edx,10
+//Eiyu Senki.exe+126C9F - 72 0E                 - jb "Eiyu Senki.exe"+126CAF
+//Eiyu Senki.exe+126CA1 - 8B 4D D8              - mov ecx,[ebp-28]
+aobscan(characterstats_mission_searchedAOB, 8B CE 8A 50 1D * * * * * 8B 55 EC)
+
+alloc(characterstats_mission_newmem, 2048, characterstats_mission_searchedAOB)
+alloc(characterstats_mission_temp1, 4, characterstats_mission_searchedAOB)
+alloc(characterstats_mission_temp2, 4, characterstats_mission_searchedAOB)
+alloc(characterstats_mission_temp3, 4, characterstats_mission_searchedAOB)
+alloc(characterstats_mission_temp4, 4, characterstats_mission_searchedAOB)
+alloc(characterstats_mission_temp5, 4, characterstats_mission_searchedAOB)
+
+
+characterstats_mission_newmem:
+mov [characterstats_mission_temp1], eax
+mov [characterstats_mission_temp2], ebx
+mov [characterstats_mission_temp3], ecx
+mov [characterstats_mission_temp4], edx
+
+cmp dword ptr [characterstats_update_enable], #0
+je characterstats_mission_update_exit
+//mov [characterstats_mission_basepointer], eax
+characterstats_mission_update_exit:
+
+cmp dword ptr [characterstats_set_enable], #0
+je characterstats_mission_set_exit
+characterstats_mission_set_exit:
+
+cmp dword ptr [characterstats_busyset_enable], #0
+je characterstats_mission_busyset_exit
+mov byte ptr [eax+1d], #0
+characterstats_mission_busyset_exit:
+
+cmp dword ptr [characterstats_maxtroopsset_enable], #0
+je characterstats_mission_maxtroopsset_exit
+mov [eax+28], #9999
+characterstats_mission_maxtroopsset_exit:
+
+cmp dword ptr [characterstats_troopset_enable], #0
+je characterstats_mission_troopset_exit
+mov ebx, [eax+28]
+mov [eax+24], ebx
+characterstats_mission_troopset_exit:
+
+mov eax, [characterstats_mission_temp1]
+mov ebx, [characterstats_mission_temp2]
+mov ecx, [characterstats_mission_temp3]
+mov edx, [characterstats_mission_temp4]
+
+
+characterstats_mission_originalcode:
+db 8B CE 8A 50 1D
+//mov ecx,esi
+//mov dl,[eax+1D]
+
+
+characterstats_mission_exit:
+jmp characterstats_mission_returnhere
+
+
+characterstats_mission_searchedAOB:
+characterstats_mission_savedAOB:
+jmp characterstats_mission_newmem
+characterstats_mission_returnhere:
+
+
+[DISABLE]
+characterstats_mission_savedAOB:
+db 8B CE 8A 50 1D
+//mov ecx,esi
+//mov dl,[eax+1D]
+
+unregistersymbol(characterstats_mission_savedAOB)
+
+dealloc(characterstats_mission_newmem)
+dealloc(characterstats_mission_temp1)
+dealloc(characterstats_mission_temp2)
+dealloc(characterstats_mission_temp3)
+dealloc(characterstats_mission_temp4)
+dealloc(characterstats_mission_temp5)"""
+
+[[cheat]]
+id = "busy-set-to-not-busy"
+name = "Busy Set to Not Busy?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_busyset_enable"
+hops = []
+
+[[cheat]]
+id = "max-troops-set-to-max"
+name = "Max Troops Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_maxtroopsset_enable"
+hops = []
+
+[[cheat]]
+id = "troops-set-to-max"
+name = "Troops Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_troopset_enable"
+hops = []
+
+[[cheat]]
+id = "character-stats-update-base-address"
+name = "Character Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "cheat"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "busy-flag"
+name = "Busy Flag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x1d"]
+
+[[cheat]]
+id = "troops"
+name = "Troops"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "max-troops"
+name = "Max Troops"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "at-2"
+name = "AT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "df-2"
+name = "DF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "sp-2"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "trust"
+name = "Trust"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "equipment-slots"
+name = "Equipment Slots"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "characterstats_basepointer"
+hops = ["+0x74"]

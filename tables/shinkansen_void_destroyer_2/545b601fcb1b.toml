@@ -1,0 +1,1291 @@
+[game]
+name = "Void Destroyer 2"
+exe = "shinkansen_void_destroyer_2.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=12738"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_creditsset_enable)
+registersymbol(playerstats_fuelset_enable)
+
+//0146B634 - 89 4D FC              - mov [ebp-04],ecx
+//0146B637 - 8B 45 FC              - mov eax,[ebp-04]
+// Accesses Credits
+//0146B63A - 8B 80 00030000        - mov eax,[eax+00000300]
+//0146B640 - 8B E5                 - mov esp,ebp
+//0146B642 - 5D                    - pop ebp
+//0146B643 - C3                    - ret
+aobscan(playerstats_initialization_searchedAOB, 8B 80 00 03 00 00 8B E5 5D C3)
+
+alloc(playerstats_basepointer, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_update_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_creditsset_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_fuelset_enable, 4, playerstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_creditsset_enable)
+unregistersymbol(playerstats_fuelset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_creditsset_enable)
+dealloc(playerstats_fuelset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_creditsset_exit)
+label(playerstats_fuelset_exit)
+
+registersymbol(playerstats_originalcode)
+registersymbol(playerstats_savedAOB)
+
+//0146B634 - 89 4D FC              - mov [ebp-04],ecx
+//0146B637 - 8B 45 FC              - mov eax,[ebp-04]
+// Accesses Credits
+//0146B63A - 8B 80 00030000        - mov eax,[eax+00000300]
+//0146B640 - 8B E5                 - mov esp,ebp
+//0146B642 - 5D                    - pop ebp
+//0146B643 - C3                    - ret
+aobscan(playerstats_searchedAOB, 8B 80 00 03 00 00 8B E5 5D C3)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+alloc(playerstats_temp5, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], eax
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_creditsset_enable], #0
+je playerstats_creditsset_exit
+mov [eax+300], #999999999
+playerstats_creditsset_exit:
+
+cmp dword ptr [playerstats_fuelset_enable], #0
+je playerstats_fuelset_exit
+fld [eax+274]
+fstp [eax+270]
+playerstats_fuelset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+readmem(playerstats_searchedAOB, 6)
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+readmem(playerstats_originalcode, 6)
+
+unregistersymbol(playerstats_originalcode)
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "credits-set-to-massive"
+name = "Credits Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_creditsset_enable"
+hops = []
+
+[[cheat]]
+id = "fuel-set-to-max"
+name = "Fuel Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_fuelset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "fuel"
+name = "Fuel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "max-fuel"
+name = "Max Fuel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x274"]
+
+[[cheat]]
+id = "credits"
+name = "Credits"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x300"]
+
+[[cheat]]
+id = "ship-stats-base-address-scan-initialization-activate-this-first"
+name = "Ship Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(shipstats_basepointer)
+registersymbol(shipstats_update_enable)
+registersymbol(shipstats_healthset_enable)
+registersymbol(shipstats_shieldset_enable)
+registersymbol(shipstats_armorset_enable)
+registersymbol(shipstats_afterburnerset_enable)
+registersymbol(shipstats_primaryset_enable)
+registersymbol(shipstats_secondaryset_enable)
+
+//0152FD11 - 50                    - push eax
+//0152FD12 - 8B 4D FC              - mov ecx,[ebp-04]
+// Accesses pointer to Primary Weapon Charge
+//0152FD15 - 8B 51 54              - mov edx,[ecx+54]
+//0152FD18 - 52                    - push edx
+//0152FD19 - 8B 4D FC              - mov ecx,[ebp-04]
+//0152FD1C - E8 DFF6FFFF           - call 0152F400
+//0152FD21 - 83 EC 18              - sub esp,18
+aobscan(shipstats_initialization_searchedAOB, 8B 51 54 52 8B 4D FC)
+
+alloc(shipstats_basepointer, 4, shipstats_initialization_searchedAOB)
+alloc(shipstats_update_enable, 4, shipstats_initialization_searchedAOB)
+alloc(shipstats_healthset_enable, 4, shipstats_initialization_searchedAOB)
+alloc(shipstats_shieldset_enable, 4, shipstats_initialization_searchedAOB)
+alloc(shipstats_armorset_enable, 4, shipstats_initialization_searchedAOB)
+alloc(shipstats_afterburnerset_enable, 4, shipstats_initialization_searchedAOB)
+alloc(shipstats_primaryset_enable, 4, shipstats_initialization_searchedAOB)
+alloc(shipstats_secondaryset_enable, 4, shipstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(shipstats_basepointer)
+unregistersymbol(shipstats_update_enable)
+unregistersymbol(shipstats_healthset_enable)
+unregistersymbol(shipstats_shieldset_enable)
+unregistersymbol(shipstats_armorset_enable)
+unregistersymbol(shipstats_afterburnerset_enable)
+unregistersymbol(shipstats_primaryset_enable)
+unregistersymbol(shipstats_secondaryset_enable)
+
+dealloc(shipstats_basepointer)
+dealloc(shipstats_update_enable)
+dealloc(shipstats_healthset_enable)
+dealloc(shipstats_shieldset_enable)
+dealloc(shipstats_armorset_enable)
+dealloc(shipstats_afterburnerset_enable)
+dealloc(shipstats_primaryset_enable)
+dealloc(shipstats_secondaryset_enable)"""
+
+[[cheat]]
+id = "ship-stats-base-address-scan-to-update-play-level"
+name = "Ship Stats Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(shipstats_savedAOB)
+label(shipstats_returnhere)
+label(shipstats_originalcode)
+label(shipstats_exit)
+
+label(shipstats_update_exit)
+label(shipstats_healthset_exit)
+label(shipstats_shieldset_exit)
+label(shipstats_armorset_exit)
+label(shipstats_afterburnerset_exit)
+label(shipstats_primaryset_exit)
+label(shipstats_secondaryset_exit)
+
+registersymbol(shipstats_originalcode)
+registersymbol(shipstats_savedAOB)
+
+//0152FD11 - 50                    - push eax
+//0152FD12 - 8B 4D FC              - mov ecx,[ebp-04]
+// Accesses pointer to Primary Weapon Charge
+//0152FD15 - 8B 51 54              - mov edx,[ecx+54]
+//0152FD18 - 52                    - push edx
+//0152FD19 - 8B 4D FC              - mov ecx,[ebp-04]
+//0152FD1C - E8 DFF6FFFF           - call 0152F400
+//0152FD21 - 83 EC 18              - sub esp,18
+aobscan(shipstats_searchedAOB, 8B 51 54 52 8B 4D FC)
+
+alloc(shipstats_newmem, 2048, shipstats_searchedAOB)
+alloc(shipstats_temp1, 4, shipstats_searchedAOB)
+alloc(shipstats_temp2, 4, shipstats_searchedAOB)
+alloc(shipstats_temp3, 4, shipstats_searchedAOB)
+alloc(shipstats_temp4, 4, shipstats_searchedAOB)
+alloc(shipstats_temp5, 4, shipstats_searchedAOB)
+
+
+shipstats_newmem:
+mov [shipstats_temp1], eax
+mov [shipstats_temp2], ebx
+mov [shipstats_temp3], ecx
+mov [shipstats_temp4], edx
+
+cmp dword ptr [shipstats_update_enable], #0
+je shipstats_update_exit
+mov [shipstats_basepointer], ecx
+shipstats_update_exit:
+
+cmp dword ptr [shipstats_healthset_enable], #0
+je shipstats_healthset_exit
+mov ebx, [ecx+4c]
+test ebx, ebx
+je shipstats_healthset_exit
+fld [ebx+80]
+fstp [ebx+7c]
+shipstats_healthset_exit:
+
+cmp dword ptr [shipstats_shieldset_enable], #0
+je shipstats_shieldset_exit
+mov ebx, [ecx+4c]
+test ebx, ebx
+je shipstats_shieldset_exit
+fld [ebx+94]
+fstp [ebx+90]
+shipstats_shieldset_exit:
+
+cmp dword ptr [shipstats_armorset_enable], #0
+je shipstats_armorset_exit
+mov ebx, [ecx+4c]
+test ebx, ebx
+je shipstats_armorset_exit
+mov [ebx+a4], (float)9999
+shipstats_armorset_exit:
+
+cmp dword ptr [shipstats_afterburnerset_enable], #0
+je shipstats_afterburnerset_exit
+mov ebx, [ecx+4c]
+test ebx, ebx
+je shipstats_afterburnerset_exit
+mov ebx, [ebx+30c]
+test ebx, ebx
+je shipstats_afterburnerset_exit
+fld [ebx+10]
+fstp [ebx+c]
+shipstats_afterburnerset_exit:
+
+cmp dword ptr [shipstats_primaryset_enable], #0
+je shipstats_primaryset_exit
+mov ebx, [ecx+54]
+test ebx, ebx
+je shipstats_primaryset_exit
+fld [ebx+58]
+fstp [ebx+5c]
+mov [ebx+60], (float)-1
+shipstats_primaryset_exit:
+
+cmp dword ptr [shipstats_secondaryset_enable], #0
+je shipstats_secondaryset_exit
+mov ebx, [ecx+58]
+test ebx, ebx
+je shipstats_secondaryset_exit
+fld [ebx+58]
+fstp [ebx+5c]
+mov [ebx+60], (float)-1
+shipstats_secondaryset_exit:
+
+mov eax, [shipstats_temp1]
+mov ebx, [shipstats_temp2]
+mov ecx, [shipstats_temp3]
+mov edx, [shipstats_temp4]
+
+
+shipstats_originalcode:
+readmem(shipstats_searchedAOB, 7)
+
+
+shipstats_exit:
+jmp shipstats_returnhere
+
+
+shipstats_searchedAOB:
+shipstats_savedAOB:
+jmp shipstats_newmem
+nop
+nop
+shipstats_returnhere:
+
+
+[DISABLE]
+shipstats_savedAOB:
+readmem(shipstats_originalcode, 7)
+
+unregistersymbol(shipstats_originalcode)
+unregistersymbol(shipstats_savedAOB)
+
+dealloc(shipstats_newmem)
+dealloc(shipstats_temp1)
+dealloc(shipstats_temp2)
+dealloc(shipstats_temp3)
+dealloc(shipstats_temp4)
+dealloc(shipstats_temp5)"""
+
+[[cheat]]
+id = "health-points-set-to-max"
+name = "Health Points Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "shield-generator-set-to-max"
+name = "Shield Generator Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_shieldset_enable"
+hops = []
+
+[[cheat]]
+id = "armor-rating-set-to-massive"
+name = "Armor Rating Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_armorset_enable"
+hops = []
+
+[[cheat]]
+id = "afterburner-set-to-max"
+name = "Afterburner Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_afterburnerset_enable"
+hops = []
+
+[[cheat]]
+id = "primary-weapon-set-to-massive"
+name = "Primary Weapon Set to Massive?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_primaryset_enable"
+hops = []
+
+[[cheat]]
+id = "secondary-weapon-set-to-massive"
+name = "Secondary Weapon Set to Massive?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_secondaryset_enable"
+hops = []
+
+[[cheat]]
+id = "ship-stats-update-base-address"
+name = "Ship Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "health-points"
+name = "Health Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "max-health-points"
+name = "Max Health Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x80",
+]
+
+[[cheat]]
+id = "shield-generator"
+name = "Shield Generator"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x90",
+]
+
+[[cheat]]
+id = "max-shield-generator"
+name = "Max Shield Generator"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x94",
+]
+
+[[cheat]]
+id = "armor-rating"
+name = "Armor Rating"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0xa4",
+]
+
+[[cheat]]
+id = "cruise-speed"
+name = "Cruise Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x254",
+]
+
+[[cheat]]
+id = "time-til-cruise-speed"
+name = "Time Til Cruise Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x258",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x30c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "capacity"
+name = "Capacity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x30c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "max-capacity"
+name = "Max Capacity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x30c",
+    "+0x10",
+]
+
+[[cheat]]
+id = "rating"
+name = "Rating"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x4c",
+    "+0x30c",
+    "+0x18",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x54",
+    "+0x0",
+]
+
+[[cheat]]
+id = "barrel-delay"
+name = "Barrel Delay"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+]
+
+[[cheat]]
+id = "range"
+name = "Range"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x54",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "max-ammo-capacity-max-charge-time"
+name = "Max Ammo Capacity / Max Charge Time"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x54",
+    "+0x58",
+]
+
+[[cheat]]
+id = "ammo-capacity-charge-time"
+name = "Ammo Capacity / Charge Time"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x54",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "refire-rate"
+name = "Refire Rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x54",
+    "+0x60",
+]
+
+[[cheat]]
+id = "max-refire-rate"
+name = "Max Refire Rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x54",
+    "+0x64",
+]
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x58",
+    "+0x0",
+]
+
+[[cheat]]
+id = "barrel-delay-2"
+name = "Barrel Delay"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x58",
+    "+0xc",
+]
+
+[[cheat]]
+id = "range-2"
+name = "Range"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x58",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "max-ammo-capacity-max-charge-time-2"
+name = "Max Ammo Capacity / Max Charge Time"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x58",
+    "+0x58",
+]
+
+[[cheat]]
+id = "ammo-capacity-charge-time-2"
+name = "Ammo Capacity / Charge Time"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x58",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "refire-rate-2"
+name = "Refire Rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x58",
+    "+0x60",
+]
+
+[[cheat]]
+id = "max-refire-rate-2"
+name = "Max Refire Rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = [
+    "+0x58",
+    "+0x64",
+]
+
+[[cheat]]
+id = "ability-stats-base-address-scan-initialization-activate-this-first"
+name = "Ability Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(abilitystats_basepointer)
+registersymbol(abilitystats_update_enable)
+registersymbol(abilitystats_abilityset_enable)
+
+//01591FF2 - E8 59FAC8FF           - call 01221A50
+//01591FF7 - 8B 4D 70              - mov ecx,[ebp+70]
+// Accesses Activated Flag
+//01591FFA - 0FB6 51 30            - movzx edx,byte ptr [ecx+30]
+//01591FFE - 85 D2                 - test edx,edx
+//01592000 - 0F84 27020000         - je 0159222D
+//01592006 - 8B 45 70              - mov eax,[ebp+70]
+//01592009 - 8B 48 04              - mov ecx,[eax+04]
+//0159200C - 8B 55 70              - mov edx,[ebp+70]
+aobscan(abilitystats_initialization_searchedAOB, 0F B6 51 30 85 D2 * * * * * * 8B 45 70)
+
+alloc(abilitystats_basepointer, 4, abilitystats_initialization_searchedAOB)
+alloc(abilitystats_update_enable, 4, abilitystats_initialization_searchedAOB)
+alloc(abilitystats_abilityset_enable, 4, abilitystats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(abilitystats_basepointer)
+unregistersymbol(abilitystats_update_enable)
+unregistersymbol(abilitystats_abilityset_enable)
+
+dealloc(abilitystats_basepointer)
+dealloc(abilitystats_update_enable)
+dealloc(abilitystats_abilityset_enable)"""
+
+[[cheat]]
+id = "ability-stats-base-address-scan-to-update-play-level"
+name = "Ability Stats Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(abilitystats_savedAOB)
+label(abilitystats_returnhere)
+label(abilitystats_originalcode)
+label(abilitystats_exit)
+
+label(abilitystats_update_exit)
+label(abilitystats_abilityset_exit)
+
+registersymbol(abilitystats_originalcode)
+registersymbol(abilitystats_savedAOB)
+
+//01591FF2 - E8 59FAC8FF           - call 01221A50
+//01591FF7 - 8B 4D 70              - mov ecx,[ebp+70]
+// Accesses Activated Flag
+//01591FFA - 0FB6 51 30            - movzx edx,byte ptr [ecx+30]
+//01591FFE - 85 D2                 - test edx,edx
+//01592000 - 0F84 27020000         - je 0159222D
+//01592006 - 8B 45 70              - mov eax,[ebp+70]
+//01592009 - 8B 48 04              - mov ecx,[eax+04]
+//0159200C - 8B 55 70              - mov edx,[ebp+70]
+aobscan(abilitystats_searchedAOB, 0F B6 51 30 85 D2 * * * * * * 8B 45 70)
+
+alloc(abilitystats_newmem, 2048, abilitystats_searchedAOB)
+alloc(abilitystats_temp1, 4, abilitystats_searchedAOB)
+alloc(abilitystats_temp2, 4, abilitystats_searchedAOB)
+alloc(abilitystats_temp3, 4, abilitystats_searchedAOB)
+alloc(abilitystats_temp4, 4, abilitystats_searchedAOB)
+alloc(abilitystats_temp5, 4, abilitystats_searchedAOB)
+
+
+abilitystats_newmem:
+mov [abilitystats_temp1], eax
+mov [abilitystats_temp2], ebx
+mov [abilitystats_temp3], ecx
+mov [abilitystats_temp4], edx
+
+cmp dword ptr [abilitystats_update_enable], #0
+je abilitystats_update_exit
+mov [abilitystats_basepointer], ecx
+abilitystats_update_exit:
+
+cmp dword ptr [abilitystats_abilityset_enable], #0
+je abilitystats_abilityset_exit
+mov [ecx+28], (float)0
+cmp dword ptr [ecx+2c], (float)0
+je abilitystats_abilityset_exit
+mov [ecx+2c], (float)999
+abilitystats_abilityset_exit:
+
+mov eax, [abilitystats_temp1]
+mov ebx, [abilitystats_temp2]
+mov ecx, [abilitystats_temp3]
+mov edx, [abilitystats_temp4]
+
+
+abilitystats_originalcode:
+readmem(abilitystats_searchedAOB, 6)
+
+
+abilitystats_exit:
+jmp abilitystats_returnhere
+
+
+abilitystats_searchedAOB:
+abilitystats_savedAOB:
+jmp abilitystats_newmem
+nop
+abilitystats_returnhere:
+
+
+[DISABLE]
+abilitystats_savedAOB:
+readmem(abilitystats_originalcode, 6)
+
+unregistersymbol(abilitystats_originalcode)
+unregistersymbol(abilitystats_savedAOB)
+
+dealloc(abilitystats_newmem)
+dealloc(abilitystats_temp1)
+dealloc(abilitystats_temp2)
+dealloc(abilitystats_temp3)
+dealloc(abilitystats_temp4)
+dealloc(abilitystats_temp5)"""
+
+[[cheat]]
+id = "ability-set-to-massive"
+name = "Ability Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "abilitystats_abilityset_enable"
+hops = []
+
+[[cheat]]
+id = "ability-stats-update-base-address"
+name = "Ability Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "abilitystats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "abilitystats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "recharge-time"
+name = "Recharge Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "abilitystats_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "duration"
+name = "Duration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "abilitystats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "activated-flag"
+name = "Activated Flag"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "abilitystats_basepointer"
+hops = ["+0x30"]

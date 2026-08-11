@@ -1,0 +1,2672 @@
+[game]
+name = "Fallen: A2P Protocol"
+exe = "shinkansen_fallen_a2p_protocol.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2498"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "avatar-base-address-scan-initialization-activate-this-first"
+name = "Avatar Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Avatar_basepointer)
+registersymbol(Avatar_update_enable)
+registersymbol(Avatar_set_enable)
+registersymbol(Avatar_actionpointsset_enable)
+registersymbol(Avatar_ammoset_enable)
+registersymbol(Avatar_hpset_enable)
+
+alloc(Avatar_basepointer, 4)
+alloc(Avatar_update_enable, 4)
+alloc(Avatar_set_enable, 4)
+alloc(Avatar_actionpointsset_enable, 4)
+alloc(Avatar_ammoset_enable, 4)
+alloc(Avatar_hpset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Avatar_basepointer)
+unregistersymbol(Avatar_update_enable)
+unregistersymbol(Avatar_set_enable)
+unregistersymbol(Avatar_actionpointsset_enable)
+unregistersymbol(Avatar_ammoset_enable)
+unregistersymbol(Avatar_hpset_enable)
+
+dealloc(Avatar_basepointer)
+dealloc(Avatar_update_enable)
+dealloc(Avatar_set_enable)
+dealloc(Avatar_actionpointsset_enable)
+dealloc(Avatar_ammoset_enable)
+dealloc(Avatar_hpset_enable)"""
+
+[[cheat]]
+id = "avatar-base-address-scan-to-activate-battle-to-update-battle"
+name = "Avatar Base Address Scan (To Activate: Battle, To Update: Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Avatar_savedAOB)
+label(Avatar_returnhere)
+label(Avatar_originalcode)
+label(Avatar_exit)
+
+label(Avatar_update_exit)
+label(Avatar_set_exit)
+label(Avatar_actionpointsset_exit)
+label(Avatar_ammoset_exit)
+label(Avatar_hpset_exit)
+
+registersymbol(Avatar_savedAOB)
+
+//35D7267A - 8B C8                 - mov ecx,eax
+//35D7267C - 39 09                 - cmp [ecx],ecx
+// InteractionStateAvatarTargetPlace:OldMovement+5ee
+//35D7267E - 8B 40 30              - mov eax,[eax+30]
+//35D72681 - 8B C8                 - mov ecx,eax
+//35D72683 - 39 09                 - cmp [ecx],ecx
+//35D72685 - 8B 40 0C              - mov eax,[eax+0C]
+//35D72688 - 8B 4F 4C              - mov ecx,[edi+4C]
+//35D7268B - 2B C1                 - sub eax,ecx
+//35D7268D - 89 85 20FFFFFF        - mov [ebp-000000E0],eax
+aobscan(Avatar_searchedAOB, 0F B6 80 05 01 00 00 85 C0 * * 0F B6 45 10)
+
+alloc(Avatar_newmem, 2048)
+alloc(Avatar_temp1, 4)
+alloc(Avatar_temp2, 4)
+
+
+Avatar_newmem:
+mov [Avatar_temp1], ebx
+mov [Avatar_temp2], edx
+
+// Check Team
+cmp dword ptr [eax+ec], #0
+jne Avatar_hpset_exit
+
+cmp dword ptr [Avatar_update_enable], #0
+je Avatar_update_exit
+mov [Avatar_basepointer], eax
+Avatar_update_exit:
+
+cmp dword ptr [Avatar_set_enable], #0
+je Avatar_set_exit
+Avatar_set_exit:
+
+cmp dword ptr [Avatar_actionpointsset_enable], #0
+je Avatar_actionpointsset_exit
+cmp dword ptr [eax+30], #0
+je Avatar_actionpointsset_exit
+mov ebx, [eax+30]
+mov edx, [ebx+14]
+mov [ebx+c], edx
+Avatar_actionpointsset_exit:
+
+cmp dword ptr [Avatar_ammoset_enable], #0
+je Avatar_ammoset_exit
+cmp dword ptr [eax+54], #0
+je Avatar_ammoset_exit
+mov ebx, [eax+54]
+// If Clipsize is 1 or less, don't change
+cmp edx, #1
+jle Avatar_ammoset_exit
+mov edx, [ebx+24]
+cmp dword ptr [ebx+8], #0
+je Avatar_ammoset_exit
+mov ebx, [ebx+8]
+cmp dword ptr [ebx+3c], #0
+je Avatar_ammoset_exit
+mov ebx, [ebx+3c]
+mov [ebx+c], edx
+Avatar_ammoset_exit:
+
+cmp dword ptr [Avatar_hpset_enable], #0
+je Avatar_hpset_exit
+cmp dword ptr [eax+34], #0
+je Avatar_hpset_exit
+mov ebx, [eax+34]
+cmp dword ptr [ebx+8], #0
+je Avatar_hpset_exit
+mov ebx, [ebx+8]
+cmp dword ptr [ebx+14], #0
+je Avatar_hpset_exit
+mov ebx, [ebx+14]
+cmp dword ptr [ebx+24], #0
+je Avatar_hpset_exit
+mov edx, [ebx+24]
+fld [edx+14]
+mov edx, [ebx+28]
+fstp [edx+14]
+Avatar_hpset_exit:
+
+mov ebx, [Avatar_temp1]
+mov edx, [Avatar_temp2]
+
+
+Avatar_originalcode:
+db 0F B6 80 05 01 00 00
+//movzx eax,byte ptr [eax+00000105]
+
+
+Avatar_exit:
+jmp Avatar_returnhere
+
+
+Avatar_searchedAOB:
+Avatar_savedAOB:
+jmp Avatar_newmem
+nop
+nop
+Avatar_returnhere:
+
+
+[DISABLE]
+Avatar_savedAOB:
+db 0F B6 80 05 01 00 00
+//movzx eax,byte ptr [eax+00000105]
+
+unregistersymbol(Avatar_savedAOB)
+
+dealloc(Avatar_newmem)
+dealloc(Avatar_temp1)
+dealloc(Avatar_temp2)"""
+
+[[cheat]]
+id = "ap-set-to-max"
+name = "AP Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_actionpointsset_enable"
+hops = []
+
+[[cheat]]
+id = "ammo-set-to-max"
+name = "Ammo Set to Max?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_ammoset_enable"
+hops = []
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "avatar-update-base-address"
+name = "Avatar Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x30",
+    "+0x0",
+]
+
+[[cheat]]
+id = "points"
+name = "points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x30",
+    "+0xc",
+]
+
+[[cheat]]
+id = "pointsbonus"
+name = "pointsBonus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x30",
+    "+0x10",
+]
+
+[[cheat]]
+id = "pointsmax"
+name = "pointsMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x30",
+    "+0x14",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "slot-1"
+name = "Slot 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x14",
+    "+0x10",
+    "+0x14",
+]
+
+[[cheat]]
+id = "slot-2"
+name = "Slot 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x14",
+    "+0x14",
+    "+0x14",
+]
+
+[[cheat]]
+id = "slot-3"
+name = "Slot 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x14",
+    "+0x18",
+    "+0x14",
+]
+
+[[cheat]]
+id = "slot-4"
+name = "Slot 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x14",
+    "+0x1c",
+    "+0x14",
+]
+
+[[cheat]]
+id = "slot-5"
+name = "Slot 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x14",
+    "+0x20",
+    "+0x14",
+]
+
+[[cheat]]
+id = "slot-6"
+name = "Slot 6"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x14",
+    "+0x24",
+    "+0x14",
+]
+
+[[cheat]]
+id = "slot-7"
+name = "Slot 7"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x34",
+    "+0x8",
+    "+0x14",
+    "+0x28",
+    "+0x14",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x8",
+    "+0x3c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "amount"
+name = "amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x8",
+    "+0x3c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "clipsize"
+name = "clipSize"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x24",
+]
+
+[[cheat]]
+id = "shootfailaccum"
+name = "shootFailAccum"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "debuffchance"
+name = "debuffChance"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x30",
+]
+
+[[cheat]]
+id = "debuffdamage"
+name = "debuffDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x54",
+    "+0x34",
+]
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "avatarname-type-initialavatarsetup-name-unknown"
+name = "avatarName (type: InitialAvatarSetup.Name) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "clothes-type-system-collections-generic-listsystem-string-unknown"
+name = "clothes (type: System.Collections.Generic.ListSystem.String) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x24",
+]
+
+[[cheat]]
+id = "stats-type-system-collections-generic-listavatartemplateidvalue-unknown"
+name = "stats (type: System.Collections.Generic.ListAvatarTemplateIDValue) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x28",
+]
+
+[[cheat]]
+id = "items-type-system-collections-generic-listavatartemplateidvalue-unknown"
+name = "items (type: System.Collections.Generic.ListAvatarTemplateIDValue) UNKNOWN"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "armors-type-system-collections-generic-listsystem-string-unknown"
+name = "armors (type: System.Collections.Generic.ListSystem.String) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x30",
+]
+
+[[cheat]]
+id = "isprimary"
+name = "isPrimary"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "randomname"
+name = "randomName"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x3d",
+]
+
+[[cheat]]
+id = "level"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x40",
+]
+
+[[cheat]]
+id = "experience"
+name = "experience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x44",
+]
+
+[[cheat]]
+id = "skillpoints"
+name = "skillPoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x48",
+]
+
+[[cheat]]
+id = "minvisionangle"
+name = "minVisionAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "maxvisionangle"
+name = "maxVisionAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = [
+    "+0x8c",
+    "+0x50",
+]
+
+[[cheat]]
+id = "team"
+name = "team"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Ally",
+    "1:Enemy",
+    "2:Neutral",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "acted"
+name = "acted"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "isprimary-2"
+name = "isPrimary"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0xf1"]
+
+[[cheat]]
+id = "istemporal"
+name = "isTemporal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0xf2"]
+
+[[cheat]]
+id = "lastweaponindex"
+name = "lastWeaponIndex"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "currentweaponindex"
+name = "currentWeaponIndex"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "skillpoints-2"
+name = "skillPoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "killcount"
+name = "killCount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "behaviorrunning"
+name = "behaviorRunning"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "dead"
+name = "dead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x105"]
+
+[[cheat]]
+id = "inactive"
+name = "inactive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x106"]
+
+[[cheat]]
+id = "showdebugdata"
+name = "showDebugData"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x107"]
+
+[[cheat]]
+id = "isalreadycheckingthescavenge"
+name = "isAlreadyCheckingTheScavenge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "debuffdamage-2"
+name = "debuffDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x109"]
+
+[[cheat]]
+id = "animationindex"
+name = "animationIndex"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_basepointer"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "avatar-caravaneers-base-address-scan-initialization-activate-this-first"
+name = "Avatar_Caravaneers Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Avatar_Caravaneers_basepointer)
+registersymbol(Avatar_Caravaneers_update_enable)
+registersymbol(Avatar_Caravaneers_set_enable)
+
+alloc(Avatar_Caravaneers_basepointer, 4)
+alloc(Avatar_Caravaneers_update_enable, 4)
+alloc(Avatar_Caravaneers_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Avatar_Caravaneers_basepointer)
+unregistersymbol(Avatar_Caravaneers_update_enable)
+unregistersymbol(Avatar_Caravaneers_set_enable)
+
+dealloc(Avatar_Caravaneers_basepointer)
+dealloc(Avatar_Caravaneers_update_enable)
+dealloc(Avatar_Caravaneers_set_enable)"""
+
+[[cheat]]
+id = "avatar-caravaneers-base-address-scan-to-activate-view-caravaneer-stats-to-update-view-caravaneer-stats"
+name = "Avatar_Caravaneers Base Address Scan (To Activate: View Caravaneer Stats, To Update: View Caravaneer Stats)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Avatar_Caravaneers_savedAOB)
+label(Avatar_Caravaneers_returnhere)
+label(Avatar_Caravaneers_originalcode)
+label(Avatar_Caravaneers_exit)
+
+label(Avatar_Caravaneers_update_exit)
+label(Avatar_Caravaneers_set_exit)
+
+registersymbol(Avatar_Caravaneers_savedAOB)
+
+//35DC836A - 83 C4 10              - add esp,10
+//35DC836D - 8B 45 0C              - mov eax,[ebp+0C]
+// StatsPanel:UpdateKillCounter+20
+//35DC8370 - 8B 40 6C              - mov eax,[eax+6C]
+//35DC8373 - 89 46 70              - mov [esi+70],eax
+//35DC8376 - 8B 46 38              - mov eax,[esi+38]
+//35DC8379 - 89 45 F4              - mov [ebp-0C],eax
+//35DC837C - 8B 46 70              - mov eax,[esi+70]
+aobscan(Avatar_Caravaneers_searchedAOB, 8B 40 6C 89 46 70 8B 46 38)
+
+alloc(Avatar_Caravaneers_newmem, 2048)
+
+
+Avatar_Caravaneers_newmem:
+cmp dword ptr [Avatar_Caravaneers_update_enable], #0
+je Avatar_Caravaneers_update_exit
+mov [Avatar_Caravaneers_basepointer], eax
+Avatar_Caravaneers_update_exit:
+
+cmp dword ptr [Avatar_Caravaneers_set_enable], #0
+je Avatar_Caravaneers_set_exit
+Avatar_Caravaneers_set_exit:
+
+
+Avatar_Caravaneers_originalcode:
+db 8B 40 6C 89 46 70
+//mov eax,[eax+6C]
+//mov [esi+70],eax
+
+
+Avatar_Caravaneers_exit:
+jmp Avatar_Caravaneers_returnhere
+
+
+Avatar_Caravaneers_searchedAOB:
+Avatar_Caravaneers_savedAOB:
+jmp Avatar_Caravaneers_newmem
+nop
+Avatar_Caravaneers_returnhere:
+
+
+[DISABLE]
+Avatar_Caravaneers_savedAOB:
+db 8B 40 6C 89 46 70
+//mov eax,[eax+6C]
+//mov [esi+70],eax
+
+unregistersymbol(Avatar_Caravaneers_savedAOB)
+
+dealloc(Avatar_Caravaneers_newmem)"""
+
+[[cheat]]
+id = "avatar-caravaneers-update-base-address"
+name = "Avatar_Caravaneers Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-9"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-10"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-11"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-12"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x10",
+    "+0x0",
+]
+
+[[cheat]]
+id = "value"
+name = "value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x10",
+    "+0xc",
+]
+
+[[cheat]]
+id = "base-address-13"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x14",
+    "+0x0",
+]
+
+[[cheat]]
+id = "value-2"
+name = "value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x14",
+    "+0xc",
+]
+
+[[cheat]]
+id = "base-address-14"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "value-3"
+name = "value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x18",
+    "+0xc",
+]
+
+[[cheat]]
+id = "base-address-15"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x1c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "value-4"
+name = "value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x50",
+    "+0x8",
+    "+0x1c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "base-address-16"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-17"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-18"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-19"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-2"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-20"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-3"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-2"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-2"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-21"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-4"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-3"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-3"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-22"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-5"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-4"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-4"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-23"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x20",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-6"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x20",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-5"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x20",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-5"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x20",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-24"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x24",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-7"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x24",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-6"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x24",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-6"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x24",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-25"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x28",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-8"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x28",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-7"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x28",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-7"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x28",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-26"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x2c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-9"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x2c",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-8"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x2c",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-8"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x2c",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-27"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x30",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-10"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x30",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-9"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x30",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-9"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x30",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "base-address-28"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x34",
+    "+0x0",
+]
+
+[[cheat]]
+id = "level-11"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x34",
+    "+0x14",
+]
+
+[[cheat]]
+id = "exp-10"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x34",
+    "+0x18",
+]
+
+[[cheat]]
+id = "expstep-10"
+name = "expStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = [
+    "+0x54",
+    "+0xc",
+    "+0x8",
+    "+0x34",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "isprimary-3"
+name = "isPrimary"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "level-12"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "experience-2"
+name = "experience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "experiencestep"
+name = "experienceStep"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "skillpoints-3"
+name = "skillPoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "killcount-2"
+name = "killCount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "recruitcost"
+name = "recruitCost"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "leveled"
+name = "leveled"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "isdead"
+name = "isDead"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Avatar_Caravaneers_basepointer"
+hops = ["+0x75"]
+
+[[cheat]]
+id = "good-base-address-scan-initialization-activate-this-first"
+name = "Good Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Good_basepointer)
+registersymbol(Good_update_enable)
+registersymbol(Good_set_enable)
+
+alloc(Good_basepointer, 4)
+alloc(Good_update_enable, 4)
+alloc(Good_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Good_basepointer)
+unregistersymbol(Good_update_enable)
+unregistersymbol(Good_set_enable)
+
+dealloc(Good_basepointer)
+dealloc(Good_update_enable)
+dealloc(Good_set_enable)"""
+
+[[cheat]]
+id = "good-base-address-scan-to-activate-exit-caravan-upgrade-to-update-exit-caravan-upgrade"
+name = "Good Base Address Scan (To Activate: Exit Caravan Upgrade, To Update: Exit Caravan Upgrade)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Good_savedAOB)
+label(Good_returnhere)
+label(Good_originalcode)
+label(Good_exit)
+
+label(Good_update_exit)
+label(Good_set_exit)
+
+registersymbol(Good_savedAOB)
+
+//04D2C2FD - 8B C8                 - mov ecx,eax
+//04D2C2FF - 39 09                 - cmp [ecx],ecx
+// MetaCaravanController:UpdateEconomy+a1
+//04D2C301 - D9 40 0C              - fld dword ptr [eax+0C]
+//04D2C304 - D9 5D A4              - fstp dword ptr [ebp-5C]
+//04D2C307 - D9 45 A4              - fld dword ptr [ebp-5C]
+//04D2C30A - D9 5E 0C              - fstp dword ptr [esi+0C]
+//04D2C30D - 8B 45 AC              - mov eax,[ebp-54]
+aobscan(Good_searchedAOB, D9 40 0C D9 5D A4 D9 45 A4)
+
+alloc(Good_newmem, 2048)
+
+
+Good_newmem:
+cmp dword ptr [Good_update_enable], #0
+je Good_update_exit
+mov [Good_basepointer], eax
+Good_update_exit:
+
+cmp dword ptr [Good_set_enable], #0
+je Good_set_exit
+fld [eax+18]
+fstp [eax+c]
+Good_set_exit:
+
+
+Good_originalcode:
+db D9 40 0C D9 5D A4
+//fld dword ptr [eax+0C]
+//fstp dword ptr [ebp-5C]
+
+
+Good_exit:
+jmp Good_returnhere
+
+
+Good_searchedAOB:
+Good_savedAOB:
+jmp Good_newmem
+nop
+Good_returnhere:
+
+
+[DISABLE]
+Good_savedAOB:
+db D9 40 0C D9 5D A4
+//fld dword ptr [eax+0C]
+//fstp dword ptr [ebp-5C]
+
+unregistersymbol(Good_savedAOB)
+
+dealloc(Good_newmem)"""
+
+[[cheat]]
+id = "scraps-a2p-set-to-max"
+name = "Scraps & A2P Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Good_set_enable"
+hops = []
+
+[[cheat]]
+id = "good-update-base-address"
+name = "Good Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Good_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-29"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Good_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "current"
+name = "current"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Good_basepointer"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "currentprev"
+name = "currentPrev"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Good_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "min"
+name = "min"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Good_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "max"
+name = "max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "Good_basepointer"
+hops = ["+0x18"]

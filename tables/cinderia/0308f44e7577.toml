@@ -1,0 +1,543 @@
+[game]
+name = "Cinderia"
+exe = "cinderia.exe"
+notes = "Converted from a Cheat Engine table by Zydak. Source: https://fearlessrevolution.com/viewtopic.php?t=39110"
+verified = []
+author = "Zydak"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "find-health-address"
+name = "Find Health Address"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobScanRegion(FindHealthAddress1, SetEdgeEffectFunction, SetEdgeEffectFunction+500,F3 0F 10 86 04 02 00 00 F3 0F 5A C0 48) // should be unique
+alloc(newmem,$1000,FindHealthAddress1)
+alloc(healthAddress1, 8)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  push rax
+  lea rax, [rsi+204]
+  mov [healthAddress1], rax
+  pop rax
+
+
+  movss xmm0,[rsi+00000204]
+  jmp return
+
+FindHealthAddress1:
+  jmp newmem
+  nop 3
+return:
+registersymbol(FindHealthAddress1)
+registersymbol(healthAddress1)
+
+[DISABLE]
+
+FindHealthAddress1:
+  db F3 0F 10 86 04 02 00 00
+
+unregistersymbol(FindHealthAddress1)
+unregistersymbol(healthAddress1)
+dealloc(newmem)
+dealloc(healthAddress1)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Rogue.Units.Character:设置边缘效果+15d
+
+Rogue.Units.Character:设置边缘效果+126: 83 38 00                       - cmp dword ptr [rax],00
+Rogue.Units.Character:设置边缘效果+129: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+Rogue.Units.Character:设置边缘效果+12e: 49 BB D0 02 98 0C 39 01 00 00  - mov r11,FairyGUI.GObject:set_visible
+Rogue.Units.Character:设置边缘效果+138: 41 FF D3                       - call r11
+Rogue.Units.Character:设置边缘效果+13b: 66 66 90                       - nop 3
+Rogue.Units.Character:设置边缘效果+13e: 49 BB 80 CC EB 2D 38 01 00 00  - mov r11,Rogue.Game:get_Inst
+Rogue.Units.Character:设置边缘效果+148: 41 FF D3                       - call r11
+Rogue.Units.Character:设置边缘效果+14b: 48 8B 40 38                    - mov rax,[rax+38]
+Rogue.Units.Character:设置边缘效果+14f: 48 8B 80 10 05 00 00           - mov rax,[rax+00000510]
+Rogue.Units.Character:设置边缘效果+156: 48 8B 80 28 02 00 00           - mov rax,[rax+00000228]
+// ---------- INJECTING HERE ----------
+Rogue.Units.Character:设置边缘效果+15d: F3 0F 10 86 04 02 00 00        - movss xmm0,[rsi+00000204]
+// ---------- DONE INJECTING  ----------
+Rogue.Units.Character:设置边缘效果+165: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Rogue.Units.Character:设置边缘效果+169: 48 8B 4E 78                    - mov rcx,[rsi+78]
+Rogue.Units.Character:设置边缘效果+16d: 48 63 89 C0 00 00 00           - movsxd  rcx,dword ptr [rcx+000000C0]
+Rogue.Units.Character:设置边缘效果+174: F3 0F 2A C9                    - cvtsi2ss xmm1,ecx
+Rogue.Units.Character:设置边缘效果+178: F3 0F 5A C9                    - cvtss2sd xmm1,xmm1
+139793D68EC: F2 0F 5E C1                    - divsd xmm0,xmm1
+139793D68F0: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+139793D68F4: F3 0F 11 6D EC                 - movss [rbp-14],xmm5
+139793D68F9: F3 0F 10 45 EC                 - movss xmm0,[rbp-14]
+139793D68FE: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+}"""
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "healthAddress1"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "infinite-hp"
+name = "Infinite HP"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobScanRegion(InfiniteHP, SetHPFunction, SetHPFunction+200,F3 0F 11 2F 4D 85 F6) // should be unique
+alloc(newmem,$1000,InfiniteHP)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+
+  pushf
+  cmp rdi, [healthAddress1]
+  je Player // skip dmg
+  movss [rdi],xmm5
+
+Player:
+  popf
+  test r14,r14
+  jmp return
+
+InfiniteHP:
+  jmp newmem
+  nop 2
+return:
+registersymbol(InfiniteHP)
+
+[DISABLE]
+
+InfiniteHP:
+  db F3 0F 11 2F 4D 85 F6
+
+unregistersymbol(InfiniteHP)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Rogue.Units.Unit:set_Networkhp服务器说是这个数+b6
+
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+8c: F3 0F 10 45 DC                 - movss xmm0,[rbp-24]
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+91: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+95: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+99: F3 0F 11 6D D4                 - movss [rbp-2C],xmm5
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+9e: 48 8B 46 50                    - mov rax,[rsi+50]
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+a2: 49 0B C7                       - or rax,r15
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+a5: 48 89 46 50                    - mov [rsi+50],rax
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+a9: F3 0F 10 45 D4                 - movss xmm0,[rbp-2C]
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+ae: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+b2: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+// ---------- INJECTING HERE ----------
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+b6: F3 0F 11 2F                    - movss [rdi],xmm5
+// ---------- DONE INJECTING  ----------
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+ba: 4D 85 F6                       - test r14,r14
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+bd: 0F 84 98 00 00 00              - je Rogue.Units.Unit:set_Networkhp服务器说是这个数+15b
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+c3: 48 B8 90 DE 6A 20 38 01 00 00  - mov rax,00000138206ADE90
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+cd: 48 8B 00                       - mov rax,[rax]
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+d0: 48 85 C0                       - test rax,rax
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+d3: 40 0F 97 C0                    - seta al
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+d7: 48 0F B6 C0                    - movzx rax,al
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+db: 85 C0                          - test eax,eax
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+dd: 0F 84 78 00 00 00              - je Rogue.Units.Unit:set_Networkhp服务器说是这个数+15b
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+e3: 48 8B 46 60                    - mov rax,[rsi+60]
+}"""
+
+[[cheat]]
+id = "insta-kill"
+name = "Insta Kill"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobScanRegion(InstaKill, SetHPFunction, SetHPFunction+200,50 F3 0F 10 45 D4) // should be unique
+alloc(newmem,$1000,InstaKill)
+alloc(float0, 4)
+
+float0:
+dd (float)0.0
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss xmm0,[rbp-2C]
+
+  pushf
+  cmp rdi, [healthAddress1]
+  je Player
+  movss xmm0, [float0]
+
+Player:
+  popf
+  jmp return
+
+InstaKill+01:
+  jmp newmem
+return:
+registersymbol(InstaKill)
+
+[DISABLE]
+
+InstaKill+01:
+  db F3 0F 10 45 D4
+
+unregistersymbol(InstaKill)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Rogue.Units.Unit:set_Networkhp服务器说是这个数+a9
+
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+7f: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+83: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+87: F3 0F 11 6D D8                 - movss [rbp-28],xmm5
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+8c: F3 0F 10 45 DC                 - movss xmm0,[rbp-24]
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+91: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+95: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+99: F3 0F 11 6D D4                 - movss [rbp-2C],xmm5
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+9e: 48 8B 46 50                    - mov rax,[rsi+50]
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+a2: 49 0B C7                       - or rax,r15
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+a5: 48 89 46 50                    - mov [rsi+50],rax
+// ---------- INJECTING HERE ----------
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+a9: F3 0F 10 45 D4                 - movss xmm0,[rbp-2C]
+// ---------- DONE INJECTING  ----------
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+ae: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+b2: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+InfiniteHP: E9 75 37 DF FD                 - jmp 1397BDC0000
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+bb: 66 90                          - nop 2
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+bd: 0F 84 98 00 00 00              - je Rogue.Units.Unit:set_Networkhp服务器说是这个数+15b
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+c3: 48 B8 90 DE 6A 20 38 01 00 00  - mov rax,00000138206ADE90
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+cd: 48 8B 00                       - mov rax,[rax]
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+d0: 48 85 C0                       - test rax,rax
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+d3: 40 0F 97 C0                    - seta al
+Rogue.Units.Unit:set_Networkhp服务器说是这个数+d7: 48 0F B6 C0                    - movzx rax,al
+}"""
+
+[[cheat]]
+id = "find-souls-notes-candles-stones"
+name = "Find Souls, Notes, Candles, Stones"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanRegion(GetSoulsAddress, GetOutsideNumbersFunction, GetOutsideNumbersFunction+100,48 05 C8 01 00 00 4C 63 78 04) // should be unique
+alloc(newmem,$1000,GetSoulsAddress)
+alloc(soulsAddress, 8)
+alloc(manuscriptAddress, 8)
+alloc(candlesAddress, 8)
+alloc(piecesAddress, 8)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  add rax,000001C8
+  push rax
+  lea rax, [rax+04]
+  mov [soulsAddress], rax
+  add rax, 04
+  mov [manuscriptAddress], rax
+  add rax, 04
+  mov [candlesAddress], rax
+  add rax, 04
+  mov [piecesAddress], rax
+  pop rax
+  jmp return
+
+GetSoulsAddress:
+  jmp newmem
+  nop
+return:
+registersymbol(GetSoulsAddress)
+registersymbol(soulsAddress)
+registersymbol(manuscriptAddress)
+registersymbol(candlesAddress)
+registersymbol(piecesAddress)
+
+[DISABLE]
+
+GetSoulsAddress:
+  db 48 05 C8 01 00 00
+
+unregistersymbol(GetSoulsAddress)
+dealloc(newmem)
+unregistersymbol(soulsAddress)
+dealloc(soulsAddress)
+unregistersymbol(manuscriptAddress)
+dealloc(manuscriptAddress)
+unregistersymbol(candlesAddress)
+dealloc(candlesAddress)
+unregistersymbol(piecesAddress)
+dealloc(piecesAddress)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UI.UI_资源显示面板:获取局外数+d4
+
+UI.UI_资源显示面板:获取局外数+a8: 41 FF D3                       - call r11
+UI.UI_资源显示面板:获取局外数+ab: 85 C0                          - test eax,eax
+UI.UI_资源显示面板:获取局外数+ad: 0F 85 7D 00 00 00              - jne UI.UI_资源显示面板:获取局外数+130
+UI.UI_资源显示面板:获取局外数+b3: E9 A0 00 00 00                 - jmp UI.UI_资源显示面板:获取局外数+158
+UI.UI_资源显示面板:获取局外数+b8: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+UI.UI_资源显示面板:获取局外数+bd: 90                             - nop 
+UI.UI_资源显示面板:获取局外数+be: 49 BB 96 47 4B 7A 25 02 00 00  - mov r11,000002257A4B4796
+UI.UI_资源显示面板:获取局外数+c8: 41 FF D3                       - call r11
+UI.UI_资源显示面板:获取局外数+cb: 48 85 C0                       - test rax,rax
+UI.UI_资源显示面板:获取局外数+ce: 0F 84 DD 00 00 00              - je UI.UI_资源显示面板:获取局外数+1b1
+// ---------- INJECTING HERE ----------
+UI.UI_资源显示面板:获取局外数+d4: 48 05 C8 01 00 00              - add rax,000001C8
+// ---------- DONE INJECTING  ----------
+UI.UI_资源显示面板:获取局外数+da: 4C 63 78 04                    - movsxd  r15,dword ptr [rax+04]
+UI.UI_资源显示面板:获取局外数+de: E9 78 00 00 00                 - jmp UI.UI_资源显示面板:获取局外数+15b
+UI.UI_资源显示面板:获取局外数+e3: 66 66 90                       - nop 3
+UI.UI_资源显示面板:获取局外数+e6: 49 BB 96 47 4B 7A 25 02 00 00  - mov r11,000002257A4B4796
+UI.UI_资源显示面板:获取局外数+f0: 41 FF D3                       - call r11
+UI.UI_资源显示面板:获取局外数+f3: 48 85 C0                       - test rax,rax
+UI.UI_资源显示面板:获取局外数+f6: 0F 84 AE 00 00 00              - je UI.UI_资源显示面板:获取局外数+1aa
+UI.UI_资源显示面板:获取局外数+fc: 48 05 C8 01 00 00              - add rax,000001C8
+UI.UI_资源显示面板:获取局外数+102: 4C 63 78 08                    - movsxd  r15,dword ptr [rax+08]
+UI.UI_资源显示面板:获取局外数+106: E9 50 00 00 00                 - jmp UI.UI_资源显示面板:获取局外数+15b
+}"""
+
+[[cheat]]
+id = "stones"
+name = "Stones"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "piecesAddress"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "candles"
+name = "Candles"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "candlesAddress"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "notes"
+name = "Notes"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "manuscriptAddress"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "souls"
+name = "Souls"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "soulsAddress"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "infiniteenergy"
+name = "InfiniteEnergy"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanRegion(InfiniteEnergy, SetMPFunction, SetMPFunction+100,F3 0F 11 AE 04 04 00 00) // should be unique
+alloc(newmem,$1000,InfiniteEnergy)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //movss [rsi+00000404],xmm5
+  jmp return
+
+InfiniteEnergy:
+  jmp newmem
+  nop 3
+return:
+registersymbol(InfiniteEnergy)
+
+[DISABLE]
+
+InfiniteEnergy:
+  db F3 0F 11 AE 04 04 00 00
+
+unregistersymbol(InfiniteEnergy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Rogue.Units.Character:set_Mp+b3
+
+Rogue.Units.Character:set_Mp+87: F3 0F 2A D0                    - cvtsi2ss xmm2,eax
+Rogue.Units.Character:set_Mp+8b: F3 0F 5A D2                    - cvtss2sd xmm2,xmm2
+Rogue.Units.Character:set_Mp+8f: F2 0F 5A D2                    - cvtsd2ss xmm2,xmm2
+Rogue.Units.Character:set_Mp+93: F2 0F 5A C9                    - cvtsd2ss xmm1,xmm1
+Rogue.Units.Character:set_Mp+97: F2 0F 5A C0                    - cvtsd2ss xmm0,xmm0
+Rogue.Units.Character:set_Mp+9b: 66 66 90                       - nop 3
+Rogue.Units.Character:set_Mp+9e: 49 BB 30 CC EC 19 25 02 00 00  - mov r11,FloatUtil:Clamp
+Rogue.Units.Character:set_Mp+a8: 41 FF D3                       - call r11
+Rogue.Units.Character:set_Mp+ab: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+Rogue.Units.Character:set_Mp+af: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+// ---------- INJECTING HERE ----------
+Rogue.Units.Character:set_Mp+b3: F3 0F 11 AE 04 04 00 00        - movss [rsi+00000404],xmm5
+// ---------- DONE INJECTING  ----------
+Rogue.Units.Character:set_Mp+bb: 48 8B 75 F0                    - mov rsi,[rbp-10]
+Rogue.Units.Character:set_Mp+bf: 48 8B 7D F8                    - mov rdi,[rbp-08]
+Rogue.Units.Character:set_Mp+c3: 48 8D 65 00                    - lea rsp,[rbp+00]
+Rogue.Units.Character:set_Mp+c7: 5D                             - pop rbp
+Rogue.Units.Character:set_Mp+c8: C3                             - ret 
+2253A594A89: 00 00                          - add [rax],al
+2253A594A8B: 00 00                          - add [rax],al
+2253A594A8D: 00 00                          - add [rax],al
+2253A594A8F: 00 01                          - add [rcx],al
+2253A594A91: 04 02                          - add al,02
+}"""
+
+[[cheat]]
+id = "find-money-address"
+name = "Find Money Address"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanRegion(GetMoneyAddress, RefreshResourceDisplay, RefreshResourceDisplay+200, 4C 63 80 08 04 00 00) // should be unique
+alloc(newmem,$1000,GetMoneyAddress)
+alloc(moneyAddress, 8)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  push rcx
+  lea rcx, [rax+408]
+  mov [moneyAddress], rcx
+  pop rcx
+  movsxd  r8,dword ptr [rax+00000408]
+  jmp return
+
+GetMoneyAddress:
+  jmp newmem
+  nop 2
+return:
+registersymbol(GetMoneyAddress)
+registersymbol(moneyAddress)
+
+[DISABLE]
+
+GetMoneyAddress:
+  db 4C 63 80 08 04 00 00
+
+unregistersymbol(GetMoneyAddress)
+dealloc(newmem)
+unregistersymbol(moneyAddress)
+dealloc(moneyAddress)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UI.UI_资源显示面板:刷新资源显示+1d1
+
+UI.UI_资源显示面板:刷新资源显示+19e: 49 BB 00 C4 99 15 26 02 00 00  - mov r11,UI.UI_资源显示面板:刷新资源列表
+UI.UI_资源显示面板:刷新资源显示+1a8: 41 FF D3                       - call r11
+UI.UI_资源显示面板:刷新资源显示+1ab: 66 66 90                       - nop 3
+UI.UI_资源显示面板:刷新资源显示+1ae: 49 BB F0 D0 48 31 24 02 00 00  - mov r11,Rogue.Game:get_Inst
+UI.UI_资源显示面板:刷新资源显示+1b8: 41 FF D3                       - call r11
+UI.UI_资源显示面板:刷新资源显示+1bb: 83 38 00                       - cmp dword ptr [rax],00
+UI.UI_资源显示面板:刷新资源显示+1be: 48 B8 00 C2 CA 0F 23 02 00 00  - mov rax,000002230FCAC200
+UI.UI_资源显示面板:刷新资源显示+1c8: 48 8B 00                       - mov rax,[rax]
+UI.UI_资源显示面板:刷新资源显示+1cb: 48 8B C8                       - mov rcx,rax
+UI.UI_资源显示面板:刷新资源显示+1ce: 83 39 00                       - cmp dword ptr [rcx],00
+// ---------- INJECTING HERE ----------
+UI.UI_资源显示面板:刷新资源显示+1d1: 4C 63 80 08 04 00 00           - movsxd  r8,dword ptr [rax+00000408]
+// ---------- DONE INJECTING  ----------
+UI.UI_资源显示面板:刷新资源显示+1d8: 48 8B CE                       - mov rcx,rsi
+UI.UI_资源显示面板:刷新资源显示+1db: 48 BA A0 42 1A 22 24 02 00 00  - mov rdx,00000224221A42A0
+UI.UI_资源显示面板:刷新资源显示+1e5: 90                             - nop 
+UI.UI_资源显示面板:刷新资源显示+1e6: 49 BB 00 C4 99 15 26 02 00 00  - mov r11,UI.UI_资源显示面板:刷新资源列表
+UI.UI_资源显示面板:刷新资源显示+1f0: 41 FF D3                       - call r11
+UI.UI_资源显示面板:刷新资源显示+1f3: 48 8B 96 40 02 00 00           - mov rdx,[rsi+00000240]
+UI.UI_资源显示面板:刷新资源显示+1fa: 48 B8 F8 3F C4 16 25 02 00 00  - mov rax,0000022516C43FF8
+UI.UI_资源显示面板:刷新资源显示+204: 48 8B 00                       - mov rax,[rax]
+UI.UI_资源显示面板:刷新资源显示+207: 48 8B C8                       - mov rcx,rax
+UI.UI_资源显示面板:刷新资源显示+20a: 48 89 55 90                    - mov [rbp-70],rdx
+}"""
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "moneyAddress"
+hops = ["+0x0"]

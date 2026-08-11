@@ -1,0 +1,370 @@
+[game]
+name = "Bomb Rush Cyberfunk - (+13)"
+exe = "cyberfunk.exe"
+notes = "Converted from a Cheat Engine table by Postposterous. Source: https://fearlessrevolution.com/viewtopic.php?t=25692"
+verified = []
+author = "Postposterous"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player"
+name = "Player"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(INJECT_meter,07 00 00 F3 0F 10 86 F0 07 00 00 F3 0F 5A C0 F3 0F 10 8E 44 07 00 00) // should be unique
+alloc(newmem,$1000)
+
+registersymbol(meter)
+label(return)
+label(meter)
+
+newmem:
+  mov [meter],rsi
+  movss xmm0,[rsi+000007F0]
+  cvtss2sd xmm0,xmm0
+  movss xmm1,[rsi+00000744]
+
+  jmp return
+
+meter:
+dq 0
+
+INJECT_meter+03:
+  jmp far newmem
+  nop 6
+
+return:
+registersymbol(INJECT_meter)
+
+[DISABLE]
+INJECT_meter+03:
+  db F3 0F 10 86 F0 07 00 00 F3 0F 5A C0 F3 0F 10 8E 44 07 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "invincible"
+name = "Invincible"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Bomb Rush Cyberfunk.exe
+  Version: 
+  Date   : 2023-09-01
+  Author : Posty
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscan(INJECT,48 3B C1 0F 84 47 03 00 00) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  db 90 90 90 //cmp rax,rcx
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 3
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 48 3B C1
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Reptile.Player:GetHit+54
+
+Reptile.Player:GetHit+1a: 4C 89 45 B8              - mov [rbp-48],r8
+Reptile.Player:GetHit+1e: 49 8B F1                 - mov rsi,r9
+Reptile.Player:GetHit+21: C7 45 C8 00 00 00 00     - mov [rbp-38],00000000
+Reptile.Player:GetHit+28: C7 45 CC 00 00 00 00     - mov [rbp-34],00000000
+Reptile.Player:GetHit+2f: C7 45 D0 00 00 00 00     - mov [rbp-30],00000000
+Reptile.Player:GetHit+36: 41 0F B6 87 E0 04 00 00  - movzx eax,byte ptr [r15+000004E0]
+Reptile.Player:GetHit+3e: 85 C0                    - test eax,eax
+Reptile.Player:GetHit+40: 0F 85 5E 03 00 00        - jne Reptile.Player:GetHit+3a4
+Reptile.Player:GetHit+46: 49 8B 87 98 01 00 00     - mov rax,[r15+00000198]
+Reptile.Player:GetHit+4d: 49 8B 8F 70 01 00 00     - mov rcx,[r15+00000170]
+// ---------- INJECTING HERE ----------
+Reptile.Player:GetHit+54: 48 3B C1                 - cmp rax,rcx
+// ---------- DONE INJECTING  ----------
+Reptile.Player:GetHit+57: 0F 84 47 03 00 00        - je Reptile.Player:GetHit+3a4
+Reptile.Player:GetHit+5d: 49 8B 87 98 01 00 00     - mov rax,[r15+00000198]
+Reptile.Player:GetHit+64: 49 8B 8F 68 01 00 00     - mov rcx,[r15+00000168]
+Reptile.Player:GetHit+6b: 48 3B C1                 - cmp rax,rcx
+Reptile.Player:GetHit+6e: 0F 84 30 03 00 00        - je Reptile.Player:GetHit+3a4
+Reptile.Player:GetHit+74: 49 8B 87 98 01 00 00     - mov rax,[r15+00000198]
+Reptile.Player:GetHit+7b: 49 8B 8F 70 01 00 00     - mov rcx,[r15+00000170]
+Reptile.Player:GetHit+82: 48 3B C1                 - cmp rax,rcx
+Reptile.Player:GetHit+85: 0F 84 19 03 00 00        - je Reptile.Player:GetHit+3a4
+Reptile.Player:GetHit+8b: 49 8B 87 98 01 00 00     - mov rax,[r15+00000198]
+}"""
+
+[[cheat]]
+id = "player-position-speed-jump-etc"
+name = "Player Position (Speed/Jump/Etc)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(INJECT_pos,UnityPlayer.dll,8B 42 14 89 41 14 8B 42 18 89 41 18 8B 47 50) // should be unique
+alloc(newmem,$1000)
+
+registersymbol(pos)
+registersymbol(speedmod jumpmod)
+label(return)
+label(pos)
+globalalloc(pos_settings,$100)
+label(speedmod jumpmod)
+
+pos_settings:
+speedmod:
+  dd (float)1.0
+jumpmod:
+  dd (float)1.0
+
+newmem:
+  cmp r11, 0
+  je code
+  mov [pos],rdx
+code:
+  mov eax,[rdx+14]
+  mov [rcx+14],eax
+  mov eax,[rdx+18]
+  mov [rcx+18],eax
+  mov eax,[rdi+50]
+
+  jmp return
+
+pos:
+dq 0
+
+INJECT_pos:
+  jmp far newmem
+  nop
+
+return:
+registersymbol(INJECT_pos)
+
+[DISABLE]
+INJECT_pos:
+  db 8B 42 14 89 41 14 8B 42 18 89 41 18 8B 47 50
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-mid-air-boost-use-boost-first"
+name = "Infinite Mid Air Boost (Use boost first)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Bomb Rush Cyberfunk.exe
+  Version: 
+  Date   : 2023-08-20
+  Author : Posty
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscan(INJECT,C6 46 64 00 48 8B 46 10) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov byte ptr [rsi+64],01
+  mov rax,[rsi+10]
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 3
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db C6 46 64 00 48 8B 46 10
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 270D9C98A8D
+
+270D9C98A64: 89 55 E8                       - mov [rbp-18],edx
+270D9C98A67: 48 8D 10                       - lea rdx,[rax]
+270D9C98A6A: 83 3F 00                       - cmp dword ptr [rdi],00
+270D9C98A6D: 90                             - nop 
+270D9C98A6E: 49 BB A0 14 B6 D9 70 02 00 00  - mov r11,00000270D9B614A0
+270D9C98A78: 41 FF D3                       - call r11
+270D9C98A7B: F3 0F 10 46 6C                 - movss xmm0,[rsi+6C]
+270D9C98A80: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+270D9C98A84: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+270D9C98A88: F3 0F 11 6E 28                 - movss [rsi+28],xmm5
+// ---------- INJECTING HERE ----------
+270D9C98A8D: C6 46 64 00                    - mov byte ptr [rsi+64],00
+// ---------- DONE INJECTING  ----------
+270D9C98A91: 48 8B 46 10                    - mov rax,[rsi+10]
+270D9C98A95: 48 63 96 84 00 00 00           - movsxd  rdx,dword ptr [rsi+00000084]
+270D9C98A9C: F3 0F 10 05 EC 00 00 00        - movss xmm0,[270D9C98B90]
+270D9C98AA4: F3 0F 5A C0                    - cvtss2sd xmm0,xmm0
+270D9C98AA8: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+270D9C98AAC: F3 0F 11 6C 24 20              - movss [rsp+20],xmm5
+270D9C98AB2: 48 8B C8                       - mov rcx,rax
+270D9C98AB5: 41 B8 01 00 00 00              - mov r8d,00000001
+270D9C98ABB: 45 33 C9                       - xor r9d,r9d
+270D9C98ABE: 83 38 00                       - cmp dword ptr [rax],00
+}"""
+
+[[cheat]]
+id = "moon-jump-multplier"
+name = "Moon Jump Multplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "jumpmod"
+hops = []
+
+[[cheat]]
+id = "speed-multplier"
+name = "Speed Multplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "speedmod"
+hops = []
+
+[[cheat]]
+id = "character-select"
+name = "Character Select"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(INJECT,41 89 BF 58 09 00 00) // should be unique
+alloc(newmem,$1000,INJECT)
+
+label(code)
+label(return)
+label(charsel)
+registersymbol(charsel)
+globalalloc(charsel_settings,$100)
+
+charsel_settings:
+charsel:
+  dd (dword)C
+
+newmem:
+
+code:
+  mov rax,[charsel]
+  mov [r15+00000958],rax
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 2
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 41 89 BF 58 09 00 00
+
+unregistersymbol(INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "change-character-to"
+name = "Change Character To:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Vinyl",
+    "1:Frank",
+    "2:Coil",
+    "3:Red",
+    "4:Tryce",
+    "5:Bel",
+    "6:Rave",
+    "7:Dot Exe (8 Ball)",
+    "8:Solace",
+    "9:DJ Cyber",
+    "10:Eclipse",
+    "11:Devil Theory",
+    "12:Faux",
+    "13:Flesh Prince",
+    "14:Riedvelt",
+    "15:Felix",
+    "16:OldHead",
+    "17:Base (DLC)",
+    "18:Jay (DLC)",
+    "19:Mesh",
+    "20:Futurism",
+    "21:Rise",
+    "22:Shine",
+    "23:Faux",
+    "24:Dot Exe (9 Ball)",
+    "25:Headless Felix?",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "charsel"
+hops = []

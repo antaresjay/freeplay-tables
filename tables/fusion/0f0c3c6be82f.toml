@@ -1,0 +1,94 @@
+[game]
+name = "Trinity Fusion (Amazon Games version)"
+exe = "fusion.exe"
+notes = "Converted from a Cheat Engine table by mugenishere. Source: https://fearlessrevolution.com/viewtopic.php?t=35389"
+verified = []
+author = "mugenishere"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "energy-set-to-100"
+name = "Energy set to 100"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Trinity Fusion.exe
+  Version:
+  Date   : 2025-06-10
+  Author : Roopa
+
+  This script sets the player's Energy (Mana) value to 100 constantly.
+}
+
+[ENABLE]
+
+aobscan(energy_inf,F3 0F 11 6E 18 48 8B 46 10 48 8B C8 48) // should be unique
+alloc(newmem,$1000,energy_inf)
+
+label(code)
+label(return)
+label(energyValue)
+
+newmem:
+  movss xmm0,[energyValue]       // Load 100.0f into xmm0
+  movss [rsi+18],xmm0            // Overwrite energy with 100
+  jmp return
+
+energyValue:
+  dd (float)100.0                // Constant 100.0f in memory
+
+code:
+  movss [rsi+18],xmm5            // original code (not used anymore)
+  jmp return
+
+energy_inf:
+  jmp newmem
+  nop
+return:
+
+registersymbol(energy_inf)
+
+[DISABLE]
+
+energy_inf:
+  db F3 0F 11 6E 18
+
+unregistersymbol(energy_inf)
+dealloc(newmem)
+
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: PlayerEnergy:set_Energy+93
+
+PlayerEnergy:set_Energy+68: F3 0F 10 45 F0     - movss xmm0,[rbp-10]
+PlayerEnergy:set_Energy+6d: F3 0F 5A C0        - cvtss2sd xmm0,xmm0
+PlayerEnergy:set_Energy+71: F3 0F 10 4D F4     - movss xmm1,[rbp-0C]
+PlayerEnergy:set_Energy+76: F3 0F 5A C9        - cvtss2sd xmm1,xmm1
+PlayerEnergy:set_Energy+7a: 66 0F 2F C8        - comisd xmm1,xmm0
+PlayerEnergy:set_Energy+7e: 7A 06              - jp PlayerEnergy:set_Energy+86
+PlayerEnergy:set_Energy+80: 0F 84 4B 00 00 00  - je PlayerEnergy:set_Energy+d1
+PlayerEnergy:set_Energy+86: F3 0F 10 45 F0     - movss xmm0,[rbp-10]
+PlayerEnergy:set_Energy+8b: F3 0F 5A C0        - cvtss2sd xmm0,xmm0
+PlayerEnergy:set_Energy+8f: F2 0F 5A E8        - cvtsd2ss xmm5,xmm0
+// ---------- INJECTING HERE ----------
+PlayerEnergy:set_Energy+93: F3 0F 11 6E 18     - movss [rsi+18],xmm5
+// ---------- DONE INJECTING  ----------
+PlayerEnergy:set_Energy+98: 48 8B 46 10        - mov rax,[rsi+10]
+PlayerEnergy:set_Energy+9c: 48 8B C8           - mov rcx,rax
+PlayerEnergy:set_Energy+9f: 48 8B F1           - mov rsi,rcx
+PlayerEnergy:set_Energy+a2: 48 85 C0           - test rax,rax
+PlayerEnergy:set_Energy+a5: 75 02              - jne PlayerEnergy:set_Energy+a9
+PlayerEnergy:set_Energy+a7: EB 28              - jmp PlayerEnergy:set_Energy+d1
+PlayerEnergy:set_Energy+a9: F3 0F 10 45 F4     - movss xmm0,[rbp-0C]
+PlayerEnergy:set_Energy+ae: F3 0F 5A C0        - cvtss2sd xmm0,xmm0
+PlayerEnergy:set_Energy+b2: F3 0F 10 4D F0     - movss xmm1,[rbp-10]
+PlayerEnergy:set_Energy+b7: F3 0F 5A C9        - cvtss2sd xmm1,xmm1
+}"""

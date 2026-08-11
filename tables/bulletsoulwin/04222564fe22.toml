@@ -1,0 +1,584 @@
+[game]
+name = "BULLET SOUL"
+exe = "bulletsoulwin.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=2059"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_shipset_enable)
+registersymbol(playerstats_bombset_enable)
+registersymbol(playerstats_soulset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_shipset_enable, 4)
+alloc(playerstats_bombset_enable, 4)
+alloc(playerstats_soulset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_shipset_enable)
+unregistersymbol(playerstats_bombset_enable)
+unregistersymbol(playerstats_soulset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_shipset_enable)
+dealloc(playerstats_bombset_enable)
+dealloc(playerstats_soulset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_shipset_exit)
+label(playerstats_bombset_exit)
+label(playerstats_soulset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//BulletSoulWin.exe+B69B5 - 81 FA 68B55700        - cmp edx,BulletSoulWin.exe+2DB568
+//BulletSoulWin.exe+B69BB - 0F85 F3040000         - jne BulletSoulWin.exe+B6EB4
+// Accesses Bombs
+//BulletSoulWin.exe+B69C1 - 8B 40 24              - mov eax,[eax+24]
+//BulletSoulWin.exe+B69C4 - 8B 8F 94000000        - mov ecx,[edi+00000094]
+//BulletSoulWin.exe+B69CA - 50                    - push eax
+//BulletSoulWin.exe+B69CB - 8B 49 2C              - mov ecx,[ecx+2C]
+//BulletSoulWin.exe+B69CE - E8 9DCAFFFF           - call BulletSoulWin.exe+B3470
+aobscan(playerstats_searchedAOB, 8B 40 24 8B 8F 94 00 00 00 50)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+alloc(playerstats_temp5, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], eax
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_shipset_enable], #0
+je playerstats_shipset_exit
+mov [eax+20], #6
+playerstats_shipset_exit:
+
+cmp dword ptr [playerstats_bombset_enable], #0
+je playerstats_bombset_exit
+mov [eax+24], #3
+playerstats_bombset_exit:
+
+cmp dword ptr [playerstats_soulset_enable], #0
+je playerstats_soulset_exit
+mov [eax+3c], (float)99
+playerstats_soulset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+db 8B 40 24 8B 8F 94 00 00 00
+//mov eax,[eax+24]
+//mov ecx,[edi+00000094]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 8B 40 24 8B 8F 94 00 00 00
+//mov eax,[eax+24]
+//mov ecx,[edi+00000094]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "ship-stock-set-to-max"
+name = "Ship Stock Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_shipset_enable"
+hops = []
+
+[[cheat]]
+id = "bombs-set-to-max"
+name = "Bombs Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_bombset_enable"
+hops = []
+
+[[cheat]]
+id = "soul-gauge-set-to-max"
+name = "Soul Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_soulset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "score"
+name = "Score"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "ship-stock"
+name = "Ship Stock"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "bomb-stock"
+name = "Bomb Stock"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "multiplier"
+name = "Multiplier"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "soul-gauge"
+name = "Soul Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "soul"
+name = "Soul?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "ship-stats-base-address-scan-initialization-activate-this-first"
+name = "Ship Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(shipstats_basepointer)
+registersymbol(shipstats_update_enable)
+registersymbol(shipstats_set_enable)
+registersymbol(shipstats_invulnerableset_enable)
+registersymbol(shipstats_shotset_enable)
+
+alloc(shipstats_basepointer, 4)
+alloc(shipstats_update_enable, 4)
+alloc(shipstats_set_enable, 4)
+alloc(shipstats_invulnerableset_enable, 4)
+alloc(shipstats_shotset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(shipstats_basepointer)
+unregistersymbol(shipstats_update_enable)
+unregistersymbol(shipstats_set_enable)
+unregistersymbol(shipstats_invulnerableset_enable)
+unregistersymbol(shipstats_shotset_enable)
+
+dealloc(shipstats_basepointer)
+dealloc(shipstats_update_enable)
+dealloc(shipstats_set_enable)
+dealloc(shipstats_invulnerableset_enable)
+dealloc(shipstats_shotset_enable)"""
+
+[[cheat]]
+id = "ship-stats-base-address-scan-to-update-play-level"
+name = "Ship Stats Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(shipstats_savedAOB)
+label(shipstats_returnhere)
+label(shipstats_originalcode)
+label(shipstats_exit)
+
+label(shipstats_update_exit)
+label(shipstats_set_exit)
+label(shipstats_invulnerableset_exit)
+label(shipstats_shotset_exit)
+
+registersymbol(shipstats_savedAOB)
+
+//BulletSoulWin.exe+F6AA3 - 3D 00714500           - cmp eax,BulletSoulWin.exe+A7100
+//BulletSoulWin.exe+F6AA8 - 0F85 27010000         - jne BulletSoulWin.exe+F6BD5
+// Accesses Invulnerability Timer
+//BulletSoulWin.exe+F6AAE - 83 BF D0010000 00     - cmp dword ptr [edi+000001D0],00
+//BulletSoulWin.exe+F6AB5 - 0F9F C0               - setg al
+//BulletSoulWin.exe+F6AB8 - 84 C0                 - test al,al
+//BulletSoulWin.exe+F6ABA - 0F85 CC000000         - jne BulletSoulWin.exe+F6B8C
+aobscan(shipstats_searchedAOB, 83 BF D0 01 00 00 00 0F 9F C0)
+
+alloc(shipstats_newmem, 2048, shipstats_searchedAOB)
+alloc(shipstats_temp1, 4, shipstats_searchedAOB)
+alloc(shipstats_temp2, 4, shipstats_searchedAOB)
+alloc(shipstats_temp3, 4, shipstats_searchedAOB)
+alloc(shipstats_temp4, 4, shipstats_searchedAOB)
+alloc(shipstats_temp5, 4, shipstats_searchedAOB)
+
+
+shipstats_newmem:
+mov [shipstats_temp1], eax
+mov [shipstats_temp2], ebx
+mov [shipstats_temp3], ecx
+mov [shipstats_temp4], edx
+
+cmp dword ptr [shipstats_update_enable], #0
+je shipstats_update_exit
+mov [shipstats_basepointer], edi
+shipstats_update_exit:
+
+cmp dword ptr [shipstats_set_enable], #0
+je shipstats_set_exit
+shipstats_set_exit:
+
+cmp dword ptr [shipstats_invulnerableset_enable], #0
+je shipstats_invulnerableset_exit
+mov [edi+1d0], #9999
+shipstats_invulnerableset_exit:
+
+cmp dword ptr [shipstats_shotset_enable], #0
+je shipstats_shotset_exit
+mov [edi+204], #3
+shipstats_shotset_exit:
+
+mov eax, [shipstats_temp1]
+mov ebx, [shipstats_temp2]
+mov ecx, [shipstats_temp3]
+mov edx, [shipstats_temp4]
+
+
+shipstats_originalcode:
+db 83 BF D0 01 00 00 00
+//cmp dword ptr [edi+000001D0],00
+
+
+shipstats_exit:
+jmp shipstats_returnhere
+
+
+shipstats_searchedAOB:
+shipstats_savedAOB:
+jmp shipstats_newmem
+nop
+nop
+shipstats_returnhere:
+
+
+[DISABLE]
+shipstats_savedAOB:
+db 83 BF D0 01 00 00 00
+//cmp dword ptr [edi+000001D0],00
+
+unregistersymbol(shipstats_savedAOB)
+
+dealloc(shipstats_newmem)
+dealloc(shipstats_temp1)
+dealloc(shipstats_temp2)
+dealloc(shipstats_temp3)
+dealloc(shipstats_temp4)
+dealloc(shipstats_temp5)"""
+
+[[cheat]]
+id = "invulnerable-timer-set-to-massive"
+name = "Invulnerable Timer Set to Massive?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_invulnerableset_enable"
+hops = []
+
+[[cheat]]
+id = "shot-level-set-to-max"
+name = "Shot Level Set to Max?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_shotset_enable"
+hops = []
+
+[[cheat]]
+id = "ship-stats-update-base-address"
+name = "Ship Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "invulnerability-flag"
+name = "Invulnerability Flag?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x1cd"]
+
+[[cheat]]
+id = "invulnerability-timer"
+name = "Invulnerability Timer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "shot-level"
+name = "Shot Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shipstats_basepointer"
+hops = ["+0x204"]

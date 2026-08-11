@@ -1,0 +1,150 @@
+[game]
+name = "Freedom Fighters"
+exe = "freedom.exe"
+notes = "Converted from a Cheat Engine table by anji. Source: https://fearlessrevolution.com/viewtopic.php?t=14845"
+verified = []
+author = "anji"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "regenerate-health"
+name = "Regenerate health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Freedom.Exe
+  Version: 1.0
+  Date   : 2021-01-05
+  Author : Anji
+
+  Gradually heal player
+}
+
+define(address,"Freedom.exe"+1CE9E3)
+define(bytes,8B CF 8B 80 D0 04 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(skipbar)
+label(origcode)
+label(rate)
+label(pHpBase)
+registersymbol(pHpBase)
+registersymbol(rate)
+
+newmem:
+
+pHpBase:
+  dq 0
+
+rate:
+  dd 0x3e800000
+
+code:
+  mov [pHpBase],edi
+
+  movss xmm0,[edi+000007FF] // Read HP
+  movss xmm1,[edi+000007FB] // Read MaxHP
+  addss xmm0,[rate] // Add HP per frame
+  minss xmm0,xmm1 // Clamp
+  movss [edi+000007FF],xmm0 // Write back
+
+  // Update health bar
+  push ecx
+  mov ecx,[edi+00000852]
+  test ecx,ecx
+  je skipbar
+  movss xmm0,[edi+000007FF]
+  divss xmm0,[edi+000007FB]
+  movss [ecx+00001D17],xmm0
+skipbar:
+  pop ecx
+
+origcode:
+  mov ecx,edi
+  mov eax,[eax+000004D0]
+  jmp return
+
+address:
+  jmp code
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov ecx,edi
+  // mov eax,[eax+000004D0]
+
+dealloc(newmem)
+unregistersymbol(pHpBase)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Freedom.exe"+1CE9E3
+
+"Freedom.exe"+1CE9B3: F3 0F 59 D1                 -  mulss xmm2,xmm1
+"Freedom.exe"+1CE9B7: F3 0F 59 0D 5C 88 0C 01     -  mulss xmm1,[Freedom.exe+27885C]
+"Freedom.exe"+1CE9BF: F3 0F 5D DA                 -  minss xmm3,xmm2
+"Freedom.exe"+1CE9C3: F3 0F 59 5C 24 10           -  mulss xmm3,[esp+10]
+"Freedom.exe"+1CE9C9: F3 0F 5E D9                 -  divss xmm3,xmm1
+"Freedom.exe"+1CE9CD: 0F 2F C3                    -  comiss xmm0,xmm3
+"Freedom.exe"+1CE9D0: F3 0F 11 9F 0F 08 00 00     -  movss [edi+0000080F],xmm3
+"Freedom.exe"+1CE9D8: 76 07                       -  jna Freedom.exe+1CE9E1
+"Freedom.exe"+1CE9DA: C6 87 4E 09 00 00 00        -  mov byte ptr [edi+0000094E],00
+"Freedom.exe"+1CE9E1: 8B 07                       -  mov eax,[edi]
+// ---------- INJECTING HERE ----------
+"Freedom.exe"+1CE9E3: 8B CF                       -  mov ecx,edi
+"Freedom.exe"+1CE9E5: 8B 80 D0 04 00 00           -  mov eax,[eax+000004D0]
+// ---------- DONE INJECTING  ----------
+"Freedom.exe"+1CE9EB: FF D0                       -  call eax
+"Freedom.exe"+1CE9ED: 84 C0                       -  test al,al
+"Freedom.exe"+1CE9EF: 0F 85 24 01 00 00           -  jne Freedom.exe+1CEB19
+"Freedom.exe"+1CE9F5: 8B 07                       -  mov eax,[edi]
+"Freedom.exe"+1CE9F7: 8B CF                       -  mov ecx,edi
+"Freedom.exe"+1CE9F9: FF 90 D0 05 00 00           -  call dword ptr [eax+000005D0]
+"Freedom.exe"+1CE9FF: 83 F8 10                    -  cmp eax,10
+"Freedom.exe"+1CEA02: 0F 84 11 01 00 00           -  je Freedom.exe+1CEB19
+"Freedom.exe"+1CEA08: 83 F8 11                    -  cmp eax,11
+"Freedom.exe"+1CEA0B: 0F 84 08 01 00 00           -  je Freedom.exe+1CEB19
+}"""
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHpBase"
+hops = ["+0x7ff"]
+
+[[cheat]]
+id = "health-per-frame"
+name = "Health per frame"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "rate"
+hops = []

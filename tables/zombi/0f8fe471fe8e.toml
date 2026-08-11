@@ -1,0 +1,268 @@
+[game]
+name = "Zombi"
+exe = "zombi.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2247"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "touch-inventory-items-and-release-don-t-change-slot"
+name = "Touch Inventory Items And Release, Don't Change Slot!"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(BACKPACK,"ZOMBI.exe")
+
+[ENABLE]
+alloc(Pointhem,$1000,BACKPACK)
+label(todo)
+label(returnhere)
+label(originalcode)
+registersymbol(Pointhem)
+// Define Variables
+label(nmbrs)
+registersymbol(nmbrs)
+
+Pointhem:
+
+// Variables
+nmbrs:
+dd 0
+
+todo:
+mov [nmbrs],edi
+add [nmbrs],ecx
+add [nmbrs],ecx
+add [nmbrs],ecx
+add [nmbrs],ecx
+add [nmbrs],00000148
+
+
+originalcode:
+mov eax,[edi+ecx*4+00000148]
+jmp returnhere
+
+
+
+"rabbids.win32.f.dll"+1FF0E4:
+jmp todo
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+"rabbids.win32.f.dll"+1FF0E4:
+db 8B 84 8F 48 01 00 00
+unregistersymbol(nmbrs)
+unregistersymbol(Pointhem)
+dealloc(Pointhem)
+//mov eax,[edi+ecx*4+00000148]
+//Alt: db 8B 84 8F 48 01 00 00 - 89 87 14"""
+
+[[cheat]]
+id = "number-of-items-stacked-clip"
+name = "Number Of Items Stacked/Clip"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "nmbrs"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "normal-max-n-stacked-clip"
+name = "Normal Max N Stacked/Clip"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "nmbrs"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "item-id"
+name = "Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "nmbrs"
+hops = ["+0xfffffffc"]
+
+[[cheat]]
+id = "no-item-decreasing-in-inventory-stacked-restorative"
+name = "No Item Decreasing In Inventory (Stacked/Restorative)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(aob_stack,rabbids.win32.f.dll,29 BC 8E 48 01 00 00)
+aobscanmodule(aob_unstack,rabbids.win32.f.dll,29 42 04 8B 42 04)
+//aobscanmodule(aob_throw,rabbids.win32.f.dll,48 89 82 48 01 00 00)
+registersymbol(aob_stack)
+registersymbol(aob_unstack)
+//registersymbol(aob_throw)
+
+//"rabbids.win32.f.dll"+1F9542:
+aob_stack: // or Normal Items, Like Ammo
+db 90 90 90 90 90 90 90
+
+//"rabbids.win32.f.dll"+1F97A9:
+aob_unstack: //Work For Restorative Items
+db 90 90 90
+
+//"rabbids.win32.f.dll"+1F45C4:
+//aob_throw: //Prevent Normal Decremental
+//db 90
+
+
+ 
+[DISABLE]
+aob_stack:
+db 29 BC 8E 48 01 00 00
+aob_unstack:
+db 29 42 04
+//aob_throw:
+//db 48
+unregistersymbol(aob_stack)
+unregistersymbol(aob_unstack)
+//unregistersymbol(aob_throw)
+//sub [esi+ecx*4+00000148],edi
+//Alt: db 29 BC 8E 48 01 00 00
+//
+//sub [edx+04],eax
+//mov eax,[edx+04]
+//Alt: db 29 42 04 8B 42 04 - 56 BE 00 00 00
+//
+//dec eax
+//mov [edx+00000148],eax
+//Alt: db 48 89 82 48 01 00 00 -8B 97 Ec 08 00 00"""
+
+[[cheat]]
+id = "unl-torch"
+name = "Unl Torch"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,1024)
+label(returnhere)
+aobscanmodule(aob_light,rabbids.win32.f.dll,F3 0F 11 9E C0 0E 00 00 72)
+registersymbol(aob_light)
+
+newmem:
+mov dword ptr [esi+00000EC0],(float)99 //xmm3
+jmp returnhere
+
+
+//"rabbids.win32.f.dll"+E3D6A:
+aob_light:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+aob_light:
+db F3 0F 11 9E C0 0E 00 00
+unregistersymbol(aob_light)
+dealloc(newmem)
+//movss [esi+00000EC0],xmm3
+//Alt: db F3 0F 11 9E C0 0E 00 00 - 72"""
+
+[[cheat]]
+id = "prevent-reducing-n-item-when-more-then-max-in-stack-v5"
+name = "Prevent Reducing N Item When More Then Max In Stack V5"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(aob_ignoremax,rabbids.win32.f.dll,3B 46 08 0F 8E 1F 01 00 00)
+aobscanmodule(aob_ignorestack,rabbids.win32.f.dll,3B C8 0F 8E E3 00 00 00)
+registersymbol(aob_ignoremax)
+registersymbol(aob_ignorestack)
+
+//"rabbids.win32.f.dll"+1F9A06:
+aob_ignoremax:
+db 90 39 C0     //cmp eax,eax
+
+//"rabbids.win32.f.dll"+1F9A43:
+aob_ignorestack:
+db 39 C9        //cmp ecx,ecx
+ 
+ 
+[DISABLE]
+aob_ignoremax:
+db 3B 46 08
+aob_ignorestack:
+db 3B C8
+unregistersymbol(aob_ignoremax)
+unregistersymbol(aob_ignorestack)
+//cmp eax,[esi+08]
+//jng rabbids.win32.f.dll+1F9B2E
+//Alt: db 3B 46 08 0F 8E 1F 01 00 00
+//
+//cmp ecx,eax
+//jng rabbids.win32.f.dll+1F9B2E
+//Alt: db 3B C8 0F 8E E3 00 00 00 - 89 46 04"""
+
+[[cheat]]
+id = "force-show-item-n-even-if-not-stackable"
+name = "Force Show Item N, Even If Not Stackable"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(aob_forceshow,rabbids.win32.f.dll,8B 5E F4 FF 76 EC 8B CF)
+registersymbol(aob_forceshow)
+
+//"rabbids.win32.f.dll"+1F52AC:
+aob_forceshow:
+db 90 90 90
+
+
+ 
+ 
+[DISABLE]
+aob_forceshow:
+db 8B 5E F4
+unregistersymbol(aob_forceshow)
+//mov ebx,[esi-0C]
+//push [esi-14]
+//Alt: db 8B 5E F4 FF 76 EC - 8B CF"""

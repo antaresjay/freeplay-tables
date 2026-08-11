@@ -1,0 +1,1103 @@
+[game]
+name = "Fantasian Neo Dimension"
+exe = "fantasiannd.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=32899"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-trainer-2-controls-money-pointer"
+name = "Activate Trainer 2 (Controls Money Pointer)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(GetMoneyPointerAOB1,"GameAssembly.dll",40 53 48 83 EC 20 48 8B D9 33 C9 E8 * * * * 80 BB B0 00 00 00 00)
+registersymbol(GetMoneyPointerAOB1)
+alloc(newmem,1024,GetMoneyPointerAOB1)
+
+///
+label(return)
+label(GetMoneyPointerAOB1Save)
+registersymbol(GetMoneyPointerAOB1Save)
+
+///
+newmem:
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,MoneyPtr
+  mov [r15],rcx
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+GetMoneyPointerAOB1Save:
+  readmem(GetMoneyPointerAOB1,6)
+  jmp GetMoneyPointerAOB1+06
+  
+R14Save:
+dq 0
+R15Save:
+dq 0
+  
+///
+GetMoneyPointerAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+GetMoneyPointerAOB1:
+  readmem(GetMoneyPointerAOB1Save,6)
+
+unregistersymbol(GetMoneyPointerAOB1)
+unregistersymbol(GetMoneyPointerAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "hotkeys-active"
+name = "Hotkeys Active"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bHotkeysActive"
+hops = []
+
+[[cheat]]
+id = "enable-damage-modifier-options-god-mode-one-hit-kill-etc"
+name = "Enable Damage Modifier Options (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// SubHP from Battle.ActorStatus
+aobscanmodule(DamageModAOB1,"GameAssembly.dll",40 53 48 83 EC 20 8B DA 8B 51 20 3B D3 0F 48 DA)
+registersymbol(DamageModAOB1)
+alloc(newmem,1024)
+
+/// AddHP from Battle.ActorStatus
+aobscanmodule(DamageModAOB2,"GameAssembly.dll",44 8B 51 24 8B 41 20 45 84 C9 75 17)
+registersymbol(DamageModAOB2)
+alloc(newmem2,1024,DamageModAOB2)
+
+///
+label(return)
+label(DamageModAOB1Save)
+registersymbol(DamageModAOB1Save)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+///
+label(return2)
+label(DamageModAOB2Save)
+registersymbol(DamageModAOB2Save)
+label(fHeroHealingMult)
+registersymbol(fHeroHealingMult)
+label(fEnemyHealingMult)
+registersymbol(fEnemyHealingMult)
+
+newmem:
+  mov [R15Save],r15
+  mov r15,[rcx+10]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+50]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+28]
+  test r15,r15
+  je MyCleanUp1
+  cmp dword ptr [r15+18],0
+  je HeroHit
+  jmp EnemyHit
+HeroHit:
+HeroDamageHit:
+  mov r15,fHeroDamageMult
+  cmp [r15],(float)0.0
+  je CheckGodMode
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+CheckGodMode:
+  mov r15,GodMode
+  cmp dword ptr [r15],1
+  jne CheckHeroCannotDie
+  xor edx,edx
+  jmp MyCleanUp1
+CheckHeroCannotDie:
+  mov r15,HeroCannotDie
+  cmp dword ptr [r15],1
+  jne MyCleanUp1
+  cmp edx,[rcx+20]
+  jl @F
+  xor edx,edx
+@@:
+  jmp MyCleanUp1  
+EnemyHit:
+EnemyDamageHit:
+  mov r15,fEnemyDamageMult
+  cmp [r15],(float)0.0
+  je CheckOneHitKill
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+CheckOneHitKill:
+  mov r15,OneHitKill
+  cmp dword ptr [r15],1
+  jne MyCleanUp1
+  mov edx,[rcx+20]
+  jmp MyCleanUp1
+
+MyCleanUp1:  
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+DamageModAOB1Save:
+  readmem(DamageModAOB1,16)
+  jmp DamageModAOB1+10
+
+R15Save:
+dq 0
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)2.0
+fHeroDamageMult:
+dq (float)0.25
+HeroCannotDie:
+dq 1
+
+newmem2:
+  mov [R15Save2],r15
+  mov r15,[rcx+10]
+  test r15,r15
+  je MyCleanUp2
+  mov r15,[r15+50]
+  test r15,r15
+  je MyCleanUp2
+  mov r15,[r15+28]
+  test r15,r15
+  je MyCleanUp2
+  cmp dword ptr [r15+18],0
+  je HeroHit2
+  jmp EnemyHit2
+HeroHit2:
+HeroHealingHit2:
+  mov r15,fHeroHealingMult
+  cmp [r15],(float)0.0
+  je MyCleanUp2
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp MyCleanUp2
+EnemyHit2:
+EnemyHealingHit2:
+  mov r15,fEnemyHealingMult
+  cmp [r15],(float)0.0
+  je MyCleanUp2
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp MyCleanUp2
+
+MyCleanUp2:  
+  mov r15,[R15Save2]
+  jmp originalcode2
+  
+originalcode2:
+DamageModAOB2Save:
+  readmem(DamageModAOB2,7)
+  jmp DamageModAOB2+07
+
+R15Save2:
+dq 0
+fEnemyHealingMult:
+dq (float)1.0
+fHeroHealingMult:
+dq (float)1.0
+
+///
+DamageModAOB1:
+  jmp newmem
+  return:
+
+///
+DamageModAOB2:
+  jmp newmem2
+  return2:
+
+[DISABLE]
+
+///
+DamageModAOB1:
+  readmem(DamageModAOB1Save,16)
+
+unregistersymbol(DamageModAOB1)
+unregistersymbol(DamageModAOB1Save)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fHeroDamageMult)
+
+///
+DamageModAOB2:
+  readmem(DamageModAOB2Save,7)
+
+unregistersymbol(DamageModAOB2)
+unregistersymbol(DamageModAOB2Save)
+unregistersymbol(fEnemyHealingMult)
+unregistersymbol(fHeroHealingMult)
+
+///
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-hp"
+name = "Hero Damage Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-hp"
+name = "Hero Healing Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die"
+name = "Hero Cannot Die"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-hp"
+name = "Enemy Damage Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-hp"
+name = "Enemy Healing Multiplier HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []
+
+[[cheat]]
+id = "enable-mp-damage-modifier-options-infinite-mp-etc"
+name = "Enable MP Damage Modifier Options (Infinite MP, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// SubMP from Battle.ActorStatus
+aobscanmodule(MPDamageModAOB1,"GameAssembly.dll",44 8B CA 8B 51 28 41 3B D1 44 0F 48 CA)
+registersymbol(MPDamageModAOB1)
+alloc(newmem,1024)
+
+/// AddMP from Battle.ActorStatus
+aobscanmodule(MPDamageModAOB2,"GameAssembly.dll",44 8B 51 2C 8B 41 28 45 84 C9 75 36)
+registersymbol(MPDamageModAOB2)
+alloc(newmem2,1024,MPDamageModAOB2)
+
+/// Battle.ActorStatus.ApplySkillCost (Using Skills) from Battle.ActorStatus
+aobscanmodule(MPDamageModAOB3,"GameAssembly.dll",44 8B 47 28 44 3B C3 41 8B D0 0F 49 D3 44 2B C2)
+registersymbol(MPDamageModAOB3)
+alloc(newmem3,1024)
+
+///
+label(return)
+label(MPDamageModAOB1Save)
+registersymbol(MPDamageModAOB1Save)
+label(InfiniteMP)
+registersymbol(InfiniteMP)
+label(fEnemyMPDamageMult)
+registersymbol(fEnemyMPDamageMult)
+label(fHeroMPDamageMult)
+registersymbol(fHeroMPDamageMult)
+
+///
+label(return2)
+label(MPDamageModAOB2Save)
+registersymbol(MPDamageModAOB2Save)
+label(fHeroMPHealingMult)
+registersymbol(fHeroMPHealingMult)
+label(fEnemyMPHealingMult)
+registersymbol(fEnemyMPHealingMult)
+
+///
+label(return3)
+label(MPDamageModAOB3Save)
+registersymbol(MPDamageModAOB3Save)
+
+newmem:
+  mov [R15Save],r15
+  mov r15,[rcx+10]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+50]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+28]
+  test r15,r15
+  je MyCleanUp1
+  cmp dword ptr [r15+18],0
+  je HeroHit
+  jmp EnemyHit
+HeroHit:
+HeroDamageHit:
+  mov r15,fHeroMPDamageMult
+  cmp [r15],(float)0.0
+  je CheckInfiniteMP
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+CheckInfiniteMP:
+  mov r15,InfiniteMP
+  cmp dword ptr [r15],1
+  jne MyCleanUp1
+  xor edx,edx
+  jmp MyCleanUp1
+EnemyHit:
+EnemyDamageHit:
+  mov r15,fEnemyMPDamageMult
+  cmp [r15],(float)0.0
+  je MyCleanUp1
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+
+MyCleanUp1:  
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+MPDamageModAOB1Save:
+  readmem(MPDamageModAOB1,16)
+  jmp MPDamageModAOB1+10
+
+R15Save:
+dq 0
+InfiniteMP:
+dq 0
+fEnemyMPDamageMult:
+dq (float)2.0
+fHeroMPDamageMult:
+dq (float)0.50
+
+newmem2:
+  mov [R15Save2],r15
+  mov r15,[rcx+10]
+  test r15,r15
+  je MyCleanUp2
+  mov r15,[r15+50]
+  test r15,r15
+  je MyCleanUp2
+  mov r15,[r15+28]
+  test r15,r15
+  je MyCleanUp2
+  cmp dword ptr [r15+18],0
+  je HeroHit2
+  jmp EnemyHit2
+HeroHit2:
+HeroHealingHit2:
+  mov r15,fHeroMPHealingMult
+  cmp [r15],(float)0.0
+  je MyCleanUp2
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp MyCleanUp2
+EnemyHit2:
+EnemyHealingHit2:
+  mov r15,fEnemyMPHealingMult
+  cmp [r15],(float)0.0
+  je MyCleanUp2
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop edx
+  jmp MyCleanUp2
+
+MyCleanUp2:  
+  mov r15,[R15Save2]
+  jmp originalcode2
+  
+originalcode2:
+MPDamageModAOB2Save:
+  readmem(MPDamageModAOB2,7)
+  jmp MPDamageModAOB2+07
+
+R15Save2:
+dq 0
+fEnemyMPHealingMult:
+dq (float)1.0
+fHeroMPHealingMult:
+dq (float)1.0
+
+///
+newmem3:
+  mov [R15Save3],r15
+  mov r15,[rdi+10]
+  test r15,r15
+  je MyCleanUp3
+  mov r15,[r15+50]
+  test r15,r15
+  je MyCleanUp3
+  mov r15,[r15+28]
+  test r15,r15
+  je MyCleanUp3
+  cmp dword ptr [r15+18],0
+  je HeroHit3
+  jmp EnemyHit3
+HeroHit3:
+HeroDamageHit3:
+  mov r15,fHeroMPDamageMult
+  cmp [r15],(float)0.0
+  je CheckInfiniteMP3
+  push ebx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop ebx
+CheckInfiniteMP3:
+  mov r15,InfiniteMP
+  cmp dword ptr [r15],1
+  jne MyCleanUp3
+  xor ebx,ebx
+  jmp MyCleanUp3
+EnemyHit3:
+EnemyDamageHit3:
+  mov r15,fEnemyMPDamageMult
+  cmp [r15],(float)0.0
+  je MyCleanUp3
+  push ebx
+  fild dword ptr [rsp]
+  fmul dword ptr [r15]
+  fistp dword ptr [rsp]
+  pop ebx
+
+MyCleanUp3:  
+  mov r15,[R15Save3]
+  jmp originalcode3
+  
+originalcode3:
+MPDamageModAOB3Save:
+  readmem(MPDamageModAOB3,16)
+  jmp MPDamageModAOB3+10
+
+R15Save3:
+dq 0
+
+///
+MPDamageModAOB1:
+  jmp newmem
+  return:
+
+///
+MPDamageModAOB2:
+  jmp newmem2
+  return2:
+
+///
+MPDamageModAOB3:
+  jmp newmem3
+  return3:
+
+[DISABLE]
+
+///
+MPDamageModAOB1:
+  readmem(MPDamageModAOB1Save,16)
+
+unregistersymbol(MPDamageModAOB1)
+unregistersymbol(MPDamageModAOB1Save)
+unregistersymbol(InfiniteMP)
+unregistersymbol(fEnemyMPDamageMult)
+unregistersymbol(fHeroMPDamageMult)
+
+///
+MPDamageModAOB2:
+  readmem(MPDamageModAOB2Save,7)
+
+unregistersymbol(MPDamageModAOB2)
+unregistersymbol(MPDamageModAOB2Save)
+unregistersymbol(fEnemyMPHealingMult)
+unregistersymbol(fHeroMPHealingMult)
+
+///
+MPDamageModAOB3:
+  readmem(MPDamageModAOB3Save,16)
+
+unregistersymbol(MPDamageModAOB3)
+unregistersymbol(MPDamageModAOB3Save)
+
+///
+dealloc(newmem)
+dealloc(newmem2)
+dealloc(newmem3)"""
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteMP"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-mp"
+name = "Hero Damage Multiplier MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-mp"
+name = "Hero Healing Multiplier MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPHealingMult"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-mp"
+name = "Enemy Damage Multiplier MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-mp"
+name = "Enemy Healing Multiplier MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyMPHealingMult"
+hops = []
+
+[[cheat]]
+id = "money-gain-multiplier"
+name = "Money Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "money-loss-multiplier"
+name = "Money Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-infinite-item-usage-set-minimum-item-amount-on-use-sell"
+name = "Enable Infinite Item Usage / Set Minimum Item Amount On Use/Sell"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This is call when using/selling items
+//aobscanmodule(InfiniteItemUsageAOB1,"GameAssembly.dll",44 8B 48 18 41 39 D9 0F 8C 86 00 00 00)
+//aobscanmodule(InfiniteItemUsageAOB1,"GameAssembly.dll",44 8B 48 18 41 39 D9)
+aobscanmodule(InfiniteItemUsageAOB1,"GameAssembly.dll",44 8B 48 18 44 3B CB 7C * 44 2B CB)
+registersymbol(InfiniteItemUsageAOB1)
+alloc(newmem,1024,InfiniteItemUsageAOB1)
+
+///
+label(return)
+label(originalcode)
+label(SetItemAmount)
+registersymbol(SetItemAmount)
+label(OverrideItemQty)
+registersymbol(OverrideItemQty)
+label(InfiniteItemUsageAOB1Save)
+registersymbol(InfiniteItemUsageAOB1Save)
+
+///
+newmem:
+  // Check If Key Item or Quest Item
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,[rax+20]
+  test r15,r15
+  je DoInfiniteItem
+  mov r15,[r15+20]
+  test r15,r15
+  je DoInfiniteItem
+  mov r14,5F00790065004B
+  cmp [r15+1E],r14
+  je MyCleanUp1
+  mov r14,73006500750051
+  cmp [r15+1E],r14
+  je MyCleanUp1  
+DoInfiniteItem:
+  xor ebx,ebx
+DoMin:
+  mov r9d,[rax+18]
+  cmp [OverrideItemQty],1
+  je ForceItemQty
+  cmp r9d,[SetItemAmount]
+  jge MyCleanUp1
+ForceItemQty:
+  mov r9d,[SetItemAmount]
+  mov [rax+18],r9d
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+InfiniteItemUsageAOB1Save:
+  readmem(InfiniteItemUsageAOB1,7)
+  jmp InfiniteItemUsageAOB1+07
+
+R14Save:
+dq 0
+R15Save:
+dq 0
+SetItemAmount:
+dq #5
+OverrideItemQty:
+dq 0
+
+/// 
+InfiniteItemUsageAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+InfiniteItemUsageAOB1:
+  readmem(InfiniteItemUsageAOB1Save,7)
+  
+unregistersymbol(InfiniteItemUsageAOB1)
+unregistersymbol(InfiniteItemUsageAOB1Save)
+unregistersymbol(SetItemAmount)
+unregistersymbol(OverrideItemQty)
+
+///  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "set-minimum-item-amount-on-use-sell"
+name = "Set Minimum Item Amount On Use/Sell"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetItemAmount"
+hops = []
+
+[[cheat]]
+id = "force-override-item-quantity"
+name = "Force Override Item Quantity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemQty"
+hops = []
+
+[[cheat]]
+id = "no-random-battles"
+name = "No Random Battles"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// EnemyEncountManager.Update
+aobscanmodule(NoRandomEncountersAOB1,"GameAssembly.dll",80 7B 2C 00 0F 85 0B 02 00 00 48 8B 0D * * * *)
+registersymbol(NoRandomEncountersAOB1)
+
+/// 
+NoRandomEncountersAOB1+4:
+  db E9 0C 02 00 00 90
+  
+[DISABLE]
+
+/// 
+NoRandomEncountersAOB1+4:
+  db 0F 85 0B 02 00 00
+  
+unregistersymbol(NoRandomEncountersAOB1)"""
+
+[[cheat]]
+id = "always-critical-hit"
+name = "Always Critical Hit"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// Battle.ActorStatus.GetCriReal
+//aobscanmodule(AlwaysCriticalHitAOB1,"GameAssembly.dll",F3 0F 10 40 58 31 D2 E8 * * * * 48 8B 0D * * * *)
+aobscanmodule(AlwaysCriticalHitAOB1,"GameAssembly.dll",F3 0F 10 40 58 33 D2 E8 * * * * 48 8B 0D * * * *)
+registersymbol(AlwaysCriticalHitAOB1)
+alloc(newmem,1024,AlwaysCriticalHitAOB1)
+
+///
+label(AlwaysCriticalHitAOB1Save)
+registersymbol(AlwaysCriticalHitAOB1Save)
+
+newmem:
+  mov [R15Save],r15
+  mov r15,[rbx+30]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+50]
+  test r15,r15
+  je MyCleanUp1
+  mov r15,[r15+28]
+  test r15,r15
+  je MyCleanUp1
+  cmp dword ptr [r15+18],0
+  je HeroHit
+  jmp EnemyHit
+HeroHit:
+AlwaysCriticalHitAOB1Save:
+  readmem(AlwaysCriticalHitAOB1,5)
+  jmp MyCleanUp1
+EnemyHit:
+  movss xmm0,[fOneHundredFloat]
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+  jmp AlwaysCriticalHitAOB1+05
+  
+R15Save:
+dq 0
+fOneHundredFloat:
+dq (float)100.0
+
+/// 
+AlwaysCriticalHitAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+/// 
+AlwaysCriticalHitAOB1:
+  readmem(AlwaysCriticalHitAOB1Save,5)
+  
+unregistersymbol(AlwaysCriticalHitAOB1)
+unregistersymbol(AlwaysCriticalHitAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-exp-multiplier"
+name = "ENABLE EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanmodule(EXPMultiplierAOB1,"GameAssembly.dll",48 89 5C 24 08 48 89 74 24 18 89 54 24 10 57 41 54 41 55 41 56 41 57 48 83 EC * 45 8B E0 8B F2)
+registersymbol(EXPMultiplierAOB1)
+alloc(newmem,1024)
+
+///
+label(EXPMultiplierAOB1Save)
+registersymbol(EXPMultiplierAOB1Save)
+label(fEXPMultiplier)
+registersymbol(fEXPMultiplier)
+
+newmem:
+  push r8d
+  fild dword ptr [rsp]
+  fmul dword ptr [fEXPMultiplier]
+  fistp dword ptr [rsp]
+  pop r8d
+  jmp MyCleanUp1  
+  
+MyCleanUp1:
+  jmp originalcode
+  
+originalcode:
+EXPMultiplierAOB1Save:
+  readmem(EXPMultiplierAOB1,15)
+  jmp EXPMultiplierAOB1+0F
+  
+fEXPMultiplier:
+dq (float)2.0
+
+/// 
+EXPMultiplierAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+/// 
+EXPMultiplierAOB1:
+  readmem(EXPMultiplierAOB1Save,15)
+  
+unregistersymbol(EXPMultiplierAOB1)
+unregistersymbol(EXPMultiplierAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEXPMultiplier"
+hops = []
+
+[[cheat]]
+id = "current-money-view-main-menu-to-populate"
+name = "Current Money (View Main Menu To Populate)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MoneyPtr"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "current-playtime-in-seconds"
+name = "Current Playtime In Seconds"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MoneyPtr"
+hops = ["+0x18"]

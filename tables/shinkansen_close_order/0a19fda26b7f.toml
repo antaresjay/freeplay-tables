@@ -1,0 +1,1407 @@
+[game]
+name = "Close Order"
+exe = "shinkansen_close_order.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2157"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playercontroller-base-address-scan-initialization-activate-this-first"
+name = "PlayerController Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerController_basepointer)
+registersymbol(PlayerController_update_enable)
+registersymbol(PlayerController_set_enable)
+registersymbol(PlayerController_healthset_enable)
+registersymbol(PlayerController_firingrateset_enable)
+registersymbol(PlayerController_speedset_enable)
+
+alloc(PlayerController_basepointer, 4)
+alloc(PlayerController_update_enable, 4)
+alloc(PlayerController_set_enable, 4)
+alloc(PlayerController_healthset_enable, 4)
+alloc(PlayerController_firingrateset_enable, 4)
+alloc(PlayerController_speedset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayerController_basepointer)
+unregistersymbol(PlayerController_update_enable)
+unregistersymbol(PlayerController_set_enable)
+unregistersymbol(PlayerController_healthset_enable)
+unregistersymbol(PlayerController_firingrateset_enable)
+unregistersymbol(PlayerController_speedset_enable)
+
+dealloc(PlayerController_basepointer)
+dealloc(PlayerController_update_enable)
+dealloc(PlayerController_set_enable)
+dealloc(PlayerController_healthset_enable)
+dealloc(PlayerController_firingrateset_enable)
+dealloc(PlayerController_speedset_enable)"""
+
+[[cheat]]
+id = "playercontroller-base-address-scan-to-activate-battle-to-update-battle"
+name = "PlayerController Base Address Scan (To Activate: Battle, To Update: Battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerController_savedAOB)
+label(PlayerController_returnhere)
+label(PlayerController_originalcode)
+label(PlayerController_exit)
+
+label(PlayerController_update_exit)
+label(PlayerController_set_exit)
+label(PlayerController_healthset_exit)
+label(PlayerController_firingrateset_exit)
+label(PlayerController_speedset_exit)
+
+registersymbol(PlayerController_savedAOB)
+
+//051E3637 - D9EE                  - fldz
+//051E3639 - 8B 45 08              - mov eax,[ebp+08]
+// PlayerController:FixedUpdate+24
+//051E363C - D9 98 9C000000        - fstp dword ptr [eax+0000009C]
+//051E3642 - C9                    - leave
+//051E3643 - C3                    - ret
+aobscan(PlayerController_searchedAOB, D9 98 9C 00 00 00 C9 C3)
+
+alloc(PlayerController_newmem, 2048, PlayerController_searchedAOB)
+alloc(PlayerController_temp1, 4, PlayerController_searchedAOB)
+
+
+PlayerController_newmem:
+mov [PlayerController_temp1], ebx
+
+cmp dword ptr [PlayerController_update_enable], #0
+je PlayerController_update_exit
+mov [PlayerController_basepointer], eax
+PlayerController_update_exit:
+
+cmp dword ptr [PlayerController_set_enable], #0
+je PlayerController_set_exit
+PlayerController_set_exit:
+
+cmp dword ptr [PlayerController_healthset_enable], #0
+je PlayerController_healthset_exit
+cmp dword ptr [eax+1c], #0
+je PlayerController_healthset_exit
+mov ebx, [eax+1c]
+fld [ebx+18]
+fstp [ebx+1c]
+PlayerController_healthset_exit:
+
+cmp dword ptr [PlayerController_firingrateset_enable], #0
+je PlayerController_firingrateset_exit
+mov byte ptr [eax+a4], #1
+PlayerController_firingrateset_exit:
+
+cmp dword ptr [PlayerController_speedset_enable], #0
+je PlayerController_speedset_exit
+mov [eax+80], (float)120
+mov [eax+84], (float)240
+mov [eax+88], (float)120
+mov [eax+8c], (float)120
+PlayerController_speedset_exit:
+
+mov ebx, [PlayerController_temp1]
+
+
+PlayerController_originalcode:
+db D9 98 9C 00 00 00
+//fstp dword ptr [eax+0000009C]
+
+
+PlayerController_exit:
+jmp PlayerController_returnhere
+
+
+PlayerController_searchedAOB:
+PlayerController_savedAOB:
+jmp PlayerController_newmem
+nop
+PlayerController_returnhere:
+
+
+[DISABLE]
+PlayerController_savedAOB:
+db D9 98 9C 00 00 00
+//fstp dword ptr [eax+0000009C]
+
+unregistersymbol(PlayerController_savedAOB)
+
+dealloc(PlayerController_newmem)
+dealloc(PlayerController_temp1)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "firing-rate-set-to-massive"
+name = "Firing Rate Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_firingrateset_enable"
+hops = []
+
+[[cheat]]
+id = "speed-set-to-massive"
+name = "Speed Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_speedset_enable"
+hops = []
+
+[[cheat]]
+id = "playercontroller-update-base-address"
+name = "PlayerController Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = [
+    "+0x1c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "max"
+name = "MAX"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = [
+    "+0x1c",
+    "+0x18",
+]
+
+[[cheat]]
+id = "min"
+name = "MIN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = [
+    "+0x1c",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "invincible"
+name = "invincible"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = [
+    "+0x1c",
+    "+0x20",
+]
+
+[[cheat]]
+id = "speed"
+name = "speed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "boostedspeed"
+name = "boostedSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "currentspeed"
+name = "currentSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "boostacceleration"
+name = "boostAcceleration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "booston"
+name = "boostOn"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "maxhealth"
+name = "maxHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "turnspeed"
+name = "turnSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "strafeforce"
+name = "strafeForce"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "playershottimer"
+name = "playerShotTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "readytoshoot"
+name = "readyToShoot"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "joystickfound"
+name = "joystickFound"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xa5"]
+
+[[cheat]]
+id = "wasjoystickfound"
+name = "wasJoystickFound"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xa6"]
+
+[[cheat]]
+id = "shopopenedbytrigger"
+name = "shopOpenedByTrigger"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xa7"]
+
+[[cheat]]
+id = "formationnumber"
+name = "formationNumber"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "spacing"
+name = "spacing"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "killpoints"
+name = "killPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "miniontocraft"
+name = "minionToCraft"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "gameradius"
+name = "gameRadius"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "settingformation"
+name = "SettingFormation"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "editing"
+name = "Editing"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "boxdistance"
+name = "BoxDistance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "seltoswap"
+name = "selToSwap"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "selx"
+name = "selX"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "sely"
+name = "selY"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "nextx"
+name = "nextX"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "nexty"
+name = "nextY"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "playerhatchtimer"
+name = "playerHatchTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "playerhatchtimerlimit"
+name = "playerHatchTimerLimit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "cursorunlocked"
+name = "cursorUnlocked"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "cursorvisible"
+name = "cursorVisible"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xe5"]
+
+[[cheat]]
+id = "playermovescale"
+name = "playerMoveScale"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "invincible-2"
+name = "invincible"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "currentformationk-backingfield"
+name = "currentFormationk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerController_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "minionscript-base-address-scan-initialization-activate-this-first"
+name = "MinionScript Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(MinionScript_basepointer)
+registersymbol(MinionScript_update_enable)
+registersymbol(MinionScript_set_enable)
+registersymbol(MinionScript_healthset_enable)
+registersymbol(MinionScript_speedset_enable)
+
+alloc(MinionScript_basepointer, 4)
+alloc(MinionScript_update_enable, 4)
+alloc(MinionScript_set_enable, 4)
+alloc(MinionScript_healthset_enable, 4)
+alloc(MinionScript_speedset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(MinionScript_basepointer)
+unregistersymbol(MinionScript_update_enable)
+unregistersymbol(MinionScript_set_enable)
+unregistersymbol(MinionScript_healthset_enable)
+unregistersymbol(MinionScript_speedset_enable)
+
+dealloc(MinionScript_basepointer)
+dealloc(MinionScript_update_enable)
+dealloc(MinionScript_set_enable)
+dealloc(MinionScript_healthset_enable)
+dealloc(MinionScript_speedset_enable)"""
+
+[[cheat]]
+id = "minionscript-base-address-scan-to-activate-battle-to-update-battle"
+name = "MinionScript Base Address Scan (To Activate: Battle, To Update: Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(MinionScript_savedAOB)
+label(MinionScript_returnhere)
+label(MinionScript_originalcode)
+label(MinionScript_exit)
+
+label(MinionScript_update_exit)
+label(MinionScript_set_exit)
+label(MinionScript_healthset_exit)
+label(MinionScript_speedset_exit)
+
+registersymbol(MinionScript_savedAOB)
+
+//051DDCE3 - E8 78970000           - call 051E7460
+//051DDCE8 - 83 C4 10              - add esp,10
+// MinionScript:Update+2b
+//051DDCEB - 0FB6 47 60            - movzx eax,byte ptr [edi+60]
+//051DDCEF - 85 C0                 - test eax,eax
+//051DDCF1 - 74 32                 - je 051DDD25
+//051DDCF3 - 8B 47 24              - mov eax,[edi+24]
+//051DDCF6 - 83 EC 08              - sub esp,08
+//051DDCF9 - 6A 00                 - push 00
+aobscan(MinionScript_searchedAOB, 0F B6 47 60 85 C0 * * 8B 47 24)
+
+alloc(MinionScript_newmem, 2048, MinionScript_searchedAOB)
+
+
+MinionScript_newmem:
+cmp dword ptr [MinionScript_update_enable], #0
+je MinionScript_update_exit
+mov [MinionScript_basepointer], edi
+MinionScript_update_exit:
+
+cmp dword ptr [MinionScript_set_enable], #0
+je MinionScript_set_exit
+MinionScript_set_exit:
+
+cmp dword ptr [MinionScript_healthset_enable], #0
+je MinionScript_healthset_exit
+fld [edi+5c]
+fstp [edi+58]
+MinionScript_healthset_exit:
+
+cmp dword ptr [MinionScript_speedset_enable], #0
+je MinionScript_speedset_exit
+mov [edi+64], (float)120
+MinionScript_speedset_exit:
+
+
+MinionScript_originalcode:
+db 0F B6 47 60 85 C0
+//movzx eax,byte ptr [edi+60]
+//test eax,eax
+
+
+MinionScript_exit:
+jmp MinionScript_returnhere
+
+
+MinionScript_searchedAOB:
+MinionScript_savedAOB:
+jmp MinionScript_newmem
+nop
+MinionScript_returnhere:
+
+
+[DISABLE]
+MinionScript_savedAOB:
+db 0F B6 47 60 85 C0
+//movzx eax,byte ptr [edi+60]
+//test eax,eax
+
+unregistersymbol(MinionScript_savedAOB)
+
+dealloc(MinionScript_newmem)"""
+
+[[cheat]]
+id = "minion-health-set-to-max"
+name = "Minion Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "speed-set-to-massive-2"
+name = "Speed Set to Massive?"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_speedset_enable"
+hops = []
+
+[[cheat]]
+id = "minionscript-update-base-address"
+name = "MinionScript Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "xp"
+name = "xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "leveluphealthbonus"
+name = "levelUpHealthBonus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "health"
+name = "_health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "maxhealth-2"
+name = "maxHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "nametagneedsupdating"
+name = "nameTagNeedsUpdating"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "speed-2"
+name = "speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "isfreeminion"
+name = "isFreeMinion"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinionScript_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "playerdata-base-address-scan-initialization-activate-this-first"
+name = "PlayerData Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerData_basepointer)
+registersymbol(PlayerData_update_enable)
+registersymbol(PlayerData_set_enable)
+registersymbol(PlayerData_currencyset_enable)
+registersymbol(PlayerData_coinsset_enable)
+
+alloc(PlayerData_basepointer, 4)
+alloc(PlayerData_update_enable, 4)
+alloc(PlayerData_set_enable, 4)
+alloc(PlayerData_currencyset_enable, 4)
+alloc(PlayerData_coinsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayerData_basepointer)
+unregistersymbol(PlayerData_update_enable)
+unregistersymbol(PlayerData_set_enable)
+unregistersymbol(PlayerData_currencyset_enable)
+unregistersymbol(PlayerData_coinsset_enable)
+
+dealloc(PlayerData_basepointer)
+dealloc(PlayerData_update_enable)
+dealloc(PlayerData_set_enable)
+dealloc(PlayerData_currencyset_enable)
+dealloc(PlayerData_coinsset_enable)"""
+
+[[cheat]]
+id = "playerdata-base-address-scan-to-activate-buy-minion-to-update-buy-minion"
+name = "PlayerData Base Address Scan (To Activate: Buy Minion, To Update: Buy Minion)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerData_savedAOB)
+label(PlayerData_returnhere)
+label(PlayerData_originalcode)
+label(PlayerData_exit)
+
+label(PlayerData_update_exit)
+label(PlayerData_set_exit)
+label(PlayerData_currencyset_exit)
+label(PlayerData_coinsset_exit)
+
+registersymbol(PlayerData_savedAOB)
+
+//051E9478 - 8B 75 08              - mov esi,[ebp+08]
+//051E947B - 8B 7D 0C              - mov edi,[ebp+0C]
+// PlayerData:BuyMinion+e
+//051E947E - 8D 46 44              - lea eax,[esi+44]
+//051E9481 - 8B 08                 - mov ecx,[eax]
+//051E9483 - 89 4D E0              - mov [ebp-20],ecx
+//051E9486 - 8B 48 04              - mov ecx,[eax+04]
+//051E9489 - 89 4D E4              - mov [ebp-1C],ecx
+//051E948C - 8B 40 08              - mov eax,[eax+08]
+aobscan(PlayerData_searchedAOB, 8D 46 44 8B 08 89 4D E0)
+
+alloc(PlayerData_newmem, 2048, PlayerData_searchedAOB)
+
+
+PlayerData_newmem:
+cmp dword ptr [PlayerData_update_enable], #0
+je PlayerData_update_exit
+mov [PlayerData_basepointer], esi
+PlayerData_update_exit:
+
+cmp dword ptr [PlayerData_set_enable], #0
+je PlayerData_set_exit
+PlayerData_set_exit:
+
+cmp dword ptr [PlayerData_currencyset_enable], #0
+je PlayerData_currencyset_exit
+mov [esi+44], #99999
+mov [esi+48], #99999
+mov [esi+4c], #99999
+PlayerData_currencyset_exit:
+
+cmp dword ptr [PlayerData_coinsset_enable], #0
+je PlayerData_coinsset_exit
+mov [esi+50], #99999
+PlayerData_coinsset_exit:
+
+
+PlayerData_originalcode:
+db 8D 46 44 8B 08
+//lea eax,[esi+44]
+//mov ecx,[eax]
+
+
+PlayerData_exit:
+jmp PlayerData_returnhere
+
+
+PlayerData_searchedAOB:
+PlayerData_savedAOB:
+jmp PlayerData_newmem
+PlayerData_returnhere:
+
+
+[DISABLE]
+PlayerData_savedAOB:
+db 8D 46 44 8B 08
+//lea eax,[esi+44]
+//mov ecx,[eax]
+
+unregistersymbol(PlayerData_savedAOB)
+
+dealloc(PlayerData_newmem)"""
+
+[[cheat]]
+id = "currency-set-to-massive"
+name = "Currency Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_currencyset_enable"
+hops = []
+
+[[cheat]]
+id = "coins-collected-set-to-massive"
+name = "Coins Collected Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_coinsset_enable"
+hops = []
+
+[[cheat]]
+id = "playerdata-update-base-address"
+name = "PlayerData Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "hubworld1levels"
+name = "hubworld1Levels"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "hubworld2levels"
+name = "hubworld2Levels"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "killcount"
+name = "_killCount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "red"
+name = "Red"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "green"
+name = "Green"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "blue"
+name = "Blue"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "coinscollected-k-backingfield"
+name = "<coinsCollected>k__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerData_basepointer"
+hops = ["+0x50"]

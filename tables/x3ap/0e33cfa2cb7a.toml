@@ -1,0 +1,321 @@
+[game]
+name = "X3 - Albion Prelude"
+exe = "x3ap.exe"
+notes = "Converted from a Cheat Engine table by Recifense. Source: https://fearlessrevolution.com/viewtopic.php?t=5617"
+verified = []
+author = "Recifense"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-x3-ap-v3-3-stean-script-v2-0"
+name = "[X]<== X3 - AP v3.3 Stean Script v2.0"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===========================================
+ Game Title    : X3 - Albion Prelude
+ Game Version  : 3.3
+ Game Sponsor  : Myself
+ Proces Name   : X3AP.exe
+ Script Version: 2.0
+ CE Version    : 6.7
+ Release date  : 11-Dec-2017
+ Author        : Recifense
+ History:
+ 26-Dez-12: Release for version 2.5.2
+ 16-May-13: Release for version 3.0.0
+ 11-Oct-17: Release for version 3.2.0
+ 11-Dec-17: Release for version 3.3
+ Features:
+ - God Mode (including shields)
+ - Unlimited Laserpower
+===========================================
+}
+
+//=========================================
+// Definitions
+define(LUDO,"X3AP.EXE")
+define(MHPT,X3AP.EXE+00064146) //== 1
+define(GDMD,X3AP.EXE+0004ff85) //== 1
+define(MSLR,X3AP.EXE+00047775) //=# 1
+define(MPSP,X3AP.EXE+0004ada7) //== 1
+define(MSSD,X3AP.EXE+0004aeca) //=# 1
+define(MSS1,X3AP.EXE+0004ae88) //=# 1
+
+//=========================================
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(MHPT,8b 8c 24 e4 03 00 00 5f 5e c7 42 64 00 00 00 00 b8 01 00 00 00)
+assert(GDMD,29 8e ec 00 00 00 ?? ?? c7 86 ec 00 00 00 00 00 00 00 ?? ?? 85)
+assert(MSLR,01 90 b4 02 00 00 68 18 04 00 00 e8 ?? ?? ?? ?? 8b 4d b0 83 c4)
+assert(MPSP,0f b7 41 48 53 55 8b 6c 24 20 56 33 f6 33 db 66 3d 07 00 57 89)
+assert(MSSD,29 47 04 03 dd 33 ed 89 6c 24 14 c7 44 24 18 01 00 00 00 89 5c)
+assert(MSS1,2b e8 89 71 04 89 6c 24 14 03 d8 e9 ?? ?? ?? ?? 0f bf 47 4a 69)
+
+//=========================================
+alloc(MyCode,4096,LUDO)
+//=========================================
+// Declaration section
+label(_MonHumanPilot)
+label(_BackMHP)
+label(_ExitMHP)
+label(_GodMode)
+label(_BackGMD)
+label(_ExitGMD)
+label(_MonShipLaser)
+label(_BackMSL)
+label(_ExitMSL)
+label(_MonPlayerShip)
+label(_BackMPS)
+label(_MonShipShield)
+label(_BackMSS)
+label(_ExitMSS)
+label(_MonShipShield1)
+label(_BackMS1)
+label(_ExitMS1)
+label(pPilot)
+label(pShip)
+label(pShields)
+label(pLaser)
+label(pShipS)
+label(pShield)
+label(iEnableGMD)
+label(iEnableMSL)
+
+//=========================================
+// Registering Symbols
+registersymbol(MyCode)
+registersymbol(pPilot)
+registersymbol(pShip)
+registersymbol(pShields)
+registersymbol(pShield)
+registersymbol(pLaser)
+registersymbol(iEnableGMD)
+registersymbol(iEnableMSL)
+
+//=========================================
+MyCode:
+//========================================= ok
+// This code monitors the player´s pilot and current ship
+// Most of the info for debugging
+_MonHumanPilot:
+ mov [pPilot],edx                  // Save ptr for debugging
+ mov ecx,[edx+38]                  // Get ptr to Ship
+ mov [pShip],ecx                   // Save ptr for further use
+ or ecx,ecx                        // Valid pointer?
+ jz _ExitMHP                       // Jump if false
+
+ mov ecx,[ecx+50]                  // Get ptr to Laser
+ mov [pLaser],ecx                  // Save ptr for debugging (otherinfo)
+ or ecx,ecx                        // Valid pointer?
+ jz _ExitMHP                       // Jump if false
+
+ mov ecx,[ecx]                     // Get ptr to Shields
+ mov [pShields],ecx                // Save ptr for debugging
+
+_ExitMHP:
+ mov ecx,[esp+000003E4]            // Original code (OK)
+ jmp _BackMHP                      // Back to main code
+
+//=========================================
+// God Mode for player's ship
+_GodMode:
+ cmp dword ptr [iEnableGMD],0
+ je _ExitGMD                       // Jump if feature is disabled
+
+ cmp esi,[pShip]                   // Get ptr to other info
+ jne _ExitGMD                      // Jump if true
+
+ xor ecx,ecx                       // make value2decrease = 0
+
+_ExitGMD:
+ sub [esi+000000EC],ecx            // Original code
+ jmp _BackGMD                      // Back to main code
+
+//========================================= 3.3 *
+// Unlimited laser power for player's ship
+_MonShipLaser:
+ cmp dword ptr [iEnableMSL],0
+ je _ExitMSL                       // Jump if feature is disabled
+
+ cmp eax,[pLaser]                  // Player´s ship's laser?
+ jne _ExitMSL                      // Jump if false
+
+ xor edx,edx                       // make value2decrease = 0
+
+_ExitMSL:
+ add [eax+000002b4],edx            // Original code
+ jmp _BackMSL                      // Back to main code
+
+//=========================================
+// This code identifies the ship for _MonShield and
+// _MonShield1 scripts
+_MonPlayerShip:
+ mov [pShipS],ecx                  // Save ptr for further use
+
+ movzx eax,word ptr [ecx+48]       // Original code
+ push ebx                          // Original code
+ jmp _BackMPS                      // Back to main code
+
+//=========================================
+// When under attack
+_MonShipShield:
+ push ecx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMSS                       // Jump if feature is disabled
+
+ mov ecx,[pShipS]                  // Get ship structure
+ cmp ecx,[pShip]                   // Is it the player's ship?
+ jne _ExitMSS                      // Jump if true
+
+ xor eax,eax                       // make value2decrease = 0
+
+ mov [pShield],edi                 // Save ptr for debugging
+
+_ExitMSS:
+ pop ecx
+
+ sub [edi+04],eax                  // Original code
+ add ebx,ebp                       // Original code
+ jmp _BackMSS                      // Back to main code
+
+//========================================= 3.3 *
+// When under attack
+_MonShipShield1:
+ push esi
+ push ecx
+
+ cmp dword ptr [iEnableGMD],0
+ je _ExitMS1                       // Jump if feature is disabled
+
+ mov ecx,[pShipS]                  // Get ship structure
+ cmp ecx,[pShip]                   // Is it the player's ship?
+ jne _ExitMS1                      // Jump if true
+
+ mov esi,#65536000                 // 64K * 1000 = 100%
+
+_ExitMS1:
+ pop  ecx
+
+ sub ebp,eax                       // Original code
+ mov [ecx+04],esi                  // Original code
+ pop esi
+ jmp _BackMS1                      // Back to main code
+
+//=========================================
+align 10,'='
+//=========================================
+ db '===============================>'
+ db 'CE6.7 Script by Recifense 171011'
+//=========================================
+// Variables
+iEnableGMD:
+ dd 0
+iEnableMSL:
+ dd 0
+pPilot:
+ dd 0
+pShip:
+ dd MyCode
+pShipS:
+ dd MyCode
+pShields:
+ dd 0
+pShield:
+ dd 0
+pLaser:
+ dd MyCode
+
+//=========================================
+// Hacking Points
+MHPT:
+ jmp _MonHumanPilot
+ nop
+ nop
+_BackMHP:
+
+GDMD:
+ jmp _GodMode
+ nop
+_BackGMD:
+
+MSLR:
+ jmp _MonShipLaser
+ nop
+_BackMSL:
+
+MPSP:
+ jmp _MonPlayerShip
+_BackMPS:
+
+MSSD:
+ jmp _MonShipShield
+_BackMSS:
+
+MSS1:
+ jmp _MonShipShield1
+_BackMS1:
+
+//=========================================
+// Script for Restoring Original Codes
+[DISABLE]
+MHPT:
+// mov ecx,[esp+000003E4]
+ db 8b 8c 24 e4 03 00 00
+
+GDMD:
+// sub [esi+000000EC],ecx
+ db 29 8e ec 00 00 00
+
+MSLR:
+// add [eax+000002b4],edx
+ db 01 90 b4 02 00 00
+
+MPSP:
+// movzx eax,word ptr [ecx+48]
+// push ebx
+ db 0f b7 41 48 53
+
+MSSD:
+// sub [edi+04],eax
+// add ebx,ebp
+ db 29 47 04 03 dd
+
+MSS1:
+// sub ebp,eax
+// mov [ecx+04],esi
+ db 2b e8 89 71 04
+
+//=========================================
+// Unregistering Symbols
+unregistersymbol(MyCode)
+unregistersymbol(pPilot)
+unregistersymbol(pShip)
+unregistersymbol(pShields)
+unregistersymbol(pShield)
+unregistersymbol(pLaser)
+unregistersymbol(iEnableGMD)
+unregistersymbol(iEnableMSL)
+
+//=========================================
+dealloc(MyCode)
+//============= Scripts End ===============
+
+// ****************************************
+// NOTES
+// ****************************************
+{
+Credits = integer (not aligned)\t(no fast or hyper scan)
+}"""

@@ -1,0 +1,515 @@
+[game]
+name = "Guilty Gear Strive"
+exe = "ggst-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by Thunter2012. Source: https://fearlessrevolution.com/viewtopic.php?t=32703"
+verified = []
+author = "Thunter2012"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-this-to-use-the-cheat"
+name = "------ Activate this to use the cheat ------"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// --- 1. AOB 掃描定位 (包含原本的三項 + 新增的 RISC) ---
+aobscanmodule(hp_inj, GGST-Win64-Shipping.exe, 89 B7 3C 12 00 00)
+aobscanmodule(tn_inj, GGST-Win64-Shipping.exe, 89 51 60 C3)
+aobscanmodule(bt_inj, GGST-Win64-Shipping.exe, 01 BC 98 C8 14 00 00)
+aobscanmodule(rs_inj, GGST-Win64-Shipping.exe, 89 86 8C CA 00 00) // RISC 定位
+
+alloc(newmem, 4096, GGST-Win64-Shipping.exe)
+
+// --- 2. 建立符號標籤 (共 8 個控制項) ---
+label(p1_hp_sw)
+label(p1_tn_sw)
+label(p1_bt_sw)
+label(p1_rs_sw) // 新增 P1 RISC 開關
+label(p2_hp_sw)
+label(p2_tn_sw)
+label(p2_bt_sw)
+label(p2_rs_sw) // 新增 P2 RISC 開關
+
+registersymbol(p1_hp_sw)
+registersymbol(p1_tn_sw)
+registersymbol(p1_bt_sw)
+registersymbol(p1_rs_sw)
+registersymbol(p2_hp_sw)
+registersymbol(p2_tn_sw)
+registersymbol(p2_bt_sw)
+registersymbol(p2_rs_sw)
+
+label(hp_code)
+label(hp_original)
+label(hp_return)
+
+label(tn_code)
+label(tn_original)
+label(tn_return)
+
+label(bt_code)
+label(bt_original)
+label(bt_return)
+
+label(rs_code)     // RISC 代碼區
+label(p1_rs_chk)   // P1 RISC 檢查
+label(p2_rs_chk)   // P2 RISC 檢查
+label(rs_original) // RISC 原代碼
+label(rs_return)
+
+newmem:
+// --- HP 邏輯 (RDI) ---
+hp_code:
+  push rax
+  movzx eax, byte ptr [rdi+4C]
+  cmp al, 0
+  je p1_hp_chk
+  cmp al, 1
+  je p2_hp_chk
+  pop rax
+  jmp hp_original
+
+p1_hp_chk:
+  pop rax
+  cmp [p1_hp_sw], 1
+  jne hp_original
+  mov esi, #420
+  jmp hp_original
+
+p2_hp_chk:
+  pop rax
+  cmp [p2_hp_sw], 1
+  jne hp_original
+  mov esi, #0
+  jmp hp_original
+
+hp_original:
+  mov [rdi+0000123C], esi
+  jmp hp_return
+
+// --- Tension 邏輯 (RCX) ---
+tn_code:
+  push rax
+  movzx eax, byte ptr [rcx+00]
+  cmp al, 0
+  je p1_tn_chk
+  cmp al, 1
+  je p2_tn_chk
+  pop rax
+  jmp tn_original
+
+p1_tn_chk:
+  pop rax
+  cmp [p1_tn_sw], 1
+  jne tn_original
+  mov edx, #10000
+  jmp tn_original
+
+p2_tn_chk:
+  pop rax
+  cmp [p2_tn_sw], 1
+  jne tn_original
+  mov edx, #0
+  jmp tn_original
+
+tn_original:
+  mov [rcx+60], edx
+  ret
+  jmp tn_return
+
+// --- Burst 邏輯 (RAX+RBX*4) ---
+bt_code:
+  push rdx
+  lea rdx, [rax+rbx*4]
+  push rax
+  movzx eax, byte ptr [rdx+30]
+  cmp al, 0
+  je p1_bt_chk
+  cmp al, 1
+  je p2_bt_chk
+  pop rax
+  pop rdx
+  jmp bt_original
+
+p1_bt_chk:
+  pop rax
+  pop rdx
+  cmp [p1_bt_sw], 1
+  jne bt_original
+  mov edi, #15000
+  jmp bt_original
+
+p2_bt_chk:
+  pop rax
+  pop rdx
+  cmp [p2_bt_sw], 1
+  jne bt_original
+  mov edi, #0
+  jmp bt_original
+
+bt_original:
+  add [rax+rbx*4+000014C8], edi
+  jmp bt_return
+
+// --- RISC 邏輯 (RSI) ---
+rs_code:
+  cmp byte ptr [rsi+4C], 0 // 檢查是否為 P1
+  je p1_rs_chk
+  cmp byte ptr [rsi+4C], 1 // 檢查是否為 P2
+  je p2_rs_chk
+  jmp rs_original
+
+p1_rs_chk:
+  cmp [p1_rs_sw], 1
+  jne rs_original
+  mov eax, 0               // P1 開啟時鎖定為 0 (最低)
+  jmp rs_original
+
+p2_rs_chk:
+  cmp [p2_rs_sw], 1
+  jne rs_original
+  mov eax, #12800          // P2 開啟時鎖定為 12800 (最大)
+  jmp rs_original
+
+rs_original:
+  mov [rsi+0000CA8C], eax
+  jmp rs_return
+
+// --- 3. 數據存放區 (預設 0) ---
+p1_hp_sw:
+dd 0
+p1_tn_sw:
+dd 0
+p1_bt_sw:
+dd 0
+p1_rs_sw:
+dd 0
+p2_hp_sw:
+dd 0
+p2_tn_sw:
+dd 0
+p2_bt_sw:
+dd 0
+p2_rs_sw:
+dd 0
+
+// --- 4. 注入點替換 ---
+hp_inj:
+  jmp hp_code
+  nop
+hp_return:
+registersymbol(hp_inj)
+
+tn_inj:
+  jmp tn_code
+tn_return:
+registersymbol(tn_inj)
+
+bt_inj:
+  jmp bt_code
+  nop 2
+bt_return:
+registersymbol(bt_inj)
+
+rs_inj:
+  jmp rs_code
+  nop
+rs_return:
+registersymbol(rs_inj)
+
+[DISABLE]
+hp_inj:
+  db 89 B7 3C 12 00 00
+tn_inj:
+  db 89 51 60 C3
+bt_inj:
+  db 01 BC 98 C8 14 00 00
+rs_inj:
+  db 89 86 8C CA 00 00
+
+unregistersymbol(*)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "p1-hp"
+name = "P1 HP"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p1_hp_sw:
+dd 1
+
+[DISABLE]
+p1_hp_sw:
+dd 0"""
+
+[[cheat]]
+id = "p1-tension"
+name = "P1 Tension"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p1_tn_sw:
+dd 1
+
+[DISABLE]
+p1_tn_sw:
+dd 0"""
+
+[[cheat]]
+id = "p1-burst"
+name = "P1 Burst"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p1_bt_sw:
+dd 1
+
+[DISABLE]
+p1_bt_sw:
+dd 0"""
+
+[[cheat]]
+id = "p1-risc-drop-to-0-very-fast"
+name = "P1 RISC drop to 0 very fast"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p1_rs_sw:
+dd 1
+
+[DISABLE]
+p1_rs_sw:
+dd 0"""
+
+[[cheat]]
+id = "p2-instant-kill"
+name = "P2 Instant kill"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p2_hp_sw:
+dd 1
+
+[DISABLE]
+p2_hp_sw:
+dd 0"""
+
+[[cheat]]
+id = "p2-no-tension"
+name = "P2 no Tension"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p2_tn_sw:
+dd 1
+
+[DISABLE]
+p2_tn_sw:
+dd 0"""
+
+[[cheat]]
+id = "p2-burst-no-recharge-after-use"
+name = "P2 Burst no recharge after use"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p2_bt_sw:
+dd 1
+
+[DISABLE]
+p2_bt_sw:
+dd 0"""
+
+[[cheat]]
+id = "p2-risc-remain-max-after-block"
+name = "P2 RISC remain max after block"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+p2_rs_sw:
+dd 1
+
+[DISABLE]
+p2_rs_sw:
+dd 0"""
+
+[[cheat]]
+id = "p1hp-420"
+name = "P1HP (420)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x28",
+    "+0x123c",
+]
+
+[[cheat]]
+id = "p1-tension-10000"
+name = "P1 Tension (10000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x60",
+]
+
+[[cheat]]
+id = "p1-burst-15000"
+name = "P1 Burst (15000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x14c8",
+]
+
+[[cheat]]
+id = "p1-risc-12800"
+name = "P1 RISC (12800)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x10",
+    "+0xca8c",
+]
+
+[[cheat]]
+id = "p2-hp"
+name = "P2 HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x1c0",
+    "+0x123c",
+]
+
+[[cheat]]
+id = "p2-tension"
+name = "P2 Tension"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x1f8",
+]
+
+[[cheat]]
+id = "p2-burst"
+name = "P2 Burst"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x14cc",
+]
+
+[[cheat]]
+id = "p2-risc"
+name = "P2 RISC"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "GGST-Win64-Shipping.exe"
+offset = "0x521bf98"
+hops = [
+    "+0x1c8",
+    "+0x1a8",
+    "+0xca8c",
+]

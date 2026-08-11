@@ -1,0 +1,244 @@
+[game]
+name = "Jotunnslayer: Hordes of Hel Demo"
+exe = "jotunnslayer.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=33249"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "invulnerability"
+name = "Invulnerability"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(invulnerability,GamesFarm.PlayerController:UpdateInput+3e,GamesFarm.PlayerController:UpdateInput+85,57 C0 48 8B CE 41 B8 01 00 00 00)
+alloc(newmem,$1000,invulnerability)
+label(code return)
+
+newmem:
+mov [rcx+D6C],#9999
+mov [rsi+D54],(float)99999
+
+code:
+  mov rcx,rsi
+  mov r8d,00000001
+  jmp return
+
+invulnerability+02:
+  jmp newmem
+  nop 4
+return:
+registersymbol(invulnerability)
+
+[DISABLE]
+
+invulnerability+02:
+  db 48 8B CE 41 B8 01 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "max-attack-range"
+name = "Max Attack Range"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+define(address,GamesFarm.PawnController:get_attackRange+6a)
+define(bytes,F3 0F 10 86 70 0B 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,GamesFarm.PawnController:get_attackRange+6a)
+label(code return)
+
+newmem:
+mov [rsi+B70],(float)10000
+mov [rsi+B74],(float)10000
+
+code:
+  movss xmm0,[rsi+00000B70]
+
+  jmp return
+
+newm:
+dd (float)10000
+
+address:
+  jmp newmem
+  nop 3
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(*)"""
+
+[[cheat]]
+id = "massive-damage"
+name = "Massive Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+aobscanregion(damagemultiplier,GamesFarm.PawnController:get_CurrentFinalDamageMultiplier,GamesFarm.PawnController:get_CurrentFinalDamageMultiplier+23,F3 0F 10 86 94 0B 00 00)
+alloc(newmem,$1000,damagemultiplier)
+label(code return)
+
+newmem:
+
+code:
+  movss xmm0,[dmg]//[rsi+00000B94]
+  jmp return
+
+dmg:
+dd (float)99999
+
+damagemultiplier:
+  jmp newmem
+  nop 3
+return:
+registersymbol(damagemultiplier)
+
+[DISABLE]
+
+damagemultiplier:
+  db F3 0F 10 86 94 0B 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "super-attack-speed"
+name = "Super Attack Speed"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//SendFearlessRevolution|Sintrix
+[ENABLE]
+
+aobscanregion(attackspeed,GamesFarm.PlayerController:get_attackSpeed,GamesFarm.PlayerController:get_attackSpeed+b4,F3 0F 10 05 63 01 00 00)
+alloc(newmem,$1000,attackspeed)
+label(code return)
+
+newmem:
+
+code:
+  movss xmm0,[atkspd]//[GamesFarm.PlayerController:get_attackSpeed+1e0]
+  jmp return
+
+atkspd:
+dd (float)100000
+
+attackspeed:
+  jmp newmem
+return:
+registersymbol(attackspeed)
+
+[DISABLE]
+
+attackspeed:
+  db F3 0F 10 05 63 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-dash-dodge-roll-cooldown"
+name = "No Dash/Dodge/Roll Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@FearlessRevolution|Sintrix
+[ENABLE]
+
+aobscanregion(rollcooldown,GamesFarm.PlayerController:get_RollCooldown,GamesFarm.PlayerController:get_RollCooldown+88,F3 0F 10 86 6C 12 00 00)
+alloc(newmem,$1000,rollcooldown)
+label(code return)
+
+newmem:
+
+code:
+  movss xmm0,[rsi+0000126C]
+  xorps xmm0,xmm0
+  jmp return
+
+rollcooldown:
+  jmp newmem
+  nop 3
+return:
+registersymbol(rollcooldown)
+
+[DISABLE]
+
+rollcooldown:
+  db F3 0F 10 86 6C 12 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "grab-player-data"
+name = "Grab Player Data"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Send@Sintrix
+[ENABLE]
+
+aobscanregion(netplayercontroller,GamesFarm.PlayerController:UpdateInput,GamesFarm.PlayerController:UpdateInput+68,0F B6 00 85 C0 0F 85 00 02 00 00 48 8B CE)
+alloc(newmem,$1000)
+registersymbol(npc)
+label(code return npc)
+
+newmem:
+cmp [rsi+68],1
+jne code
+mov [npc],rcx
+code:
+  movzx eax,byte ptr [rax]
+  test eax,eax
+  jne GamesFarm.PlayerController:UpdateInput+22c
+  mov rcx,rsi
+  jmp return
+
+npc:
+dq 0
+netplayercontroller:
+  jmp far newmem
+return:
+registersymbol(netplayercontroller)
+
+[DISABLE]
+
+netplayercontroller:
+  db 0F B6 00 85 C0 0F 85 00 02 00 00 48 8B CE
+
+unregistersymbol(*)
+dealloc(*)"""

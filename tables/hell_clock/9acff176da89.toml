@@ -1,0 +1,311 @@
+[game]
+name = "Hell Clock"
+exe = "hell_clock.exe"
+notes = "Converted from a Cheat Engine table by Cissa90. Source: https://fearlessrevolution.com/viewtopic.php?t=35826"
+verified = []
+author = "Cissa90"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "game-speed-multiplier-v1"
+name = "Game Speed Multiplier V1"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GameSpeed,UnityPlayer.dll,F3 0F 10 99 FC 00 00 00) // should be unique
+alloc(newmem,$1000,GameSpeed)
+label(code)
+label(return)
+alloc(SpeedGame,4)
+registersymbol(SpeedGame)
+label(Speed1)
+label(Speed2)
+label(Speed3)
+label(Speed4)
+label(Speed5)
+
+SpeedGame:
+dd (float)1
+
+newmem:
+cmp [SpeedGame],(float)1
+je Speed1
+cmp [SpeedGame],(float)2
+je Speed2
+cmp [SpeedGame],(float)3
+je Speed3
+cmp [SpeedGame],(float)4
+je Speed4
+cmp [SpeedGame],(float)5
+je Speed5
+
+Speed1:
+mov [rcx+000000FC],(float)1
+jmp code
+
+Speed2:
+mov [rcx+000000FC],(float)2
+jmp code
+
+Speed3:
+mov [rcx+000000FC],(float)3
+jmp code
+
+Speed4:
+mov [rcx+000000FC],(float)4
+jmp code
+
+Speed5:
+mov [rcx+000000FC],(float)5
+jmp code
+
+code:
+  movss xmm3,[rcx+000000FC]
+  jmp return
+
+GameSpeed:
+  jmp newmem
+  nop 3
+return:
+registersymbol(GameSpeed)
+
+[DISABLE]
+
+GameSpeed:
+  db F3 0F 10 99 FC 00 00 00
+
+unregistersymbol(GameSpeed)
+dealloc(newmem)
+dealloc(SpeedGame)
+unregistersymbol(SpeedGame)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UnityPlayer.dll+45F2C0
+
+UnityPlayer.dll+45F290: 80 B9 C0 00 00 00 00     - cmp byte ptr [rcx+000000C0],00
+UnityPlayer.dll+45F297: 74 1B                    - je UnityPlayer.dll+45F2B4
+UnityPlayer.dll+45F299: 0F 28 74 24 20           - movaps xmm6,[rsp+20]
+UnityPlayer.dll+45F29E: 0F 28 7C 24 10           - movaps xmm7,[rsp+10]
+UnityPlayer.dll+45F2A3: C6 81 C0 00 00 00 00     - mov byte ptr [rcx+000000C0],00
+UnityPlayer.dll+45F2AA: 44 0F 28 04 24           - movaps xmm8,[rsp]
+UnityPlayer.dll+45F2AF: 48 83 C4 38              - add rsp,38
+UnityPlayer.dll+45F2B3: C3                       - ret 
+UnityPlayer.dll+45F2B4: 80 B9 C1 00 00 00 00     - cmp byte ptr [rcx+000000C1],00
+UnityPlayer.dll+45F2BB: F2 0F 10 61 60           - movsd xmm4,[rcx+60]
+// ---------- INJECTING HERE ----------
+UnityPlayer.dll+45F2C0: F3 0F 10 99 FC 00 00 00  - movss xmm3,[rcx+000000FC]
+// ---------- DONE INJECTING  ----------
+UnityPlayer.dll+45F2C8: 74 0D                    - je UnityPlayer.dll+45F2D7
+UnityPlayer.dll+45F2CA: F3 0F 59 1D 62 A1 2C 01  - mulss xmm3,[UnityPlayer.dll+1729434]
+UnityPlayer.dll+45F2D2: 0F 5A D3                 - cvtps2pd xmm2,xmm3
+UnityPlayer.dll+45F2D5: EB 61                    - jmp UnityPlayer.dll+45F338
+UnityPlayer.dll+45F2D7: F3 0F 10 89 00 01 00 00  - movss xmm1,[rcx+00000100]
+UnityPlayer.dll+45F2DF: 0F 28 EA                 - movaps xmm5,xmm2
+UnityPlayer.dll+45F2E2: 0F 5A C1                 - cvtps2pd xmm0,xmm1
+UnityPlayer.dll+45F2E5: F2 0F 5C EC              - subsd xmm5,xmm4
+UnityPlayer.dll+45F2E9: 66 0F 2F E8              - comisd xmm5,xmm0
+UnityPlayer.dll+45F2ED: 76 09                    - jna UnityPlayer.dll+45F2F8
+}"""
+
+[[cheat]]
+id = "multiplier"
+name = "Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 1
+choices = [
+    "1:x1",
+    "2:x2",
+    "3:x3",
+    "4:x4",
+    "5:x5",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SpeedGame"
+hops = []
+
+[[cheat]]
+id = "gameconfig-pointer"
+name = "GameConfig Pointer"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(GameConfigPtr,PlayerControllerGUI:OnGUI+0,PlayerControllerGUI:OnGUI+100,83 38 00 0F B6 87 B8 00 00 00) // should be unique
+alloc(newmem,$1000,GameConfigPtr)
+
+label(code GameCfg)
+label(return)
+
+newmem:
+mov [GameCfg],rdi
+
+code:
+  cmp dword ptr [rax],00
+  movzx eax,byte ptr [rdi+000000B8]
+  jmp return
+
+GameCfg:
+dq 0
+
+GameConfigPtr:
+  jmp newmem
+  nop 5
+return:
+registersymbol(GameConfigPtr GameCfg)
+
+[DISABLE]
+
+GameConfigPtr:
+  db 83 38 00 0F B6 87 B8 00 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: PlayerControllerGUI:OnGUI+38
+
+PlayerControllerGUI:OnGUI+4: 48 83 EC 60                    - sub rsp,60
+PlayerControllerGUI:OnGUI+8: 48 89 75 E8                    - mov [rbp-18],rsi
+PlayerControllerGUI:OnGUI+c: 48 89 7D F0                    - mov [rbp-10],rdi
+PlayerControllerGUI:OnGUI+10: 4C 89 7D F8                    - mov [rbp-08],r15
+PlayerControllerGUI:OnGUI+14: 48 8B F1                       - mov rsi,rcx
+PlayerControllerGUI:OnGUI+17: 66 0F 57 C0                    - xorpd xmm0,xmm0
+PlayerControllerGUI:OnGUI+1b: F2 0F 5A E8                    - cvtsd2ss xmm5,xmm0
+PlayerControllerGUI:OnGUI+1f: F3 0F 11 6D E4                 - movss [rbp-1C],xmm5
+PlayerControllerGUI:OnGUI+24: 48 BF 30 AC 18 96 B8 02 00 00  - mov rdi,000002B89618AC30
+PlayerControllerGUI:OnGUI+2e: 48 B8 30 AC 18 96 B8 02 00 00  - mov rax,000002B89618AC30
+// ---------- INJECTING HERE ----------
+PlayerControllerGUI:OnGUI+38: 83 38 00                       - cmp dword ptr [rax],00
+// ---------- DONE INJECTING  ----------
+PlayerControllerGUI:OnGUI+3b: 0F B6 87 B0 00 00 00           - movzx eax,byte ptr [rdi+000000B0]
+PlayerControllerGUI:OnGUI+42: 85 C0                          - test eax,eax
+PlayerControllerGUI:OnGUI+44: 75 0A                          - jne PlayerControllerGUI:OnGUI+50
+PlayerControllerGUI:OnGUI+46: 44 0F B6 BF B2 00 00 00        - movzx r15d,byte ptr [rdi+000000B2]
+PlayerControllerGUI:OnGUI+4e: EB 03                          - jmp PlayerControllerGUI:OnGUI+53
+PlayerControllerGUI:OnGUI+50: 45 33 FF                       - xor r15d,r15d
+PlayerControllerGUI:OnGUI+53: 45 85 FF                       - test r15d,r15d
+PlayerControllerGUI:OnGUI+56: 0F 84 0F 0C 00 00              - je PlayerControllerGUI:OnGUI+c6b
+PlayerControllerGUI:OnGUI+5c: 0F B6 86 00 01 00 00           - movzx eax,byte ptr [rsi+00000100]
+PlayerControllerGUI:OnGUI+63: 85 C0                          - test eax,eax
+}"""
+
+[[cheat]]
+id = "disabel-cheater-flag"
+name = "Disabel Cheater Flag?"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(NoFlag,HellClock.Cheat.CheatInputs:FlagCheat+0,HellClock.Cheat.CheatInputs:FlagCheat+27,49 BB ?? ?? ?? ?? ?? ?? ?? ?? 41 ?? ?? 48) // should be unique
+
+NoFlag:
+  mov r11,BoolStateExtention:SetFalse
+registersymbol(NoFlag)
+
+[DISABLE]
+NoFlag:
+  mov r11,BoolStateExtention:SetTrue
+
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: HellClock.Cheat.CheatInputs:FlagCheat+16
+
+2B91E22D3A8: 00 00                          - add [rax],al
+2B91E22D3AA: 00 00                          - add [rax],al
+2B91E22D3AC: 00 00                          - add [rax],al
+2B91E22D3AE: 00 00                          - add [rax],al
+HellClock.Cheat.CheatInputs:FlagCheat: 55                             - push rbp
+HellClock.Cheat.CheatInputs:FlagCheat+1: 48 8B EC                       - mov rbp,rsp
+HellClock.Cheat.CheatInputs:FlagCheat+4: 48 83 EC 30                    - sub rsp,30
+HellClock.Cheat.CheatInputs:FlagCheat+8: 48 B8 00 7F 1A 23 B9 02 00 00  - mov rax,000002B9231A7F00
+HellClock.Cheat.CheatInputs:FlagCheat+12: 48 8B 08                       - mov rcx,[rax]
+HellClock.Cheat.CheatInputs:FlagCheat+15: 90                             - nop 
+// ---------- INJECTING HERE ----------
+HellClock.Cheat.CheatInputs:FlagCheat+16: 49 BB 60 53 ED 35 B8 02 00 00  - mov r11,BoolStateExtention:SetTrue
+// ---------- DONE INJECTING  ----------
+HellClock.Cheat.CheatInputs:FlagCheat+20: 41 FF D3                       - call r11
+HellClock.Cheat.CheatInputs:FlagCheat+23: 48 8D 65 00                    - lea rsp,[rbp+00]
+HellClock.Cheat.CheatInputs:FlagCheat+27: 5D                             - pop rbp
+HellClock.Cheat.CheatInputs:FlagCheat+28: C3                             - ret 
+2B91E22D3D9: 00 00                          - add [rax],al
+2B91E22D3DB: 00 00                          - add [rax],al
+2B91E22D3DD: 00 00                          - add [rax],al
+2B91E22D3DF: 00 01                          - add [rcx],al
+2B91E22D3E1: 04 02                          - add al,02
+2B91E22D3E3: 05 04 03 01 50                 - add eax,50010304
+}"""
+
+[[cheat]]
+id = "enable-only-f6-menu-enable-before-loading-save"
+name = "Enable Only F6 Menu? (Enable Before Loading Save)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(JustF6,HellClock.Cheat.CheatInputs:Start+50,HellClock.Cheat.CheatInputs:Start+100,C6 85 ?? ?? ?? ?? 00 0F) // should be unique
+
+JustF6+6:
+db 01
+registersymbol(JustF6)
+
+[DISABLE]
+
+JustF6+6:
+  db 00
+
+unregistersymbol(*)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: HellClock.Cheat.CheatInputs:Start+95
+
+HellClock.Cheat.CheatInputs:Start+60: 41 FF D3                       - call r11
+HellClock.Cheat.CheatInputs:Start+63: 48 BB 30 3C 34 17 50 02 00 00  - mov rbx,0000025017343C30
+HellClock.Cheat.CheatInputs:Start+6d: 48 B8 30 3C 34 17 50 02 00 00  - mov rax,0000025017343C30
+HellClock.Cheat.CheatInputs:Start+77: 83 38 00                       - cmp dword ptr [rax],00
+HellClock.Cheat.CheatInputs:Start+7a: 0F B6 83 B0 00 00 00           - movzx eax,byte ptr [rbx+000000B0]
+HellClock.Cheat.CheatInputs:Start+81: 85 C0                          - test eax,eax
+HellClock.Cheat.CheatInputs:Start+83: 75 10                          - jne HellClock.Cheat.CheatInputs:Start+95
+HellClock.Cheat.CheatInputs:Start+85: 0F B6 83 B2 00 00 00           - movzx eax,byte ptr [rbx+000000B2]
+HellClock.Cheat.CheatInputs:Start+8c: 40 88 85 70 FF FF FF           - mov [rbp-00000090],al
+HellClock.Cheat.CheatInputs:Start+93: EB 07                          - jmp HellClock.Cheat.CheatInputs:Start+9c
+// ---------- INJECTING HERE ----------
+HellClock.Cheat.CheatInputs:Start+95: C6 85 70 FF FF FF 00           - mov byte ptr [rbp-00000090],00
+// ---------- DONE INJECTING  ----------
+HellClock.Cheat.CheatInputs:Start+9c: 0F B6 85 70 FF FF FF           - movzx eax,byte ptr [rbp-00000090]
+HellClock.Cheat.CheatInputs:Start+a3: 85 C0                          - test eax,eax
+HellClock.Cheat.CheatInputs:Start+a5: 75 39                          - jne HellClock.Cheat.CheatInputs:Start+e0
+HellClock.Cheat.CheatInputs:Start+a7: 48 8B 46 18                    - mov rax,[rsi+18]
+HellClock.Cheat.CheatInputs:Start+ab: 48 8B C8                       - mov rcx,rax
+HellClock.Cheat.CheatInputs:Start+ae: 83 38 00                       - cmp dword ptr [rax],00
+HellClock.Cheat.CheatInputs:Start+b1: 48 8D 64 24 00                 - lea rsp,[rsp+00]
+HellClock.Cheat.CheatInputs:Start+b6: 49 BB 10 C4 59 71 50 02 00 00  - mov r11,UnityEngine.Component:get_gameObject
+HellClock.Cheat.CheatInputs:Start+c0: 41 FF D3                       - call r11
+HellClock.Cheat.CheatInputs:Start+c3: 48 8B C8                       - mov rcx,rax
+}"""

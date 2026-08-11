@@ -1,0 +1,2786 @@
+[game]
+name = "Legend of Heroes: Trails of Cold Steel IV"
+exe = "ed8_4_pc.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=15803"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script-god-mode-one-hit-kill-etc"
+name = "Damage Modifier Script (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(DamageModAOB,$process,44 8B F2 48 8B F9 74 25 0F B7 91 32 04 00 00) // should be unique
+aobscanmodule(DamageModAOB,$process,44 8B F2 48 8B F1 74 25 0F B7 91 8A 04 00 00) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,4096,DamageModAOB)
+
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fEnemyHealingMult)
+registersymbol(fEnemyHealingMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(fHeroHealingMult)
+registersymbol(fHeroHealingMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+newmem:
+  cmp dword ptr [rcx+B0],0
+  jne EnemyHit
+HeroHit:
+  cmp edx,0
+  jl HeroHealingHit
+  jg HeroDamageHit
+  jmp CleanUp
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [rsp]
+  pop edx
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor edx,edx
+  jmp CleanUp
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne CleanUp
+  cmp edx,dword ptr [rcx+3AC]
+  jl @F
+  xor edx,edx
+@@:
+  jmp CleanUp  
+HeroHealingHit:
+  cmp [fHeroHealingMult],(float)0.0
+  je CleanUp
+  neg edx
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroHealingMult]
+  fistp dword ptr [rsp]
+  pop edx
+  neg edx
+  jmp CleanUp
+EnemyHit:
+  cmp edx,0
+  jl EnemyHealingHit
+  jg EnemyDamageHit
+  jmp CheckOneHitKill
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [rsp]
+  pop edx
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne CleanUp
+  mov edx,dword ptr [rcx+3AC]
+  jmp CleanUp
+EnemyHealingHit:
+  cmp [fEnemyHealingMult],(float)0.0
+  je CleanUp
+  neg edx
+  push edx
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyHealingMult]
+  fistp dword ptr [rsp]
+  pop edx
+  neg edx
+
+CleanUp:  
+  mov r14d,edx
+  mov rsi,rcx
+  test [rcx+000003A8],00200000
+  jmp return
+
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)1.4
+fEnemyHealingMult:
+dq (float)0.25
+fHeroDamageMult:
+dq (float)0.25
+fHeroHealingMult:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+
+DamageModAOB:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  db 44 8B F2 48 8B F1
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fEnemyHealingMult)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(fHeroHealingMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-damage-to-hero-party"
+name = "Hero Damage Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half damage to hero party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-set-to-zero-off-otherwise-multiplier-to-hero-party-healing"
+name = "Hero Healing Multiplier (Set to Zero = Off; Otherwise multiplier to hero party healing)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-if-on-and-god-mode-off-then-you-take-damage-until-the-hit-will-kill-you"
+name = "Hero Cannot Die (If On and God Mode Off, Then You Take Damage Until The Hit Will Kill You)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier-to-damage-you-deal-to-enemies"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier to damage you deal to enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-healing-to-enemy-party"
+name = "Enemy Healing Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half healing to enemy party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []
+
+[[cheat]]
+id = "infinite-battle-ep"
+name = "Infinite Battle EP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteBattleEP"
+hops = []
+
+[[cheat]]
+id = "hero-battle-ep-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-ep-usage-for-hero-party"
+name = "Hero Battle EP Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half EP usage for hero party)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroBattleEPMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-ep-multiplier-set-to-zero-off-otherwise-multiplier-for-hero-party-ep-healing"
+name = "Hero Healing EP Multiplier (Set to Zero = Off; Otherwise multiplier for hero party EP healing)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingEPMult"
+hops = []
+
+[[cheat]]
+id = "enemy-battle-ep-multiplier-set-to-zero-off-otherwise-multiplier-to-ep-usage-for-enemies"
+name = "Enemy Battle EP Multiplier (Set to Zero = Off; Otherwise multiplier to EP usage for enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyBattleEPMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-ep-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-ep-healing-for-enemy-party"
+name = "Enemy Healing EP Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half EP healing for enemy party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingEPMult"
+hops = []
+
+[[cheat]]
+id = "infinite-battle-cp"
+name = "Infinite Battle CP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteBattleCP"
+hops = []
+
+[[cheat]]
+id = "max-cp-on-hit-hero-party"
+name = "Max CP On Hit (Hero Party)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MaxCPOnHit"
+hops = []
+
+[[cheat]]
+id = "hero-battle-cp-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-cp-usage-for-hero-party"
+name = "Hero Battle CP Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half CP usage for hero party)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroBattleCPMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-cp-multiplier-set-to-zero-off-otherwise-multiplier-for-hero-party-cp-healing"
+name = "Hero Healing CP Multiplier (Set to Zero = Off; Otherwise multiplier for hero party CP healing)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingCPMult"
+hops = []
+
+[[cheat]]
+id = "enemy-battle-cp-multiplier-set-to-zero-off-otherwise-multiplier-to-cp-usage-for-enemies"
+name = "Enemy Battle CP Multiplier (Set to Zero = Off; Otherwise multiplier to CP usage for enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyBattleCPMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-cp-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-cp-healing-for-enemy-party"
+name = "Enemy Healing CP Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half CP healing for enemy party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingCPMult"
+hops = []
+
+[[cheat]]
+id = "always-max-bravery-points-7"
+name = "Always Max Bravery Points (7)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BraveryPointsMaxAOB,$process,0F B6 BB 90 02 00 00 0F 29 B4 24 90 00 00 00 8D 42 FF) // should be unique
+registersymbol(BraveryPointsMaxAOB)
+alloc(newmem,1024,BraveryPointsMaxAOB)
+
+label(code)
+label(return)
+
+newmem:
+  cmp byte ptr [rbx+00000290],#7
+  jge code
+  mov byte ptr [rbx+00000290],#7
+
+code:
+  movzx edi,byte ptr [rbx+00000290]
+  jmp return
+
+BraveryPointsMaxAOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+BraveryPointsMaxAOB:
+  db 0F B6 BB 90 02 00 00
+
+unregistersymbol(BraveryPointsMaxAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "always-one-hit-break"
+name = "Always One Hit Break"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This is in the function calculating break damage, searched for Skuld ID to find it
+aobscanmodule(OneHitBreakAOB,$process,8B DF 41 BE 0F 27 00 00 44 8B 64 24 60) // should be unique
+registersymbol(OneHitBreakAOB)
+alloc(newmem,1024,OneHitBreakAOB)
+
+label(return)
+label(originalcode)
+
+newmem:
+  // We are basically adding 1,999,999 to the break damage amount, so in theory 1 Hit Break
+  add esi,#1999999
+
+originalcode:
+  mov ebx,edi
+  mov r14d,0000270F
+  jmp return
+
+OneHitBreakAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+OneHitBreakAOB:
+  db 8B DF 41 BE 0F 27 00 00
+
+unregistersymbol(OneHitBreakAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "emblem-effect-for-hp-ep-cp-regeneration-always-available"
+name = "Emblem Effect For HP/EP/CP Regeneration Always Available"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(EmblemHPEPCPAOB1,$process,66 39 07 0F 85 01 01 00 00) // should be unique
+registersymbol(EmblemHPEPCPAOB1)
+alloc(newmem,1024,EmblemHPEPCPAOB1)
+
+///
+aobscanmodule(EmblemHPEPCPAOB2,$process,84 C0 0F 84 C9 00 00 00 F3 48 0F 2C 47 E4) // should be unique
+registersymbol(EmblemHPEPCPAOB2)
+alloc(newmem2,1024,EmblemHPEPCPAOB2)
+
+///
+label(return)
+label(originalcode)
+
+///
+label(CustomHPEPCPPercent)
+registersymbol(CustomHPEPCPPercent)
+
+newmem:
+  cmp bx,0
+  jne originalcode
+  jmp return
+originalcode:
+  cmp [rdi],ax
+  jne EmblemHPEPCPAOB1+10B
+  jmp return
+
+newmem2:
+  cmp bx,0
+  jne originalcode2
+  cvtss2si rax,[CustomHPEPCPPercent]
+  jmp return2
+originalcode2:
+  test al,al
+  je EmblemHPEPCPAOB2+D1
+  cvtss2si rax,[rdi-1C]
+  jmp return2
+
+CustomHPEPCPPercent:
+dq (float)10.0
+  
+EmblemHPEPCPAOB1:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  return:
+
+EmblemHPEPCPAOB2:
+  jmp newmem2
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  return2:
+  
+[DISABLE]
+
+EmblemHPEPCPAOB1:
+  db 66 39 07 0F 85 01 01 00 00
+
+unregistersymbol(EmblemHPEPCPAOB1)
+  
+EmblemHPEPCPAOB2:
+  db 84 C0 0F 84 C9 00 00 00 F3 48 0F 2C 47 E4
+
+unregistersymbol(EmblemHPEPCPAOB2)
+
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "custom-hp-ep-cp-regeneration-percent"
+name = "Custom HP/EP/CP Regeneration Percent"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CustomHPEPCPPercent"
+hops = []
+
+[[cheat]]
+id = "infinite-turns-brave-order-battle-buffs"
+name = "Infinite Turns Brave Order Battle Buffs"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BraveOrderBuffsAOB,$process,FE 4B 44 80 7B 44 00 75 4E) // should be unique
+registersymbol(BraveOrderBuffsAOB)
+
+BraveOrderBuffsAOB:
+  db 90 90 90
+
+[DISABLE]
+
+BraveOrderBuffsAOB:
+  db FE 4B 44
+
+unregistersymbol(BraveOrderBuffsAOB)"""
+
+[[cheat]]
+id = "spending-sepith-increases-it-instead-of-decreasing"
+name = "Spending Sepith Increases It Instead of Decreasing"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(SepithIncreaseAOB1,$process,41 2B C0 89 82 D8 A5 9A 00) // should be unique
+registersymbol(SepithIncreaseAOB1)
+  
+SepithIncreaseAOB1:
+  db 44 01 C0
+
+SepithIncreaseAOB1-D:
+  db EB
+  
+[DISABLE]
+
+SepithIncreaseAOB1:
+  db 41 2B C0
+
+SepithIncreaseAOB1-D:
+  db 72
+
+unregistersymbol(SepithIncreaseAOB1)"""
+
+[[cheat]]
+id = "always-critical-hit"
+name = "Always Critical Hit"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(AlwaysCriticalHitAOB1,$process,41 3B C1 75 2A 41 81 F9 2C 01 00 00) // should be unique
+registersymbol(AlwaysCriticalHitAOB1)
+alloc(newmem,1024,AlwaysCriticalHitAOB1)
+
+///
+label(return)
+
+///
+newmem:
+  cmp r9d,00000133
+  jne originalcode
+  mov eax,#100
+  jmp AlwaysCriticalHitAOB1+3F  
+
+originalcode:
+  cmp eax,r9d
+  jne AlwaysCriticalHitAOB1+2F
+  jmp return
+
+///  
+AlwaysCriticalHitAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+AlwaysCriticalHitAOB1:
+  db 41 3B C1 75 2A
+
+unregistersymbol(AlwaysCriticalHitAOB1)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "always-no-cast-time-for-arts"
+name = "Always No Cast Time For Arts"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(AlwaysNoCastTimeAOB1,$process,84 C0 75 27 E8 ?? ?? ?? ?? 48 8B 56 60 4C 8D 84 24 A8 00 00 00 41 B9 43 01 00 00) // should be unique
+registersymbol(AlwaysNoCastTimeAOB1)
+
+///  
+AlwaysNoCastTimeAOB1+2:
+  db 90 90
+
+AlwaysNoCastTimeAOB1+29:
+  db 90 90
+  
+[DISABLE]
+
+AlwaysNoCastTimeAOB1+2:
+  db 75 27
+
+AlwaysNoCastTimeAOB1+29:
+  db 74 1D
+
+unregistersymbol(AlwaysNoCastTimeAOB1)"""
+
+[[cheat]]
+id = "infinite-item-usage"
+name = "Infinite Item Usage"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteItemUsage"
+hops = []
+
+[[cheat]]
+id = "set-minimum-item-amount-on-gain-use-toss-0-off"
+name = "Set Minimum Item Amount On Gain/Use/Toss (0 = Off)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetItemAmount"
+hops = []
+
+[[cheat]]
+id = "force-override-item-quantity"
+name = "Force Override Item Quantity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemQty"
+hops = []
+
+[[cheat]]
+id = "set-item-quantity-when-viewing-items"
+name = "Set Item Quantity When Viewing Items"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetQtyWhenViewing"
+hops = []
+
+[[cheat]]
+id = "override-item-id-on-gain-of-item-turn-off-when-not-needed"
+name = "Override Item ID On Gain of Item (Turn Off When Not Needed)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OverrideItemIDAOB,$process,48 89 85 40 03 00 00 48 8B ?? ?? ?? ?? ?? 45 0F B7 F8) // should be unique
+registersymbol(OverrideItemIDAOB)
+alloc(newmem,1024,OverrideItemIDAOB)
+
+label(OverrideItemID)
+registersymbol(OverrideItemID)
+label(OverrideQty)
+registersymbol(OverrideQty)
+label(return)
+
+newmem:
+  mov ebx,#100
+  cmp dx,bx
+  jb DoOverrideItemID
+  mov ebx,#200
+  cmp dx,bx
+  jae NextCheck
+  jmp originalcode
+NextCheck:
+  mov ebx,#2250
+  cmp dx,bx
+  jb DoOverrideItemID
+  mov ebx,#2400
+  cmp dx,bx
+  ja NextCheck2
+  jmp originalcode
+NextCheck2:
+  mov ebx,#3200
+  cmp dx,bx
+  jb DoOverrideItemID
+  mov ebx,#3250
+  cmp dx,bx
+  ja DoOverrideItemID
+  jmp originalcode
+DoOverrideItemID:
+  mov ebx,FFFFFFFF
+  cmp [OverrideItemID],bx
+  je originalcode
+  mov dx,[OverrideItemID]
+  mov r8w,[OverrideQty]
+  
+originalcode:
+  mov [rbp+00000340],rax
+  jmp return
+
+OverrideItemID:
+dq FFFF
+OverrideQty:
+dq 1
+
+OverrideItemIDAOB:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+OverrideItemIDAOB:
+  db 48 89 85 40 03 00 00
+  
+unregistersymbol(OverrideItemIDAOB)
+unregistersymbol(OverrideItemID)
+unregistersymbol(OverrideQty)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "override-item-id"
+name = "Override Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemID"
+hops = []
+
+[[cheat]]
+id = "override-item-qty-when-adding"
+name = "Override Item Qty When Adding"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideQty"
+hops = []
+
+[[cheat]]
+id = "easies-way-just-add-and-remove-quartz-with-infinite-item-usage-on-to-get-any-item-you-want"
+name = "Easies Way, Just Add and Remove Quartz With Infinite Item Usage On To Get Any Item You Want"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemID"
+hops = []
+
+[[cheat]]
+id = "master-quartz-exp-multiplier"
+name = "Master Quartz EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(MQEXPMultAOB1,$process,F3 48 0F 2A C8 8B 83 DC 02 00 00) // should be unique
+registersymbol(MQEXPMultAOB1)
+alloc(newmem,1024,MQEXPMultAOB1)
+
+///
+label(return)
+label(fMQEXPMultiplier)
+registersymbol(fMQEXPMultiplier)
+
+newmem:
+  cvtsi2ss xmm1,rax
+  mulss xmm1,dword ptr [fMQEXPMultiplier]
+  cvttss2si rax,xmm1
+originalcode:
+  cvtsi2ss xmm1,rax
+  jmp return
+  
+fMQEXPMultiplier:
+dq (float)200.0
+
+MQEXPMultAOB1:
+  jmp newmem
+return:
+  
+[DISABLE]
+
+MQEXPMultAOB1:
+  db F3 48 0F 2A C8
+
+unregistersymbol(MQEXPMultAOB1)
+unregistersymbol(fMQEXPMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "master-quartz-exp-multiplier-2"
+name = "Master Quartz EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMQEXPMultiplier"
+hops = []
+
+[[cheat]]
+id = "character-exp-multiplier"
+name = "Character EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CharEXPMultAOB1,$process,F3 48 0F 2A C8 8B 87 CC 02 00 00) // should be unique
+registersymbol(CharEXPMultAOB1)
+alloc(newmem,1024,CharEXPMultAOB1)
+
+///
+label(return)
+label(fCharEXPMultiplier)
+registersymbol(fCharEXPMultiplier)
+
+newmem:
+  cvtsi2ss xmm1,rax
+  mulss xmm1,dword ptr [fCharEXPMultiplier]
+  cvttss2si rax,xmm1
+originalcode:
+  cvtsi2ss xmm1,rax
+  jmp return
+  
+fCharEXPMultiplier:
+dq (float)10.0
+
+CharEXPMultAOB1:
+  jmp newmem
+return:
+  
+[DISABLE]
+
+CharEXPMultAOB1:
+  db F3 48 0F 2A C8
+
+unregistersymbol(CharEXPMultAOB1)
+unregistersymbol(fCharEXPMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "char-exp-multiplier"
+name = "Char EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCharEXPMultiplier"
+hops = []
+
+[[cheat]]
+id = "tactical-bonus-override-must-proc-1-bonus-both-exp-and-master-quartz-exp-multiplier"
+name = "Tactical Bonus Override (Must Proc 1 Bonus) (Both EXP and Master Quartz EXP Multiplier)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This is code that adds to Tactical Bonus for each time you proc one
+aobscanmodule(TacticalBonusOverrideAOB1,$process,76 0A C7 86 90 02 00 00 66 66 1E 41 4C 8B B4 24 98 00 00 00) // should be unique
+registersymbol(TacticalBonusOverrideAOB1)
+alloc(newmem,1024,TacticalBonusOverrideAOB1)
+
+///
+aobscanmodule(TacticalBonusOverrideAOB2,$process,76 0A C7 86 90 02 00 00 66 66 1E 41 41 83 8f 64 02 00 00 10) // should be unique
+registersymbol(TacticalBonusOverrideAOB2)
+alloc(newmem2,1024,TacticalBonusOverrideAOB2)
+
+///
+label(return)
+registersymbol(fTacticalBonusOverrideOverall)
+
+label(return2)
+
+newmem:
+  movss xmm10,[fTacticalBonusOverrideOverall]
+  movss [rsi+00000290],xmm10
+  xorps xmm10,xmm10
+  jmp return
+  
+fTacticalBonusOverrideOverall:
+dq (float)10.0
+
+newmem2:
+  movss xmm10,[fTacticalBonusOverrideOverall]
+  movss [rsi+00000290],xmm10
+  xorps xmm10,xmm10
+  jmp return2
+ 
+TacticalBonusOverrideAOB1:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  return:
+
+TacticalBonusOverrideAOB2:
+  jmp newmem2
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  return2:
+  
+[DISABLE]
+
+TacticalBonusOverrideAOB1:
+  db 76 0A C7 86 90 02 00 00 66 66 1E 41
+
+unregistersymbol(TacticalBonusOverrideAOB1)
+unregistersymbol(fTacticalBonusOverrideOverall)
+
+TacticalBonusOverrideAOB2:
+  db 76 0A C7 86 90 02 00 00 66 66 1E 41
+
+unregistersymbol(TacticalBonusOverrideAOB2)
+  
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "tactical-bonus-override-exp-and-master-quartz-multiplier"
+name = "Tactical Bonus Override (EXP and Master Quartz Multiplier)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fTacticalBonusOverrideOverall"
+hops = []
+
+[[cheat]]
+id = "always-have-dragon-vision-effect-scan-defeated-enemies"
+name = "Always Have Dragon Vision Effect (Scan Defeated Enemies)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(DragonVisionAOB1,$process,74 66 F7 87 A8 03 00 00 00 00 20 00 74 24) // should be unique
+registersymbol(DragonVisionAOB1)
+
+DragonVisionAOB1:
+  db 90 90
+  
+[DISABLE]
+
+DragonVisionAOB1:
+  db 74 66
+
+unregistersymbol(DragonVisionAOB1)"""
+
+[[cheat]]
+id = "always-see-treasure-chests-on-map-portion-of-moon-lens-effect"
+name = "Always See Treasure Chests On Map (Portion of Moon Lens Effect)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(SeeTreasureChestsAOB1,$process,84 C0 44 0F B6 E3 44 0F 45 E6 48 81 C1 68 4D 00 00) // should be unique
+registersymbol(SeeTreasureChestsAOB1)
+
+SeeTreasureChestsAOB1+6:
+  db 44 8B E6 90
+  
+[DISABLE]
+
+SeeTreasureChestsAOB1+6:
+  db 44 0F 45 E6
+
+unregistersymbol(SeeTreasureChestsAOB1)"""
+
+[[cheat]]
+id = "add-bonus-ap-when-completing-a-quest"
+name = "Add Bonus AP When Completing A Quest"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BonusQuestAPAOB,$process,08 5D 02 80 FB 02 74 05 80 FB 08) // should be unique
+alloc(newmem,1024,BonusQuestAPAOB)
+registersymbol(BonusQuestAPAOB)
+
+label(return)
+label(originalcode)
+label(BonusAPAmount)
+registersymbol(BonusAPAmount)
+
+newmem:
+  test bl,02
+  je originalcode
+  push eax
+  mov eax,[BonusAPAmount]
+  add [rbp+24],al
+  pop eax
+
+originalcode:
+  or [rbp+02],bl
+  cmp bl,02
+  jmp return
+
+BonusAPAmount:
+dq #10
+    
+BonusQuestAPAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+BonusQuestAPAOB:
+  db 08 5D 02 80 FB 02
+  
+unregistersymbol(BonusAPAmount)
+unregistersymbol(BonusQuestAPAOB)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bonus-ap-amount"
+name = "Bonus AP Amount"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "BonusAPAmount"
+hops = []
+
+[[cheat]]
+id = "easy-vantage-master-wins-1-hit-kill-opponent-cards"
+name = "Easy Vantage Master Wins (1 Hit Kill Opponent Cards)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+   I ended up using the value of whoever turn it was at word ptr [r14+000006C8] to determine whether to give one hit kill   
+   0 means player turn, 1 means enemy turn
+}
+
+/// This is first attack code
+aobscanmodule(EasyVMWinAOB,$process,0F B7 88 BA 02 00 00 66 29 8A BC 02 00 00 41 C6 86 36 06 00 00 01 EB 06) // should be unique
+alloc(newmem,1024,EasyVMWinAOB)
+registersymbol(EasyVMWinAOB)
+
+/// This is counter attack code I think
+aobscanmodule(EasyVMWinAOB2,$process,0F B7 80 BA 02 00 00 66 29 81 BC 02 00 00) // should be unique
+alloc(newmem2,1024,EasyVMWinAOB2)
+registersymbol(EasyVMWinAOB2)
+
+///
+label(return)
+
+///
+label(return2)
+
+newmem:
+  cmp word ptr [r14+000006C8],0
+  je HeroAttack
+  jmp EnemyAttack
+HeroAttack:
+  mov ecx,[rdx+000002BC]
+  sub [rdx+000002BC],cx
+  mov byte ptr [r14+0000636],01
+  jmp return
+EnemyAttack:
+  sub [rdx+000002BC],cx
+  mov byte ptr [r14+0000636],01
+  jmp return
+originalcode:
+  movzx ecx,word ptr [rax+000002BA]
+  sub [rdx+000002BC],cx
+  mov byte ptr [r14+00000636],01
+  jmp return
+
+newmem2:
+  cmp word ptr [r14+000006C8],0
+  je EnemyCounterAttack
+  jmp HeroCounterAttack
+HeroCounterAttack:
+  mov eax,[rcx+000002BC]
+  jmp return2
+EnemyCounterAttack:
+  xor eax,eax
+  jmp return2
+originalcode2:
+  movzx eax,word ptr [rax+000002BA]
+  jmp return2
+    
+EasyVMWinAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  return:
+
+EasyVMWinAOB2:
+  jmp newmem2
+  nop
+  nop
+  return2:
+  
+[DISABLE]
+
+EasyVMWinAOB:
+  db 0F B7 88 BA 02 00 00 66 29 8A BC 02 00 00 41 C6 86 36 06 00 00 01
+  
+unregistersymbol(EasyVMWinAOB)
+
+EasyVMWinAOB2:
+  db 0F B7 80 BA 02 00 00
+  
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "anyone-can-equip-rean-only-accessories"
+name = "Anyone Can Equip Rean Only Accessories"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(EquipCharCheckAOB,$process,0F B7 45 2A 66 83 F8 40 73 59) // should be unique
+alloc(newmem,1024,EquipCharCheckAOB)
+registersymbol(EquipCharCheckAOB)
+
+label(return)
+label(originalcode)
+
+newmem:
+  mov eax,000000C0
+  cmp [rbp+4E],al
+  jne originalcode
+  mov eax,0000FFFF
+  cmp ax,40
+  jmp return
+
+originalcode:
+  movzx eax,word ptr [rbp+2A]
+  cmp ax,40
+  jmp return
+    
+EquipCharCheckAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+EquipCharCheckAOB:
+  db 0F B7 45 2A 66 83 F8 40
+  
+unregistersymbol(EquipCharCheckAOB)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "easy-pom-pom-party-wins-always-max-cp-hit-rt-to-win"
+name = "Easy Pom Pom Party Wins (Always Max CP, Hit RT To Win)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(PomPomPartyAOB,$process,44 8B 8F D8 7A 00 00 41 8B C1) // should be unique
+alloc(newmem,1024,PomPomPartyAOB)
+registersymbol(PomPomPartyAOB)
+
+label(return)
+
+newmem:
+  mov r9,[GameStructureBasePtr]
+  test r9,r9
+  je originalcode
+  add r9,9CD0F8
+  mov r9,[r9]
+  test r9,r9
+  je originalcode
+  add r9,8A0
+  mov dword ptr [r9+7AD8],03E7
+  mov dword ptr [r9+7AD4],03E7
+  sub r9,8A0
+  add r9,9300
+  mov dword ptr [r9+7AD8],0
+  mov dword ptr [r9+7AD4],0
+  
+originalcode:
+  mov r9d,[rdi+00007AD8]
+  jmp return
+  
+PomPomPartyAOB:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+PomPomPartyAOB:
+  db 44 8B 8F D8 7A 00 00
+  
+unregistersymbol(PomPomPartyAOB)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "thors-unity-rating-multiplier"
+name = "Thors Unity Rating Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CampusEnhancementMultAOB,$process,44 8D 04 18 48 83 C4 20 5B) // should be unique
+registersymbol(CampusEnhancementMultAOB)
+alloc(newmem,1024,CampusEnhancementMultAOB)
+
+label(return)
+label(iCampusEnhancementMult)
+registersymbol(iCampusEnhancementMult)
+
+newmem:
+  imul ebx,[iCampusEnhancementMult]
+originalcode:
+  lea r8d,[rax+rbx]
+  add rsp,20
+  jmp return
+  
+iCampusEnhancementMult:
+dq #5
+
+CampusEnhancementMultAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+CampusEnhancementMultAOB:
+  db 44 8D 04 18 48 83 C4 20
+
+unregistersymbol(CampusEnhancementMultAOB)
+unregistersymbol(iCampusEnhancementMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "campus-enhancment-rating-multiplier"
+name = "Campus Enhancment Rating Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iCampusEnhancementMult"
+hops = []
+
+[[cheat]]
+id = "infinite-turns-good-status-for-allies"
+name = "Infinite Turns Good Status For Allies"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(InfStatusTurnsAOB,$process,FF 4B 08 FF 43 0C 83 7B 08 00 75 CD) // should be unique
+registersymbol(InfStatusTurnsAOB)
+alloc(newmem,1024,InfStatusTurnsAOB)
+
+label(return)
+
+{
+  Kurt's Brandish Effect is considered bad status, it's id is 00000100
+  Just from researching on the Internet, Brandish doesn't seem to help much
+  , so we use 00007EFF as the bad status check instead
+}
+
+newmem:
+  cmp dword ptr [rdi+B0],0
+  jne EnemyStatusTurn
+  test dword ptr [rbx],00007EFF
+  jne HeroBadStatus
+  /// Since it is good status for Hero, just return
+  jmp return
+HeroBadStatus:
+  /// Since it is bad status for Hero, set turns left to 1
+  mov dword ptr [rbx+08],1
+  jmp originalcode
+EnemyStatusTurn:
+  jmp originalcode
+  
+originalcode:
+  dec [rbx+08]
+  inc [rbx+0C]
+  jmp return
+  
+InfStatusTurnsAOB:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+InfStatusTurnsAOB:
+  db FF 4B 08 FF 43 0C
+
+unregistersymbol(InfStatusTurnsAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "grail-locket-force-seal-effect-for-prevent-abnormal-status-stat-down-always-available-must-have-accessory-equipped"
+name = "Grail Locket/Force Seal Effect For Prevent Abnormal Status/Stat Down Always Available (Must Have Accessory Equipped)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This code executes before the loop to get the type of status effect to resist from the item structure
+aobscanmodule(GrailLocketPreventStatusAOB1,$process,45 8B C2 48 8D 50 54 0F 1F 80 00 00 00) // should be unique
+registersymbol(GrailLocketPreventStatusAOB1)
+alloc(newmem,1024,GrailLocketPreventStatusAOB1)
+
+/// This code retrieves the type of status effect to resist from the item structure and starts a loop
+aobscanmodule(GrailLocketPreventStatusAOB2,$process,0F B7 02 05 69 FF FF FF 83 F8 11 0F 87 C1 00 00 00) // should be unique
+registersymbol(GrailLocketPreventStatusAOB2)
+alloc(newmem2,1024,GrailLocketPreventStatusAOB2)
+
+///  This code is the loop that checks all 5 spots in the item structure
+aobscanmodule(GrailLocketPreventStatusAOB3,$process,41 FF C0 48 83 C2 10 41 83 F8 05 0F 82 1D FF FF FF) // should be unique
+registersymbol(GrailLocketPreventStatusAOB3)
+alloc(newmem3,1024,GrailLocketPreventStatusAOB3)
+
+///
+label(return)
+label(originalcode)
+
+newmem:
+  mov qword ptr [ExecutedSpecialTypes],0
+  mov qword ptr [DoneExecutingSpecialTypes],0
+originalcode:
+  mov r8d,r10d
+  lea rdx,[rax+54]
+  jmp return
+
+ExecutedSpecialTypes:
+dq 0
+DoneExecutingSpecialTypes:
+dq 0
+  
+newmem2:
+  cmp [ExecutedSpecialTypes],0
+  je DoFirstSpecialType
+  cmp [ExecutedSpecialTypes],1
+  je DoSecondSpecialType
+  mov [DoneExecutingSpecialTypes],1
+  movzx eax,word ptr [rdx]
+  jmp originalcode2
+DoFirstSpecialType:
+  add [ExecutedSpecialTypes],1
+  mov eax,#152
+  jmp originalcode2
+DoSecondSpecialType:
+  add [ExecutedSpecialTypes],1
+  mov eax,#153
+  jmp originalcode2
+originalcode2:
+  add eax,FFFFFF69
+  jmp return2
+
+newmem3:
+  cmp [DoneExecutingSpecialTypes],1
+  je originalcode3
+  jmp GrailLocketPreventStatusAOB2
+originalcode3:
+  inc r8d
+  add rdx,10
+  jmp return3
+  
+GrailLocketPreventStatusAOB1:
+  jmp newmem
+  nop
+  nop
+  return:
+
+GrailLocketPreventStatusAOB2:
+  jmp newmem2
+  nop
+  nop
+  nop
+  return2:
+
+GrailLocketPreventStatusAOB3:
+  jmp newmem3
+  nop
+  nop
+  return3:
+  
+[DISABLE]
+
+GrailLocketPreventStatusAOB1:
+  db 45 8B C2 48 8D 50 54
+
+unregistersymbol(GrailLocketPreventStatusAOB1)
+
+///
+GrailLocketPreventStatusAOB2:
+  db 0F B7 02 05 69 FF FF FF
+
+unregistersymbol(GrailLocketPreventStatusAOB2)
+
+///
+GrailLocketPreventStatusAOB3:
+  db 41 FF C0 48 83 C2 10
+
+unregistersymbol(GrailLocketPreventStatusAOB2)
+    
+dealloc(newmem)
+dealloc(newmem2)
+dealloc(newmem3)"""
+
+[[cheat]]
+id = "increase-craft-arts-item-range-of-all-items-to-max-make-all-craft-art-items-affect-range-instead-of-one"
+name = "Increase Craft/Arts/Item Range Of All Items To Max / Make All Craft/Art/Items Affect Range Instead of One"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This determines the actual range of the item if it is ranged
+aobscanmodule(ItemRangeAOB1,$process,0F B6 87 84 00 00 00 88 83 84 00 00 00) // should be unique
+registersymbol(ItemRangeAOB1)
+alloc(newmem,1024,ItemRangeAOB1)
+
+/// This determines the actual range of the item if it is ranged
+aobscanmodule(ItemRangeAOB2,$process,44 0F B6 86 84 00 00 00 0F B7 D0) // should be unique
+registersymbol(ItemRangeAOB2)
+alloc(newmem2,1024,ItemRangeAOB2)
+
+/// This determines if the item is a range item or not
+aobscanmodule(ItemRangeAOB3,$process,0F B6 47 7C 88 43 7C) // should be unique
+registersymbol(ItemRangeAOB3)
+alloc(newmem3,1024,ItemRangeAOB3)
+
+/// This determines if the item is a range item or not
+aobscanmodule(ItemRangeAOB4,$process,0F B6 42 7C 33 F6 83 C0 F6) // should be unique
+registersymbol(ItemRangeAOB4)
+alloc(newmem4,1024,ItemRangeAOB4)
+
+/// This code determines if it is an ally turn or not
+aobscanmodule(ItemRangeAOB5,$process,84 C0 0F 85 C8 00 00 00 E8 ?? ?? ?? ?? 48 8B 90 28 41 00 00) // should be unique
+registersymbol(ItemRangeAOB5)
+alloc(newmem5,1024,ItemRangeAOB5)
+
+///
+label(return)
+label(CurrentCharTurnPtr)
+registersymbol(CurrentCharTurnPtr)
+
+newmem:
+  mov [RAXSave],rax
+  mov rax,rdi
+  sub rax,rsp
+  cmp rax,10000
+  jl originalcode
+  mov rax,[CurrentCharTurnPtr]
+  test rax,rax
+  je originalcode
+  cmp [rax+000000B0],0
+  jne originalcode
+  mov rax,[RAXSave]
+  mov eax,[CustomItemRange]
+  jmp return
+originalcode:
+  mov rax,[RAXSave]
+  movzx eax,byte ptr [rdi+00000084]
+  jmp return
+
+RAXSave:
+dq 0
+CustomItemRange:
+dq #40
+
+newmem2:
+  mov [R8Save],r8
+  mov r8,rsi
+  sub r8,rsp
+  cmp r8,10000
+  jl originalcode2
+  mov r8,[CurrentCharTurnPtr]
+  test r8,r8
+  je originalcode2
+  cmp [r8+000000B0],0
+  jne originalcode2
+  mov r8,[R8Save]
+  mov r8d,[CustomItemRange]
+  jmp return2
+
+originalcode2:
+  mov r8,[R8Save]
+  movzx r8d,byte ptr [rsi+00000084]
+  jmp return2
+
+R8Save:
+dq 0
+
+///
+newmem3:
+  mov [RAXSave3],rax
+  mov rax,rdi
+  sub rax,rsp
+  cmp rax,10000
+  jl originalcode3
+  mov rax,[CurrentCharTurnPtr]
+  test rax,rax
+  je originalcode3
+  cmp [rax+000000B0],0
+  jne originalcode3
+  mov rax,[RAXSave3]
+  mov eax,#14
+  mov [rbx+7C],al
+  jmp return3
+
+originalcode3:
+  mov rax,[RAXSave3]
+  movzx eax,byte ptr [rdi+7C]
+  mov [rbx+7C],al
+  jmp return3
+  
+RAXSave3:
+dq 0
+
+///
+newmem4:
+  mov [RAXSave4],rax
+  mov rax,rdx
+  sub rax,rsp
+  cmp rax,10000
+  jl originalcode4
+  mov rax,[CurrentCharTurnPtr]
+  test rax,rax
+  je originalcode4
+  cmp [rax+000000B0],0
+  jne originalcode4
+  mov rax,[RAXSave4]
+  mov eax,#14
+  xor esi,esi
+  jmp return4
+
+originalcode4:
+  mov rax,[RAXSave4]
+  movzx eax,byte ptr [rdx+7C]
+  xor esi,esi
+  jmp return4
+
+RAXSave4:
+dq 0
+  
+///
+newmem5:
+  mov [RAXSave5],rax
+  mov rax,[GameStructureBasePtr]
+  test rax,rax
+  je originalcode5
+  mov rax,[rax+00001CB8]
+  mov rax,[rax+00047ED8]
+  mov rax,[rax+00004128]
+  mov rax,[rax+000002B8]
+  test rax,rax
+  je originalcode5
+  mov [CurrentCharTurnPtr],rax
+  
+originalcode5:
+  mov rax,[RAXSave5]
+  test al,al
+  jne ItemRangeAOB5+D0
+  jmp return5
+
+RAXSave5:
+dq 0
+CurrentCharTurnPtr:
+dq 0
+  
+ItemRangeAOB1:
+  jmp newmem
+  nop
+  nop
+  return:
+
+ItemRangeAOB2:
+  jmp newmem2
+  nop
+  nop
+  nop
+  return2:
+
+ItemRangeAOB3:
+  jmp newmem3
+  nop
+  nop
+  return3:
+
+ItemRangeAOB4:
+  jmp newmem4
+  nop
+  return4:
+
+ItemRangeAOB5:
+  jmp newmem5
+  nop
+  nop
+  nop
+  return5:
+  
+[DISABLE]
+
+ItemRangeAOB1:
+  db 0F B6 87 84 00 00 00
+
+unregistersymbol(ItemRangeAOB1)
+  
+ItemRangeAOB2:
+  db 44 0F B6 86 84 00 00 00
+
+unregistersymbol(ItemRangeAOB2)
+
+ItemRangeAOB3:
+  db 0F B6 47 7C 88 43 7C
+
+unregistersymbol(ItemRangeAOB3)
+
+ItemRangeAOB4:
+  db 0F B6 42 7C 33 F6
+
+unregistersymbol(ItemRangeAOB4)
+
+ItemRangeAOB5:
+  db 84 C0 0F 85 C8 00 00 00
+
+unregistersymbol(ItemRangeAOB5)
+unregistersymbol(CurrentCharTurnPtr)
+  
+dealloc(newmem)
+dealloc(newmem2)
+dealloc(newmem3)
+dealloc(newmem4)
+dealloc(newmem5)"""
+
+[[cheat]]
+id = "pop-any-default-follow-up-attacks-battle-trophy-after-1-follow-up-attack"
+name = "Pop Any (Default Follow Up Attacks) Battle Trophy After 1 Follow Up Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BattleTrophyMultAOB2,$process,81 FB F4 01 00 00 72 11 BA 1A 00 00 00) // should be unique
+registersymbol(BattleTrophyMultAOB2)
+
+BattleTrophyMultAOB2+02:
+  db 01 00 00 00
+  
+[DISABLE]
+
+BattleTrophyMultAOB2+02:
+  db F4 01 00 00
+
+BattleTrophyMultAOB2+09:
+  db 1A 00 00 00
+  
+unregistersymbol(BattleTrophyMultAOB2)"""
+
+[[cheat]]
+id = "trophy-to-pop"
+name = "Trophy To Pop"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:The Magnificent Class VII - Achieved a Special Ops rank of A0.",
+    "2:Pride of the Horned Lions - Achieved a Unity Grade of Unbreakable.",
+    "3:Slayer of Nightmares - Completed the game on nightmare difficulty.",
+    "4:Wings of Hope - Completed all quests.",
+    "5:Empty Chest-er - Opened every treasure chest.",
+    "6:Chronicle of Battle - Completely filled the battle section in the notebook. (Besides the Extra category)",
+    "7:Ally Almanac - Completely filled the character section in the notebook.",
+    "8:Mr. Suitcase - Completely filled the cards section in the notebook.",
+    "9:Keeper of the Records - Completely filled the books section in the notebook.",
+    "10:Ashen Chef-alier - Completely filled the recipe section in the notebook.",
+    "11:Angler God, Master of the Aqueous Realm - Completely filled the fishing section in the notebook. (All 30 types of fish + Rod Lv. Max)",
+    "12:Pom! Pom! Pro! - Won against all opponents in Pom! Pom! Party!",
+    "13:Shutterbug - Took all landscape photos and reported them to Rex.",
+    "14:The Legendary Rean QUARTZ-er - Gathered all 31 varieties of master quartz.",
+    "15:Raiders of the Lost Arts - Gathered all 5 lost arts quartz.",
+    "16:Trials in the Chest - Opened every trial chest.",
+    "17:War Coffers - Acquired over a million mira.",
+    "18:Heavenly Jewel - Raised a master quartz to level 10.",
+    "19:Clashing Steel - Won 100 battles.",
+    "20:Fully-charged Rivalry - Won 700 battles.",
+    "21:The Early Bird Gets the Win - Initiated 300 advantage encounters. (Including double and triple advantage)",
+    "22:Hit the S-Breaks - Used 100 S-Crafts in battle.",
+    "23:Master Strategist - Won a battle with a tactical bonus of x3.0 or greater.",
+    "24:All Broken Up About It - Inflicted Break over 800 times.",
+    "25:Unbreakable Bonds - Raised any two characters to Link Level 7.",
+    "26:Tag-team Trouncing - Used over 500 follow-up attacks in battle.",
+    "27:Dynamic Duo - Used Rush in battle 100 times.",
+    "28:Teamwork Makes the Fiends Hurt - Used Burst in battle 50 times.",
+    "29:Order Up - Used Brave Order in battle over 100 times.",
+    "30:Extra Special Operations - Earned an S-Rank on any act.",
+    "31:Juna-versal Feelings - Spent the evening before the final battle with Juna.",
+    "32:Bunny Love - Spent the evening before the final battle with Altina.",
+    "33:Musse to My Ears - Spent the evening before the final battle with Musse.",
+    "34:Orbal Beau - Spent the evening before the final battle with Alisa.",
+    "35:Sword-crossed Lovers - Spent the evening before the final battle with Laura.",
+    "36:Spellbound - Spent the evening before the final battle with Emma.",
+    "37:Fairy Tale Ending - Spent the evening before the final battle with Fie.",
+    "38:Lifelong Drinking Partner - Spent the evening before the final battle with Sara.",
+    "39:Him & Herschel - Spent the evening before the final battle with Towa.",
+    "40:Family Ties - Spent the evening before the final battle with Elise.",
+    "41:Arnor Ardor - Spent the evening before the final battle with Alfin.",
+    "42:Tsunderbolts and Lightning - Forged a strong bond with Celine and Duvalie.",
+    "43:Playing with the Boys - Forged a strong bond with Kurt, Ash, Elliot, Machias, Jusis, Gaius, and Crow.",
+    "44:Joint Operation - Infiltrated Orchis Tower.",
+    "45:Nightfall - Completed the prologue.",
+    "46:The Trials of Class VII - Completed Act 1.",
+    "47:A Shattered Blade - Completed Fragments.",
+    "48:Guiding Starlight - Completed Act 2.",
+    "49:Seekers of the Dawn - Completed Act 3.",
+    "50:Night of Promises - Completed Eventide.",
+    "51:Scattered Petals, Dying Flames - Completed the finale.",
+    "52:A New Dawn - Reached the true ending.",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "BattleTrophyMultAOB2"
+hops = []
+
+[[cheat]]
+id = "infinite-fishing-line-tension-made-by-master-builder"
+name = "Infinite Fishing Line Tension (Made by Master_Builder)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ed8_4_PC.exe
+  Version: 
+  Date   : 2021-04-11
+  Author : Master_Builder
+
+  The first AoB is reeling when the fish isn't fighting. The second is reeling when the fish *is* fighting.
+}
+
+{ Game   : ed8_4_PC.exe
+  Version:
+  Date   : 2021-04-11
+  Author : gregory
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(INF_FLINE_TENSION_1,$process,F3 0F 58 8F 00 02 00 00 F3 0F 5D C1 F3 0F 11 87 00 02 00 00 F3 0F 10 40 3C) // should be unique
+alloc(newmem,$1000,INF_FLINE_TENSION_1)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //addss xmm1,[rdi+00000200]
+  movss xmm1,[perfectTension]
+  jmp return
+
+perfectTension:
+  dd (float)0.3
+
+INF_FLINE_TENSION_1:
+  jmp newmem
+  nop 3
+return:
+registersymbol(INF_FLINE_TENSION_1)
+
+aobscanmodule(INF_FLINE_TENSION_2,$process,F3 0F 58 8F 00 02 00 00 F3 0F 5D C1 F3 0F 11 87 00 02 00 00 F3 0F 10 40 40) // should be unique
+alloc(newmem2,$1000,INF_FLINE_TENSION_2)
+
+label(code2)
+label(return2)
+
+newmem2:
+
+code2:
+  //addss xmm1,[rdi+00000200]
+  movss xmm1,[perfectTension]
+  jmp return2
+
+INF_FLINE_TENSION_2:
+  jmp newmem2
+  nop 3
+return2:
+registersymbol(INF_FLINE_TENSION_2)
+
+[DISABLE]
+
+INF_FLINE_TENSION_1:
+  db F3 0F 58 8F 00 02 00 00
+
+unregistersymbol(INF_FLINE_TENSION_1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ed8_4_PC.exe+3506EF
+
+ed8_4_PC.exe+3506AD: F3 44 0F 11 44 24 40     - movss [rsp+40],xmm8
+ed8_4_PC.exe+3506B4: 89 B7 18 02 00 00        - mov [rdi+00000218],esi
+ed8_4_PC.exe+3506BA: F3 0F 5F 15 7A 12 63 00  - maxss xmm2,[ed8_4_PC.exe+98193C]
+ed8_4_PC.exe+3506C2: F3 41 0F 59 CC           - mulss xmm1,xmm12
+ed8_4_PC.exe+3506C7: 48 89 74 24 38           - mov [rsp+38],rsi
+ed8_4_PC.exe+3506CC: 40 88 74 24 30           - mov [rsp+30],sil
+ed8_4_PC.exe+3506D1: F3 44 0F 11 44 24 28     - movss [rsp+28],xmm8
+ed8_4_PC.exe+3506D8: F3 0F 59 0D A4 C7 76 00  - mulss xmm1,[ed8_4_PC.exe+ABCE84]
+ed8_4_PC.exe+3506E0: F3 0F 5D 15 98 3E 55 00  - minss xmm2,[ed8_4_PC.exe+8A4580]
+ed8_4_PC.exe+3506E8: F3 44 0F 11 44 24 20     - movss [rsp+20],xmm8
+// ---------- INJECTING HERE ----------
+ed8_4_PC.exe+3506EF: F3 0F 58 8F 00 02 00 00  - addss xmm1,[rdi+00000200]
+// ---------- DONE INJECTING  ----------
+ed8_4_PC.exe+3506F7: F3 0F 5D C1              - minss xmm0,xmm1
+ed8_4_PC.exe+3506FB: F3 0F 11 87 00 02 00 00  - movss [rdi+00000200],xmm0
+ed8_4_PC.exe+350703: F3 0F 10 40 3C           - movss xmm0,[rax+3C]
+ed8_4_PC.exe+350708: 0F B7 C1                 - movzx eax,cx
+ed8_4_PC.exe+35070B: F3 0F 59 87 2C 02 00 00  - mulss xmm0,[rdi+0000022C]
+ed8_4_PC.exe+350713: 66 83 F0 01              - xor ax,01
+ed8_4_PC.exe+350717: 66 89 87 EA 01 00 00     - mov [rdi+000001EA],ax
+ed8_4_PC.exe+35071E: 66 83 F9 01              - cmp cx,01
+ed8_4_PC.exe+350722: F3 0F 59 C2              - mulss xmm0,xmm2
+ed8_4_PC.exe+350726: 41 0F 28 D2              - movaps xmm2,xmm10
+}
+INF_FLINE_TENSION_2:
+  db F3 0F 58 8F 00 02 00 00
+
+unregistersymbol(INF_FLINE_TENSION_2)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ed8_4_PC.exe+3503FA
+
+ed8_4_PC.exe+3503B8: F3 44 0F 11 44 24 40     - movss [rsp+40],xmm8
+ed8_4_PC.exe+3503BF: 89 B7 18 02 00 00        - mov [rdi+00000218],esi
+ed8_4_PC.exe+3503C5: F3 0F 5F 15 6F 15 63 00  - maxss xmm2,[ed8_4_PC.exe+98193C]
+ed8_4_PC.exe+3503CD: F3 41 0F 59 CC           - mulss xmm1,xmm12
+ed8_4_PC.exe+3503D2: 48 89 74 24 38           - mov [rsp+38],rsi
+ed8_4_PC.exe+3503D7: 40 88 74 24 30           - mov [rsp+30],sil
+ed8_4_PC.exe+3503DC: F3 44 0F 11 44 24 28     - movss [rsp+28],xmm8
+ed8_4_PC.exe+3503E3: F3 0F 59 0D 99 CA 76 00  - mulss xmm1,[ed8_4_PC.exe+ABCE84]
+ed8_4_PC.exe+3503EB: F3 0F 5D 15 8D 41 55 00  - minss xmm2,[ed8_4_PC.exe+8A4580]
+ed8_4_PC.exe+3503F3: F3 44 0F 11 44 24 20     - movss [rsp+20],xmm8
+// ---------- INJECTING HERE ----------
+ed8_4_PC.exe+3503FA: F3 0F 58 8F 00 02 00 00  - addss xmm1,[rdi+00000200]
+// ---------- DONE INJECTING  ----------
+ed8_4_PC.exe+350402: F3 0F 5D C1              - minss xmm0,xmm1
+ed8_4_PC.exe+350406: F3 0F 11 87 00 02 00 00  - movss [rdi+00000200],xmm0
+ed8_4_PC.exe+35040E: F3 0F 10 40 40           - movss xmm0,[rax+40]
+ed8_4_PC.exe+350413: 0F B7 C1                 - movzx eax,cx
+ed8_4_PC.exe+350416: F3 0F 59 87 2C 02 00 00  - mulss xmm0,[rdi+0000022C]
+ed8_4_PC.exe+35041E: 66 83 F0 01              - xor ax,01
+ed8_4_PC.exe+350422: 66 89 87 EA 01 00 00     - mov [rdi+000001EA],ax
+ed8_4_PC.exe+350429: 66 83 F9 01              - cmp cx,01
+ed8_4_PC.exe+35042D: F3 0F 59 C2              - mulss xmm0,xmm2
+ed8_4_PC.exe+350431: 41 0F 28 D2              - movaps xmm2,xmm10
+}"""
+
+[[cheat]]
+id = "playtime-in-seconds"
+name = "Playtime (In Seconds)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStructureBasePtr"
+hops = ["+0x4c68"]
+
+[[cheat]]
+id = "sepith-mass-crystals"
+name = "Sepith Mass Crystals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStructureBasePtr"
+hops = ["+0x9aa5f4"]
+
+[[cheat]]
+id = "mira"
+name = "Mira"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStructureBasePtr"
+hops = ["+0x9aa638"]
+
+[[cheat]]
+id = "assault-gauge"
+name = "Assault Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStructureBasePtr"
+hops = ["+0x9aa64c"]
+
+[[cheat]]
+id = "last-selected-master-quartz-level"
+name = "Last Selected Master Quartz Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedMasterQuartzPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "last-selected-master-quartz-exp"
+name = "Last Selected Master Quartz EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedMasterQuartzPtr"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "link-level-exp-gain-for-all-links"
+name = "Link Level EXP Gain for ALL Links"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStructureBasePtr"
+hops = [
+    "+0x83b2f8",
+    "+0x70",
+    "+0x4",
+]
+
+[[cheat]]
+id = "link-level-exp-gain-for-regular-links"
+name = "Link Level EXP Gain for Regular Links"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStructureBasePtr"
+hops = [
+    "+0x83b2f8",
+    "+0x70",
+    "+0xc",
+]
+
+[[cheat]]
+id = "selected-char-to-edit-brave-order"
+name = "Selected Char To Edit Brave Order"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Rean",
+    "1:Alisa",
+    "2:Elliot",
+    "3:Laura",
+    "4:Machias",
+    "5:Emma",
+    "6:Jusis",
+    "7:Fie",
+    "8:Gaius",
+    "9:Millium",
+    "10:Juna",
+    "11:Kurt",
+    "12:Altina",
+    "13:Musse",
+    "14:Ash",
+    "15:Sara",
+    "16:General Le Guin",
+    "17:Agate",
+    "18:Angelica",
+    "19:Prince Olivert",
+    "20:Tita",
+    "21:Tio",
+    "22:Sharon",
+    "23:Crow",
+    "24:Vita",
+    "25:Toval",
+    "26:Estelle",
+    "27:Joshua",
+    "28:Renne",
+    "29:Lloyd",
+    "30:Elie",
+    "31:Randy",
+    "32:Crimson Roselia",
+    "33:George",
+    "34:Viscount Arseid",
+    "35:Duvalie",
+    "36:Ines",
+    "37:Ennea",
+    "38:Xeno",
+    "39:Leonidas",
+    "40:Celine",
+    "41:KeA",
+    "42:Jona",
+    "43:Sully",
+    "44:Towa",
+    "45:Elise",
+    "46:Princess Alfin",
+    "47:Josette",
+    "48:Patrick",
+    "49:Scherazard",
+    "50:Jessica",
+    "51:Wayne",
+    "56:Test: Trails 3 Rean",
+    "56:Test: Ennea",
+    "57:Test: Rean / Lloyd",
+    "58:Test: ★ OZ Crimson",
+    "59:Test: ★ Aurelia as General",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedBraveOrderChar"
+hops = []
+
+[[cheat]]
+id = "current-brave-order-1"
+name = "Current Brave Order 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentSelectedBraveOrderPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "current-brave-order-2"
+name = "Current Brave Order 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentSelectedBraveOrderPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "current-brave-order-3"
+name = "Current Brave Order 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentSelectedBraveOrderPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "current-brave-order-4"
+name = "Current Brave Order 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentSelectedBraveOrderPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "earth-sepith"
+name = "Earth Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithBasePtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "water-sepith"
+name = "Water Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithBasePtr"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "fire-sepith"
+name = "Fire Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithBasePtr"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "wind-sepith"
+name = "Wind Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithBasePtr"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "time-sepith"
+name = "Time Sepith"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithBasePtr"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "space-sepith"
+name = "Space Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithBasePtr"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "mirage-sepith"
+name = "Mirage Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithBasePtr"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "selected-char-for-equipment"
+name = "Selected Char for Equipment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Rean",
+    "1:Alisa",
+    "2:Elliot",
+    "3:Laura",
+    "4:Machias",
+    "5:Emma",
+    "6:Jusis",
+    "7:Fie",
+    "8:Gaius",
+    "9:Millium",
+    "10:Juna",
+    "11:Kurt",
+    "12:Altina",
+    "13:Musse",
+    "14:Ash",
+    "15:Sara",
+    "16:General Le Guin",
+    "17:Agate",
+    "18:Angelica",
+    "19:Prince Olivert",
+    "20:Tita",
+    "21:Tio",
+    "22:Sharon",
+    "23:Crow",
+    "24:Vita",
+    "25:Toval",
+    "26:Estelle",
+    "27:Joshua",
+    "28:Renne",
+    "29:Lloyd",
+    "30:Elie",
+    "31:Randy",
+    "32:Crimson Roselia",
+    "33:George",
+    "34:Viscount Arseid",
+    "35:Duvalie",
+    "36:Ines",
+    "37:Ennea",
+    "38:Xeno",
+    "39:Leonidas",
+    "40:Celine",
+    "41:KeA",
+    "42:Jona",
+    "43:Sully",
+    "44:Towa",
+    "45:Elise",
+    "46:Princess Alfin",
+    "47:Josette",
+    "48:Patrick",
+    "49:Scherazard",
+    "50:Jessica",
+    "51:Wayne",
+    "56:Test: Trails 3 Rean",
+    "56:Test: Ennea",
+    "57:Test: Rean / Lloyd",
+    "58:Test: ★ OZ Crimson",
+    "59:Test: ★ Aurelia as General",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedEquipChar"
+hops = []
+
+[[cheat]]
+id = "selected-char-for-orbments"
+name = "Selected Char for Orbments"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Rean",
+    "1:Alisa",
+    "2:Elliot",
+    "3:Laura",
+    "4:Machias",
+    "5:Emma",
+    "6:Jusis",
+    "7:Fie",
+    "8:Gaius",
+    "9:Millium",
+    "10:Juna",
+    "11:Kurt",
+    "12:Altina",
+    "13:Musse",
+    "14:Ash",
+    "15:Sara",
+    "16:General Le Guin",
+    "17:Agate",
+    "18:Angelica",
+    "19:Prince Olivert",
+    "20:Tita",
+    "21:Tio",
+    "22:Sharon",
+    "23:Crow",
+    "24:Vita",
+    "25:Toval",
+    "26:Estelle",
+    "27:Joshua",
+    "28:Renne",
+    "29:Lloyd",
+    "30:Elie",
+    "31:Randy",
+    "32:Crimson Roselia",
+    "33:George",
+    "34:Viscount Arseid",
+    "35:Duvalie",
+    "36:Ines",
+    "37:Ennea",
+    "38:Xeno",
+    "39:Leonidas",
+    "40:Celine",
+    "41:KeA",
+    "42:Jona",
+    "43:Sully",
+    "44:Towa",
+    "45:Elise",
+    "46:Princess Alfin",
+    "47:Josette",
+    "48:Patrick",
+    "49:Scherazard",
+    "50:Jessica",
+    "51:Wayne",
+    "56:Test: Trails 3 Rean",
+    "56:Test: Ennea",
+    "57:Test: Rean / Lloyd",
+    "58:Test: ★ OZ Crimson",
+    "59:Test: ★ Aurelia as General",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedQuartzChar"
+hops = []
+
+[[cheat]]
+id = "selected-party-member"
+name = "Selected Party Member"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Rean",
+    "92:Alisa",
+    "184:Elliot",
+    "276:Laura",
+    "368:Machias",
+    "460:Emma",
+    "552:Jusis",
+    "644:Fie",
+    "736:Gaius",
+    "828:Millium",
+    "920:Juna",
+    "1012:Kurt",
+    "1104:Altina",
+    "1196:Musse",
+    "1288:Ash",
+    "1380:Sara",
+    "1472:General Le Guin",
+    "1564:Agate",
+    "1656:Angelica",
+    "1748:Prince Olivert",
+    "1840:Tita",
+    "1932:Tio",
+    "2024:Sharon",
+    "2116:Crow",
+    "2208:Vita",
+    "2300:Toval",
+    "2392:Estelle",
+    "2484:Joshua",
+    "2576:Renne",
+    "2668:Lloyd",
+    "2760:Elie",
+    "2852:Randy",
+    "2944:Crimson Roselia",
+    "3036:George",
+    "3128:Viscount Arseid",
+    "3220:Duvalie",
+    "3312:Ines",
+    "3404:Ennea",
+    "3496:Xeno",
+    "3588:Leonidas",
+    "3680:Celine",
+    "3772:KeA",
+    "3864:Jona",
+    "3956:Sully",
+    "4048:Towa",
+    "4140:Elise",
+    "4232:Princess Alfin",
+    "4324:Josette",
+    "4416:Patrick",
+    "4508:Scherazard",
+    "4600:Jessica",
+    "4692:Wayne",
+    "5152:Test: Trails 3 Rean",
+    "5152:Test: Ennea",
+    "5244:Test: Rean / Lloyd",
+    "5336:Test: ★ OZ Crimson",
+    "5428:Test: ★ Aurelia as General",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentSelectedCharacter"
+hops = []
+
+[[cheat]]
+id = "selected-extra-stat-party-member"
+name = "Selected Extra Stat Party Member"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Rean",
+    "36:Alisa",
+    "72:Elliot",
+    "108:Laura",
+    "144:Machias",
+    "180:Emma",
+    "216:Jusis",
+    "252:Fie",
+    "288:Gaius",
+    "324:Millium",
+    "360:Juna",
+    "396:Kurt",
+    "432:Altina",
+    "468:Musse",
+    "504:Ash",
+    "540:Sara",
+    "576:General Le Guin",
+    "612:Agate",
+    "648:Angelica",
+    "684:Prince Olivert",
+    "720:Tita",
+    "756:Tio",
+    "792:Sharon",
+    "828:Crow",
+    "864:Vita",
+    "900:Toval",
+    "936:Estelle",
+    "972:Joshua",
+    "1008:Renne",
+    "1044:Lloyd",
+    "1080:Elie",
+    "1116:Randy",
+    "1152:Crimson Roselia",
+    "1188:George",
+    "1224:Viscount Arseid",
+    "1260:Duvalie",
+    "1296:Ines",
+    "1332:Ennea",
+    "1368:Xeno",
+    "1404:Leonidas",
+    "1440:Celine",
+    "1476:KeA",
+    "1512:Jona",
+    "1548:Sully",
+    "1584:Towa",
+    "1620:Elise",
+    "1656:Princess Alfin",
+    "1692:Josette",
+    "1728:Patrick",
+    "1764:Scherazard",
+    "1800:Jessica",
+    "1836:Wayne",
+    "2016:Test: Trails 3 Rean",
+    "2016:Test: Ennea",
+    "2052:Test: Rean / Lloyd",
+    "2088:Test: ★ OZ Crimson",
+    "2124:Test: ★ Aurelia as General",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentSelectedCharacter2"
+hops = []

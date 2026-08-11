@@ -1,0 +1,106 @@
+[game]
+name = "SCUM"
+exe = "scum.exe"
+notes = "Converted from a Cheat Engine table by N3rveMods. Source: https://fearlessrevolution.com/viewtopic.php?t=27479"
+verified = []
+author = "N3rveMods"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlimited-ammo"
+name = "Unlimited Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+
+
+
+
+aobscanmodule(noammoneeded_aob,SCUM.exe,0F B6 81 48 1c 00 00) // should be unique
+alloc(newmem,$1000,noammoneeded_aob)
+
+label(code)
+label(return)
+
+newmem:
+mov byte ptr [rcx+00001c48],1
+code:
+  movzx eax,byte ptr [rcx+00001c48]
+  jmp return
+
+noammoneeded_aob:
+  jmp newmem
+  nop 2
+return:
+registersymbol(noammoneeded_aob)
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+noammoneeded_aob:
+  db 0F B6 81 48 1c 00 00
+
+unregistersymbol(noammoneeded_aob)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "unlimited-durability"
+name = "Unlimited Durability"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+
+aobscanmodule(durability2_ret,SCUM.exe,F3 41 0F 59 F8 F3 41 0F 59 F9 F3 0F 59 C7 F3 0F 5C F0 0F 28 CE) // should be unique
+aobscanmodule(durability_ret,SCUM.exe,48 8B 03 48 8B CB FF 90 30 0E 00 00 48 8B 13 48 8B CB 8B F8) // should be unique
+aobscanmodule(durability_aob,SCUM.exe,F3 0F 11 BB A8 01 00 00 F3 0F 11 B3) // should be unique
+alloc(newmem,$1000,durability_aob)
+
+label(code)
+label(return)
+
+newmem:
+push rax
+mov rax,durability_ret
+cmp [rsp+c0],rax
+pop rax
+jne @f
+mov  [rbx+000001A8],(float)999
+  movss xmm7,[rbx+000001A8]
+
+  @@:
+push rax
+mov rax,durability2_ret+1a
+cmp [rsp+c0],rax
+pop rax
+jne @f
+mov  [rbx+000001A8],(float)999
+  movss xmm7,[rbx+000001A8]
+code:
+  movss [rbx+000001A8],xmm7
+  jmp return
+
+durability_aob:
+  jmp newmem
+  nop 3
+return:
+registersymbol(durability_aob)
+
+[DISABLE]
+
+durability_aob:
+  db F3 0F 11 BB A8 01 00 00
+
+unregistersymbol(durability_aob)
+dealloc(newmem)"""

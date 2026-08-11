@@ -1,0 +1,201 @@
+[game]
+name = "Hitman 2: Silent Assassin"
+exe = "hitman2.exe"
+notes = "Converted from a Cheat Engine table by Eerie Goes D. Source: https://fearlessrevolution.com/viewtopic.php?t=34660"
+verified = []
+author = "Eerie Goes D"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-save-game-normal-and-expert-difficulty"
+name = "Infinite Save Game [Normal and Expert Difficulty]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// 1) allocate 2 KB for our code cave
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+// 2) our custom code: force saves to 63
+newmem:
+  mov [esi+00000245], 63
+
+originalcode:
+// mov [esi+00000245], edi  ; (this is the overwritten instruction)
+
+exit:
+  jmp returnhere
+
+// 3) patch the game’s save‑write instruction to jump into our cave
+"hitman2.exe"+104C9D:
+  jmp newmem
+  nop    // pad out to the original 6 bytes
+returnhere:
+
+[DISABLE]
+// restore original bytes and free our cave
+dealloc(newmem)
+"hitman2.exe"+104C9D:
+  mov [esi+00000245], edi"""
+
+[[cheat]]
+id = "infinite-ammo-no-reload"
+name = "Infinite Ammo + No Reload"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ True Infinite Clip – AOB Injection }
+
+[ENABLE]
+// Locate the instruction that writes the new clip count: mov [esi+0x96], edx
+aobscanmodule(ClipPatch, hitman2.exe, 89 96 96 00 00 00)
+assert(ClipPatch, 89 96 96 00 00 00)
+
+// Allocate a tiny cave right after it
+alloc(ClipCave, 32, ClipPatch)
+label(returnHere)
+
+ClipCave:
+  // Force clip to 200 every write
+  mov edx, 0xC8
+  mov [esi+00000096], edx
+  jmp returnHere
+
+// Overwrite the original store with a jump into our cave
+ClipPatch:
+  jmp ClipCave
+  nop  // pad out to 6 bytes (orig instr length)
+
+returnHere:
+
+registersymbol(ClipPatch)
+
+[DISABLE]
+// Restore original instruction and free our cave
+unregistersymbol(ClipPatch)
+ClipPatch:
+  db 89 96 96 00 00 00
+dealloc(ClipCave)"""
+
+[[cheat]]
+id = "infinite-health-god-mode-invincible"
+name = "Infinite Health / God Mode / Invincible"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Set the float value at hitman2.exe+2A960C to 1.0 when enabled
+// No code injection, just direct memory write
+
+// Allocate some space if needed (not needed in this case)
+alloc(newmem, 64)
+
+newmem:
+  dd (float)1.0
+
+// Write the float directly
+hitman2.exe+2A960C:
+  dd (float)1.0
+
+[DISABLE]
+// Revert to 0.0 when disabled
+hitman2.exe+2A960C:
+  dd (float)0.0"""
+
+[[cheat]]
+id = "invisible-no-suspicion"
+name = "Invisible / No Suspicion"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Set the float value at hitman2.exe+2AA05C to 1.0 when enabled
+hitman2.exe+2AA05C:
+  dd (float)1.0
+
+[DISABLE]
+// Set the float value back to 0.0 when disabled
+hitman2.exe+2AA05C:
+  dd (float)0.0"""
+
+[[cheat]]
+id = "not-working-still-testing-infinite-save-game-professional-difficulty"
+name = "[Not Working - Still Testing ]Infinite Save Game [Professional Difficulty]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Infinite Saves + Pro‑Mode Normalizer }
+
+[ENABLE]
+//— Part 1: force difficulty = Normal (1) —//
+// overwrite the pro‑difficulty byte (03) with 01
+hitman2.exe+2A4118:
+  db 01
+
+//— Part 2: infinite saves code cave —//
+// locate and hook the save‑counter write
+aobscanmodule(SaveCountAOB, hitman2.exe, 89 BE 45 02 00 00)
+alloc(newmem, 32, SaveCountAOB)
+label(returnHere)
+
+newmem:
+  mov [esi+00000245], 63    // cap “saves remaining” at 63 (7×9)
+  jmp returnHere
+
+SaveCountAOB:
+  jmp newmem
+  nop                       // pad out to 6 bytes
+
+returnHere:
+
+[DISABLE]
+// restore original difficulty byte
+hitman2.exe+2A4118:
+  db 03
+
+// remove code cave and restore original save‑write
+SaveCountAOB:
+  db 89 BE 45 02 00 00
+dealloc(newmem)"""
+
+[[cheat]]
+id = "buy-me-a-coffee-socials-check-script"
+name = "Buy Me a Coffee!+ Socials (Check Script)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+// https://www.tiktok.com/@eeriegoesd
+// https://www.instagram.com/eeriegoesd
+// https://www.youtube.com/@eeriegoesd
+// https://www.beatstars.com/eeriegoesd
+// https://steamcommunity.com/profiles/76561198217097379/
+// https://discord.gg/45dcFxThZX
+// https://soundcloud.com/eeriegoesd
+// https://www.paypal.com/paypalme/eeriegoesd
+// https://github.com/EerieGoesD
+// eeriegoesd@gmail.com
+
+[DISABLE]
+//"""

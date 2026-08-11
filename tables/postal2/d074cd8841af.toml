@@ -1,0 +1,742 @@
+[game]
+name = "Postal 2 : Steam-US-5020-Hotfix 1"
+exe = "postal2.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1684"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "invincibility-ctrl-f12"
+name = "Invincibility (ctrl+F12)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+// The UObject::execSubtract_IntInt AOB-scan targets the following code:
+// 8B 45 0C               mov eax, [ebp+C]
+// 8B 4D FC               mov ecx, [ebp-4]
+// 2B 4D 08               sub ecx, [ebp+8]
+// 5E                     pop esi
+// ---------- injecting here ----------
+// 89 08                  mov [eax], ecx
+// 8B E5                  mov esp, ebp
+// 5D                     pop ebp
+// ---------- done injecting  ----------
+// C2 08 00               ret 8
+aobscanmodule(execSubtract_IntInt, Core.dll, 8B 45 0C 8B 4D FC 2B 4D 08 5E 89 08 8B E5 5D C2 08 00);
+registersymbol(_execSubtract_IntInt);
+label(_execSubtract_IntInt);
+
+alloc(newmem, 1024)
+
+label(execSubtract_IntInt_hook);
+label(execSubtract_IntInt_original);
+label(execSubtract_IntInt_epilog);
+label(execSubtract_IntInt_return);
+
+
+newmem:
+
+/*
+ * ============================  Actual hook code =============================
+ */
+
+execSubtract_IntInt_hook:
+    // Address of Dude's Health might be in EAX now. Need to do additional
+    // checks whether it is really the Health that is being decremented.
+
+    or eax, eax // Some (completely redundant and unneeded) safety check
+    jz execSubtract_IntInt_epilog
+    cmp [eax], 0 // Another safety check just for... safety
+    jbe execSubtract_IntInt_original
+    cmp [eax+1C4], 1 // Only Dude's Health has 1 at this offset
+    je execSubtract_IntInt_epilog
+
+execSubtract_IntInt_original:
+    mov [eax], ecx // Decrement the value by amount in ECX
+
+execSubtract_IntInt_epilog:
+    mov esp, ebp
+    pop ebp
+    jmp execSubtract_IntInt_return
+
+
+/*
+ * ==================================  Patch  ==================================
+ */
+
+execSubtract_IntInt+A:
+_execSubtract_IntInt:
+    jmp execSubtract_IntInt_hook
+execSubtract_IntInt_return:
+
+[DISABLE]
+
+_execSubtract_IntInt:
+    mov [eax], ecx
+    mov esp, ebp
+    pop ebp
+//  db 89 08 8B E5 5D
+
+unregistersymbol(_execSubtract_IntInt);
+dealloc(newmem);"""
+
+[[cheat]]
+id = "infinite-ammo-ctrl-f11"
+name = "Infinite Ammo (ctrl+F11)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ammo,Core.dll,29 07 8B 45 0C) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(hax)
+
+newmem:
+cmp eax,5
+je hax
+cmp eax,1
+je hax
+jmp code
+code:
+  sub [edi],eax
+  mov eax,[ebp+0C]
+  jmp return
+
+hax:
+db 90 90
+mov eax,[ebp+0C]
+jmp return
+
+ammo:
+  jmp newmem
+return:
+registersymbol(ammo)
+
+[DISABLE]
+
+ammo:
+  db 29 07 8B 45 0C
+
+unregistersymbol(ammo)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+4FC57
+
+"Core.dll"+4FC3C: 8B 46 0C                       -  mov eax,[esi+0C]
+"Core.dll"+4FC3F: 80 38 42                       -  cmp byte ptr [eax],42
+"Core.dll"+4FC42: 75 10                          -  jne Core.dll+4FC54
+"Core.dll"+4FC44: 8B 4E 08                       -  mov ecx,[esi+08]
+"Core.dll"+4FC47: 40                             -  inc eax
+"Core.dll"+4FC48: 6A 00                          -  push 00
+"Core.dll"+4FC4A: 56                             -  push esi
+"Core.dll"+4FC4B: 89 46 0C                       -  mov [esi+0C],eax
+"Core.dll"+4FC4E: FF 15 60 8D 09 6E              -  call dword ptr [Core.dll+138D60]
+"Core.dll"+4FC54: 8B 45 08                       -  mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+"Core.dll"+4FC57: 29 07                          -  sub [edi],eax
+"Core.dll"+4FC59: 8B 45 0C                       -  mov eax,[ebp+0C]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+4FC5C: 8B 0F                          -  mov ecx,[edi]
+"Core.dll"+4FC5E: 5F                             -  pop edi
+"Core.dll"+4FC5F: 5E                             -  pop esi
+"Core.dll"+4FC60: 89 08                          -  mov [eax],ecx
+"Core.dll"+4FC62: 8B E5                          -  mov esp,ebp
+"Core.dll"+4FC64: 5D                             -  pop ebp
+"Core.dll"+4FC65: C2 08 00                       -  ret 0008
+"Core.dll"+4FC68: CC                             -  int 3 
+"Core.dll"+4FC69: CC                             -  int 3 
+"Core.dll"+4FC6A: CC                             -  int 3 
+}"""
+
+[[cheat]]
+id = "infinite-items-don-t-pee-with-this-enabled-ctrl-f10"
+name = "Infinite Items (Don't pee with this enabled) (ctrl+F10)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(items,Core.dll,F3 0F 5C 45 08 8B 45 0C F3) // should be unique
+alloc(newmem,$1000)
+label(hax)
+label(code)
+label(return)
+
+newmem:
+
+hax:
+cmp [edi+0380],4
+je code
+cmp [eax+0378],0
+jne return
+
+
+code:
+  subss xmm0,[ebp+08]
+  jmp return
+
+items:
+  jmp hax
+return:
+registersymbol(items)
+
+[DISABLE]
+
+items:
+  db F3 0F 5C 45 08
+
+unregistersymbol(items)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+50F58
+
+"Core.dll"+50F3C: 8B 46 0C              -  mov eax,[esi+0C]
+"Core.dll"+50F3F: 80 38 42              -  cmp byte ptr [eax],42
+"Core.dll"+50F42: 75 10                 -  jne Core.dll+50F54
+"Core.dll"+50F44: 8B 4E 08              -  mov ecx,[esi+08]
+"Core.dll"+50F47: 40                    -  inc eax
+"Core.dll"+50F48: 6A 00                 -  push 00
+"Core.dll"+50F4A: 56                    -  push esi
+"Core.dll"+50F4B: 89 46 0C              -  mov [esi+0C],eax
+"Core.dll"+50F4E: FF 15 60 8D 9B 6D     -  call dword ptr [Core.dll+138D60]
+"Core.dll"+50F54: F3 0F 10 07           -  movss xmm0,[edi]
+// ---------- INJECTING HERE ----------
+"Core.dll"+50F58: F3 0F 5C 45 08        -  subss xmm0,[ebp+08]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+50F5D: 8B 45 0C              -  mov eax,[ebp+0C]
+"Core.dll"+50F60: F3 0F 11 07           -  movss [edi],xmm0
+"Core.dll"+50F64: 5F                    -  pop edi
+"Core.dll"+50F65: F3 0F 11 00           -  movss [eax],xmm0
+"Core.dll"+50F69: 5E                    -  pop esi
+"Core.dll"+50F6A: 8B E5                 -  mov esp,ebp
+"Core.dll"+50F6C: 5D                    -  pop ebp
+"Core.dll"+50F6D: C2 08 00              -  ret 0008
+"Core.dll"+50F70: CC                    -  int 3 
+"Core.dll"+50F71: CC                    -  int 3 
+}"""
+
+[[cheat]]
+id = "items-numeric-to-increase"
+name = "Items (Numeric * to increase)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "Engine.dll"
+offset = "0x4c6810"
+hops = [
+    "+0x2c",
+    "+0x30",
+    "+0x240",
+    "+0x2ec",
+    "+0x2c0",
+]
+
+[[cheat]]
+id = "elephants-enable-kill-1-disable-kill-another-ctrl-num5"
+name = "Elephants - Enable, Kill 1, Disable, Kill another (ctrl+num5)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(herb,Core.dll,8B 0F 89 08 FF 07) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,edi
+  mov [eax],09
+  add [edi],09
+  jmp return
+
+herb:
+  jmp code
+  nop
+return:
+registersymbol(herb)
+
+[DISABLE]
+
+herb:
+  db 8B 0F 89 08 FF 07
+
+unregistersymbol(herb)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+4FE75
+
+"Core.dll"+4FE5A: 8B 46 0C                       -  mov eax,[esi+0C]
+"Core.dll"+4FE5D: 80 38 42                       -  cmp byte ptr [eax],42
+"Core.dll"+4FE60: 75 10                          -  jne Core.dll+4FE72
+"Core.dll"+4FE62: 8B 4E 08                       -  mov ecx,[esi+08]
+"Core.dll"+4FE65: 40                             -  inc eax
+"Core.dll"+4FE66: 6A 00                          -  push 00
+"Core.dll"+4FE68: 56                             -  push esi
+"Core.dll"+4FE69: 89 46 0C                       -  mov [esi+0C],eax
+"Core.dll"+4FE6C: FF 15 60 8D 07 51              -  call dword ptr [Core.dll+138D60]
+"Core.dll"+4FE72: 8B 45 0C                       -  mov eax,[ebp+0C]
+// ---------- INJECTING HERE ----------
+"Core.dll"+4FE75: 8B 0F                          -  mov ecx,[edi]
+"Core.dll"+4FE77: 89 08                          -  mov [eax],ecx
+"Core.dll"+4FE79: FF 07                          -  inc [edi]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+4FE7B: 5F                             -  pop edi
+"Core.dll"+4FE7C: 5E                             -  pop esi
+"Core.dll"+4FE7D: 8B E5                          -  mov esp,ebp
+"Core.dll"+4FE7F: 5D                             -  pop ebp
+"Core.dll"+4FE80: C2 08 00                       -  ret 0008
+"Core.dll"+4FE83: CC                             -  int 3 
+"Core.dll"+4FE84: CC                             -  int 3 
+"Core.dll"+4FE85: CC                             -  int 3 
+"Core.dll"+4FE86: CC                             -  int 3 
+"Core.dll"+4FE87: CC                             -  int 3 
+}"""
+
+[[cheat]]
+id = "cows-enable-kill-1-disable-kill-another-ctrl-num6"
+name = "Cows - Enable, Kill 1, Disable, Kill another (ctrl+num6)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(herb,Core.dll,8B 0F 89 08 FF 07) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,edi
+  mov [eax],09
+  add [edi],14
+  jmp return
+
+herb:
+  jmp code
+  nop
+return:
+registersymbol(herb)
+
+[DISABLE]
+
+herb:
+  db 8B 0F 89 08 FF 07
+
+unregistersymbol(herb)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+4FE75
+
+"Core.dll"+4FE5A: 8B 46 0C                       -  mov eax,[esi+0C]
+"Core.dll"+4FE5D: 80 38 42                       -  cmp byte ptr [eax],42
+"Core.dll"+4FE60: 75 10                          -  jne Core.dll+4FE72
+"Core.dll"+4FE62: 8B 4E 08                       -  mov ecx,[esi+08]
+"Core.dll"+4FE65: 40                             -  inc eax
+"Core.dll"+4FE66: 6A 00                          -  push 00
+"Core.dll"+4FE68: 56                             -  push esi
+"Core.dll"+4FE69: 89 46 0C                       -  mov [esi+0C],eax
+"Core.dll"+4FE6C: FF 15 60 8D 07 51              -  call dword ptr [Core.dll+138D60]
+"Core.dll"+4FE72: 8B 45 0C                       -  mov eax,[ebp+0C]
+// ---------- INJECTING HERE ----------
+"Core.dll"+4FE75: 8B 0F                          -  mov ecx,[edi]
+"Core.dll"+4FE77: 89 08                          -  mov [eax],ecx
+"Core.dll"+4FE79: FF 07                          -  inc [edi]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+4FE7B: 5F                             -  pop edi
+"Core.dll"+4FE7C: 5E                             -  pop esi
+"Core.dll"+4FE7D: 8B E5                          -  mov esp,ebp
+"Core.dll"+4FE7F: 5D                             -  pop ebp
+"Core.dll"+4FE80: C2 08 00                       -  ret 0008
+"Core.dll"+4FE83: CC                             -  int 3 
+"Core.dll"+4FE84: CC                             -  int 3 
+"Core.dll"+4FE85: CC                             -  int 3 
+"Core.dll"+4FE86: CC                             -  int 3 
+"Core.dll"+4FE87: CC                             -  int 3 
+}"""
+
+[[cheat]]
+id = "zombies-at-food-place-ctrl-num7"
+name = "Zombies at food place (ctrl+num7)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(herb,Core.dll,8B 0F 89 08 FF 07) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,edi
+  mov [eax],09
+  add [edi],14
+  jmp return
+
+herb:
+  jmp code
+  nop
+return:
+registersymbol(herb)
+
+[DISABLE]
+
+herb:
+  db 8B 0F 89 08 FF 07
+
+unregistersymbol(herb)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+4FE75
+
+"Core.dll"+4FE5A: 8B 46 0C                       -  mov eax,[esi+0C]
+"Core.dll"+4FE5D: 80 38 42                       -  cmp byte ptr [eax],42
+"Core.dll"+4FE60: 75 10                          -  jne Core.dll+4FE72
+"Core.dll"+4FE62: 8B 4E 08                       -  mov ecx,[esi+08]
+"Core.dll"+4FE65: 40                             -  inc eax
+"Core.dll"+4FE66: 6A 00                          -  push 00
+"Core.dll"+4FE68: 56                             -  push esi
+"Core.dll"+4FE69: 89 46 0C                       -  mov [esi+0C],eax
+"Core.dll"+4FE6C: FF 15 60 8D 07 51              -  call dword ptr [Core.dll+138D60]
+"Core.dll"+4FE72: 8B 45 0C                       -  mov eax,[ebp+0C]
+// ---------- INJECTING HERE ----------
+"Core.dll"+4FE75: 8B 0F                          -  mov ecx,[edi]
+"Core.dll"+4FE77: 89 08                          -  mov [eax],ecx
+"Core.dll"+4FE79: FF 07                          -  inc [edi]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+4FE7B: 5F                             -  pop edi
+"Core.dll"+4FE7C: 5E                             -  pop esi
+"Core.dll"+4FE7D: 8B E5                          -  mov esp,ebp
+"Core.dll"+4FE7F: 5D                             -  pop ebp
+"Core.dll"+4FE80: C2 08 00                       -  ret 0008
+"Core.dll"+4FE83: CC                             -  int 3 
+"Core.dll"+4FE84: CC                             -  int 3 
+"Core.dll"+4FE85: CC                             -  int 3 
+"Core.dll"+4FE86: CC                             -  int 3 
+"Core.dll"+4FE87: CC                             -  int 3 
+}"""
+
+[[cheat]]
+id = "zombies-at-vince-s-house-ctrl-num8"
+name = "Zombies at Vince's house (ctrl+num8)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(herb,Core.dll,8B 0F 89 08 FF 07) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,edi
+  mov [eax],09
+  add [edi],32
+  jmp return
+
+herb:
+  jmp code
+  nop
+return:
+registersymbol(herb)
+
+[DISABLE]
+
+herb:
+  db 8B 0F 89 08 FF 07
+
+unregistersymbol(herb)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+4FE75
+
+"Core.dll"+4FE5A: 8B 46 0C                       -  mov eax,[esi+0C]
+"Core.dll"+4FE5D: 80 38 42                       -  cmp byte ptr [eax],42
+"Core.dll"+4FE60: 75 10                          -  jne Core.dll+4FE72
+"Core.dll"+4FE62: 8B 4E 08                       -  mov ecx,[esi+08]
+"Core.dll"+4FE65: 40                             -  inc eax
+"Core.dll"+4FE66: 6A 00                          -  push 00
+"Core.dll"+4FE68: 56                             -  push esi
+"Core.dll"+4FE69: 89 46 0C                       -  mov [esi+0C],eax
+"Core.dll"+4FE6C: FF 15 60 8D 07 51              -  call dword ptr [Core.dll+138D60]
+"Core.dll"+4FE72: 8B 45 0C                       -  mov eax,[ebp+0C]
+// ---------- INJECTING HERE ----------
+"Core.dll"+4FE75: 8B 0F                          -  mov ecx,[edi]
+"Core.dll"+4FE77: 89 08                          -  mov [eax],ecx
+"Core.dll"+4FE79: FF 07                          -  inc [edi]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+4FE7B: 5F                             -  pop edi
+"Core.dll"+4FE7C: 5E                             -  pop esi
+"Core.dll"+4FE7D: 8B E5                          -  mov esp,ebp
+"Core.dll"+4FE7F: 5D                             -  pop ebp
+"Core.dll"+4FE80: C2 08 00                       -  ret 0008
+"Core.dll"+4FE83: CC                             -  int 3 
+"Core.dll"+4FE84: CC                             -  int 3 
+"Core.dll"+4FE85: CC                             -  int 3 
+"Core.dll"+4FE86: CC                             -  int 3 
+"Core.dll"+4FE87: CC                             -  int 3 
+}"""
+
+[[cheat]]
+id = "easy-kill-kosher-cow-god-ctrl-f6"
+name = "Easy Kill Kosher Cow God (ctrl+F6)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(eKill,Core.dll,29 07 8B 45 0C) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(boss)
+
+newmem:
+cmp eax,4
+je boss
+cmp eax,2
+je boss
+cmp eax,7
+je boss
+cmp eax,C
+je boss
+jmp code
+
+code:
+  sub [edi],eax
+  mov eax,[ebp+0C]
+  jmp return
+
+boss:
+sub [edi],3E8
+mov eax,[ebp+0C]
+jmp return
+
+eKill:
+  jmp newmem
+return:
+registersymbol(eKill)
+
+[DISABLE]
+
+eKill:
+  db 29 07 8B 45 0C
+
+unregistersymbol(eKill)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+4FC57
+
+"Core.dll"+4FC3C: 8B 46 0C                       -  mov eax,[esi+0C]
+"Core.dll"+4FC3F: 80 38 42                       -  cmp byte ptr [eax],42
+"Core.dll"+4FC42: 75 10                          -  jne Core.dll+4FC54
+"Core.dll"+4FC44: 8B 4E 08                       -  mov ecx,[esi+08]
+"Core.dll"+4FC47: 40                             -  inc eax
+"Core.dll"+4FC48: 6A 00                          -  push 00
+"Core.dll"+4FC4A: 56                             -  push esi
+"Core.dll"+4FC4B: 89 46 0C                       -  mov [esi+0C],eax
+"Core.dll"+4FC4E: FF 15 60 8D 09 6E              -  call dword ptr [Core.dll+138D60]
+"Core.dll"+4FC54: 8B 45 08                       -  mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+"Core.dll"+4FC57: 29 07                          -  sub [edi],eax
+"Core.dll"+4FC59: 8B 45 0C                       -  mov eax,[ebp+0C]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+4FC5C: 8B 0F                          -  mov ecx,[edi]
+"Core.dll"+4FC5E: 5F                             -  pop edi
+"Core.dll"+4FC5F: 5E                             -  pop esi
+"Core.dll"+4FC60: 89 08                          -  mov [eax],ecx
+"Core.dll"+4FC62: 8B E5                          -  mov esp,ebp
+"Core.dll"+4FC64: 5D                             -  pop ebp
+"Core.dll"+4FC65: C2 08 00                       -  ret 0008
+"Core.dll"+4FC68: CC                             -  int 3
+"Core.dll"+4FC69: CC                             -  int 3
+"Core.dll"+4FC6A: CC                             -  int 3
+}"""
+
+[[cheat]]
+id = "revolver-execution-points-ctrl-f9"
+name = "Revolver Execution Points (ctrl+F9)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(execute1,29 07 8B 45 0C) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  sub [edi],0
+  mov eax,[ebp+0C]
+  jmp return
+
+execute1:
+  jmp code
+return:
+registersymbol(execute1)
+
+[DISABLE]
+
+execute1:
+  db 29 07 8B 45 0C
+
+unregistersymbol(execute1)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 62770017
+
+6276FFFB:                    -  ?? 
+6276FFFC:                    -  ?? 
+6276FFFD:                    -  ?? 
+6276FFFE:                    -  ?? 
+6276FFFF:                    -  ?? 
+62770000: 83 F8 05           -  cmp eax,05
+62770003: 0F 84 18 00 00 00  -  je 62770021
+62770009: 83 F8 01           -  cmp eax,01
+6277000C: 0F 84 0F 00 00 00  -  je 62770021
+62770012: E9 00 00 00 00     -  jmp 62770017
+// ---------- INJECTING HERE ----------
+62770017: 29 07              -  sub [edi],eax
+62770019: 8B 45 0C           -  mov eax,[ebp+0C]
+// ---------- DONE INJECTING  ----------
+6277001C: E9 3B FC 72 EE     -  jmp Core.dll+4FC5C
+62770021: 90                 -  nop 
+62770022: 90                 -  nop 
+62770023: 8B 45 0C           -  mov eax,[ebp+0C]
+62770026: E9 31 FC 72 EE     -  jmp Core.dll+4FC5C
+6277002B: 00 00              -  add [eax],al
+6277002D: 00 00              -  add [eax],al
+6277002F: 00 00              -  add [eax],al
+62770031: 00 00              -  add [eax],al
+62770033: 00 00              -  add [eax],al
+}"""
+
+[[cheat]]
+id = "quick-herb-collect-ctrl-num9"
+name = "Quick herb Collect (ctrl+num9)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(herb,Core.dll,8B 0F 89 08 FF 07) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,edi
+  mov [eax],ecx
+  add [edi],09
+  jmp return
+
+herb:
+  jmp code
+  nop
+return:
+registersymbol(herb)
+
+[DISABLE]
+
+herb:
+  db 8B 0F 89 08 FF 07
+
+unregistersymbol(herb)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Core.dll"+4FE75
+
+"Core.dll"+4FE5A: 8B 46 0C                       -  mov eax,[esi+0C]
+"Core.dll"+4FE5D: 80 38 42                       -  cmp byte ptr [eax],42
+"Core.dll"+4FE60: 75 10                          -  jne Core.dll+4FE72
+"Core.dll"+4FE62: 8B 4E 08                       -  mov ecx,[esi+08]
+"Core.dll"+4FE65: 40                             -  inc eax
+"Core.dll"+4FE66: 6A 00                          -  push 00
+"Core.dll"+4FE68: 56                             -  push esi
+"Core.dll"+4FE69: 89 46 0C                       -  mov [esi+0C],eax
+"Core.dll"+4FE6C: FF 15 60 8D 07 51              -  call dword ptr [Core.dll+138D60]
+"Core.dll"+4FE72: 8B 45 0C                       -  mov eax,[ebp+0C]
+// ---------- INJECTING HERE ----------
+"Core.dll"+4FE75: 8B 0F                          -  mov ecx,[edi]
+"Core.dll"+4FE77: 89 08                          -  mov [eax],ecx
+"Core.dll"+4FE79: FF 07                          -  inc [edi]
+// ---------- DONE INJECTING  ----------
+"Core.dll"+4FE7B: 5F                             -  pop edi
+"Core.dll"+4FE7C: 5E                             -  pop esi
+"Core.dll"+4FE7D: 8B E5                          -  mov esp,ebp
+"Core.dll"+4FE7F: 5D                             -  pop ebp
+"Core.dll"+4FE80: C2 08 00                       -  ret 0008
+"Core.dll"+4FE83: CC                             -  int 3 
+"Core.dll"+4FE84: CC                             -  int 3 
+"Core.dll"+4FE85: CC                             -  int 3 
+"Core.dll"+4FE86: CC                             -  int 3 
+"Core.dll"+4FE87: CC                             -  int 3 
+}"""

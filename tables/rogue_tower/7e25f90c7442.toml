@@ -1,0 +1,343 @@
+[game]
+name = "Rogue Tower"
+exe = "rogue_tower.exe"
+notes = "Converted from a Cheat Engine table by Zanzer. Source: https://fearlessrevolution.com/viewtopic.php?t=19044"
+verified = []
+author = "Zanzer"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlimited-gold"
+name = "Unlimited Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(ResourceManagerSpend,8B 45 ?? 8B 48 ?? 2B 4D 0C 89 48)
+ResourceManagerSpend+06:
+  nop 3
+registersymbol(ResourceManagerSpend)
+
+[DISABLE]
+ResourceManagerSpend+06:
+  db 2B 4D 0C
+unregistersymbol(ResourceManagerSpend)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ResourceManager:Spend+c
+
+BuildingGhost:SetText+13: 89 04 24           - mov [esp],eax
+BuildingGhost:SetText+16: 8B 00              - mov eax,[eax]
+BuildingGhost:SetText+18: FF 90 74 01 00 00  - call dword ptr [eax+00000174]
+BuildingGhost:SetText+1e: C9                 - leave 
+BuildingGhost:SetText+1f: C3                 - ret 
+ResourceManager:Spend: 55                 - push ebp
+ResourceManager:Spend+1: 8B EC              - mov ebp,esp
+ResourceManager:Spend+3: 83 EC 18           - sub esp,18
+ResourceManager:Spend+6: 8B 45 08           - mov eax,[ebp+08]
+ResourceManager:Spend+9: 8B 48 20           - mov ecx,[eax+20]
+// ---------- INJECTING HERE ----------
+ResourceManager:Spend+c: 2B 4D 0C           - sub ecx,[ebp+0C]
+// ---------- DONE INJECTING  ----------
+ResourceManager:Spend+f: 89 48 20           - mov [eax+20],ecx
+ResourceManager:Spend+12: 89 04 24           - mov [esp],eax
+ResourceManager:Spend+15: 8B C0              - mov eax,eax
+ResourceManager:Spend+17: E8 0C 59 FF FF     - call ResourceManager:UpdateResourceText
+ResourceManager:Spend+1c: C9                 - leave 
+ResourceManager:Spend+1d: C3                 - ret 
+003DF4A6: 00 00              - add [eax],al
+BuildingManager:Build: 55                 - push ebp
+BuildingManager:Build+1: 8B EC              - mov ebp,esp
+BuildingManager:Build+3: 53                 - push ebx
+}"""
+
+[[cheat]]
+id = "unlimited-mana"
+name = "Unlimited Mana"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(mana,D9 47 28 8B 47 24 50)
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  fld dword ptr [edi+28]
+  mov eax,[edi+2C]
+  cmp [edi+24],eax
+  je return
+  mov [edi+24],eax
+  jmp return
+
+mana:
+  jmp newmem
+  nop
+return:
+registersymbol(mana)
+
+[DISABLE]
+mana:
+  db D9 47 28 8B 47 24
+unregistersymbol(mana)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ResourceManager:Update+a
+
+1E8310A5: E9 56 F0 AD E5     - jmp 04310100
+1E8310AA: 00 00              - add [eax],al
+1E8310AC: 68 58 8A BD 13     - push 13BD8A58
+1E8310B1: E9 4A F0 AD E5     - jmp 04310100
+1E8310B6: 00 00              - add [eax],al
+ResourceManager:Update: 55                 - push ebp
+ResourceManager:Update+1: 8B EC              - mov ebp,esp
+ResourceManager:Update+3: 57                 - push edi
+ResourceManager:Update+4: 83 EC 54           - sub esp,54
+ResourceManager:Update+7: 8B 7D 08           - mov edi,[ebp+08]
+// ---------- INJECTING HERE ----------
+ResourceManager:Update+a: D9 47 28           - fld dword ptr [edi+28]
+// ---------- DONE INJECTING  ----------
+ResourceManager:Update+d: 8B 47 24           - mov eax,[edi+24]
+ResourceManager:Update+10: 50                 - push eax
+ResourceManager:Update+11: DB 04 24           - fild dword ptr [esp]
+ResourceManager:Update+14: D9 1C 24           - fstp dword ptr [esp]
+ResourceManager:Update+17: D9 04 24           - fld dword ptr [esp]
+ResourceManager:Update+1a: 83 C4 04           - add esp,04
+ResourceManager:Update+1d: DF F1              - fcomip st(0),st(1)
+ResourceManager:Update+1f: DD D8              - fstp st(0)
+ResourceManager:Update+21: 0F 8A B9 00 00 00  - jp ResourceManager:Update+e0
+ResourceManager:Update+27: 0F 83 B3 00 00 00  - jae ResourceManager:Update+e0
+}"""
+
+[[cheat]]
+id = "upgrades-are-free"
+name = "Upgrades Are Free"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(UpgradeButtonUnlock,0F 8C ?? ?? ?? ?? 8B 05 ?? ?? ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 8B 05 ?? ?? ?? ?? 8B ?? ?? F7 D9)
+UpgradeButtonUnlock+00:
+  db EB 04
+UpgradeButtonUnlock+1F:
+  db 31 C9
+registersymbol(UpgradeButtonUnlock)
+
+[DISABLE]
+UpgradeButtonUnlock+00:
+  db 0F 8C
+UpgradeButtonUnlock+1F:
+  db F7 D9
+unregistersymbol(UpgradeButtonUnlock)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UpgradeButton:Unlock+1a
+
+UpgradeButton:Unlock+1: 8B EC              - mov ebp,esp
+UpgradeButton:Unlock+3: 53                 - push ebx
+UpgradeButton:Unlock+4: 57                 - push edi
+UpgradeButton:Unlock+5: 56                 - push esi
+UpgradeButton:Unlock+6: 83 EC 1C           - sub esp,1C
+UpgradeButton:Unlock+9: 8B 7D 08           - mov edi,[ebp+08]
+UpgradeButton:Unlock+c: 8B 05 D8 3D A2 08  - mov eax,[UpgradeManager]
+UpgradeButton:Unlock+12: 8B 40 20           - mov eax,[eax+20]
+UpgradeButton:Unlock+15: 8B 4F 2C           - mov ecx,[edi+2C]
+UpgradeButton:Unlock+18: 3B C1              - cmp eax,ecx
+// ---------- INJECTING HERE ----------
+UpgradeButton:Unlock+1a: 0F 8C EC 00 00 00  - jl UpgradeButton:Unlock+10c
+// ---------- DONE INJECTING  ----------
+UpgradeButton:Unlock+20: 8B 05 C8 3D A2 08  - mov eax,[08A23DC8]
+UpgradeButton:Unlock+26: 89 04 24           - mov [esp],eax
+UpgradeButton:Unlock+29: 39 00              - cmp [eax],eax
+UpgradeButton:Unlock+2b: E8 30 01 00 00     - call 003A7980
+UpgradeButton:Unlock+30: 8B 05 D8 3D A2 08  - mov eax,[UpgradeManager]
+UpgradeButton:Unlock+36: 8B 4F 2C           - mov ecx,[edi+2C]
+UpgradeButton:Unlock+39: F7 D9              - neg ecx
+UpgradeButton:Unlock+3b: 89 4C 24 04        - mov [esp+04],ecx
+UpgradeButton:Unlock+3f: 89 04 24           - mov [esp],eax
+UpgradeButton:Unlock+42: 39 00              - cmp [eax],eax
+}"""
+
+[[cheat]]
+id = "unlock-any-upgrade"
+name = "Unlock Any Upgrade"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(UpgradeButtonInteractable,0F B6 80 ?? ?? 00 00 EB 02 33 C0)
+UpgradeButtonInteractable+07:
+  nop 2
+  mov al,1
+registersymbol(UpgradeButtonInteractable)
+
+[DISABLE]
+UpgradeButtonInteractable+07:
+  db EB 02 33 C0
+unregistersymbol(UpgradeButtonInteractable)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UnityEngine.UI:Selectable:IsInteractable+1e
+
+UnityEngine.UI:Selectable:get_currentSelectionState+5f: C3                    - ret 
+UnityEngine.UI:Selectable:IsInteractable: 55                    - push ebp
+UnityEngine.UI:Selectable:IsInteractable+1: 8B EC                 - mov ebp,esp
+UnityEngine.UI:Selectable:IsInteractable+3: 83 EC 08              - sub esp,08
+UnityEngine.UI:Selectable:IsInteractable+6: 8B 45 08              - mov eax,[ebp+08]
+UnityEngine.UI:Selectable:IsInteractable+9: 0F B6 80 A1 00 00 00  - movzx eax,byte ptr [eax+000000A1]
+UnityEngine.UI:Selectable:IsInteractable+10: 85 C0                 - test eax,eax
+UnityEngine.UI:Selectable:IsInteractable+12: 74 0C                 - je UnityEngine.UI:Selectable:IsInteractable+20
+UnityEngine.UI:Selectable:IsInteractable+14: 8B 45 08              - mov eax,[ebp+08]
+UnityEngine.UI:Selectable:IsInteractable+17: 0F B6 80 A0 00 00 00  - movzx eax,byte ptr [eax+000000A0]
+// ---------- INJECTING HERE ----------
+UnityEngine.UI:Selectable:IsInteractable+1e: EB 02                 - jmp UnityEngine.UI:Selectable:IsInteractable+22
+// ---------- DONE INJECTING  ----------
+UnityEngine.UI:Selectable:IsInteractable+20: 33 C0                 - xor eax,eax
+UnityEngine.UI:Selectable:IsInteractable+22: C9                    - leave 
+UnityEngine.UI:Selectable:IsInteractable+23: C3                    - ret 
+1E17C3D4: 00 00                 - add [eax],al
+1E17C3D6: 00 00                 - add [eax],al
+UnityEngine.UI:Selectable:DoStateTransition: 55                    - push ebp
+UnityEngine.UI:Selectable:DoStateTransition+1: 8B EC                 - mov ebp,esp
+UnityEngine.UI:Selectable:DoStateTransition+3: 53                    - push ebx
+UnityEngine.UI:Selectable:DoStateTransition+4: 57                    - push edi
+UnityEngine.UI:Selectable:DoStateTransition+5: 83 EC 60              - sub esp,60
+}"""
+
+[[cheat]]
+id = "xp"
+name = "xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "UpgradeManager"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "prestige"
+name = "prestige"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "UpgradeManager"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "gold"
+name = "gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1440
+
+[cheat.locator]
+find = "symbol"
+symbol = "ResourceManager"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "mana"
+name = "mana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 200
+
+[cheat.locator]
+find = "symbol"
+symbol = "ResourceManager"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "manaloss"
+name = "manaLoss"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1077936128
+
+[cheat.locator]
+find = "symbol"
+symbol = "ResourceManager"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "maxmana"
+name = "maxMana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "ResourceManager"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "managatherrate"
+name = "manaGatherRate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 3
+
+[cheat.locator]
+find = "symbol"
+symbol = "ResourceManager"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "enemybonusgolddrop"
+name = "enemyBonusGoldDrop"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 5
+
+[cheat.locator]
+find = "symbol"
+symbol = "ResourceManager"
+hops = ["+0x34"]

@@ -1,0 +1,171 @@
+[game]
+name = "Tomb Raider 2013 \"blink\" teleport [bow teleport]"
+exe = "tombraider.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4053"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "freeze-health"
+name = "Freeze Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmemHealth,2048)
+label(returnhereHealth)
+label(skip)
+aobscan(HealthCodeAOB,C1E0048B88xxxxxxxx69C92003000083B9xxxxxxxx00xxxx6AFF)
+label(HealthCodeREGISTERED)
+registersymbol(HealthCodeREGISTERED)
+label(health)
+registersymbol(health)
+
+newmemHealth:
+cmp dword ptr [ecx+health],00        // originalcode
+je short skip
+mov dword ptr [ecx+health],#9000     // current Health
+mov dword ptr [ecx+health+04],#9000  // max Health (default 450)
+skip:
+jmp returnhereHealth
+
+
+[HealthCodeAOB+11]:
+health:
+
+HealthCodeAOB+0F:
+HealthCodeREGISTERED:
+jmp newmemHealth
+nop
+nop
+returnhereHealth:
+
+[DISABLE]
+HealthCodeREGISTERED:
+cmp dword ptr [ecx+health],00        // originalcode
+
+dealloc(newmemHealth)
+
+unregistersymbol(HealthCodeREGISTERED)
+unregistersymbol(health)"""
+
+[[cheat]]
+id = "blink-teleport-hotkey-f6"
+name = "Blink teleport [hotkey: F6]"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem2,2048)
+label(returnhere2)
+label(destinationAddress)
+registersymbol(destinationAddress)
+aobscan(destAddressAOB,8993F00A00008B54242C8983F40A0000898BF80A00008993FC0A0000)
+label(destAddressCODE)
+registersymbol(destAddressCODE)
+
+newmem2:
+mov [ebx+00000AF0],edx         //original code
+mov [destinationAddress],ebx
+jmp returnhere2
+
+destinationAddress:
+dd 00
+
+destAddressAOB:
+destAddressCODE:
+jmp newmem2
+nop
+returnhere2:
+
+
+alloc(newmem,2048)
+label(returnhere)
+label(playerAddress)
+registersymbol(playerAddress)
+aobscan(playerAddressAOB,8B3089328B70048972048B70088972088B400C8B74240C89420C8B01)
+label(playerAddressCODE)
+registersymbol(playerAddressCODE)
+
+newmem:
+mov [playerAddress],eax
+mov esi,[eax]          //original code
+mov [edx],esi          //original code
+mov esi,[eax+04]       //original code
+jmp returnhere
+
+playerAddress:
+dd 00
+
+playerAddressAOB:
+playerAddressCODE:
+jmp newmem
+nop
+nop
+returnhere:
+
+[DISABLE]
+destAddressCODE:
+db 89 93 F0 0A 00 00
+
+playerAddressCODE:
+db 8B 30 89 32 8B 70 04
+
+dealloc(newmem2)
+dealloc(newmem)
+
+unregistersymbol(destinationAddress)
+unregistersymbol(destAddressCODE)
+
+unregistersymbol(playerAddress)
+unregistersymbol(playerAddressCODE)"""
+
+[[cheat]]
+id = "fall-protect"
+name = "fall protect"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,2048)
+label(returnhere)
+aobscan(fallprotectAOB,D996180F0000D99E0C0F000085C07425)
+label(fallprotectCODE)
+registersymbol(fallprotectCODE)
+
+// TombRaider.exe+58ACAD - D9 96 180F0000        - fst dword ptr [esi+00000F18]
+// TombRaider.exe+58ACB3 - D9 9E 0C0F0000        - fstp dword ptr [esi+00000F0C]
+// TombRaider.exe+58ACB9 - 85 C0                 - test eax,eax
+// TombRaider.exe+58ACBB - 74 25                 - je TombRaider.exe+58ACE2
+
+
+newmem:
+fstp dword ptr [esi+00000F0C]
+mov dword ptr [esi+00000F0C],(float)-9000000.0
+jmp returnhere
+
+fallprotectAOB+6:
+fallprotectCODE:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+fallprotectCODE:
+db D9 9E 0C 0F 00 00
+
+dealloc(newmem)
+
+unregistersymbol(fallprotectCODE)"""

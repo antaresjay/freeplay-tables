@@ -1,0 +1,908 @@
+[game]
+name = "Zero No Kiseki (Trails to Zero, JP PC Version, English Patched)"
+exe = "ed_zero.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=6107"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script-god-mode-one-hit-kill-etc"
+name = "Damage Modifier Script (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(DamageModAOB,$process,8B 48 04 3B 4D 0C 76 11 8B 45 EC 8B 48 04) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,4096,DamageModAOB)
+
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+newmem:
+  push ebx
+  mov eax,[ebp+08]
+  cmp [eax+234],0
+  mov ebx,[ebp+0C]
+  jne EnemyHit
+HeroHit:
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [esp]
+  pop ebx
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor ebx,ebx
+  jmp CleanUp
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne CleanUp
+  cmp dword ptr [eax+270],ebx
+  jg @F
+  xor ebx,ebx
+@@:
+  jmp CleanUp  
+EnemyHit:
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [esp]
+  pop ebx
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne CleanUp
+  mov ebx,#99999
+  jmp CleanUp
+CleanUp:  
+  mov [ebp+0C],ebx
+  pop ebx
+  mov eax,[ebp-14]
+  mov ecx,[eax+04]
+  cmp ecx,[ebp+0C]
+  jmp return
+
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)2.0
+fHeroDamageMult:
+dq (float)0.25
+HeroCannotDie:
+dq 1
+
+DamageModAOB:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  db 8B 48 04 3B 4D 0C
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(HeroCannotDie)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-damage-to-hero-party"
+name = "Hero Damage Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half damage to hero party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-if-on-and-god-mode-off-then-you-take-damage-until-the-hit-will-kill-you"
+name = "Hero Cannot Die (If On and God Mode Off, Then You Take Damage Until The Hit Will Kill You)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier-to-damage-you-deal-to-enemies"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier to damage you deal to enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "infinite-battle-ep"
+name = "Infinite Battle EP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BattleEPModAOB,$process,0F B7 48 0C 3B 4D 0C 7D 0C C7) // should be unique
+registersymbol(BattleEPModAOB)
+alloc(newmem,2048,BattleEPModAOB)
+
+label(return)
+
+newmem:
+  push eax
+  sub eax,26C
+  cmp [eax+234],0
+  pop eax
+  jne originalcode
+  mov word ptr [ebp+0C],0
+
+originalcode:
+  movzx ecx,word ptr [eax+0C]
+  cmp ecx,[ebp+0C]
+  jmp return
+  
+BattleEPModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+BattleEPModAOB:
+  db 0F B7 48 0C 3B 4D 0C
+
+unregistersymbol(BattleEPModAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-cp"
+name = "Infinite CP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(InfCPModAOB,$process,89 4D F8 8B 45 08 0F B7 48 0E 3B 4D 0C 7D 0C) // should be unique
+registersymbol(InfCPModAOB)
+alloc(newmem,1024,InfCPModAOB)
+
+label(return)
+
+newmem:
+  mov [ebp-08],ecx
+  mov eax,[ebp+08]
+  push eax
+  sub eax,26C
+  cmp [eax+234],0
+  pop eax
+  jne originalcode
+  mov word ptr [ebp+0C],0
+
+originalcode:
+  jmp return
+  
+InfCPModAOB:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+InfCPModAOB:
+  db 89 4D F8 8B 45 08
+
+unregistersymbol(InfCPModAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "gain-cp-multiplier-max-cp-on-gain"
+name = "Gain CP Multiplier / Max CP On Gain"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(MaxCPModAOB,$process,0F B7 48 0E 03 4D 0C 8B 55 08) // should be unique
+registersymbol(MaxCPModAOB)
+alloc(newmem,2048,MaxCPModAOB)
+
+label(return)
+label(MaxCPOnHit)
+registersymbol(MaxCPOnHit)
+label(fHeroCPMultiplier)
+registersymbol(fHeroCPMultiplier)
+label(fEnemyCPMultiplier)
+registersymbol(fEnemyCPMultiplier)
+
+newmem:
+  push eax
+  sub eax,26C
+  cmp [eax+234],0
+  pop eax
+  jne EnemyCPHit
+HeroCPHit:
+  cmp [fHeroCPMultiplier],(float)0.0
+  je CheckMaxCPOnHit
+  push eax
+  movzx eax, word ptr [ebp+0C]
+  push eax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroCPMultiplier]
+  fistp dword ptr [rsp]
+  pop eax
+  mov [ebp+0C],ax
+  pop eax
+CheckMaxCPOnHit:
+  cmp [MaxCPOnHit],1
+  jne originalcode
+  mov word ptr [eax+0E],#200
+  mov word ptr [ebp+0C],0
+  jmp originalcode
+EnemyCPHit:
+  cmp [fEnemyCPMultiplier],(float)0.0
+  je originalcode
+  push eax
+  movzx eax, word ptr [ebp+0C]
+  push eax
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyCPMultiplier]
+  fistp dword ptr [rsp]
+  pop eax
+  mov [ebp+0C],ax
+  pop eax
+
+originalcode:
+  movzx ecx,word ptr [eax+0E]
+  add ecx,[ebp+0C]
+  jmp return
+
+MaxCPOnHit:
+dq 0
+fEnemyCPMultiplier:
+dq (float)0.25
+fHeroCPMultiplier:
+dq (float)25.0
+  
+MaxCPModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+MaxCPModAOB:
+  db 0F B7 48 0E 03 4D 0C
+
+unregistersymbol(MaxCPModAOB)
+unregistersymbol(MaxCPOnHit)
+unregistersymbol(fHeroCPMultiplier)
+unregistersymbol(fEnemyCPMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "max-cp-on-hit"
+name = "Max CP On Hit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MaxCPOnHit"
+hops = []
+
+[[cheat]]
+id = "hero-cp-multiplier-set-to-0-0-off"
+name = "Hero CP Multiplier (Set to 0.0 = Off)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroCPMultiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-cp-multiplier-set-to-zero-off"
+name = "Enemy CP Multiplier (Set to Zero = Off)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyCPMultiplier"
+hops = []
+
+[[cheat]]
+id = "set-minimum-item-amount-on-use-toss-0-off"
+name = "Set Minimum Item Amount On Use/Toss (0 = Off)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetItemAmount"
+hops = []
+
+[[cheat]]
+id = "override-item-id-on-gain-of-item-turn-off-when-not-needed"
+name = "Override Item ID On Gain of Item (Turn Off When Not Needed)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OverrideItemIDAOB,$process,83 7D 08 00 75 07 33 C0 E9 B3 01 00 00 8B 45 0C 50 8B 4D 08 51 8B 4D F8) // should be unique
+registersymbol(OverrideItemIDAOB)
+alloc(newmem,1024,OverrideItemIDAOB)
+
+label(OverrideItemID)
+registersymbol(OverrideItemID)
+label(OverrideQty)
+registersymbol(OverrideQty)
+label(return)
+
+newmem:
+  mov eax,#50
+  cmp [ebp+08],ax
+  jb originalcode
+  mov eax,#800
+  cmp [ebp+08],ax
+  jb DoOverrideItemID
+  mov eax,#900
+  cmp [ebp+08],ax
+  jb originalcode
+  jmp DoOverrideItemID
+DoOverrideItemID:
+  mov eax,FFFFFFFF
+  cmp [OverrideItemID],ax
+  je originalcode
+  mov eax,[OverrideItemID]
+  mov [ebp+08],ax
+  mov eax,[OverrideQty]
+  mov [ebp+0C],ax
+
+originalcode:
+  mov eax,[ebp+0C]
+  push eax
+  mov ecx,[ebp+08]
+  jmp return
+
+OverrideItemID:
+dq FFFF
+OverrideQty:
+dq 1
+
+OverrideItemIDAOB+D:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+OverrideItemIDAOB+D:
+  db 8B 45 0C 50 8B 4D 08
+  
+unregistersymbol(OverrideItemIDAOB)
+unregistersymbol(OverrideItemID)
+unregistersymbol(OverrideQty)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "override-item-id"
+name = "Override Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemID"
+hops = []
+
+[[cheat]]
+id = "override-item-qty-when-adding"
+name = "Override Item Qty When Adding"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideQty"
+hops = []
+
+[[cheat]]
+id = "easiest-way-just-add-and-remove-quartz-with-infinite-item-usage-on-to-get-any-item-you-want"
+name = "Easiest Way, Just Add and Remove Quartz With Infinite Item Usage On To Get Any Item You Want"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemID"
+hops = []
+
+[[cheat]]
+id = "add-bonus-detective-points-dp-when-reporting-a-quest"
+name = "Add Bonus Detective Points (DP) When Reporting A Quest"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(AddBonusDPAOB,$process,8B 95 B8 EE FF FF 0F BF 42 04 03 C8) // should be unique
+registersymbol(AddBonusDPAOB)
+alloc(newmem,1024,AddBonusDPAOB)
+
+label(iAdditionalBonusDP)
+registersymbol(iAdditionalBonusDP)
+label(return)
+
+newmem:
+  mov edx,[ebp-00001148]
+  movsx eax,[iAdditionalBonusDP]
+  add [edx+04],eax
+  
+originalcode:
+  mov edx,[ebp-00001148]
+  jmp return
+
+iAdditionalBonusDP:
+dq #10
+
+AddBonusDPAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+AddBonusDPAOB:
+  db 8B 95 B8 EE FF FF
+  
+unregistersymbol(AddBonusDPAOB)
+unregistersymbol(iAdditionalBonusDP)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "additional-bonus-dp"
+name = "Additional Bonus DP"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iAdditionalBonusDP"
+hops = []
+
+[[cheat]]
+id = "spending-sepith-increases-it-instead-of-decreases"
+name = "Spending Sepith Increases It Instead of Decreases"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(SpendingSepithAddAOB,$process,8B 94 81 D0 D3 07 00 2B 55 0C 8B 45 08 8B 0D F0 97 B9 00) // should be unique
+registersymbol(SpendingSepithAddAOB)
+
+SpendingSepithAddAOB+7:
+  db 03
+  
+[DISABLE]
+
+SpendingSepithAddAOB+7:
+  db 2B
+  
+unregistersymbol(SpendingSepithAddAOB)"""
+
+[[cheat]]
+id = "mira"
+name = "Mira"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MiraPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "detective-points-dp"
+name = "Detective Points (DP)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MiraPtr"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "earth-sepith"
+name = "Earth Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "water-sepith"
+name = "Water Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "fire-sepith"
+name = "Fire Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "wind-sepith"
+name = "Wind Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "time-sepith"
+name = "Time Sepith"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "space-sepith"
+name = "Space Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "mirage-sepith"
+name = "Mirage Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "inventory-slot"
+name = "Inventory Slot"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Slot 1",
+    "4:Slot 2",
+    "8:Slot 3",
+    "10:Slot 5",
+    "14:Slot 6",
+    "18:Slot 7",
+    "20:Slot 9",
+    "24:Slot 10",
+    "28:Slot 11",
+    "30:Slot 13",
+    "34:Slot 14",
+    "38:Slot 15",
+    "40:Slot 17",
+    "44:Slot 18",
+    "48:Slot 19",
+    "50:Slot 21",
+    "54:Slot 22",
+    "58:Slot 23",
+    "60:Slot 25",
+    "64:Slot 26",
+    "68:Slot 27",
+    "70:Slot 29",
+    "74:Slot 30",
+    "78:Slot 31",
+    "80:Slot 33",
+    "84:Slot 34",
+    "88:Slot 35",
+    "90:Slot 37",
+    "94:Slot 38",
+    "98:Slot 39",
+    "0:Slot 57",
+    "0:Slot 58",
+    "0:Slot 59",
+    "100:Slot 65",
+    "104:Slot 66",
+    "108:Slot 67",
+    "110:Slot 69",
+    "114:Slot 70",
+    "118:Slot 71",
+    "120:Slot 73",
+    "124:Slot 74",
+    "128:Slot 75",
+    "130:Slot 77",
+    "134:Slot 78",
+    "138:Slot 79",
+    "140:Slot 81",
+    "144:Slot 82",
+    "148:Slot 83",
+    "150:Slot 85",
+    "154:Slot 86",
+    "158:Slot 87",
+    "160:Slot 89",
+    "164:Slot 90",
+    "168:Slot 91",
+    "170:Slot 93",
+    "174:Slot 94",
+    "178:Slot 95",
+    "180:Slot 97",
+    "184:Slot 98",
+    "188:Slot 99",
+    "190:Slot 101",
+    "194:Slot 102",
+    "198:Slot 103",
+    "1:Slot 121",
+    "10000:Slot 122",
+    "100000000:Slot 123",
+    "200:Slot 129",
+    "204:Slot 130",
+    "208:Slot 131",
+    "210:Slot 133",
+    "214:Slot 134",
+    "218:Slot 135",
+    "220:Slot 137",
+    "224:Slot 138",
+    "228:Slot 139",
+    "230:Slot 141",
+    "234:Slot 142",
+    "238:Slot 143",
+    "240:Slot 145",
+    "244:Slot 146",
+    "248:Slot 147",
+    "250:Slot 149",
+    "254:Slot 150",
+    "258:Slot 151",
+    "260:Slot 153",
+    "264:Slot 154",
+    "268:Slot 155",
+    "270:Slot 157",
+    "274:Slot 158",
+    "278:Slot 159",
+    "280:Slot 161",
+    "284:Slot 162",
+    "288:Slot 163",
+    "290:Slot 165",
+    "294:Slot 166",
+    "298:Slot 167",
+    "2:Slot 185",
+    "20000:Slot 186",
+    "200000000:Slot 187",
+    "300:Slot 193",
+    "304:Slot 194",
+    "308:Slot 195",
+    "310:Slot 197",
+    "314:Slot 198",
+    "318:Slot 199",
+    "320:Slot 201",
+    "324:Slot 202",
+    "328:Slot 203",
+    "330:Slot 205",
+    "334:Slot 206",
+    "338:Slot 207",
+    "340:Slot 209",
+    "344:Slot 210",
+    "348:Slot 211",
+    "350:Slot 213",
+    "354:Slot 214",
+    "358:Slot 215",
+    "360:Slot 217",
+    "364:Slot 218",
+    "368:Slot 219",
+    "370:Slot 221",
+    "374:Slot 222",
+    "378:Slot 223",
+    "380:Slot 225",
+    "384:Slot 226",
+    "388:Slot 227",
+    "390:Slot 229",
+    "394:Slot 230",
+    "398:Slot 231",
+    "3:Slot 249",
+    "30000:Slot 250",
+    "300000000:Slot 251",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventorySlotOffset"
+hops = []

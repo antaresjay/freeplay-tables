@@ -1,0 +1,450 @@
+[game]
+name = "Quake 4"
+exe = "quake4.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3960"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "script-globals"
+name = "Script: Globals"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Quake4.exe
+  Version: Steam
+  Date   : 2013-08-06
+  Author : jgoemat
+
+  ALlocate space for global variables:
+
+  1000 - flags
+  2000 - Clip structure base address (clip at 05EC)
+  2010 - Ammo structure base address (ammo at index*04+18)
+  2014 - Ammo - last index
+  2020 - Health structure base address (health at BC)
+  2030 - Hit Monster structure base (health at BC)
+  2034 - Last damage done to monster
+}
+
+globalalloc(GLOBALS,$100000)
+
+[ENABLE]
+
+GLOBALS+1000:
+  dd 0 // 1000: Flag: Clip
+  dd 0 // 1004: Flag: Ammo
+  dd 0 // 1008: Flag: God
+  dd 0 // 100C: Flag: One Hit Kill
+  dd 0 // 1010: Flag: Friend God
+
+[DISABLE]"""
+
+[[cheat]]
+id = "script-clip"
+name = "Script: Clip"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Quake4.exe
+  Version: Steam
+  Date   : 2013-08-06
+  Author : jgoemat
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(CLIP,gamex86.dll,01 AE EC 05 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [GLOBALS+2000],esi
+  cmp dword ptr [GLOBALS+1000],0
+  jne skip
+  add [esi+000005EC],ebp
+skip:
+  jmp return
+
+CLIP:
+  jmp code
+  nop
+return:
+registersymbol(CLIP)
+
+[DISABLE]
+
+CLIP:
+  db 01 AE EC 05 00 00
+
+unregistersymbol(CLIP)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "gamex86.dll"+21DD62
+
+"gamex86.dll"+21DD38: 51                 - push ecx
+"gamex86.dll"+21DD39: 8B 8E F0060000     - mov ecx,[esi+000006F0]
+"gamex86.dll"+21DD3F: 52                 - push edx
+"gamex86.dll"+21DD40: 81 C1 E4150000     - add ecx,000015E4
+"gamex86.dll"+21DD46: E8 4525FAFF        - call gamex86.dll+1C0290
+"gamex86.dll"+21DD4B: 83 BE E8050000 00  - cmp dword ptr [esi+000005E8],00
+"gamex86.dll"+21DD52: 74 1A              - je gamex86.dll+21DD6E
+"gamex86.dll"+21DD54: 83 BE E4050000 00  - cmp dword ptr [esi+000005E4],00
+"gamex86.dll"+21DD5B: 74 11              - je gamex86.dll+21DD6E
+"gamex86.dll"+21DD5D: A1 80EE8620        - mov eax,[gamex86.dll+86EE80]
+// ---------- INJECTING HERE ----------
+"gamex86.dll"+21DD62: 01 AE EC050000     - add [esi+000005EC],ebp
+// ---------- DONE INJECTING  ----------
+"gamex86.dll"+21DD68: 89 86 F8050000     - mov [esi+000005F8],eax
+"gamex86.dll"+21DD6E: F6 46 05 20        - test byte ptr [esi+05],20
+"gamex86.dll"+21DD72: 75 11              - jne gamex86.dll+21DD85
+"gamex86.dll"+21DD74: 8B 8E F0060000     - mov ecx,[esi+000006F0]
+"gamex86.dll"+21DD7A: 51                 - push ecx
+"gamex86.dll"+21DD7B: B9 488D3820        - mov ecx,gamex86.dll+388D48
+"gamex86.dll"+21DD80: E8 EB54E2FF        - call gamex86.dll+43270
+"gamex86.dll"+21DD85: A1 4C993920        - mov eax,[gamex86.dll+39994C]
+"gamex86.dll"+21DD8A: 69 C0 CD0D0100     - imul eax,eax,00010DCD
+"gamex86.dll"+21DD90: 83 C0 01           - add eax,01
+}"""
+
+[[cheat]]
+id = "script-ammo"
+name = "Script: Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Quake4.exe
+  Version: Steam
+  Date   : 2013-08-06
+  Author : jgoemat
+
+  Infinite Ammo
+}
+
+[ENABLE]
+
+aobscanmodule(AMMO,gamex86.dll,2B C7 89 44 B1 18) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [GLOBALS+2010],ecx
+  mov [GLOBALS+2014],esi
+  cmp dword ptr [GLOBALS+1004],0
+  jne skip
+  sub eax,edi
+  mov [ecx+esi*4+18],eax
+skip:
+  jmp return
+
+AMMO:
+  jmp code
+  nop
+return:
+registersymbol(AMMO)
+
+[DISABLE]
+
+AMMO:
+  db 2B C7 89 44 B1 18
+
+unregistersymbol(AMMO)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "gamex86.dll"+1C02B4
+
+"gamex86.dll"+1C029C: E8 BFFFFFFF        - call gamex86.dll+1C0260
+"gamex86.dll"+1C02A1: 85 C0              - test eax,eax
+"gamex86.dll"+1C02A3: 75 07              - jne gamex86.dll+1C02AC
+"gamex86.dll"+1C02A5: 5F                 - pop edi
+"gamex86.dll"+1C02A6: 32 C0              - xor al,al
+"gamex86.dll"+1C02A8: 5E                 - pop esi
+"gamex86.dll"+1C02A9: C2 0800            - ret 0008
+"gamex86.dll"+1C02AC: 8B 44 B1 18        - mov eax,[ecx+esi*4+18]
+"gamex86.dll"+1C02B0: 85 C0              - test eax,eax
+"gamex86.dll"+1C02B2: 7C 11              - jnge gamex86.dll+1C02C5
+// ---------- INJECTING HERE ----------
+"gamex86.dll"+1C02B4: 2B C7              - sub eax,edi
+"gamex86.dll"+1C02B6: 89 44 B1 18        - mov [ecx+esi*4+18],eax
+// ---------- DONE INJECTING  ----------
+"gamex86.dll"+1C02BA: A1 80EE8620        - mov eax,[gamex86.dll+86EE80]
+"gamex86.dll"+1C02BF: 89 81 18010000     - mov [ecx+00000118],eax
+"gamex86.dll"+1C02C5: 5F                 - pop edi
+"gamex86.dll"+1C02C6: B0 01              - mov al,01
+"gamex86.dll"+1C02C8: 5E                 - pop esi
+"gamex86.dll"+1C02C9: C2 0800            - ret 0008
+"gamex86.dll"+1C02CC: CC                 - int 3
+"gamex86.dll"+1C02CD: CC                 - int 3
+"gamex86.dll"+1C02CE: CC                 - int 3
+"gamex86.dll"+1C02CF: CC                 - int 3
+}"""
+
+[[cheat]]
+id = "script-god"
+name = "Script: God"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Quake4.exe
+  Version: Steam
+  Date   : 2013-08-06
+  Author : jgoemat
+
+  God mode - monster attacks anyway
+}
+
+[ENABLE]
+
+aobscanmodule(GOD,gamex86.dll,89 86 BC 00 00 00 A1 * * * * 83) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  mov [GLOBALS+2020],esi
+  cmp [GLOBALS+1008],0
+  jne skip
+  mov [esi+000000BC],eax
+skip:
+  jmp return
+
+GOD:
+  jmp code
+  nop
+return:
+registersymbol(GOD)
+
+[DISABLE]
+
+GOD:
+  db 89 86 BC 00 00 00
+
+unregistersymbol(GOD)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "gamex86.dll"+1D1FD9
+
+"gamex86.dll"+1D1FB8: 8B 4C 24 14     - mov ecx,[esp+14]
+"gamex86.dll"+1D1FBC: D9 6C 24 54     - fldcw [esp+54]
+"gamex86.dll"+1D1FC0: BB 01000000     - mov ebx,00000001
+"gamex86.dll"+1D1FC5: 3B CB           - cmp ecx,ebx
+"gamex86.dll"+1D1FC7: 7D 06           - jnl gamex86.dll+1D1FCF
+"gamex86.dll"+1D1FC9: 8B CB           - mov ecx,ebx
+"gamex86.dll"+1D1FCB: 89 4C 24 14     - mov [esp+14],ecx
+"gamex86.dll"+1D1FCF: 8B 86 BC000000  - mov eax,[esi+000000BC]
+"gamex86.dll"+1D1FD5: 8B E8           - mov ebp,eax
+"gamex86.dll"+1D1FD7: 2B C1           - sub eax,ecx
+// ---------- INJECTING HERE ----------
+"gamex86.dll"+1D1FD9: 89 86 BC000000  - mov [esi+000000BC],eax
+// ---------- DONE INJECTING  ----------
+"gamex86.dll"+1D1FDF: A1 3C043820     - mov eax,[gamex86.dll+38043C]
+"gamex86.dll"+1D1FE4: 83 78 24 00     - cmp dword ptr [eax+24],00
+"gamex86.dll"+1D1FE8: 74 28           - je gamex86.dll+1D2012
+"gamex86.dll"+1D1FEA: 8B 46 04        - mov eax,[esi+04]
+"gamex86.dll"+1D1FED: 8B 15 488C3720  - mov edx,[gamex86.dll+378C48]
+"gamex86.dll"+1D1FF3: 8B 3A           - mov edi,[edx]
+"gamex86.dll"+1D1FF5: 51              - push ecx
+"gamex86.dll"+1D1FF6: 50              - push eax
+"gamex86.dll"+1D1FF7: 68 0C4F3420     - push gamex86.dll+344F0C
+"gamex86.dll"+1D1FFC: E8 8FC00600     - call gamex86.dll+23E090
+}"""
+
+[[cheat]]
+id = "script-one-hit-kill-friend-god"
+name = "Script: One Hit Kill,Friend God"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Quake4.exe
+  Version: Steam
+  Date   : 2013-08-06
+  Author : jgoemat
+
+  One-hit kill (NOTE: MIGHT NEED TO CHECK MONSTER/FRIEND)
+}
+
+[ENABLE]
+
+aobscanmodule(ONEHITKILL,gamex86.dll,29 81 BC 00 00 00 8B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(enemy)
+label(return)
+
+newmem:
+
+code:
+  mov [GLOBALS+2030],ecx
+  mov [GLOBALS+2034],eax
+  push ebx
+  mov ebx,[ecx+2A8]
+  test ebx,ebx
+  jz enemy
+
+  // friend
+  cmp [GLOBALS+1010],0
+  je skip
+  xor eax,eax // no damage to friends
+  jmp skip
+
+enemy:
+  cmp [GLOBALS+100C],0
+  je skip
+
+  cmp eax,[ecx+000000BC]
+  jge skip
+  mov eax,[ecx+000000BC]
+  inc eax
+skip:
+  pop ebx
+  sub [ecx+000000BC],eax
+  jmp return
+
+ONEHITKILL:
+  jmp code
+  nop
+return:
+registersymbol(ONEHITKILL)
+
+[DISABLE]
+
+ONEHITKILL:
+  db 29 81 BC 00 00 00
+
+unregistersymbol(ONEHITKILL)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "gamex86.dll"+EBD8D
+
+"gamex86.dll"+EBD76: 33 C0                   - xor eax,eax
+"gamex86.dll"+EBD78: 5B                      - pop ebx
+"gamex86.dll"+EBD79: C2 0400                 - ret 0004
+"gamex86.dll"+EBD7C: CC                      - int 3
+"gamex86.dll"+EBD7D: CC                      - int 3
+"gamex86.dll"+EBD7E: CC                      - int 3
+"gamex86.dll"+EBD7F: CC                      - int 3
+"gamex86.dll"+EBD80: F6 81 B21D0000 02       - test byte ptr [ecx+00001DB2],02
+"gamex86.dll"+EBD87: 75 2A                   - jne gamex86.dll+EBDB3
+"gamex86.dll"+EBD89: 8B 44 24 04             - mov eax,[esp+04]
+// ---------- INJECTING HERE ----------
+"gamex86.dll"+EBD8D: 29 81 BC000000          - sub [ecx+000000BC],eax
+// ---------- DONE INJECTING  ----------
+"gamex86.dll"+EBD93: 8B 15 78063820          - mov edx,[gamex86.dll+380678]
+"gamex86.dll"+EBD99: 83 7A 24 00             - cmp dword ptr [edx+24],00
+"gamex86.dll"+EBD9D: 8B 81 BC000000          - mov eax,[ecx+000000BC]
+"gamex86.dll"+EBDA3: 74 0E                   - je gamex86.dll+EBDB3
+"gamex86.dll"+EBDA5: 85 C0                   - test eax,eax
+"gamex86.dll"+EBDA7: 7F 0A                   - jg gamex86.dll+EBDB3
+"gamex86.dll"+EBDA9: C7 81 BC000000 01000000 - mov [ecx+000000BC],00000001
+"gamex86.dll"+EBDB3: C2 0400                 - ret 0004
+"gamex86.dll"+EBDB6: CC                      - int 3
+"gamex86.dll"+EBDB7: CC                      - int 3
+}"""
+
+[[cheat]]
+id = "flag-clip"
+name = "Flag: Clip"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GLOBALS"
+hops = []
+
+[[cheat]]
+id = "flag-ammo"
+name = "Flag: Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GLOBALS"
+hops = []
+
+[[cheat]]
+id = "flag-god"
+name = "Flag: God"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GLOBALS"
+hops = []
+
+[[cheat]]
+id = "flag-one-hit-kill"
+name = "Flag: One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GLOBALS"
+hops = []
+
+[[cheat]]
+id = "flag-god-friends"
+name = "Flag: God-Friends"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GLOBALS"
+hops = []

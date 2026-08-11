@@ -1,0 +1,5950 @@
+[game]
+name = "WARNO - Full Release"
+exe = "warno.exe"
+notes = "Converted from a Cheat Engine table by shearerc. Source: https://fearlessrevolution.com/viewtopic.php?t=29921"
+verified = []
+author = "shearerc"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "experimental-hack-prevent-frozen-values-below-from-affecting-ag-campaign-scores"
+name = "EXPERIMENTAL HACK : Prevent frozen values below from affecting AG campaign scores"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script is an experimental ugly hack to prevent spillover of tactical battle scores into AG campaign scores.
+  For people who forget to unfreeze tactical scores/morale before exiting tac battle summary screen.
+
+  no longer working since v135139
+
+  140B03BC6 - F3 0F6F 44 10 20  - movdqu xmm0,[rax+rdx+20]
+  140AC5C68 - F3 0F6F 46 18  - movdqu xmm0,[rsi+18]
+
+}
+
+[ENABLE]
+
+aobscanmodule(PreventSpilloverTacticalScoreIntoCampaignScoreAOB,$process,44 03 41 1C 44 03 41 20 44 03 41 24 44 03 41 28 44 03 41 2C BA 06) // should be unique
+alloc(newmem,$1000,PreventSpilloverTacticalScoreIntoCampaignScoreAOB)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  // add r8d,[rcx+1C]
+  // add r8d,[rcx+20]
+  jmp return
+
+PreventSpilloverTacticalScoreIntoCampaignScoreAOB:
+  jmp newmem
+  nop 3
+return:
+registersymbol(PreventSpilloverTacticalScoreIntoCampaignScoreAOB)
+
+[DISABLE]
+
+PreventSpilloverTacticalScoreIntoCampaignScoreAOB:
+  db 44 03 41 1C 44 03 41 20
+
+unregistersymbol(PreventSpilloverTacticalScoreIntoCampaignScoreAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AB2F44
+
+WARNO.exe+AB2F1F: E8 EC F3 C8 FF        - call WARNO.exe+742310
+WARNO.exe+AB2F24: 80 7D A7 02           - cmp byte ptr [rbp-59],02
+WARNO.exe+AB2F28: 74 44                 - je WARNO.exe+AB2F6E
+WARNO.exe+AB2F2A: 0F B7 45 97           - movzx eax,word ptr [rbp-69]
+WARNO.exe+AB2F2E: 66 39 45 99           - cmp [rbp-67],ax
+WARNO.exe+AB2F32: 77 3A                 - ja WARNO.exe+AB2F6E
+WARNO.exe+AB2F34: 0F B6 45 9B           - movzx eax,byte ptr [rbp-65]
+WARNO.exe+AB2F38: 48 6B C8 70           - imul rcx,rax,70
+WARNO.exe+AB2F3C: 48 03 4D 87           - add rcx,[rbp-79]
+WARNO.exe+AB2F40: 44 8B 41 18           - mov r8d,[rcx+18]
+// ---------- INJECTING HERE ----------
+WARNO.exe+AB2F44: 44 03 41 1C           - add r8d,[rcx+1C]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AB2F48: 44 03 41 20           - add r8d,[rcx+20]
+WARNO.exe+AB2F4C: 44 03 41 24           - add r8d,[rcx+24]
+WARNO.exe+AB2F50: 44 03 41 28           - add r8d,[rcx+28]
+WARNO.exe+AB2F54: 44 03 41 2C           - add r8d,[rcx+2C]
+WARNO.exe+AB2F58: BA 06 00 00 00        - mov edx,00000006
+WARNO.exe+AB2F5D: E8 AE ED CB FF        - call WARNO.exe+771D10
+WARNO.exe+AB2F62: 48 8D 4C 24 20        - lea rcx,[rsp+20]
+WARNO.exe+AB2F67: E8 E4 F4 C8 FF        - call WARNO.exe+742450
+WARNO.exe+AB2F6C: EB B6                 - jmp WARNO.exe+AB2F24
+WARNO.exe+AB2F6E: 48 81 C4 00 01 00 00  - add rsp,00000100
+}"""
+
+[[cheat]]
+id = "steam-v130507"
+name = "Steam v130507"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507 steam
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script captures important pointers n stuff
+}
+
+[ENABLE]
+aobscanmodule(PlayerManualDeployAOB,$process,8B 54 24 30 85 D2 0F 84 ?? ?? ?? ?? 48 8B ?? ?? ?? 48 8D) // should be unique
+registersymbol(PlayerManualDeployAOB)
+
+aobscanmodule(GetPlayerTeamID,$process,48 89 44 24 60 B2 64 48 ?? ?? ?? E8) // should be unique
+alloc(newmem1,$1000,GetPlayerTeamID)
+alloc(HumanPlayerTeamID,8,GetPlayerTeamID)
+
+label(code1)
+label(return1)
+registersymbol(HumanPlayerTeamID)
+
+newmem1:
+  mov [rsp+60],rax
+code1:
+  push rcx
+  mov rcx,[rax]
+  mov [HumanPlayerTeamID],rcx
+  pop rcx
+  jmp return1
+
+GetPlayerTeamID:
+  jmp newmem1
+return1:
+registersymbol(GetPlayerTeamID)
+
+[DISABLE]
+GetPlayerTeamID:
+  db 48 89 44 24 60
+
+unregistersymbol(PlayerManualDeployAOB)
+unregistersymbol(GetPlayerTeamID HumanPlayerTeamID)
+dealloc(newmem1 GetPlayerTeamID)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+9E9F85
+
+WARNO.exe+9E9F62: 49 89 5B 10              - mov [r11+10],rbx
+WARNO.exe+9E9F66: 4D 8B F0                 - mov r14,r8
+WARNO.exe+9E9F69: 48 8B CA                 - mov rcx,rdx
+WARNO.exe+9E9F6C: 45 33 FF                 - xor r15d,r15d
+WARNO.exe+9E9F6F: 45 89 7B B8              - mov [r11-48],r15d
+WARNO.exe+9E9F73: 45 89 7B C0              - mov [r11-40],r15d
+WARNO.exe+9E9F77: 4D 89 7B B0              - mov [r11-50],r15
+WARNO.exe+9E9F7B: 48 8B 02                 - mov rax,[rdx]
+WARNO.exe+9E9F7E: 49 8D 53 B0              - lea rdx,[r11-50]
+WARNO.exe+9E9F82: FF 50 48                 - call qword ptr [rax+48]
+// ---------- INJECTING HERE ----------
+WARNO.exe+9E9F85: 8B 54 24 30              - mov edx,[rsp+30]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+9E9F89: 85 D2                    - test edx,edx
+WARNO.exe+9E9F8B: 0F 84 D4 00 00 00        - je WARNO.exe+9EA065
+WARNO.exe+9E9F91: 48 8B 7C 24 28           - mov rdi,[rsp+28]
+WARNO.exe+9E9F96: 48 8D 34 D7              - lea rsi,[rdi+rdx*8]
+WARNO.exe+9E9F9A: 48 3B FE                 - cmp rdi,rsi
+WARNO.exe+9E9F9D: 0F 84 BF 00 00 00        - je WARNO.exe+9EA062
+WARNO.exe+9E9FA3: 4C 8B B4 24 80 00 00 00  - mov r14,[rsp+00000080]
+WARNO.exe+9E9FAB: EB 06                    - jmp WARNO.exe+9E9FB3
+WARNO.exe+9E9FAD: 0F 1F 00                 - nop dword ptr [rax]
+WARNO.exe+9E9FB0: 45 33 FF                 - xor r15d,r15d
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+935FBF
+
+WARNO.exe+935F93: 48 8B 48 08           - mov rcx,[rax+08]
+WARNO.exe+935F97: 48 89 4D 28           - mov [rbp+28],rcx
+WARNO.exe+935F9B: 48 8B 48 10           - mov rcx,[rax+10]
+WARNO.exe+935F9F: 48 89 4D 30           - mov [rbp+30],rcx
+WARNO.exe+935FA3: 48 8B 48 18           - mov rcx,[rax+18]
+WARNO.exe+935FA7: 48 89 4D 38           - mov [rbp+38],rcx
+WARNO.exe+935FAB: 48 8B 40 20           - mov rax,[rax+20]
+WARNO.exe+935FAF: 48 89 45 40           - mov [rbp+40],rax
+WARNO.exe+935FB3: 48 8B 0D FE E1 7D 02  - mov rcx,[WARNO.exe+31141B8]
+WARNO.exe+935FBA: E8 C1 23 A8 FF        - call WARNO.exe+3B8380
+// ---------- INJECTING HERE ----------
+WARNO.exe+935FBF: 48 89 44 24 60        - mov [rsp+60],rax
+// ---------- DONE INJECTING  ----------
+WARNO.exe+935FC4: B2 64                 - mov dl,64
+WARNO.exe+935FC6: 48 8D 4D 10           - lea rcx,[rbp+10]
+WARNO.exe+935FCA: E8 C1 9E D3 FF        - call WARNO.ImRect::GetCenter+83E0
+WARNO.exe+935FCF: 45 33 F6              - xor r14d,r14d
+WARNO.exe+935FD2: 48 85 C0              - test rax,rax
+WARNO.exe+935FD5: 75 1F                 - jne WARNO.exe+935FF6
+WARNO.exe+935FD7: 0F 57 C0              - xorps xmm0,xmm0
+WARNO.exe+935FDA: F3 0F 7F 44 24 20     - movdqu [rsp+20],xmm0
+WARNO.exe+935FE0: 44 89 74 24 40        - mov [rsp+40],r14d
+WARNO.exe+935FE5: C6 44 24 45 03        - mov byte ptr [rsp+45],03
+}"""
+
+[[cheat]]
+id = "tactical-battles"
+name = "Tactical Battles"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507 steam
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script captures important pointers n stuff
+}
+
+[ENABLE]
+aobscanmodule(GetArrayOfTeamLinkModuleAOB,$process,48 8B 04 C8 48 83 E0 FC EB 03 48 8B C3 48 8B 0D) // should be unique
+alloc(newmem2,$1000,GetArrayOfTeamLinkModuleAOB)
+alloc(ArrayOfTeamLinkModule,8,GetArrayOfTeamLinkModuleAOB)
+
+label(code2)
+label(return2)
+registersymbol(ArrayOfTeamLinkModule)
+
+newmem2:
+  mov [ArrayOfTeamLinkModule],rax
+code2:
+  mov rax,[rax+rcx*8]
+  and rax,-04
+  jmp return2
+
+GetArrayOfTeamLinkModuleAOB:
+  jmp newmem2
+  nop 3
+return2:
+registersymbol(GetArrayOfTeamLinkModuleAOB)
+
+[DISABLE]
+GetArrayOfTeamLinkModuleAOB:
+  db 48 8B 04 C8 48 83 E0 FC
+
+unregistersymbol(GetArrayOfTeamLinkModuleAOB ArrayOfTeamLinkModule)
+dealloc(newmem2 ArrayOfTeamLinkModule)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AB78BC
+
+WARNO.exe+AB7896: A8 01                 - test al,01
+WARNO.exe+AB7898: 48 8D 87 50 03 00 00  - lea rax,[rdi+00000350]
+WARNO.exe+AB789F: 75 07                 - jne WARNO.exe+AB78A8
+WARNO.exe+AB78A1: 48 8D 87 60 03 00 00  - lea rax,[rdi+00000360]
+WARNO.exe+AB78A8: C1 E9 08              - shr ecx,08
+WARNO.exe+AB78AB: 81 E1 FF FF 7F 00     - and ecx,007FFFFF
+WARNO.exe+AB78B1: 8B D1                 - mov edx,ecx
+WARNO.exe+AB78B3: 48 3B 50 08           - cmp rdx,[rax+08]
+WARNO.exe+AB78B7: 73 0D                 - jae WARNO.exe+AB78C6
+WARNO.exe+AB78B9: 48 8B 00              - mov rax,[rax]
+// ---------- INJECTING HERE ----------
+WARNO.exe+AB78BC: 48 8B 04 C8           - mov rax,[rax+rcx*8]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AB78C0: 48 83 E0 FC           - and rax,-04
+WARNO.exe+AB78C4: EB 03                 - jmp WARNO.exe+AB78C9
+WARNO.exe+AB78C6: 48 8B C3              - mov rax,rbx
+WARNO.exe+AB78C9: 48 8B 0D E8 C8 65 02  - mov rcx,[WARNO.exe+31141B8]
+WARNO.exe+AB78D0: 4C 8D 70 20           - lea r14,[rax+20]
+WARNO.exe+AB78D4: E8 A7 0A 90 FF        - call WARNO.exe+3B8380
+WARNO.exe+AB78D9: 4C 8B F8              - mov r15,rax
+WARNO.exe+AB78DC: 41 BC 03 00 00 00     - mov r12d,00000003
+WARNO.exe+AB78E2: 48 8B 08              - mov rcx,[rax]
+WARNO.exe+AB78E5: 49 39 0E              - cmp [r14],rcx
+}"""
+
+[[cheat]]
+id = "command-requisition-pts-activate-then-manually-deploy-a-unit-to-capture-pointer"
+name = "Command/Requisition Pts (activate, then manually deploy a unit to capture pointer)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(CmdPtsAOB,$process,44 0F 28 C2 44 8B FA) // should be unique
+alloc(newmem1,$1000,CmdPtsAOB)
+alloc(PtrToCommandPts,8,CmdPtsAOB)
+
+label(code1)
+label(return)
+label(newmem2)
+label(cleanup)
+label(loopingChk)
+
+registersymbol(PtrToCommandPts)
+
+newmem1:
+  movaps xmm8,xmm2   // original code
+  mov r15d,edx       // original code
+  push rdi
+  push rcx
+  push rax
+  pushfq
+  mov rdi,PlayerManualDeployAOB
+  xor rax,rax
+
+loopingChk:         // check the stack for presence of PlayerManualDeployAOB, up to rsp+0xA00
+  cmp [rsp+rax*8+20],rdi
+  je newmem2
+  inc eax
+  cmp eax,140
+  jne loopingChk
+  jmp cleanup
+
+newmem2:
+  mov rcx,[rcx+28]
+  cmp dword ptr [rcx],edx
+  cmove rax,[rcx+8]
+  je code1
+  cmp dword ptr [rcx+10],edx
+  cmove rax,[rcx+10+8]
+  je code1
+  jmp cleanup
+
+code1:
+  mov [PtrToCommandPts],rax
+  jmp cleanup
+
+cleanup:
+  popfq
+  pop rax
+  pop rcx
+  pop rdi
+  jmp return
+
+CmdPtsAOB:
+  jmp newmem1
+  nop 2
+return:
+registersymbol(CmdPtsAOB)
+
+[DISABLE]
+CmdPtsAOB:
+  db 44 0F 28 C2 44 8B FA
+
+unregistersymbol(CmdPtsAOB PtrToCommandPts)
+dealloc(newmem1 PtrToCommandPts)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+9A1AF5
+
+WARNO.exe+9A1ACA: 41 57                    - push r15
+WARNO.exe+9A1ACC: 48 83 EC 60              - sub rsp,60
+WARNO.exe+9A1AD0: 48 C7 40 A0 FE FF FF FF  - mov qword ptr [rax-60],FFFFFFFFFFFFFFFE
+WARNO.exe+9A1AD8: 48 89 58 08              - mov [rax+08],rbx
+WARNO.exe+9A1ADC: 48 89 68 10              - mov [rax+10],rbp
+WARNO.exe+9A1AE0: 48 89 70 20              - mov [rax+20],rsi
+WARNO.exe+9A1AE4: 0F 29 70 C8              - movaps [rax-38],xmm6
+WARNO.exe+9A1AE8: 0F 29 78 B8              - movaps [rax-48],xmm7
+WARNO.exe+9A1AEC: 44 0F 29 40 A8           - movaps [rax-58],xmm8
+WARNO.exe+9A1AF1: 41 0F B6 F9              - movzx edi,r9b
+// ---------- INJECTING HERE ----------
+WARNO.exe+9A1AF5: 44 0F 28 C2              - movaps xmm8,xmm2
+// ---------- DONE INJECTING  ----------
+WARNO.exe+9A1AF9: 44 8B FA                 - mov r15d,edx
+WARNO.exe+9A1AFC: 48 8B E9                 - mov rbp,rcx
+WARNO.exe+9A1AFF: 0F 57 FF                 - xorps xmm7,xmm7
+WARNO.exe+9A1B02: 44 0F 2E C7              - ucomiss xmm8,xmm7
+WARNO.exe+9A1B06: 7A 09                    - jp WARNO.exe+9A1B11
+WARNO.exe+9A1B08: 75 07                    - jne WARNO.exe+9A1B11
+WARNO.exe+9A1B0A: 33 C0                    - xor eax,eax
+WARNO.exe+9A1B0C: E9 2D 01 00 00           - jmp WARNO.exe+9A1C3E
+WARNO.exe+9A1B11: 44 89 BC 24 A0 00 00 00  - mov [rsp+000000A0],r15d
+WARNO.exe+9A1B19: 48 83 C1 20              - add rcx,20
+}"""
+
+[[cheat]]
+id = "command-requisition-pts-display-value-x-100"
+name = "Command/Requisition Pts (Display Value x 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrToCommandPts"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "unlimited-human-player-units-for-manual-deployment-only"
+name = "Unlimited Human Player Units (For manual deployment only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+  Author : Administrator
+
+  Infinite Units for player when manually deploying. credits to TheOrchidStation from playground.ru for initial discovery of these AOBs
+
+  WARNO.exe+13EFED3  dec [rax+r15*4]    << decrease number of units deployed (Army General)
+  WARNO.exe+13F035E  add [rax+rsi*4],r10d  << increase number of units deployed (Army General)
+  WARNO.exe+A56213   sub [rax+20],r12d   << deduct unit from pool after player confirms deployment
+  WARNO.exe+A560E8   add [rdx+20],r12d  << refund deployed unit to pool  (AI doesn't seem to use this)
+}
+
+[ENABLE]
+aobscanmodule(UnlimitedUnitsAOB1,$process,42 FF 0C B8 48 83 C3 04)
+aobscanmodule(UnlimitedUnitsAOB2,$process,44 01 14 B0 49 8B 1B)
+aobscanmodule(UnlimitedUnitsAOB3,$process,44 29 60 20 49 8B D3 49 ?? ?? E8) // should be unique
+aobscanmodule(UnlimitedUnitsAOB4,$process,44 01 62 20 4D 85 F6 74)
+
+alloc(newmem,$1000,UnlimitedUnitsAOB3)
+
+label(code)
+label(return)
+label(loopingChk)
+
+UnlimitedUnitsAOB1:
+  db 90 90 90 90
+  registersymbol(UnlimitedUnitsAOB1)
+
+UnlimitedUnitsAOB2:
+  db 90 90 90 90
+  registersymbol(UnlimitedUnitsAOB2)
+
+UnlimitedUnitsAOB4:
+  db 90 90 90 90
+  registersymbol(UnlimitedUnitsAOB4)
+
+newmem:
+  push rbx
+  push rdx
+  pushfq
+  mov rdx,PlayerManualDeployAOB
+  xor rbx,rbx
+
+loopingChk:     // check the stack for presence of PlayerManualDeployAOB, up to rsp+0xA00
+  cmp [rsp+rbx*8+18],rdx
+  je code       // don't deduct unit if human player
+  inc ebx
+  cmp ebx,140
+  jne loopingChk
+  sub [rax+20],r12d  // original code
+  jmp code
+
+code:
+  popfq
+  pop rdx
+  pop rbx
+  mov rdx,r11
+  jmp return
+
+UnlimitedUnitsAOB3:
+  jmp newmem
+  nop 2
+return:
+registersymbol(UnlimitedUnitsAOB3)
+
+[DISABLE]
+
+UnlimitedUnitsAOB1:
+  db 42 FF 0C B8 48 83 C3 04
+
+UnlimitedUnitsAOB2:
+  db 44 01 14 B0 49 8B 1B
+
+UnlimitedUnitsAOB3:
+  db 44 29 60 20 49 8B D3
+
+UnlimitedUnitsAOB4:
+  db 44 01 62 20 4D 85 F6
+
+unregistersymbol(UnlimitedUnitsAOB1 UnlimitedUnitsAOB2 UnlimitedUnitsAOB3 UnlimitedUnitsAOB4)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+13EFED3
+
+WARNO.exe+13EFEB1: 74 11                    - je WARNO.exe+13EFEC4
+WARNO.exe+13EFEB3: 48 8B D3                 - mov rdx,rbx
+WARNO.exe+13EFEB6: 48 8B CE                 - mov rcx,rsi
+WARNO.exe+13EFEB9: E8 32 4C 20 FF           - call WARNO.exe+5F4AF0
+WARNO.exe+13EFEBE: 8B 0B                    - mov ecx,[rbx]
+WARNO.exe+13EFEC0: 89 08                    - mov [rax],ecx
+WARNO.exe+13EFEC2: EB 13                    - jmp WARNO.exe+13EFED7
+WARNO.exe+13EFEC4: 49 8B 85 C8 00 00 00     - mov rax,[r13+000000C8]
+WARNO.exe+13EFECB: 49 8B 0C 04              - mov rcx,[r12+rax]
+WARNO.exe+13EFECF: 4A 8B 04 F1              - mov rax,[rcx+r14*8]
+// ---------- INJECTING HERE ----------
+WARNO.exe+13EFED3: 42 FF 0C B8              - dec [rax+r15*4]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+13EFED7: 48 83 C3 04              - add rbx,04
+WARNO.exe+13EFEDB: 48 3B DF                 - cmp rbx,rdi
+WARNO.exe+13EFEDE: 75 82                    - jne WARNO.exe+13EFE62
+WARNO.exe+13EFEE0: 48 8B 94 24 C8 00 00 00  - mov rdx,[rsp+000000C8]
+WARNO.exe+13EFEE8: 48 FF C2                 - inc rdx
+WARNO.exe+13EFEEB: 48 89 94 24 C8 00 00 00  - mov [rsp+000000C8],rdx
+WARNO.exe+13EFEF3: 48 3B 54 24 30           - cmp rdx,[rsp+30]
+WARNO.exe+13EFEF8: 0F 85 C2 FE FF FF        - jne WARNO.exe+13EFDC0
+WARNO.exe+13EFEFE: 48 8B 4C 24 38           - mov rcx,[rsp+38]
+WARNO.exe+13EFF03: 48 8B 44 24 20           - mov rax,[rsp+20]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+13F035E
+
+WARNO.exe+13F0332: 41 8B F1                 - mov esi,r9d
+WARNO.exe+13F0335: 4D 8B 53 08              - mov r10,[r11+08]
+WARNO.exe+13F0339: 48 8D 14 40              - lea rdx,[rax+rax*2]
+WARNO.exe+13F033D: 41 8B C0                 - mov eax,r8d
+WARNO.exe+13F0340: 4C 8D 3C D5 00 00 00 00  - lea r15,[rdx*8+00000000]
+WARNO.exe+13F0348: 48 8B 91 C8 00 00 00     - mov rdx,[rcx+000000C8]
+WARNO.exe+13F034F: 4C 8D 34 40              - lea r14,[rax+rax*2]
+WARNO.exe+13F0353: 4A 8B 04 3A              - mov rax,[rdx+r15]
+WARNO.exe+13F0357: 4D 03 F6                 - add r14,r14
+WARNO.exe+13F035A: 4A 8B 04 F0              - mov rax,[rax+r14*8]
+// ---------- INJECTING HERE ----------
+WARNO.exe+13F035E: 44 01 14 B0              - add [rax+rsi*4],r10d
+// ---------- DONE INJECTING  ----------
+WARNO.exe+13F0362: 49 8B 1B                 - mov rbx,[r11]
+WARNO.exe+13F0365: 48 8D 14 B0              - lea rdx,[rax+rsi*4]
+WARNO.exe+13F0369: 49 8B 43 08              - mov rax,[r11+08]
+WARNO.exe+13F036D: 48 8D 3C 83              - lea rdi,[rbx+rax*4]
+WARNO.exe+13F0371: 48 3B DF                 - cmp rbx,rdi
+WARNO.exe+13F0374: 74 32                    - je WARNO.exe+13F03A8
+WARNO.exe+13F0376: 48 C1 E6 04              - shl rsi,04
+WARNO.exe+13F037A: 66 0F 1F 44 00 00        - nop word ptr [rax+rax+00]
+WARNO.exe+13F0380: 48 8B 85 C8 00 00 00     - mov rax,[rbp+000000C8]
+WARNO.exe+13F0387: 48 8B D3                 - mov rdx,rbx
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+A56213
+
+WARNO.exe+A561FA: 41 3B D0        - cmp edx,r8d
+WARNO.exe+A561FD: 74 14           - je WARNO.exe+A56213
+WARNO.exe+A561FF: 48 83 C0 28     - add rax,28
+WARNO.exe+A56203: 48 3B C1        - cmp rax,rcx
+WARNO.exe+A56206: 75 9D           - jne WARNO.exe+A561A5
+WARNO.exe+A56208: 48 83 C4 20     - add rsp,20
+WARNO.exe+A5620C: 41 5F           - pop r15
+WARNO.exe+A5620E: 41 5E           - pop r14
+WARNO.exe+A56210: 41 5C           - pop r12
+WARNO.exe+A56212: C3              - ret
+// ---------- INJECTING HERE ----------
+WARNO.exe+A56213: 44 29 60 20     - sub [rax+20],r12d
+// ---------- DONE INJECTING  ----------
+WARNO.exe+A56217: 49 8B D3        - mov rdx,r11
+WARNO.exe+A5621A: 49 8B CF        - mov rcx,r15
+WARNO.exe+A5621D: E8 1E 01 00 00  - call WARNO.exe+A56340
+WARNO.exe+A56222: 4C 8B C0        - mov r8,rax
+WARNO.exe+A56225: 48 85 C0        - test rax,rax
+WARNO.exe+A56228: 74 5C           - je WARNO.exe+A56286
+WARNO.exe+A5622A: 44 8B 48 08     - mov r9d,[rax+08]
+WARNO.exe+A5622E: 45 85 C9        - test r9d,r9d
+WARNO.exe+A56231: 74 53           - je WARNO.exe+A56286
+WARNO.exe+A56233: 49 8B 08        - mov rcx,[r8]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+A560E8
+
+WARNO.exe+A560CB: 48 8B 5C 24 58        - mov rbx,[rsp+58]
+WARNO.exe+A560D0: 48 8B 6C 24 60        - mov rbp,[rsp+60]
+WARNO.exe+A560D5: 48 8B 74 24 68        - mov rsi,[rsp+68]
+WARNO.exe+A560DA: 48 83 C4 20           - add rsp,20
+WARNO.exe+A560DE: 41 5F                 - pop r15
+WARNO.exe+A560E0: 41 5E                 - pop r14
+WARNO.exe+A560E2: 41 5D                 - pop r13
+WARNO.exe+A560E4: 41 5C                 - pop r12
+WARNO.exe+A560E6: 5F                    - pop rdi
+WARNO.exe+A560E7: C3                    - ret
+// ---------- INJECTING HERE ----------
+WARNO.exe+A560E8: 44 01 62 20           - add [rdx+20],r12d
+// ---------- DONE INJECTING  ----------
+WARNO.exe+A560EC: 4D 85 F6              - test r14,r14
+WARNO.exe+A560EF: 74 0F                 - je WARNO.exe+A56100
+WARNO.exe+A560F1: 48 8D 8D F0 00 00 00  - lea rcx,[rbp+000000F0]
+WARNO.exe+A560F8: 4D 8B C6              - mov r8,r14
+WARNO.exe+A560FB: E8 00 15 00 00        - call WARNO.exe+A57600
+WARNO.exe+A56100: 41 B7 01              - mov r15b,01
+WARNO.exe+A56103: E9 1C FF FF FF        - jmp WARNO.exe+A56024
+WARNO.exe+A56108: CC                    - int 3
+WARNO.exe+A56109: CC                    - int 3
+WARNO.exe+A5610A: CC                    - int 3
+}"""
+
+[[cheat]]
+id = "army-general-tactical-battles-team-score-team-morale"
+name = "Army General - Tactical Battles (Team Score, Team Morale)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+
+  This script collects pointer to structure containing addresses for Army General tactical battles
+}
+
+[ENABLE]
+
+aobscanmodule(ArmyGeneralStatsAOB,$process,46 03 04 B7 BA 02 00 00 00 E8) // should be unique
+alloc(newmem,$1000,ArmyGeneralStatsAOB)
+alloc(PtrArmyGeneralStats,8,ArmyGeneralStatsAOB)
+
+registersymbol(PtrArmyGeneralStats)
+label(code)
+label(return)
+
+newmem:
+  mov [PtrArmyGeneralStats],rdx
+code:
+  add r8d,[rdi+r14*4]
+  mov edx,00000002
+  jmp return
+
+ArmyGeneralStatsAOB:
+  jmp newmem
+  nop 4
+return:
+registersymbol(ArmyGeneralStatsAOB)
+
+[DISABLE]
+
+ArmyGeneralStatsAOB:
+  db 46 03 04 B7 BA 02 00 00 00
+
+unregistersymbol(ArmyGeneralStatsAOB PtrArmyGeneralStats)
+dealloc(newmem PtrArmyGeneralStats)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AB5FDF
+
+WARNO.exe+AB5FC0: 48 3B 48 08     - cmp rcx,[rax+08]
+WARNO.exe+AB5FC4: 73 13           - jae WARNO.exe+AB5FD9
+WARNO.exe+AB5FC6: 48 8B 10        - mov rdx,[rax]
+WARNO.exe+AB5FC9: F6 04 CA 01     - test byte ptr [rdx+rcx*8],01
+WARNO.exe+AB5FCD: 74 0A           - je WARNO.exe+AB5FD9
+WARNO.exe+AB5FCF: 48 8B 0C CA     - mov rcx,[rdx+rcx*8]
+WARNO.exe+AB5FD3: 48 83 E1 FC     - and rcx,-04
+WARNO.exe+AB5FD7: EB 02           - jmp WARNO.exe+AB5FDB
+WARNO.exe+AB5FD9: 33 C9           - xor ecx,ecx
+WARNO.exe+AB5FDB: 44 8B 41 20     - mov r8d,[rcx+20]
+// ---------- INJECTING HERE ----------
+WARNO.exe+AB5FDF: 46 03 04 B7     - add r8d,[rdi+r14*4]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AB5FE3: BA 02 00 00 00  - mov edx,00000002
+WARNO.exe+AB5FE8: E8 23 BD CB FF  - call WARNO.exe+771D10
+WARNO.exe+AB5FED: 48 FF C3        - inc rbx
+WARNO.exe+AB5FF0: 49 3B DF        - cmp rbx,r15
+WARNO.exe+AB5FF3: 75 8B           - jne WARNO.exe+AB5F80
+WARNO.exe+AB5FF5: 45 85 ED        - test r13d,r13d
+WARNO.exe+AB5FF8: 74 16           - je WARNO.exe+AB6010
+WARNO.exe+AB5FFA: 48 85 FF        - test rdi,rdi
+WARNO.exe+AB5FFD: 74 11           - je WARNO.exe+AB6010
+WARNO.exe+AB5FFF: E8 9C DE 6B FF  - call WARNO.glslang_program_SPIRV_get_ptr+2380
+}"""
+
+[[cheat]]
+id = "experimental-hack-prevent-frozen-values-below-from-affecting-ag-campaign-scores-2"
+name = "EXPERIMENTAL HACK : Prevent frozen values below from affecting AG campaign scores"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script is an experimental ugly hack to prevent spillover of tactical battle scores into AG campaign scores.
+  For people who forget to unfreeze tactical scores/morale before exiting tac battle summary screen.
+}
+
+[ENABLE]
+
+aobscanmodule(PreventSpilloverTacticalScoreIntoCampaignScoreAOB,$process,44 03 41 1C 44 03 41 20 44 03 41 24 44 03 41 28 44 03 41 2C BA 06) // should be unique
+alloc(newmem,$1000,PreventSpilloverTacticalScoreIntoCampaignScoreAOB)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  // add r8d,[rcx+1C]
+  // add r8d,[rcx+20]
+  jmp return
+
+PreventSpilloverTacticalScoreIntoCampaignScoreAOB:
+  jmp newmem
+  nop 3
+return:
+registersymbol(PreventSpilloverTacticalScoreIntoCampaignScoreAOB)
+
+[DISABLE]
+
+PreventSpilloverTacticalScoreIntoCampaignScoreAOB:
+  db 44 03 41 1C 44 03 41 20
+
+unregistersymbol(PreventSpilloverTacticalScoreIntoCampaignScoreAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AB2F44
+
+WARNO.exe+AB2F1F: E8 EC F3 C8 FF        - call WARNO.exe+742310
+WARNO.exe+AB2F24: 80 7D A7 02           - cmp byte ptr [rbp-59],02
+WARNO.exe+AB2F28: 74 44                 - je WARNO.exe+AB2F6E
+WARNO.exe+AB2F2A: 0F B7 45 97           - movzx eax,word ptr [rbp-69]
+WARNO.exe+AB2F2E: 66 39 45 99           - cmp [rbp-67],ax
+WARNO.exe+AB2F32: 77 3A                 - ja WARNO.exe+AB2F6E
+WARNO.exe+AB2F34: 0F B6 45 9B           - movzx eax,byte ptr [rbp-65]
+WARNO.exe+AB2F38: 48 6B C8 70           - imul rcx,rax,70
+WARNO.exe+AB2F3C: 48 03 4D 87           - add rcx,[rbp-79]
+WARNO.exe+AB2F40: 44 8B 41 18           - mov r8d,[rcx+18]
+// ---------- INJECTING HERE ----------
+WARNO.exe+AB2F44: 44 03 41 1C           - add r8d,[rcx+1C]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AB2F48: 44 03 41 20           - add r8d,[rcx+20]
+WARNO.exe+AB2F4C: 44 03 41 24           - add r8d,[rcx+24]
+WARNO.exe+AB2F50: 44 03 41 28           - add r8d,[rcx+28]
+WARNO.exe+AB2F54: 44 03 41 2C           - add r8d,[rcx+2C]
+WARNO.exe+AB2F58: BA 06 00 00 00        - mov edx,00000006
+WARNO.exe+AB2F5D: E8 AE ED CB FF        - call WARNO.exe+771D10
+WARNO.exe+AB2F62: 48 8D 4C 24 20        - lea rcx,[rsp+20]
+WARNO.exe+AB2F67: E8 E4 F4 C8 FF        - call WARNO.exe+742450
+WARNO.exe+AB2F6C: EB B6                 - jmp WARNO.exe+AB2F24
+WARNO.exe+AB2F6E: 48 81 C4 00 01 00 00  - add rsp,00000100
+}"""
+
+[[cheat]]
+id = "combat-battalion-1-team-score"
+name = "Combat Battalion 1 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-1-units-lost-the-closer-to-0-the-higher-the-displayed-morale"
+name = "Combat Battalion 1 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-team-score"
+name = "Combat Battalion 2 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-units-lost-the-closer-to-0-the-higher-the-displayed-morale"
+name = "Combat Battalion 2 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-team-score"
+name = "Combat Battalion 3 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-units-lost-the-closer-to-0-the-higher-the-displayed-morale"
+name = "Combat Battalion 3 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-team-score"
+name = "Combat Battalion 4 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-units-lost-the-closer-to-0-the-higher-the-displayed-morale"
+name = "Combat Battalion 4 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "unlimited-fuel-player-only"
+name = "Unlimited Fuel (Player Only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(FuelAOB,$process,7A ?? 74 ?? F3 44 0F 11 4B 24 48 ?? ?? E8) // should be unique
+alloc(newmem,$1000,FuelAOB)
+label(code)
+label(return)
+label(cleanup)
+
+// rbx = start address of unit's Eugen::IA::TFuelModule instance
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem:
+  push rax
+  push rcx
+  push r8
+  pushfq
+  mov rcx,[rbx+8]
+  shr rcx,20
+  shr ecx,1F   // isolate uppermost bit for checkin if unsigned
+  not cl
+  test cl,01   // 0 or 1
+  je cleanup
+  mov rcx,[rbx+8]
+  shr rcx,20
+  shr rcx,08
+  and ecx,007FFFFF  // now rcx is ready to be used as array index
+
+  mov r8,ArrayOfTeamLinkModule
+  mov rax,[r8]
+  mov rax,[rax+rcx*8]
+  and rax,-04  // now rax has the Eugen::IA::TLinkTeamModule instance of affected unit
+
+  mov rcx,[rbx+8]   // rcx = affected unit ID in full 8 bytes
+  cmp [rax+8],rcx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r8,HumanPlayerTeamID
+  mov rcx,[r8]
+  cmp [rax+20],rcx  // compare current unit's faction ID against HumanPlayerTeamID
+  jne cleanup       // not human player, no free fuel 4 u
+  movss xmm9,[rbx+20]  // move unit's max fuel into xmm
+
+cleanup:
+  popfq
+  pop r8
+  pop rcx
+  pop rax
+  jmp code
+code:
+  movss [rbx+24],xmm9   // original code
+  jmp return
+
+FuelAOB+4:
+  jmp newmem
+  nop
+return:
+registersymbol(FuelAOB)
+
+[DISABLE]
+
+FuelAOB+4:
+  db F3 44 0F 11 4B 24
+
+unregistersymbol(FuelAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7FE9E1
+
+WARNO.exe+7FE9B9: F3 45 0F 59 C2           - mulss xmm8,xmm10
+WARNO.exe+7FE9BE: F3 45 0F 58 C3           - addss xmm8,xmm11
+WARNO.exe+7FE9C3: F3 41 0F 58 C0           - addss xmm0,xmm8
+WARNO.exe+7FE9C8: 41 0F 2F C3              - comiss xmm0,xmm11
+WARNO.exe+7FE9CC: 76 21                    - jna WARNO.exe+7FE9EF
+WARNO.exe+7FE9CE: F3 44 0F 5C C8           - subss xmm9,xmm0
+WARNO.exe+7FE9D3: F3 45 0F 5F CB           - maxss xmm9,xmm11
+WARNO.exe+7FE9D8: 44 0F 2E 4B 24           - ucomiss xmm9,[rbx+24]
+WARNO.exe+7FE9DD: 7A 02                    - jp WARNO.exe+7FE9E1
+WARNO.exe+7FE9DF: 74 0E                    - je WARNO.exe+7FE9EF
+// ---------- INJECTING HERE ----------
+WARNO.exe+7FE9E1: F3 44 0F 11 4B 24        - movss [rbx+24],xmm9
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7FE9E7: 48 8B CB                 - mov rcx,rbx
+WARNO.exe+7FE9EA: E8 61 18 E7 FF           - call WARNO.ImRect::GetCenter+87A0
+WARNO.exe+7FE9EF: 48 8D 4C 24 20           - lea rcx,[rsp+20]
+WARNO.exe+7FE9F4: E8 57 3A F4 FF           - call WARNO.exe+742450
+WARNO.exe+7FE9F9: E9 62 FE FF FF           - jmp WARNO.exe+7FE860
+WARNO.exe+7FE9FE: 4C 8D 9C 24 E0 01 00 00  - lea r11,[rsp+000001E0]
+WARNO.exe+7FEA06: 49 8B 5B 20              - mov rbx,[r11+20]
+WARNO.exe+7FEA0A: 41 0F 28 73 F0           - movaps xmm6,[r11-10]
+WARNO.exe+7FEA0F: 41 0F 28 7B E0           - movaps xmm7,[r11-20]
+WARNO.exe+7FEA14: 45 0F 28 43 D0           - movaps xmm8,[r11-30]
+}"""
+
+[[cheat]]
+id = "unlimited-supplies-player-only"
+name = "Unlimited Supplies (Player only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(UnlimitedSupplyAOB,$process,0F 11 41 18 0F 10 4C 24 50 0F 11 49 28 E8) // should be unique
+alloc(newmem,$1000,UnlimitedSupplyAOB)
+
+label(code)
+label(return)
+label(cleanup)
+
+newmem:
+  // rcx = Eugen::IA::TSupplyModuleInstance instance
+  // ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+  // HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+  movups [rcx+18],xmm0   // original code
+  pushfq
+  // rcx+8  contains unit ID that took dmg, eg. 00000000001F0100
+  push rax
+  push rdx
+  mov rdx,[rcx+8]
+  shr rdx,20
+  shr edx,1F   // isolate uppermost bit for checkin if unsigned
+  not dl
+  test dl,01   // 0 or 1
+  je cleanup
+  mov rdx,[rcx+8]
+  shr rdx,20
+  shr rdx,08
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov rax,[ArrayOfTeamLinkModule]
+  mov rax,[rax+rdx*8]
+  and rax,-04  // now rax has the Eugen::IA::TLinkTeamModule instance of affected unit
+
+  mov rdx,[rcx+8]   // rcx = affected unit ID in full 8 bytes
+  cmp [rax+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov rdx,[HumanPlayerTeamID]
+  cmp [rax+20],rdx  // compare current unit's faction ID against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheat
+
+code:
+  cvttss2si eax,[rcx+18]
+  imul eax,#100
+  mov [rcx+1C],eax   // set current supply to max supply
+  jmp cleanup
+
+cleanup:
+  pop rdx
+  pop rax
+  popfq
+  movups xmm1,[rsp+50]   // original code
+  jmp return
+
+UnlimitedSupplyAOB:
+  jmp newmem
+  nop 4
+return:
+registersymbol(UnlimitedSupplyAOB)
+
+[DISABLE]
+
+UnlimitedSupplyAOB:
+  db 0F 11 41 18 0F 10 4C 24 50
+
+unregistersymbol(UnlimitedSupplyAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+9848A7
+
+WARNO.exe+984885: F3 0F 10 41 20     - movss xmm0,[rcx+20]
+WARNO.exe+98488A: 0F 2E 44 24 48     - ucomiss xmm0,[rsp+48]
+WARNO.exe+98488F: 7A 11              - jp WARNO.exe+9848A2
+WARNO.exe+984891: 75 0F              - jne WARNO.exe+9848A2
+WARNO.exe+984893: 8B 44 24 50        - mov eax,[rsp+50]
+WARNO.exe+984897: 39 41 28           - cmp [rcx+28],eax
+WARNO.exe+98489A: 75 06              - jne WARNO.exe+9848A2
+WARNO.exe+98489C: 44 38 51 2C        - cmp [rcx+2C],r10b
+WARNO.exe+9848A0: 74 17              - je WARNO.exe+9848B9
+WARNO.exe+9848A2: 0F 10 44 24 40     - movups xmm0,[rsp+40]
+// ---------- INJECTING HERE ----------
+WARNO.exe+9848A7: 0F 11 41 18        - movups [rcx+18],xmm0
+// ---------- DONE INJECTING  ----------
+WARNO.exe+9848AB: 0F 10 4C 24 50     - movups xmm1,[rsp+50]
+WARNO.exe+9848B0: 0F 11 49 28        - movups [rcx+28],xmm1
+WARNO.exe+9848B4: E8 97 B9 CE FF     - call WARNO.ImRect::GetCenter+87A0
+WARNO.exe+9848B9: 48 83 C7 48        - add rdi,48
+WARNO.exe+9848BD: 48 8D 47 E0        - lea rax,[rdi-20]
+WARNO.exe+9848C1: 48 3B C3           - cmp rax,rbx
+WARNO.exe+9848C4: 0F 85 EB FE FF FF  - jne WARNO.exe+9847B5
+WARNO.exe+9848CA: 4C 89 75 00        - mov [rbp+00],r14
+WARNO.exe+9848CE: 4C 89 75 38        - mov [rbp+38],r14
+WARNO.exe+9848D2: 4C 89 75 70        - mov [rbp+70],r14
+}"""
+
+[[cheat]]
+id = "ammo-won-t-decrease-affects-ai-too"
+name = "Ammo Won't Decrease  (affects AI too)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507 steam
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(Ammo1_AOB,$process,41 0F 42 C7 2B C8) // should be unique
+alloc(newmem,$1000,Ammo1_AOB)
+
+label(code)
+label(return)
+
+newmem:
+  cmovb eax,r15d
+code:
+  // sub ecx,eax
+  jmp return
+
+Ammo1_AOB:
+  jmp newmem
+  nop
+return:
+registersymbol(Ammo1_AOB)
+
+[DISABLE]
+
+Ammo1_AOB:
+  db 41 0F 42 C7 2B C8
+
+unregistersymbol(Ammo1_AOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+77B1DB
+
+WARNO.exe+77B1C1: 48 85 D2                 - test rdx,rdx
+WARNO.exe+77B1C4: 74 06                    - je WARNO.exe+77B1CC
+WARNO.exe+77B1C6: 48 83 C2 04              - add rdx,04
+WARNO.exe+77B1CA: EB 03                    - jmp WARNO.exe+77B1CF
+WARNO.exe+77B1CC: 48 8B D3                 - mov rdx,rbx
+WARNO.exe+77B1CF: 48 85 D2                 - test rdx,rdx
+WARNO.exe+77B1D2: 74 13                    - je WARNO.exe+77B1E7
+WARNO.exe+77B1D4: 8B 0A                    - mov ecx,[rdx]
+WARNO.exe+77B1D6: 44 3B F9                 - cmp r15d,ecx
+WARNO.exe+77B1D9: 8B C1                    - mov eax,ecx
+// ---------- INJECTING HERE ----------
+WARNO.exe+77B1DB: 41 0F 42 C7              - cmovb eax,r15d
+// ---------- DONE INJECTING  ----------
+WARNO.exe+77B1DF: 2B C8                    - sub ecx,eax
+WARNO.exe+77B1E1: 89 0A                    - mov [rdx],ecx
+WARNO.exe+77B1E3: C6 45 1C 01              - mov byte ptr [rbp+1C],01
+WARNO.exe+77B1E7: 48 8B AC 24 80 00 00 00  - mov rbp,[rsp+00000080]
+WARNO.exe+77B1EF: 45 85 F6                 - test r14d,r14d
+WARNO.exe+77B1F2: 4C 8B 74 24 48           - mov r14,[rsp+48]
+WARNO.exe+77B1F7: 74 07                    - je WARNO.exe+77B200
+WARNO.exe+77B1F9: BA 03 00 00 00           - mov edx,00000003
+WARNO.exe+77B1FE: EB 65                    - jmp WARNO.exe+77B265
+WARNO.exe+77B200: 41 3B F7                 - cmp esi,r15d
+}"""
+
+[[cheat]]
+id = "unit-health-and-cohesion-always-full-player-only"
+name = "Unit Health and Cohesion Always Full (Player only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(DamageAOB,$process,0F 28 D6 49 8B D6 48 8B ?? E8) // should be unique
+alloc(newmem,$1000,DamageAOB)
+
+label(code)
+label(return)
+label(cleanup)
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem:
+  // Always check if r14 is Eugen::IA::TBaseDamageModule
+  // r14+8  contains unit ID that took dmg, eg. 00000000001F0100
+  push rax
+  push rcx
+  mov rcx,[r14+8]
+  shr rcx,20
+  shr ecx,1F   // isolate uppermost bit for checkin if unsigned
+  not cl
+  test cl,01   // 0 or 1
+  je cleanup
+  mov rcx,[r14+8]
+  shr rcx,20
+  shr rcx,08
+  and ecx,007FFFFF  // now rcx is ready to be used as array index
+
+  mov rax,[ArrayOfTeamLinkModule]
+  mov rax,[rax+rcx*8]
+  and rax,-04  // now rax has the Eugen::IA::TLinkTeamModule instance of affected unit
+
+  mov rcx,[r14+8]   // rcx = affected unit ID in full 8 bytes
+  cmp [rax+8],rcx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov rcx,[HumanPlayerTeamID]
+  cmp [rax+20],rcx  // compare current unit's faction ID against HumanPlayerTeamID
+  jne cleanup       // not human player, no godmode 4 u
+  xorps xmm6,xmm6   // no damage/supression added
+  movss [r14+50],xmm6   // damage=0 which means full health
+  movss [r14+90],xmm6   // supression=0 which means high cohesion
+
+cleanup:
+  pop rcx
+  pop rax
+code:
+  movaps xmm2,xmm6  // xmm6 = amount of health/supress to add
+  mov rdx,r14
+  jmp return
+
+DamageAOB:
+  jmp newmem
+  nop
+return:
+registersymbol(DamageAOB)
+
+[DISABLE]
+
+DamageAOB:
+  db 0F 28 D6 49 8B D6
+
+unregistersymbol(DamageAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7B961D
+
+WARNO.exe+7B95F1: 48 8D 4C 24 70           - lea rcx,[rsp+70]
+WARNO.exe+7B95F6: E8 55 1A 00 00           - call WARNO.exe+7BB050
+WARNO.exe+7B95FB: 48 83 EF 01              - sub rdi,01
+WARNO.exe+7B95FF: 75 DF                    - jne WARNO.exe+7B95E0
+WARNO.exe+7B9601: 8B 44 24 48              - mov eax,[rsp+48]
+WARNO.exe+7B9605: 89 44 24 30              - mov [rsp+30],eax
+WARNO.exe+7B9609: 4C 89 64 24 28           - mov [rsp+28],r12
+WARNO.exe+7B960E: 48 8B 44 24 78           - mov rax,[rsp+78]
+WARNO.exe+7B9613: 48 89 44 24 20           - mov [rsp+20],rax
+WARNO.exe+7B9618: 4C 8D 4C 24 58           - lea r9,[rsp+58]
+// ---------- INJECTING HERE ----------
+WARNO.exe+7B961D: 0F 28 D6                 - movaps xmm2,xmm6
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7B9620: 49 8B D6                 - mov rdx,r14
+WARNO.exe+7B9623: 48 8B CE                 - mov rcx,rsi
+WARNO.exe+7B9626: E8 55 EF FF FF           - call WARNO.exe+7B8580
+WARNO.exe+7B962B: F3 0F 11 44 24 44        - movss [rsp+44],xmm0
+WARNO.exe+7B9631: 41 0F 2E C0              - ucomiss xmm0,xmm8
+WARNO.exe+7B9635: 7A 16                    - jp WARNO.exe+7B964D
+WARNO.exe+7B9637: 75 14                    - jne WARNO.exe+7B964D
+WARNO.exe+7B9639: F3 41 0F 10 46 6C        - movss xmm0,[r14+6C]
+WARNO.exe+7B963F: 41 0F 2F 86 90 00 00 00  - comiss xmm0,[r14+00000090]
+WARNO.exe+7B9647: 0F 87 82 04 00 00        - ja WARNO.exe+7B9ACF
+}"""
+
+[[cheat]]
+id = "damage-multiplier-human-player-only-x10"
+name = "Damage Multiplier (Human Player Only) x10"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script multiplies dmg + supression done by human plyr units
+}
+
+[ENABLE]
+
+aobscanmodule(DmgMultiplierAOB,$process,89 44 24 4C 48 8B 45 D8 F3 0F 10 30 49 8B 04 24) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(multiplier)
+
+newmem:
+  mov [rsp+4C],eax
+  mov rax,[rbp-28]
+  movss xmm6,[rax]      // xmm contain physical/cohesion damage
+  mov rax,[r12]
+
+  push rcx
+  push rdx
+  mov rcx,[rbp-98]      //  ALWAYS DOUBLECHECK, offset may change with game updates
+  mov rdx,HumanPlayerTeamID
+  mov rdx,[rdx]
+  cmp rcx,rdx
+  pop rdx
+  pop rcx
+  jne code
+  mulss xmm6,[multiplier]  //  xmm may change with game updates
+code:
+  jmp return
+
+multiplier:
+  dd (float)10.0       //  can change to whatever positive float number u want
+
+DmgMultiplierAOB:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(DmgMultiplierAOB)
+
+[DISABLE]
+
+DmgMultiplierAOB:
+  db 89 44 24 4C 48 8B 45 D8 F3 0F 10 30 49 8B 04 24
+
+unregistersymbol(DmgMultiplierAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7B9571
+
+WARNO.exe+7B9548: EB 02                 - jmp WARNO.exe+7B954C
+WARNO.exe+7B954A: 32 C9                 - xor cl,cl
+WARNO.exe+7B954C: 88 8D B0 04 00 00     - mov [rbp+000004B0],cl
+WARNO.exe+7B9552: 80 BD A0 04 00 00 00  - cmp byte ptr [rbp+000004A0],00
+WARNO.exe+7B9559: 0F 85 9A 02 00 00     - jne WARNO.exe+7B97F9
+WARNO.exe+7B955F: 8B 44 24 4C           - mov eax,[rsp+4C]
+WARNO.exe+7B9563: 0F B6 C0              - movzx eax,al
+WARNO.exe+7B9566: 40 84 FF              - test dil,dil
+WARNO.exe+7B9569: BA 01 00 00 00        - mov edx,00000001
+WARNO.exe+7B956E: 0F 45 C2              - cmovne eax,edx
+// ---------- INJECTING HERE ----------
+WARNO.exe+7B9571: 89 44 24 4C           - mov [rsp+4C],eax
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7B9575: 48 8B 45 D8           - mov rax,[rbp-28]
+WARNO.exe+7B9579: F3 0F 10 30           - movss xmm6,[rax]
+WARNO.exe+7B957D: 49 8B 04 24           - mov rax,[r12]
+WARNO.exe+7B9581: 48 85 C0              - test rax,rax
+WARNO.exe+7B9584: 75 08                 - jne WARNO.exe+7B958E
+WARNO.exe+7B9586: 88 85 B8 04 00 00     - mov [rbp+000004B8],al
+WARNO.exe+7B958C: EB 0D                 - jmp WARNO.exe+7B959B
+WARNO.exe+7B958E: 0F B6 80 5B 01 00 00  - movzx eax,byte ptr [rax+0000015B]
+WARNO.exe+7B9595: 88 85 B8 04 00 00     - mov [rbp+000004B8],al
+WARNO.exe+7B959B: 84 C9                 - test cl,cl
+}"""
+
+[[cheat]]
+id = "human-player-id-don-t-change"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "army-general-strategic-map"
+name = "Army General Strategic Map"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507 steam
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script captures important pointers n stuff
+}
+
+[ENABLE]
+aobscanmodule(GetArrayOfStrategicTeamLinkModuleAOB,$process,DD EE FF 48 8B 48 08 48 89 4F 18 48 8B 48 10 48 89 4F 20 48 8B 48 18) //should be unique
+alloc(newmem1,$1000)
+alloc(ArrayOfStrategicTeamLinkModule,8)
+
+label(code1)
+label(return1)
+
+newmem1:
+  // rcx = start address of array of Eugen::IA::TLinkTeamModule instances
+  mov [ArrayOfStrategicTeamLinkModule],rcx
+code1:
+  mov [rdi+18],rcx
+  mov rcx,[rax+10]
+  mov [rdi+20],rcx
+  mov rcx,[rax+18]
+  jmp return1
+
+GetArrayOfStrategicTeamLinkModuleAOB+07:
+  jmp far newmem1
+  nop 2
+return1:
+registersymbol(GetArrayOfStrategicTeamLinkModuleAOB ArrayOfStrategicTeamLinkModule)
+
+[DISABLE]
+GetArrayOfStrategicTeamLinkModuleAOB+07:
+  db 48 89 4F 18 48 8B 48 10 48 89 4F 20 48 8B 48 18
+unregistersymbol(GetArrayOfStrategicTeamLinkModuleAOB ArrayOfStrategicTeamLinkModule)
+dealloc(newmem1 ArrayOfStrategicTeamLinkModule)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+79C093
+
+WARNO.exe+79C04F - E8 2C349BFF           - call WARNO.ImBitVector::ImBitVector
+WARNO.exe+79C054 - 33 C0                 - xor eax,eax
+WARNO.exe+79C056 - 8B D3                 - mov edx,ebx
+WARNO.exe+79C058 - 48 89 47 18           - mov [rdi+18],rax
+WARNO.exe+79C05C - B1 55                 - mov cl,55  <-----------
+WARNO.exe+79C05E - 48 89 47 20           - mov [rdi+20],rax
+WARNO.exe+79C062 - 48 89 47 28           - mov [rdi+28],rax
+WARNO.exe+79C066 - 48 89 47 30           - mov [rdi+30],rax
+WARNO.exe+79C06A: 48 8D 05 8F AB 8E 01  - lea rax,[WARNO.exe+2086C00]
+WARNO.exe+79C071: 48 89 47 10           - mov [rdi+10],rax
+WARNO.exe+79C075: E8 16 3F ED FF        - call WARNO.ImRect::GetCenter+84E0
+WARNO.exe+79C07A: 48 89 07              - mov [rdi],rax
+WARNO.exe+79C07D: 48 85 C0              - test rax,rax
+WARNO.exe+79C080: 74 2D                 - je WARNO.exe+79C0AF
+WARNO.exe+79C082: 48 8D 54 24 20        - lea rdx,[rsp+20]
+WARNO.exe+79C087: 48 8B C8              - mov rcx,rax
+WARNO.exe+79C08A: E8 31 DD EE FF        - call WARNO.exe+689DC0
+WARNO.exe+79C08F: 48 8B 48 08           - mov rcx,[rax+08]
+// ---------- INJECTING HERE ----------
+WARNO.exe+79C093: 48 89 4F 18           - mov [rdi+18],rcx
+// ---------- DONE INJECTING  ----------
+WARNO.exe+79C097: 48 8B 48 10           - mov rcx,[rax+10]
+WARNO.exe+79C09B: 48 89 4F 20           - mov [rdi+20],rcx
+WARNO.exe+79C09F: 48 8B 48 18           - mov rcx,[rax+18]
+WARNO.exe+79C0A3: 48 89 4F 28           - mov [rdi+28],rcx
+WARNO.exe+79C0A7: 48 8B 40 20           - mov rax,[rax+20]
+WARNO.exe+79C0AB: 48 89 47 30           - mov [rdi+30],rax
+WARNO.exe+79C0AF: 48 8B 5C 24 60        - mov rbx,[rsp+60]
+WARNO.exe+79C0B4: 48 8B C7              - mov rax,rdi
+WARNO.exe+79C0B7: 48 83 C4 50           - add rsp,50
+WARNO.exe+79C0BB: 5F                    - pop rdi
+}"""
+
+[[cheat]]
+id = "action-pts-don-t-decrease-deactivate-before-ending-your-turn"
+name = "Action Pts Don't Decrease (Deactivate Before ending your turn!)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507 steam
+  Date   : 2024-09-01
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(AG_ActionPtsAOB,$process,F3 0F 5C F1 0F 57 C0 F3 0F 5F F0 F3 0F 11 71 40) // should be unique
+alloc(newmem,$1000,AG_ActionPtsAOB)
+
+label(code)
+label(return)
+
+// rcx = Batallion's Eugen::IA::TActionPointsModule
+
+newmem:
+  xorps xmm1,xmm1
+code:
+  subss xmm6,xmm1
+  xorps xmm0,xmm0
+  jmp return
+
+AG_ActionPtsAOB:
+  jmp newmem
+  nop 2
+return:
+registersymbol(AG_ActionPtsAOB)
+
+[DISABLE]
+
+AG_ActionPtsAOB:
+  db F3 0F 5C F1 0F 57 C0
+
+unregistersymbol(AG_ActionPtsAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+758EB6
+
+WARNO.exe+758E8B: 48 83 EC 50              - sub rsp,50
+WARNO.exe+758E8F: 48 C7 40 A8 FE FF FF FF  - mov qword ptr [rax-58],FFFFFFFFFFFFFFFE
+WARNO.exe+758E97: 48 89 58 10              - mov [rax+10],rbx
+WARNO.exe+758E9B: 48 89 68 18              - mov [rax+18],rbp
+WARNO.exe+758E9F: 0F 29 70 C8              - movaps [rax-38],xmm6
+WARNO.exe+758EA3: 0F 29 78 B8              - movaps [rax-48],xmm7
+WARNO.exe+758EA7: 45 0F B6 E0              - movzx r12d,r8b
+WARNO.exe+758EAB: 4C 8B F1                 - mov r14,rcx
+WARNO.exe+758EAE: F3 0F 10 79 40           - movss xmm7,[rcx+40]
+WARNO.exe+758EB3: 0F 28 F7                 - movaps xmm6,xmm7
+// ---------- INJECTING HERE ----------
+WARNO.exe+758EB6: F3 0F 5C F1              - subss xmm6,xmm1
+// ---------- DONE INJECTING  ----------
+WARNO.exe+758EBA: 0F 57 C0                 - xorps xmm0,xmm0
+WARNO.exe+758EBD: F3 0F 5F F0              - maxss xmm6,xmm0
+WARNO.exe+758EC1: F3 0F 11 71 40           - movss [rcx+40],xmm6
+WARNO.exe+758EC6: E8 85 73 F1 FF           - call WARNO.ImRect::GetCenter+87A0
+WARNO.exe+758ECB: 48 8B 35 C6 5B 13 04     - mov rsi,[WARNO.exe+488EA98]
+WARNO.exe+758ED2: 49 8B 6E 08              - mov rbp,[r14+08]
+WARNO.exe+758ED6: 48 8B 3D 2B 5C 13 04     - mov rdi,[WARNO.exe+488EB08]
+WARNO.exe+758EDD: 48 8D 9F D8 11 00 00     - lea rbx,[rdi+000011D8]
+WARNO.exe+758EE4: 48 89 9C 24 80 00 00 00  - mov [rsp+00000080],rbx
+WARNO.exe+758EEC: 48 8B CB                 - mov rcx,rbx
+}"""
+
+[[cheat]]
+id = "player-s-fatigue-points-always-zero-takes-effect-after-battle"
+name = "Player's Fatigue Points Always Zero (takes effect after battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507 steam
+  Date   : 2024-09-02
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(WriteStrategicFatigueAOB,$process,8B 50 20 3B DA 0F 42 D3 89 57 18 48 8B 5C 24 38) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup)
+
+newmem2:
+  mov edx,[rax+20]  // rax+20 holds max # of fatigue points
+  // rdi = start of unit's instance of Eugen::IA::TStrategicFatigueModule
+  // HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+  // ArrayOfStrategicTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+
+  push rax
+  push rcx
+  push r8
+  mov rcx,[rdi+8]
+  shr rcx,20
+  shr ecx,1F   // isolate uppermost bit for checkin if unsigned
+  not cl
+  test cl,01   // 0 or 1
+  je cleanup
+  mov rcx,[rdi+8]
+  shr rcx,20
+  shr rcx,08
+  and ecx,007FFFFF  // now rcx is ready to be used as array index
+
+  mov r8,ArrayOfStrategicTeamLinkModule
+  mov rax,[r8]
+  mov rax,[rax+rcx*8]
+  and rax,-04  // now rax has the Eugen::IA::TLinkTeamModule instance of affected unit
+
+  mov rcx,[rdi+8]   // rcx = affected unit ID in full 8 bytes
+  cmp [rax+8],rcx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r8,HumanPlayerTeamID
+  mov rcx,[r8]
+  cmp [rax+20],rcx  // compare current unit's faction ID against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  xor ebx,ebx       // set Fatigue Points to zero
+cleanup:
+  pop r8
+  pop rcx
+  pop rax
+code2:
+  cmp ebx,edx
+  cmovb edx,ebx
+  mov [rdi+18],edx   // move new fatigue pts into batallion's Eugen::IA::TStrategicFatigueModule
+  mov rbx,[rsp+38]
+  jmp return2
+
+WriteStrategicFatigueAOB:
+  jmp far newmem2
+  nop 2
+return2:
+registersymbol(WriteStrategicFatigueAOB)
+
+[DISABLE]
+
+WriteStrategicFatigueAOB:
+  db 8B 50 20 3B DA 0F 42 D3 89 57 18 48 8B 5C 24 38
+
+unregistersymbol(WriteStrategicFatigueAOB)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+B1966C
+
+WARNO.exe+B19646: 48 83 EC 20     - sub rsp,20
+WARNO.exe+B1964A: 8B 59 18        - mov ebx,[rcx+18]
+WARNO.exe+B1964D: 48 8B F9        - mov rdi,rcx
+WARNO.exe+B19650: 48 8B 41 08     - mov rax,[rcx+08]
+WARNO.exe+B19654: 03 DA           - add ebx,edx
+WARNO.exe+B19656: 0F B6 49 10     - movzx ecx,byte ptr [rcx+10]
+WARNO.exe+B1965A: 48 8D 54 24 30  - lea rdx,[rsp+30]
+WARNO.exe+B1965F: 48 89 44 24 30  - mov [rsp+30],rax
+WARNO.exe+B19664: E8 77 69 B5 FF  - call WARNO.ImRect::GetCenter+8530
+WARNO.exe+B19669: 48 8B CF        - mov rcx,rdi
+// ---------- INJECTING HERE ----------
+WARNO.exe+B1966C: 8B 50 20        - mov edx,[rax+20]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+B1966F: 3B DA           - cmp ebx,edx
+WARNO.exe+B19671: 0F 42 D3        - cmovb edx,ebx
+WARNO.exe+B19674: 89 57 18        - mov [rdi+18],edx
+WARNO.exe+B19677: 48 8B 5C 24 38  - mov rbx,[rsp+38]
+WARNO.exe+B1967C: 48 83 C4 20     - add rsp,20
+WARNO.exe+B19680: 5F              - pop rdi
+WARNO.exe+B19681: E9 CA 6B B5 FF  - jmp WARNO.ImRect::GetCenter+87A0
+WARNO.exe+B19686: CC              - int 3
+WARNO.exe+B19687: CC              - int 3
+WARNO.exe+B19688: CC              - int 3
+}"""
+
+[[cheat]]
+id = "pointer-to-current-turn"
+name = "Pointer to Current Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v130507
+  Date   : 2024-09-01
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(GetCurrentTurnAOB,$process,48 8B ?? ?? ?? ?? ?? 44 8B B8 80 00 00 00 48 8D 4D 90 E8) // should be unique
+alloc(newmem,$1000,GetCurrentTurnAOB)
+alloc(CurrentCampaignTurn,8,GetCurrentTurnAOB)
+registersymbol(CurrentCampaignTurn)
+
+label(code)
+label(return)
+
+newmem:
+  mov [CurrentCampaignTurn],rax
+code:
+  mov r15d,[rax+00000080]
+  jmp return
+
+GetCurrentTurnAOB+7:
+  jmp newmem
+  nop 2
+return:
+registersymbol(GetCurrentTurnAOB)
+
+[DISABLE]
+
+GetCurrentTurnAOB+7:
+  db 44 8B B8 80 00 00 00
+
+unregistersymbol(GetCurrentTurnAOB CurrentCampaignTurn)
+dealloc(newmem CurrentCampaignTurn)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+A218B1
+
+WARNO.exe+A21843 - E8 38DC72FF           - call WARNO.ImBitVector::ImBitVector
+WARNO.exe+A21848 - 0F57 C0               - xorps xmm0,xmm0
+WARNO.exe+A2184B - F3 0F7F 44 24 70      - movdqu [rsp+70],xmm0
+WARNO.exe+A21851 - 0F57 C9               - xorps xmm1,xmm1
+WARNO.exe+A21854 - F3 0F7F 4D 80         - movdqu [rbp-80],xmm1
+WARNO.exe+A21859 - 48 8D 05 F0A56601     - lea rax,[WARNO.exe+208BE50]
+WARNO.exe+A21860 - 48 89 44 24 68        - mov [rsp+68],rax
+WARNO.exe+A21865 - BA 03000000           - mov edx,00000003
+WARNO.exe+A2186A - B1 04                 - mov cl,04
+WARNO.exe+A2186C - E8 1FE7C4FF           - call WARNO.ImRect::GetCenter+84E0
+WARNO.exe+A21871 - 48 89 44 24 58        - mov [rsp+58],rax
+WARNO.exe+A21876 - 48 85 C0              - test rax,rax
+WARNO.exe+A21879 - 74 2F                 - je WARNO.exe+A218AA
+WARNO.exe+A2187B - 48 8D 54 24 20        - lea rdx,[rsp+20]
+WARNO.exe+A21880 - 48 8B C8              - mov rcx,rax
+WARNO.exe+A21883: E8 08 85 C6 FF        - call WARNO.exe+689D90
+WARNO.exe+A21888: 48 8B 48 08           - mov rcx,[rax+08]
+WARNO.exe+A2188C: 48 89 4C 24 70        - mov [rsp+70],rcx
+WARNO.exe+A21891: 48 8B 48 10           - mov rcx,[rax+10]
+WARNO.exe+A21895: 48 89 4C 24 78        - mov [rsp+78],rcx
+WARNO.exe+A2189A: 48 8B 48 18           - mov rcx,[rax+18]
+WARNO.exe+A2189E: 48 89 4D 80           - mov [rbp-80],rcx
+WARNO.exe+A218A2: 48 8B 40 20           - mov rax,[rax+20]
+WARNO.exe+A218A6: 48 89 45 88           - mov [rbp-78],rax
+WARNO.exe+A218AA: 48 8B 05 EF DF E6 03  - mov rax,[WARNO.exe+488F8A0]
+// ---------- INJECTING HERE ----------
+WARNO.exe+A218B1: 44 8B B8 80 00 00 00  - mov r15d,[rax+00000080]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+A218B8: 48 8D 4D 90           - lea rcx,[rbp-70]
+WARNO.exe+A218BC: E8 BF DB 72 FF        - call WARNO.ImBitVector::ImBitVector
+WARNO.exe+A218C1: 0F 57 C0              - xorps xmm0,xmm0
+WARNO.exe+A218C4: F3 0F 7F 45 A8        - movdqu [rbp-58],xmm0
+WARNO.exe+A218C9: 0F 57 C9              - xorps xmm1,xmm1
+WARNO.exe+A218CC: F3 0F 7F 4D B8        - movdqu [rbp-48],xmm1
+WARNO.exe+A218D1: 48 8D 05 28 53 66 01  - lea rax,[WARNO.exe+2086C00]
+WARNO.exe+A218D8: 48 89 45 A0           - mov [rbp-60],rax
+WARNO.exe+A218DC: 33 D2                 - xor edx,edx
+WARNO.exe+A218DE: B1 14                 - mov cl,14
+}"""
+
+[[cheat]]
+id = "current-campaign-turn"
+name = "Current Campaign Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentCampaignTurn"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "human-player-id-don-t-change-2"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofstrategicteamlinkmodule-don-t-change"
+name = "ArrayOfStrategicTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfStrategicTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "steam-v135139"
+name = "Steam v135139"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139 steam
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script captures important pointers n stuff
+}
+
+[ENABLE]
+aobscanmodule(PlayerManualDeployAOB,$process,8B 45 F0 48 85 C0 0F 84 ?? ?? ?? ?? 48 8B ?? ?? 4C 8D ?? ?? 49 8D ?? ?? 48 89 ?? ?? EB) // should be unique
+registersymbol(PlayerManualDeployAOB)
+
+aobscanmodule(GetPlayerTeamID,$process,48 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 89 C3 48 C7 44 24 28 FF FF FF FF 48 8B 00) // should be unique
+alloc(newmem1,$1000)
+alloc(HumanPlayerTeamID,8)
+
+label(code1)
+label(return1)
+registersymbol(HumanPlayerTeamID)
+
+newmem1:
+  // run orig code first
+  mov rbx,rax
+  mov qword ptr [rsp+28],FFFFFFFFFFFFFFFF
+  mov rax,[rax]
+code1:
+  mov [HumanPlayerTeamID],rax
+  jmp return1
+
+GetPlayerTeamID+C:
+  jmp far newmem1
+  nop
+return1:
+registersymbol(GetPlayerTeamID)
+
+[DISABLE]
+GetPlayerTeamID+C:
+  db 48 89 C3 48 C7 44 24 28 FF FF FF FF 48 8B 00
+
+unregistersymbol(PlayerManualDeployAOB)
+unregistersymbol(GetPlayerTeamID HumanPlayerTeamID)
+dealloc(newmem1 GetPlayerTeamID)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+A09189
+
+WARNO.exe+A0915D: 4D 89 C7                    - mov r15,r8
+WARNO.exe+A09160: 48 89 D0                    - mov rax,rdx
+WARNO.exe+A09163: 49 89 CD                    - mov r13,rcx
+WARNO.exe+A09166: C7 45 F0 00 00 00 00        - mov [rbp-10],00000000
+WARNO.exe+A0916D: C7 45 F8 00 00 00 00        - mov [rbp-08],00000000
+WARNO.exe+A09174: 48 C7 45 E8 00 00 00 00     - mov qword ptr [rbp-18],00000000
+WARNO.exe+A0917C: 48 8B 1A                    - mov rbx,[rdx]
+WARNO.exe+A0917F: 48 8D 55 E8                 - lea rdx,[rbp-18]
+WARNO.exe+A09183: 48 89 C1                    - mov rcx,rax
+WARNO.exe+A09186: FF 53 48                    - call qword ptr [rbx+48]
+// ---------- INJECTING HERE ----------
+WARNO.exe+A09189: 8B 45 F0                    - mov eax,[rbp-10]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+A0918C: 48 85 C0                    - test rax,rax
+WARNO.exe+A0918F: 0F 84 9E 00 00 00           - je WARNO.exe+A09233
+WARNO.exe+A09195: 48 8B 75 E8                 - mov rsi,[rbp-18]
+WARNO.exe+A09199: 4C 8D 24 C6                 - lea r12,[rsi+rax*8]
+WARNO.exe+A0919D: 49 8D 45 10                 - lea rax,[r13+10]
+WARNO.exe+A091A1: 48 89 45 E0                 - mov [rbp-20],rax
+WARNO.exe+A091A5: EB 12                       - jmp WARNO.exe+A091B9
+WARNO.exe+A091A7: 66 0F 1F 84 00 00 00 00 00  - nop word ptr [rax+rax+00000000]
+WARNO.exe+A091B0: 48 83 C6 08                 - add rsi,08
+WARNO.exe+A091B4: 4C 39 E6                    - cmp rsi,r12
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+74508C
+
+WARNO.exe+745065: 48 83 EC 38                 - sub rsp,38
+WARNO.exe+745069: 48 85 C9                    - test rcx,rcx
+WARNO.exe+74506C: 74 74                       - je WARNO.exe+7450E2
+WARNO.exe+74506E: 4D 89 C6                    - mov r14,r8
+WARNO.exe+745071: 48 89 D7                    - mov rdi,rdx
+WARNO.exe+745074: 48 89 CE                    - mov rsi,rcx
+WARNO.exe+745077: 48 8B 41 08                 - mov rax,[rcx+08]
+WARNO.exe+74507B: 48 89 44 24 30              - mov [rsp+30],rax
+WARNO.exe+745080: 48 8B 0D 61 EA D1 02        - mov rcx,[WARNO.exe+3463AE8]
+WARNO.exe+745087: E8 14 EB A5 FF              - call WARNO.exe+1A3BA0
+// ---------- INJECTING HERE ----------
+WARNO.exe+74508C: 48 89 C3                    - mov rbx,rax
+WARNO.exe+74508F: 48 C7 44 24 28 FF FF FF FF  - mov qword ptr [rsp+28],FFFFFFFFFFFFFFFF
+WARNO.exe+745098: 48 8B 00                    - mov rax,[rax]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+74509B: 48 89 44 24 28              - mov [rsp+28],rax
+WARNO.exe+7450A0: 48 8D 54 24 28              - lea rdx,[rsp+28]
+WARNO.exe+7450A5: 48 89 F1                    - mov rcx,rsi
+WARNO.exe+7450A8: E8 43 65 2C 00              - call WARNO.exe+A0B5F0
+WARNO.exe+7450AD: 89 C6                       - mov esi,eax
+WARNO.exe+7450AF: 48 85 FF                    - test rdi,rdi
+WARNO.exe+7450B2: 74 33                       - je WARNO.exe+7450E7
+WARNO.exe+7450B4: 85 F6                       - test esi,esi
+}"""
+
+[[cheat]]
+id = "tactical-battles-2"
+name = "Tactical Battles"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139 steam
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script captures important pointers n stuff
+}
+
+[ENABLE]
+aobscanmodule(GetArrayOfTeamLinkModuleAOB,$process,48 8D 4D 30 48 8D 55 20 48 0F 48 D1 48 8B 0A 48 8B) // should be unique
+alloc(newmem2,$1000)
+alloc(ArrayOfTeamLinkModule,8)
+
+label(code2)
+label(return2)
+registersymbol(ArrayOfTeamLinkModule)
+
+newmem2:
+  // run orig code first
+  lea rcx,[rbp+30]
+  lea rdx,[rbp+20]
+  cmovs rdx,rcx
+  mov rcx,[rdx]
+
+code2:
+  // rcx = start address of array of Eugen::IA::TLinkTeamModule instances
+  mov [ArrayOfTeamLinkModule],rcx
+  jmp return2
+
+GetArrayOfTeamLinkModuleAOB:
+  jmp far newmem2
+  nop
+return2:
+registersymbol(GetArrayOfTeamLinkModuleAOB)
+
+[DISABLE]
+GetArrayOfTeamLinkModuleAOB:
+  db 48 8D 4D 30 48 8D 55 20 48 0F 48 D1 48 8B 0A
+
+unregistersymbol(GetArrayOfTeamLinkModuleAOB ArrayOfTeamLinkModule)
+dealloc(newmem2 ArrayOfTeamLinkModule)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+8B6079
+
+WARNO.exe+8B6056: 89 C8              - mov eax,ecx
+WARNO.exe+8B6058: C1 E8 08           - shr eax,08
+WARNO.exe+8B605B: 25 FF FF 7F 00     - and eax,007FFFFF
+WARNO.exe+8B6060: 85 C9              - test ecx,ecx
+WARNO.exe+8B6062: 48 8D 55 28        - lea rdx,[rbp+28]
+WARNO.exe+8B6066: 48 8D 5D 38        - lea rbx,[rbp+38]
+WARNO.exe+8B606A: 48 0F 49 DA        - cmovns rbx,rdx
+WARNO.exe+8B606E: 48 39 03           - cmp [rbx],rax
+WARNO.exe+8B6071: 0F 86 63 01 00 00  - jbe WARNO.exe+8B61DA
+WARNO.exe+8B6077: 85 C9              - test ecx,ecx
+// ---------- INJECTING HERE ----------
+WARNO.exe+8B6079: 48 8D 4D 30        - lea rcx,[rbp+30]
+WARNO.exe+8B607D: 48 8D 55 20        - lea rdx,[rbp+20]
+WARNO.exe+8B6081: 48 0F 48 D1        - cmovs rdx,rcx
+WARNO.exe+8B6085: 48 8B 0A           - mov rcx,[rdx]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+8B6088: 48 8B 3C C1        - mov rdi,[rcx+rax*8]
+WARNO.exe+8B608C: 48 83 E7 FC        - and rdi,-04
+WARNO.exe+8B6090: E9 47 01 00 00     - jmp WARNO.exe+8B61DC
+WARNO.exe+8B6095: 48 8D 4D 08        - lea rcx,[rbp+08]
+WARNO.exe+8B6099: E8 02 3A 78 FF     - call WARNO.ImBitVector::ImBitVector
+WARNO.exe+8B609E: 0F 57 C0           - xorps xmm0,xmm0
+WARNO.exe+8B60A1: 0F 11 45 20        - movups [rbp+20],xmm0
+}"""
+
+[[cheat]]
+id = "command-requisition-pts-activate-then-manually-deploy-a-unit-that-has-cost-to-capture-pointer"
+name = "Command/Requisition Pts (activate, then manually deploy a unit that has cost to capture pointer)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(CmdPtsAOB,$process,E8 ?? ?? ?? ?? 29 C6 0F 57 F6 F3 48 0F 2A F6 F3 0F 5D F7) // should be unique
+alloc(newmem1,$1000)
+alloc(PtrToCommandPts,8)
+
+label(code1)
+label(return)
+label(newmem2)
+label(cleanup)
+label(loopingChk)
+
+registersymbol(PtrToCommandPts)
+
+newmem1:
+  // run orig code first
+  sub esi,eax
+  xorps xmm6,xmm6
+  cvtsi2ss xmm6,rsi
+  minss xmm6,xmm7
+
+  push rdi
+  push rcx
+  push rax
+  pushfq
+  mov rdi,PlayerManualDeployAOB
+  xor rax,rax
+
+loopingChk:         // check the stack for presence of PlayerManualDeployAOB, up to rsp+0xA00
+  cmp [rsp+rax*8+20],rdi
+  je newmem2
+  inc eax
+  cmp eax,140
+  jne loopingChk
+  jmp cleanup
+
+newmem2:
+  // rbx + 44 = player's cmdPts
+  jmp code1
+  jmp cleanup
+
+code1:
+  mov [PtrToCommandPts],rbx
+  jmp cleanup
+
+cleanup:
+  popfq
+  pop rax
+  pop rcx
+  pop rdi
+  jmp return
+
+CmdPtsAOB+5:
+  jmp far newmem1
+return:
+registersymbol(CmdPtsAOB)
+
+[DISABLE]
+CmdPtsAOB+5:
+  db 29 C6 0F 57 F6 F3 48 0F 2A F6 F3 0F 5D F7
+
+unregistersymbol(CmdPtsAOB PtrToCommandPts)
+dealloc(newmem1 PtrToCommandPts)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+9B7288
+
+WARNO.exe+9B7262: 8B 44 24 24              - mov eax,[rsp+24]
+WARNO.exe+9B7266: 89 01                    - mov [rcx],eax
+WARNO.exe+9B7268: 48 8B 44 24 28           - mov rax,[rsp+28]
+WARNO.exe+9B726D: 48 C7 40 08 00 00 00 00  - mov qword ptr [rax+08],00000000
+WARNO.exe+9B7275: 31 DB                    - xor ebx,ebx
+WARNO.exe+9B7277: EB 04                    - jmp WARNO.exe+9B727D
+WARNO.exe+9B7279: 48 8B 59 08              - mov rbx,[rcx+08]
+WARNO.exe+9B727D: 8B 73 40                 - mov esi,[rbx+40]
+WARNO.exe+9B7280: 48 89 D9                 - mov rcx,rbx
+WARNO.exe+9B7283: E8 D8 AC F5 FF           - call WARNO.ImRect::GetSize+3D90
+// ---------- INJECTING HERE ----------
+WARNO.exe+9B7288: 29 C6                    - sub esi,eax
+WARNO.exe+9B728A: 0F 57 F6                 - xorps xmm6,xmm6
+WARNO.exe+9B728D: F3 48 0F 2A F6           - cvtsi2ss xmm6,rsi
+WARNO.exe+9B7292: F3 0F 5D F7              - minss xmm6,xmm7
+// ---------- DONE INJECTING  ----------
+WARNO.exe+9B7296: 0F 57 FF                 - xorps xmm7,xmm7
+WARNO.exe+9B7299: 0F 2E F7                 - ucomiss xmm6,xmm7
+WARNO.exe+9B729C: 75 02                    - jne WARNO.exe+9B72A0
+WARNO.exe+9B729E: 7B 74                    - jnp WARNO.exe+9B7314
+WARNO.exe+9B72A0: 48 8B 47 08              - mov rax,[rdi+08]
+WARNO.exe+9B72A4: 48 89 44 24 28           - mov [rsp+28],rax
+WARNO.exe+9B72A9: 48 8D 4C 24 28           - lea rcx,[rsp+28]
+}"""
+
+[[cheat]]
+id = "command-requisition-pts-display-value-x-100-2"
+name = "Command/Requisition Pts (Display Value x 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrToCommandPts"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "army-general-tactical-battles-team-score-team-morale-2"
+name = "Army General - Tactical Battles (Team Score, Team Morale)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+
+  This script collects pointer to structure containing addresses for Army General tactical battles
+}
+
+[ENABLE]
+
+aobscanmodule(ArmyGeneralStatsAOB,$process,48 8B 85 80 01 00 00 46 8B 04 A0 44 03 41 20) // should be unique
+alloc(newmem,$1000)
+alloc(PtrArmyGeneralStats,8)
+
+registersymbol(PtrArmyGeneralStats)
+label(code)
+label(return)
+
+newmem:
+  push rcx
+  push rax
+  mov rax,[rdx]
+  mov rcx,PtrArmyGeneralStats
+  mov [rcx],rax
+  pop rax
+  pop rcx
+code:
+  // orig codes
+  mov rax,[rbp+00000180]
+  mov r8d,[rax+r12*4]
+  add r8d,[rcx+20]
+  jmp return
+
+ArmyGeneralStatsAOB:
+  jmp far newmem
+  nop
+return:
+registersymbol(ArmyGeneralStatsAOB)
+
+[DISABLE]
+
+ArmyGeneralStatsAOB:
+  db 48 8B 85 80 01 00 00 46 8B 04 A0 44 03 41 20
+
+unregistersymbol(ArmyGeneralStatsAOB PtrArmyGeneralStats)
+dealloc(newmem PtrArmyGeneralStats)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+B02282
+
+WARNO.exe+B02260: 85 C9                 - test ecx,ecx
+WARNO.exe+B02262: 4C 89 E9              - mov rcx,r13
+WARNO.exe+B02265: 48 8D 55 30           - lea rdx,[rbp+30]
+WARNO.exe+B02269: 48 0F 49 CA           - cmovns rcx,rdx
+WARNO.exe+B0226D: 48 8B 09              - mov rcx,[rcx]
+WARNO.exe+B02270: 48 8B 0C C1           - mov rcx,[rcx+rax*8]
+WARNO.exe+B02274: F6 C1 01              - test cl,01
+WARNO.exe+B02277: 75 31                 - jne WARNO.exe+B022AA
+WARNO.exe+B02279: 0F 1F 80 00 00 00 00  - nop dword ptr [rax+00000000]
+WARNO.exe+B02280: 31 C9                 - xor ecx,ecx
+// ---------- INJECTING HERE ----------
+WARNO.exe+B02282: 48 8B 85 80 01 00 00  - mov rax,[rbp+00000180]
+WARNO.exe+B02289: 46 8B 04 A0           - mov r8d,[rax+r12*4]
+WARNO.exe+B0228D: 44 03 41 20           - add r8d,[rcx+20]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+B02291: BA 02 00 00 00        - mov edx,00000002
+WARNO.exe+B02296: E8 D5 74 C3 FF        - call WARNO.exe+739770
+WARNO.exe+B0229B: 48 83 C3 01           - add rbx,01
+WARNO.exe+B0229F: 48 39 FB              - cmp rbx,rdi
+WARNO.exe+B022A2: 0F 85 78 FF FF FF     - jne WARNO.exe+B02220
+WARNO.exe+B022A8: EB 06                 - jmp WARNO.exe+B022B0
+WARNO.exe+B022AA: 48 83 E1 FC           - and rcx,-04
+WARNO.exe+B022AE: EB D2                 - jmp WARNO.exe+B02282
+}"""
+
+[[cheat]]
+id = "combat-battalion-1-team-score-2"
+name = "Combat Battalion 1 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-1-units-lost-the-closer-to-0-the-higher-the-displayed-morale-2"
+name = "Combat Battalion 1 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-team-score-2"
+name = "Combat Battalion 2 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-units-lost-the-closer-to-0-the-higher-the-displayed-morale-2"
+name = "Combat Battalion 2 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-team-score-2"
+name = "Combat Battalion 3 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-units-lost-the-closer-to-0-the-higher-the-displayed-morale-2"
+name = "Combat Battalion 3 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-team-score-2"
+name = "Combat Battalion 4 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-units-lost-the-closer-to-0-the-higher-the-displayed-morale-2"
+name = "Combat Battalion 4 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "unlimited-fuel-player-only-2"
+name = "Unlimited Fuel (Player Only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(FuelAOB,$process,F3 44 0F 11 10 48 8? ?? E8) // should be unique
+alloc(newmem,$1000,FuelAOB)
+label(code)
+label(return)
+label(cleanup)
+
+// rax-24 = start address of unit's Eugen::IA::TFuelModule instance
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem:
+  // don't use rax
+  push r13
+  push r14
+  push rdx
+  mov rdx,[rax-24+8]  // get raw unit ID from TFuelModule
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TFuelModule with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rax-24+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov rdx,[r13]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  movss xmm10,[rax-4] // move unit's max fuel into xmm
+
+cleanup:
+  pop rdx
+  pop r14
+  pop r13
+  jmp code
+code:
+  movss [rax],xmm10   // original code
+  jmp return
+
+FuelAOB:
+  jmp newmem
+return:
+registersymbol(FuelAOB)
+
+[DISABLE]
+
+FuelAOB:
+  db F3 44 0F 11 10
+
+unregistersymbol(FuelAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7DA70A
+
+WARNO.exe+7DA6DF: 0F 86 46 FE FF FF  - jbe WARNO.exe+7DA52B
+WARNO.exe+7DA6E5: 4A 8D 04 23        - lea rax,[rbx+r12]
+WARNO.exe+7DA6E9: 48 83 C0 24        - add rax,24
+WARNO.exe+7DA6ED: F3 44 0F 5C D7     - subss xmm10,xmm7
+WARNO.exe+7DA6F2: F3 45 0F 5F D1     - maxss xmm10,xmm9
+WARNO.exe+7DA6F7: F3 0F 10 00        - movss xmm0,[rax]
+WARNO.exe+7DA6FB: 41 0F 2E C2        - ucomiss xmm0,xmm10
+WARNO.exe+7DA6FF: 75 06              - jne WARNO.exe+7DA707
+WARNO.exe+7DA701: 0F 8B 24 FE FF FF  - jnp WARNO.exe+7DA52B
+WARNO.exe+7DA707: 4C 01 E3           - add rbx,r12
+// ---------- INJECTING HERE ----------
+WARNO.exe+7DA70A: F3 44 0F 11 10     - movss [rax],xmm10
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7DA70F: 48 89 D9           - mov rcx,rbx
+WARNO.exe+7DA712: E8 C9 3A E3 FF     - call WARNO.exe+60E1E0
+WARNO.exe+7DA717: E9 0F FE FF FF     - jmp WARNO.exe+7DA52B
+WARNO.exe+7DA71C: 0F 1F 40 00        - nop dword ptr [rax+00]
+WARNO.exe+7DA720: 0F B6 4D 10        - movzx ecx,byte ptr [rbp+10]
+WARNO.exe+7DA724: 38 C8              - cmp al,cl
+WARNO.exe+7DA726: 0F 85 E4 FD FF FF  - jne WARNO.exe+7DA510
+WARNO.exe+7DA72C: 0F B7 45 02        - movzx eax,word ptr [rbp+02]
+WARNO.exe+7DA730: 66 3B 45 42        - cmp ax,[rbp+42]
+WARNO.exe+7DA734: 0F 85 D6 FD FF FF  - jne WARNO.exe+7DA510
+}"""
+
+[[cheat]]
+id = "unlimited-supplies-player-only-2"
+name = "Unlimited Supplies (Player only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(UnlimitedSupplyAOB,$process,89 51 1C 0F B6 54 24 2E 88 56 02 0F B7 54 24 2C 66 89 16) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(cleanup)
+
+newmem:
+  // rcx = Eugen::IA::TSupplyModuleInstance instance
+  //  +18(float)=max supply  +1C(int32)= current supply x 100
+  // ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+  // HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+  // don't use rcx
+  push r13
+  push r14
+  push rdx
+  push rax
+  mov rdx,[rcx+8]  // get raw unit ID from TSupplyModuleInstance
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TSupplyModuleInstance with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rcx+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov rdx,[r13]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  cvttss2si eax,[rcx+18]
+  imul eax,#100
+  mov [rcx+1C],eax   // set current supply to max supply
+  jmp cleanup
+
+cleanup:
+  pop rax
+  pop rdx
+  pop r14
+  pop r13
+  jmp code
+code:
+  // orig codes
+  movzx edx,byte ptr [rsp+2E]
+  mov [rsi+02],dl
+  movzx edx,word ptr [rsp+2C]
+  mov [rsi],dx
+  jmp return
+
+UnlimitedSupplyAOB+3:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(UnlimitedSupplyAOB)
+
+[DISABLE]
+
+UnlimitedSupplyAOB+3:
+  db 0F B6 54 24 2E 88 56 02 0F B7 54 24 2C 66 89 16
+
+unregistersymbol(UnlimitedSupplyAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+99629B
+
+WARNO.exe+996272: 4D 8D 70 28                    - lea r14,[r8+28]
+WARNO.exe+996276: 48 C1 E0 03                    - shl rax,03
+WARNO.exe+99627A: 48 8D 1C C0                    - lea rbx,[rax+rax*8]
+WARNO.exe+99627E: 48 83 C7 20                    - add rdi,20
+WARNO.exe+996282: EB 4B                          - jmp WARNO.exe+9962CF
+WARNO.exe+996284: 66 2E 0F 1F 84 00 00 00 00 00  - nop word ptr cs:[rax+rax+00000000]
+WARNO.exe+99628E: 66 90                          - nop 2
+WARNO.exe+996290: 48 8D 71 25                    - lea rsi,[rcx+25]
+WARNO.exe+996294: 48 8D 41 2D                    - lea rax,[rcx+2D]
+WARNO.exe+996298: 89 51 1C                       - mov [rcx+1C],edx  <--written here
+// ---------- INJECTING HERE ----------
+WARNO.exe+99629B: 0F B6 54 24 2E                 - movzx edx,byte ptr [rsp+2E]
+WARNO.exe+9962A0: 88 56 02                       - mov [rsi+02],dl
+WARNO.exe+9962A3: 0F B7 54 24 2C                 - movzx edx,word ptr [rsp+2C]
+WARNO.exe+9962A8: 66 89 16                       - mov [rsi],dx
+// ---------- DONE INJECTING  ----------
+WARNO.exe+9962AB: 44 88 41 2C                    - mov [rcx+2C],r8b
+WARNO.exe+9962AF: 8B 54 24 24                    - mov edx,[rsp+24]
+WARNO.exe+9962B3: 8B 74 24 27                    - mov esi,[rsp+27]
+WARNO.exe+9962B7: 89 70 03                       - mov [rax+03],esi
+WARNO.exe+9962BA: 89 10                          - mov [rax],edx
+WARNO.exe+9962BC: E8 1F 7F C7 FF                 - call WARNO.exe+60E1E0
+WARNO.exe+9962C1: 48 83 C7 48                    - add rdi,48
+}"""
+
+[[cheat]]
+id = "ammo-won-t-decrease-affects-ai-too-2"
+name = "Ammo Won't Decrease  (affects AI too)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139 steam
+  Date   : 2024-10-18
+  Author : Administrator
+
+  TAmmoStock is for each weapon
+  look for function that deducts ammo clip, not from ammo stock
+  TAmmoStock+30 -> +4 = ammo remaining in clip, then find what writes to it
+}
+
+[ENABLE]
+
+aobscanmodule(Ammo1_AOB,$process,31 D2 44 29 F1 0F) // should be unique
+alloc(newmem,$1000,Ammo1_AOB)
+
+label(code)
+label(return)
+
+newmem:
+  xor edx,edx
+  // sub ecx,r14d
+code:
+  jmp return
+
+Ammo1_AOB:
+  jmp newmem
+return:
+registersymbol(Ammo1_AOB)
+
+[DISABLE]
+
+Ammo1_AOB:
+  db 31 D2 44 29 F1
+
+unregistersymbol(Ammo1_AOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+743D94
+
+WARNO.exe+743D6E: 41 89 C0              - mov r8d,eax
+WARNO.exe+743D71: 41 C1 E8 10           - shr r8d,10
+WARNO.exe+743D75: 41 31 C0              - xor r8d,eax
+WARNO.exe+743D78: 48 8D 54 24 2C        - lea rdx,[rsp+2C]
+WARNO.exe+743D7D: 4C 8D 4C 24 30        - lea r9,[rsp+30]
+WARNO.exe+743D82: E8 A9 1E 00 00        - call WARNO.exe+745C30
+WARNO.exe+743D87: 48 8B 44 24 30        - mov rax,[rsp+30]
+WARNO.exe+743D8C: 48 85 C0              - test rax,rax
+WARNO.exe+743D8F: 74 12                 - je WARNO.exe+743DA3
+WARNO.exe+743D91: 8B 48 04              - mov ecx,[rax+04]
+// ---------- INJECTING HERE ----------
+WARNO.exe+743D94: 31 D2                 - xor edx,edx
+// ---------- DONE INJECTING  ----------
+WARNO.exe+743D96: 44 29 F1              - sub ecx,r14d  <------
+WARNO.exe+743D99: 0F 42 CA              - cmovb ecx,edx
+WARNO.exe+743D9C: 89 48 04              - mov [rax+04],ecx
+WARNO.exe+743D9F: C6 47 1C 01           - mov byte ptr [rdi+1C],01
+WARNO.exe+743DA3: 85 DB                 - test ebx,ebx
+WARNO.exe+743DA5: 74 0C                 - je WARNO.exe+743DB3
+WARNO.exe+743DA7: C7 46 38 03 00 00 00  - mov [rsi+38],00000003
+WARNO.exe+743DAE: E9 C9 00 00 00        - jmp WARNO.exe+743E7C
+WARNO.exe+743DB3: 44 39 F5              - cmp ebp,r14d
+WARNO.exe+743DB6: 0F 85 97 00 00 00     - jne WARNO.exe+743E53
+}"""
+
+[[cheat]]
+id = "unit-health-and-cohesion-always-full-player-only-2"
+name = "Unit Health and Cohesion Always Full (Player only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+  Author : Administrator
+
+  TBaseDamageModule + 50 = (float)suppression
+  TBaseDamageModule + 90 = (float)damage taken so far
+  Find what writes to values above, near the top of same function is a movaps xmm,xmm
+  that contains the dmg(or suppression)
+
+  movaps xmm,xmm
+  ..
+  write to supression
+  ..
+  call to another function that writes to dmg
+}
+
+[ENABLE]
+aobscanmodule(DamageAOB,$process,44 0F 28 C2 49 89 D6 48 89 CE 48 8B 9D F8 00 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(cleanup)
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem:
+  // Always check if rdx is Eugen::IA::TBaseDamageModule
+  // rdx+8  contains unit ID that took dmg, eg. 00000000001F0100
+
+  // don't use rdx
+  push r13
+  push r14
+  push r15
+  push rax
+  mov r15,[rdx+8]  // get raw unit ID from TBaseDamageModule
+  shr r15,28
+  and r15d,007FFFFF  // now r15d is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+r15d*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TBaseDamageModule with the one from TLinkTeamModule
+  mov r15,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdx+8],r15
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov r15,[r13]
+  cmp [r14+20],r15  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  xorps xmm2,xmm2   // no damage/supression added
+  movss [rdx+50],xmm2   // damage=0 which means full health
+  movss [rdx+90],xmm2   // supression=0 which means high cohesion
+
+cleanup:
+  pop rax
+  pop r15
+  pop r14
+  pop r13
+code:
+  // proceed with orig codes
+  movaps xmm8,xmm2  // xmm2 = amount of health/supress to add
+  mov r14,rdx
+  mov rsi,rcx
+  mov rbx,[rbp+000000F8]
+  jmp return
+
+DamageAOB:
+  jmp far newmem
+  nop 3
+return:
+registersymbol(DamageAOB)
+
+[DISABLE]
+
+DamageAOB:
+  db 44 0F 28 C2 49 89 D6 48 89 CE 48 8B 9D F8 00 00 00
+
+unregistersymbol(DamageAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+78E792
+
+WARNO.exe+78E75C: 48 81 EC 08 01 00 00     - sub rsp,00000108
+WARNO.exe+78E763: 48 8D AC 24 80 00 00 00  - lea rbp,[rsp+00000080]
+WARNO.exe+78E76B: 44 0F 29 5D 70           - movaps [rbp+70],xmm11
+WARNO.exe+78E770: 44 0F 29 55 60           - movaps [rbp+60],xmm10
+WARNO.exe+78E775: 44 0F 29 4D 50           - movaps [rbp+50],xmm9
+WARNO.exe+78E77A: 44 0F 29 45 40           - movaps [rbp+40],xmm8
+WARNO.exe+78E77F: 0F 29 7D 30              - movaps [rbp+30],xmm7
+WARNO.exe+78E783: 0F 29 75 20              - movaps [rbp+20],xmm6
+WARNO.exe+78E787: 48 C7 45 18 FE FF FF FF  - mov qword ptr [rbp+18],FFFFFFFFFFFFFFFE
+WARNO.exe+78E78F: 4D 89 CD                 - mov r13,r9
+// ---------- INJECTING HERE ----------
+WARNO.exe+78E792: 44 0F 28 C2              - movaps xmm8,xmm2
+WARNO.exe+78E796: 49 89 D6                 - mov r14,rdx
+WARNO.exe+78E799: 48 89 CE                 - mov rsi,rcx
+WARNO.exe+78E79C: 48 8B 9D F8 00 00 00     - mov rbx,[rbp+000000F8]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+78E7A3: 4C 8B A5 F0 00 00 00     - mov r12,[rbp+000000F0]
+WARNO.exe+78E7AA: E8 11 0C 29 00           - call WARNO.exe+A1F3C0
+WARNO.exe+78E7AF: 0F 28 F0                 - movaps xmm6,xmm0
+WARNO.exe+78E7B2: F6 83 BC 02 00 00 01     - test byte ptr [rbx+000002BC],01
+WARNO.exe+78E7B9: 74 60                    - je WARNO.exe+78E81B
+WARNO.exe+78E7BB: 41 F6 44 24 34 01        - test byte ptr [r12+34],01
+WARNO.exe+78E7C1: 75 04                    - jne WARNO.exe+78E7C7
+}"""
+
+[[cheat]]
+id = "damage-multiplier-human-player-only-x10-2"
+name = "Damage Multiplier (Human Player Only) x10"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script multiplies dmg + supression done by human plyr units
+}
+
+[ENABLE]
+
+aobscanmodule(DmgMultiplierAOB,$process,F3 0F 10 32 48 8B 85 B0 04 00 00 48 8B 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(multiplier)
+
+newmem:
+  // run orig codes first
+  movss xmm6,[rdx]  // xmm contain physical/cohesion damage
+  mov rax,[rbp+000004B0]
+  mov rax,[rax]
+
+  push rcx
+  push rdx
+  mov rcx,[rbp+498]      //  ALWAYS DOUBLECHECK, offset may change with game updates
+  mov rdx,HumanPlayerTeamID
+  mov rdx,[rdx]
+  cmp rcx,rdx
+  pop rdx
+  pop rcx
+  jne code
+  mulss xmm6,[multiplier]  //  xmm may change with game updates
+code:
+  jmp return
+
+multiplier:
+  dd (float)10.0       //  can change to whatever positive float number u want
+
+DmgMultiplierAOB:
+  jmp far newmem
+return:
+registersymbol(DmgMultiplierAOB)
+
+[DISABLE]
+
+DmgMultiplierAOB:
+  db F3 0F 10 32 48 8B 85 B0 04 00 00 48 8B 00
+
+unregistersymbol(DmgMultiplierAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+78DA03
+
+WARNO.exe+78D9DD: 89 F3                          - mov ebx,esi
+WARNO.exe+78D9DF: E9 39 03 00 00                 - jmp WARNO.exe+78DD1D
+WARNO.exe+78D9E4: 66 2E 0F 1F 84 00 00 00 00 00  - nop word ptr cs:[rax+rax+00000000]
+WARNO.exe+78D9EE: 66 90                          - nop 2
+WARNO.exe+78D9F0: 34 01                          - xor al,01
+WARNO.exe+78D9F2: 20 C3                          - and bl,al
+WARNO.exe+78D9F4: 83 FF 01                       - cmp edi,01
+WARNO.exe+78D9F7: 8B 8D AC 04 00 00              - mov ecx,[rbp+000004AC]
+WARNO.exe+78D9FD: 0F B6 C9                       - movzx ecx,cl
+WARNO.exe+78DA00: 0F 44 CF                       - cmove ecx,edi
+// ---------- INJECTING HERE ----------
+WARNO.exe+78DA03: F3 0F 10 32                    - movss xmm6,[rdx]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+78DA07: 48 8B 85 B0 04 00 00           - mov rax,[rbp+000004B0]
+WARNO.exe+78DA0E: 48 8B 00                       - mov rax,[rax]
+WARNO.exe+78DA11: 48 85 C0                       - test rax,rax
+WARNO.exe+78DA14: 89 8D AC 04 00 00              - mov [rbp+000004AC],ecx
+WARNO.exe+78DA1A: 74 12                          - je WARNO.exe+78DA2E
+WARNO.exe+78DA1C: 80 B8 5B 01 00 00 00           - cmp byte ptr [rax+0000015B],00
+WARNO.exe+78DA23: 0F 95 C0                       - setne al
+WARNO.exe+78DA26: 89 85 94 04 00 00              - mov [rbp+00000494],eax
+WARNO.exe+78DA2C: EB 0A                          - jmp WARNO.exe+78DA38
+WARNO.exe+78DA2E: C7 85 94 04 00 00 00 00 00 00  - mov [rbp+00000494],00000000
+}"""
+
+[[cheat]]
+id = "human-player-id-don-t-change-3"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change-2"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "army-general-strategic-map-2"
+name = "Army General Strategic Map"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139 steam
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script captures important pointers n stuff
+}
+
+[ENABLE]
+aobscanmodule(GetArrayOfStrategicTeamLinkModuleAOB,$process,48 8D 95 18 03 00 00 48 0F 49 CA 48 8B 09 4C) //should be unique
+alloc(newmem1,$1000)
+alloc(ArrayOfStrategicTeamLinkModule,8)
+
+label(code1)
+label(return1)
+
+newmem1:
+  // run orig code first
+  lea rdx,[rbp+00000318]
+  cmovns rcx,rdx
+  mov rcx,[rcx]
+
+code1:
+  // rcx = start address of array of Eugen::IA::TLinkTeamModule instances
+  mov [ArrayOfStrategicTeamLinkModule],rcx
+  jmp return1
+
+GetArrayOfStrategicTeamLinkModuleAOB:
+  jmp far newmem1
+return1:
+registersymbol(GetArrayOfStrategicTeamLinkModuleAOB ArrayOfStrategicTeamLinkModule)
+
+[DISABLE]
+GetArrayOfStrategicTeamLinkModuleAOB:
+  db 48 8D 95 18 03 00 00 48 0F 49 CA 48 8B 09
+unregistersymbol(GetArrayOfStrategicTeamLinkModuleAOB ArrayOfStrategicTeamLinkModule)
+dealloc(newmem1 ArrayOfStrategicTeamLinkModule)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AF6A67
+
+WARNO.exe+AF6A3D: C1 E8 08              - shr eax,08
+WARNO.exe+AF6A40: 25 FF FF 7F 00        - and eax,007FFFFF
+WARNO.exe+AF6A45: 85 C9                 - test ecx,ecx
+WARNO.exe+AF6A47: 48 8D 95 30 03 00 00  - lea rdx,[rbp+00000330]
+WARNO.exe+AF6A4E: 48 8D 9D 20 03 00 00  - lea rbx,[rbp+00000320]
+WARNO.exe+AF6A55: 48 0F 49 D3           - cmovns rdx,rbx
+WARNO.exe+AF6A59: 48 39 02              - cmp [rdx],rax
+WARNO.exe+AF6A5C: 76 A2                 - jna WARNO.exe+AF6A00
+WARNO.exe+AF6A5E: 85 C9                 - test ecx,ecx
+WARNO.exe+AF6A60: 48 8D 8D 28 03 00 00  - lea rcx,[rbp+00000328]
+// ---------- INJECTING HERE ----------
+WARNO.exe+AF6A67: 48 8D 95 18 03 00 00  - lea rdx,[rbp+00000318]
+WARNO.exe+AF6A6E: 48 0F 49 CA           - cmovns rcx,rdx
+WARNO.exe+AF6A72: 48 8B 09              - mov rcx,[rcx]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AF6A75: 4C 8B 34 C1           - mov r14,[rcx+rax*8]
+WARNO.exe+AF6A79: 41 F6 C6 01           - test r14b,01
+WARNO.exe+AF6A7D: 74 81                 - je WARNO.exe+AF6A00
+WARNO.exe+AF6A7F: 49 83 E6 FC           - and r14,-04
+WARNO.exe+AF6A83: 0F 84 77 FF FF FF     - je WARNO.exe+AF6A00
+WARNO.exe+AF6A89: 49 83 C6 20           - add r14,20
+WARNO.exe+AF6A8D: 4C 89 F1              - mov rcx,r14
+WARNO.exe+AF6A90: 48 8B 95 50 03 00 00  - mov rdx,[rbp+00000350]
+}"""
+
+[[cheat]]
+id = "action-pts-don-t-decrease-deactivate-before-ending-your-turn-2"
+name = "Action Pts Don't Decrease (Deactivate Before ending your turn!)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139 steam
+  Date   : 2024-10-18
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(AG_ActionPtsAOB,$process,F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+// rcx = Batallion's Eugen::IA::TActionPointsModule
+
+newmem:
+  xorps xmm1,xmm1
+code:
+  subss xmm7,xmm1
+  xorps xmm0,xmm0
+  maxss xmm7,xmm0
+  movss [rcx+40],xmm7
+  jmp return
+
+AG_ActionPtsAOB:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(AG_ActionPtsAOB)
+
+[DISABLE]
+
+AG_ActionPtsAOB:
+  db F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40
+
+unregistersymbol(AG_ActionPtsAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+71BCEE
+
+WARNO.exe+71BCCF: CC                    - int 3
+WARNO.exe+71BCD0: 56                    - push rsi
+WARNO.exe+71BCD1: 53                    - push rbx
+WARNO.exe+71BCD2: 48 83 EC 68           - sub rsp,68
+WARNO.exe+71BCD6: 0F 29 7C 24 50        - movaps [rsp+50],xmm7
+WARNO.exe+71BCDB: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+WARNO.exe+71BCE0: 44 89 C3              - mov ebx,r8d
+WARNO.exe+71BCE3: 48 89 CE              - mov rsi,rcx
+WARNO.exe+71BCE6: F3 0F 10 71 40        - movss xmm6,[rcx+40]
+WARNO.exe+71BCEB: 0F 28 FE              - movaps xmm7,xmm6
+// ---------- INJECTING HERE ----------
+WARNO.exe+71BCEE: F3 0F 5C F9           - subss xmm7,xmm1
+// ---------- DONE INJECTING  ----------
+WARNO.exe+71BCF2: 0F 57 C0              - xorps xmm0,xmm0
+WARNO.exe+71BCF5: F3 0F 5F F8           - maxss xmm7,xmm0
+WARNO.exe+71BCF9: F3 0F 11 79 40        - movss [rcx+40],xmm7
+WARNO.exe+71BCFE: E8 DD 24 EF FF        - call WARNO.exe+60E1E0
+WARNO.exe+71BD03: 48 8B 05 66 29 4C 04  - mov rax,[WARNO.exe+4BDE670]
+WARNO.exe+71BD0A: 48 89 44 24 30        - mov [rsp+30],rax
+WARNO.exe+71BD0F: 48 8D 05 A2 61 DE 01  - lea rax,[WARNO.exe+2501EB8]
+WARNO.exe+71BD16: 48 89 44 24 28        - mov [rsp+28],rax
+WARNO.exe+71BD1B: 48 8B 46 08           - mov rax,[rsi+08]
+WARNO.exe+71BD1F: 48 89 44 24 38        - mov [rsp+38],rax
+}"""
+
+[[cheat]]
+id = "player-s-fatigue-points-always-zero-takes-effect-after-battle-2"
+name = "Player's Fatigue Points Always Zero (takes effect after battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139 steam
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(WriteStrategicFatigueAOB,$process,48 89 70 08 41 0F B6 4D 10 88 48 10 49 8B 4D 18 48 89 48 18 41 0F B7) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup)
+
+newmem2:
+  // run orig codes first
+  mov [rax+08],rsi
+  movzx ecx,byte ptr [r13+10]
+  mov [rax+10],cl
+  mov rcx,[r13+18]
+
+  // rax = start of unit's instance of Eugen::IA::TStrategicFatigueModule
+  // HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+  // ArrayOfStrategicTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+
+  // don't use rax/rcx
+  push r13
+  push r14
+  push rdx
+  mov rdx,[rax+8]  // get raw unit ID from TStrategicFatigueModule
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r13,ArrayOfStrategicTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TStrategicFatigueModule with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rax+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov rdx,[r13]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  xor rcx,rcx       // set Fatigue Points to zero for player
+cleanup:
+  pop rdx
+  pop r14
+  pop r13
+code2:
+  jmp return2
+
+WriteStrategicFatigueAOB:
+  jmp far newmem2
+  nop 2
+return2:
+registersymbol(WriteStrategicFatigueAOB)
+
+[DISABLE]
+
+WriteStrategicFatigueAOB:
+  db 48 89 70 08 41 0F B6 4D 10 88 48 10 49 8B 4D 18
+
+unregistersymbol(WriteStrategicFatigueAOB)
+dealloc(newmem2)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+ABAD50
+
+WARNO.exe+ABAD29: 49 89 F6              - mov r14,rsi
+WARNO.exe+ABAD2C: 49 C1 EE 28           - shr r14,28
+WARNO.exe+ABAD30: 41 81 E6 FF FF 7F 00  - and r14d,007FFFFF
+WARNO.exe+ABAD37: 85 C0                 - test eax,eax
+WARNO.exe+ABAD39: 48 8D 45 C0           - lea rax,[rbp-40]
+WARNO.exe+ABAD3D: 48 8D 4D B0           - lea rcx,[rbp-50]
+WARNO.exe+ABAD41: 48 0F 49 C1           - cmovns rax,rcx
+WARNO.exe+ABAD45: 48 8B 38              - mov rdi,[rax]
+WARNO.exe+ABAD48: 4A 8B 04 F7           - mov rax,[rdi+r14*8]
+WARNO.exe+ABAD4C: 48 83 E0 FC           - and rax,-04
+// ---------- INJECTING HERE ----------
+WARNO.exe+ABAD50: 48 89 70 08           - mov [rax+08],rsi
+WARNO.exe+ABAD54: 41 0F B6 4D 10        - movzx ecx,byte ptr [r13+10]
+WARNO.exe+ABAD59: 88 48 10              - mov [rax+10],cl
+WARNO.exe+ABAD5C: 49 8B 4D 18           - mov rcx,[r13+18]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+ABAD60: 48 89 48 18           - mov [rax+18],rcx  <-----written here
+WARNO.exe+ABAD64: 41 0F B7 4D 20        - movzx ecx,word ptr [r13+20]
+WARNO.exe+ABAD69: 66 89 48 20           - mov [rax+20],cx
+WARNO.exe+ABAD6D: 48 89 75 F0           - mov [rbp-10],rsi
+WARNO.exe+ABAD71: 4C 89 F9              - mov rcx,r15
+WARNO.exe+ABAD74: 48 8D 55 F0           - lea rdx,[rbp-10]
+WARNO.exe+ABAD78: E8 73 F6 B6 FF        - call WARNO.exe+62A3F0
+}"""
+
+[[cheat]]
+id = "pointer-to-current-turn-advance-next-turn-to-see-effect"
+name = "Pointer to Current Turn (advance next turn to see effect)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v135139
+  Date   : 2024-10-18
+  Author : Administrator
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(GetCurrentTurnAOB,$process,48 8B ?? ?? ?? ?? ?? 8B 80 80 00 00 00 89 85 ?? 00 00 00 48 8D 4D D8) // should be unique
+alloc(newmem,$1000,GetCurrentTurnAOB)
+alloc(CurrentCampaignTurn,8,GetCurrentTurnAOB)
+registersymbol(CurrentCampaignTurn)
+
+label(code)
+label(return)
+
+newmem:
+  // rax = Eugen::IA::TStrategicOrderManager
+  mov [CurrentCampaignTurn],rax
+code:
+  mov eax,[rax+00000080]
+  jmp return
+
+GetCurrentTurnAOB+7:
+  jmp newmem
+  nop
+return:
+registersymbol(GetCurrentTurnAOB)
+
+[DISABLE]
+
+GetCurrentTurnAOB+7:
+  db 8B 80 80 00 00 00
+
+unregistersymbol(GetCurrentTurnAOB CurrentCampaignTurn)
+dealloc(newmem CurrentCampaignTurn)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+A4A0B0
+
+WARNO.exe+A4A088: 48 85 C0              - test rax,rax
+WARNO.exe+A4A08B: 74 1C                 - je WARNO.exe+A4A0A9
+WARNO.exe+A4A08D: 48 8D 55 D8           - lea rdx,[rbp-28]
+WARNO.exe+A4A091: 48 89 C1              - mov rcx,rax
+WARNO.exe+A4A094: E8 97 08 BE FF        - call WARNO.exe+62A930
+WARNO.exe+A4A099: 0F 10 45 E0           - movups xmm0,[rbp-20]
+WARNO.exe+A4A09D: 0F 10 4D F0           - movups xmm1,[rbp-10]
+WARNO.exe+A4A0A1: 0F 11 45 68           - movups [rbp+68],xmm0
+WARNO.exe+A4A0A5: 0F 11 4D 78           - movups [rbp+78],xmm1
+WARNO.exe+A4A0A9: 48 8B 05 68 53 19 04  - mov rax,[WARNO.exe+4BDF418]
+// ---------- INJECTING HERE ----------
+WARNO.exe+A4A0B0: 8B 80 80 00 00 00     - mov eax,[rax+00000080]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+A4A0B6: 89 85 8C 00 00 00     - mov [rbp+0000008C],eax
+WARNO.exe+A4A0BC: 48 8D 4D D8           - lea rcx,[rbp-28]
+WARNO.exe+A4A0C0: E8 DB F9 5E FF        - call WARNO.ImBitVector::ImBitVector
+WARNO.exe+A4A0C5: 0F 57 C0              - xorps xmm0,xmm0
+WARNO.exe+A4A0C8: 0F 11 45 00           - movups [rbp+00],xmm0
+WARNO.exe+A4A0CC: 0F 11 45 F0           - movups [rbp-10],xmm0
+WARNO.exe+A4A0D0: 48 8D 05 D9 7B A8 01  - lea rax,[WARNO.exe+24D1CB0]
+WARNO.exe+A4A0D7: 48 89 45 E8           - mov [rbp-18],rax
+WARNO.exe+A4A0DB: B1 11                 - mov cl,11
+WARNO.exe+A4A0DD: 31 D2                 - xor edx,edx
+}"""
+
+[[cheat]]
+id = "current-campaign-turn-2"
+name = "Current Campaign Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentCampaignTurn"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "human-player-id-don-t-change-4"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofstrategicteamlinkmodule-don-t-change-2"
+name = "ArrayOfStrategicTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfStrategicTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "command-requisition-pts-display-value-x-100-3"
+name = "Command/Requisition Pts (Display Value x 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrToCommandPts"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "army-general-tactical-battles-team-score-team-morale-3"
+name = "Army General - Tactical Battles (Team Score, Team Morale)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v141373
+  Date   : 2024-12-18
+
+  This script collects pointer to structure containing addresses for Army General tactical battles
+  AOB accesses each team's Eugen::IA::TTeamScoreModule via rcx
+  TTeamScoreModule layout (structure is 0x50 bytes):
+     +8  team ID      (8 bytes hex)
+     +1C score representing units lost  (int32)
+     +20 team score      (int32)
+}
+
+[ENABLE]
+aobscanmodule(ArmyGeneralStatsAOB,$process,48 8B ?? ?? 18 C1 ?? ?? 25 ?? ?? ?? ?? 48 8B ?? ?? 48 83 ?? ?? 44 03 ?? ?? 18) // should be unique
+alloc(newmem,$1000)
+alloc(PtrArmyGeneralStats,8)
+
+registersymbol(PtrArmyGeneralStats)
+label(code)
+label(return)
+label(ArmyGeneralStatsAOB_bytes)
+
+newmem:
+// we want to capture rcx, it's pointing to array of TTeamScoreModule instances
+  push r15
+  mov r15,PtrArmyGeneralStats
+  mov [r15],rcx
+  pop r15
+code:
+  // proceed with orig codes
+  readmem(ArmyGeneralStatsAOB+5,16)
+  {  shr eax,05
+     and eax,03FFFFF8
+     mov rax,[rcx+rax]
+     and rax,-04 }
+  jmp return
+
+ArmyGeneralStatsAOB_bytes:
+  readmem(ArmyGeneralStatsAOB+5,16)
+
+ArmyGeneralStatsAOB+5:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(ArmyGeneralStatsAOB ArmyGeneralStatsAOB_bytes)
+
+[DISABLE]
+ArmyGeneralStatsAOB+5:
+  readmem(ArmyGeneralStatsAOB_bytes,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7AF120
+
+WARNO.exe+7AF0FE: 74 B0                    - je WARNO.exe+7AF0B0
+WARNO.exe+7AF100: 48 89 F9                 - mov rcx,rdi
+WARNO.exe+7AF103: E8 48 90 E1 FF           - call WARNO.exe+5C8150
+WARNO.exe+7AF108: 8B 47 04                 - mov eax,[rdi+04]
+WARNO.exe+7AF10B: 89 C1                    - mov ecx,eax
+WARNO.exe+7AF10D: C1 E9 1B                 - shr ecx,1B
+WARNO.exe+7AF110: 83 E1 F0                 - and ecx,-10
+WARNO.exe+7AF113: 48 8B 4C 31 18           - mov rcx,[rcx+rsi+18]
+// ---------- INJECTING HERE ----------
+WARNO.exe+7AF118: C1 E8 05                 - shr eax,05
+WARNO.exe+7AF11B: 25 F8 FF FF 03           - and eax,03FFFFF8
+WARNO.exe+7AF120: 48 8B 04 01              - mov rax,[rcx+rax]
+WARNO.exe+7AF124: 48 83 E0 FC              - and rax,-04
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7AF128: 44 03 6C 98 18           - add r13d,[rax+rbx*4+18]
+WARNO.exe+7AF12D: 48 83 C7 08              - add rdi,08
+WARNO.exe+7AF131: 49 83 C6 F8              - add r14,-08
+WARNO.exe+7AF135: 4D 85 F6                 - test r14,r14
+WARNO.exe+7AF138: 75 C6                    - jne WARNO.exe+7AF100
+WARNO.exe+7AF13A: E9 71 FF FF FF           - jmp WARNO.exe+7AF0B0
+WARNO.exe+7AF13F: 49 83 E4 FC              - and r12,-04
+WARNO.exe+7AF143: E9 3B FF FF FF           - jmp WARNO.exe+7AF083
+WARNO.exe+7AF148: 0F 28 B4 24 50 01 00 00  - movaps xmm6,[rsp+00000150]
+}"""
+
+[[cheat]]
+id = "combat-battalion-1-team-score-3"
+name = "Combat Battalion 1 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-1-units-lost-the-closer-to-0-the-higher-the-displayed-morale-3"
+name = "Combat Battalion 1 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-team-score-3"
+name = "Combat Battalion 2 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-units-lost-the-closer-to-0-the-higher-the-displayed-morale-3"
+name = "Combat Battalion 2 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-team-score-3"
+name = "Combat Battalion 3 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-units-lost-the-closer-to-0-the-higher-the-displayed-morale-3"
+name = "Combat Battalion 3 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-team-score-3"
+name = "Combat Battalion 4 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-units-lost-the-closer-to-0-the-higher-the-displayed-morale-3"
+name = "Combat Battalion 4 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "unit-health-and-cohesion-always-full-player-only-3"
+name = "Unit Health and Cohesion Always Full (Player only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v141373
+  Date   : 2024-12-20
+  Author : Administrator
+
+  1st AOB: Conventional dmg/supression
+  2nd AOB: Suppression added by nearby SAM missile (New for air units since v141373)
+
+  TBaseDamageModule + 2C = (float)Max suppression
+  TBaseDamageModule + ?? = (float)Max damage
+  TBaseDamageModule + 50 = (float)suppression   (zero means NO supression)
+  TBaseDamageModule + 90 = (float)damage taken so far   (zero means NO damage, i.e full health)
+  Find what writes to values above and you'll land in an appropriate function depending on layout below:-
+
+  near the top of function is a movaps xmm,xmm2
+  that contains the dmg(or suppression)
+  ..
+  ..
+  call to another function that writes to dmg
+  ..
+  ..
+  write to supression
+  ..
+}
+
+[ENABLE]
+aobscanmodule(DamageAOB,$process,0F 28 ?? 48 89 ?? 48 89 ?? 4C ?? ?? ?? ?? ?? ?? ?? 4C ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F 28 ?? 41 F6 ?? ?? ?? ?? ?? 01)
+alloc(newmem1,$1000)
+
+label(code1)
+label(return1)
+label(cleanup1)
+label(DamageAOB_bytes)
+
+aobscanmodule(WriteSAMSupressionAOB,$process,0F 29 ?? ?? ?? 0F 29 ?? ?? ?? 0F 28 ?? 48 89 ?? 48 89 ?? 48 8B ?? ?? ?? ?? ?? 48 31 ?? 48 89 ?? ?? ?? F3 ?? ?? ?? 2C F3 ?? ?? ?? 50) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup2)
+label(WriteSAMSupressionAOB_bytes)
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem1:
+  // Always check if rdx is Eugen::IA::TBaseDamageModule
+  // Also check if xmm2 = amount of health/supress to add
+  // rcx shld be Eugen::IA::TDamageModule , possibly the attacker's module doing the damage
+  // rdx+8 contains unit ID that took dmg, eg. 00000000001F0100
+
+  // don't use rdx
+  push r13
+  push r14
+  push r15
+  push rax
+  mov r15,[rdx+8]  // get raw unit ID from TBaseDamageModule
+  shr r15,28
+  and r15d,007FFFFF  // now r15d is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+r15d*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup1
+
+  // compare the unit ID from TBaseDamageModule with the one from TLinkTeamModule
+  mov r15,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdx+8],r15
+  jne cleanup1       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov r15,[r13]
+  cmp [r14+20],r15  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup1       // not human player, no cheats for u
+  xorps xmm2,xmm2   // no damage/supression added
+  movss [rdx+50],xmm2   // damage=0 which means full health
+  movss [rdx+90],xmm2   // supression=0 which means high cohesion
+
+cleanup1:
+  pop rax
+  pop r15
+  pop r14
+  pop r13
+code1:
+  // proceed with orig codes
+  readmem(DamageAOB,17)
+  // movaps xmm6,xmm2  // xmm2 = amount of health/supress to add
+  // mov rdi,rdx
+  // mov rsi,rcx
+  // mov r13,[rsp+000001A8]
+  jmp return1
+
+DamageAOB_bytes:
+  readmem(DamageAOB,17)
+
+DamageAOB:
+  jmp far newmem1
+  nop 3
+return1:
+registersymbol(DamageAOB DamageAOB_bytes)
+
+newmem2:
+  // run some orig code first
+  readmem(WriteSAMSupressionAOB,10)
+  {  movaps [rsp+40],xmm7
+  movaps [rsp+30],xmm6 }
+code2:
+  // Always check if rdx is Eugen::IA::TBaseDamageModule and xmm2 is SAM supression
+  // rcx shld be Eugen::IA::TDamageModule
+  // rsi appears to always be Eugen::IA::TEffectInflictSuppressDamageDescriptor
+  // rdx+8 contains unit ID that took dmg, eg. 00000000001F0100
+
+  // don't use rdx
+  push r13
+  push r14
+  push r15
+  push rax
+  mov r15,[rdx+8]  // get raw unit ID from TBaseDamageModule
+  shr r15,28
+  and r15d,007FFFFF  // now r15d is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+r15d*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup2
+
+  // compare the unit ID from TBaseDamageModule with the one from TLinkTeamModule
+  mov r15,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdx+8],r15
+  jne cleanup2       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov r15,[r13]
+  cmp [r14+20],r15  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup2       // not human player, no cheats for u
+  xorps xmm2,xmm2   // set SAM supression to 0
+
+cleanup2:
+  pop rax
+  pop r15
+  pop r14
+  pop r13
+  readmem(WriteSAMSupressionAOB+A,6)
+  { movaps xmm7,xmm2
+  mov rdi,rdx  }
+  jmp return2
+
+WriteSAMSupressionAOB_bytes:
+  readmem(WriteSAMSupressionAOB,16)
+
+WriteSAMSupressionAOB:
+  jmp far newmem2
+  nop 2
+return2:
+registersymbol(WriteSAMSupressionAOB WriteSAMSupressionAOB_bytes)
+
+[DISABLE]
+DamageAOB:
+  readmem(DamageAOB_bytes,17)
+
+WriteSAMSupressionAOB:
+  readmem(WriteSAMSupressionAOB_bytes,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7538D1
+
+WARNO.exe+753890 - 41 57                 - push r15
+WARNO.exe+753892 - 41 56                 - push r14
+WARNO.exe+753894 - 41 55                 - push r13
+WARNO.exe+753896 - 41 54                 - push r12
+WARNO.exe+753898 - 56                    - push rsi
+WARNO.exe+753899 - 57                    - push rdi
+WARNO.exe+75389A - 55                    - push rbp
+WARNO.exe+75389B - 53                    - push rbx
+WARNO.exe+75389C - 48 81 EC 38010000     - sub rsp,00000138
+WARNO.exe+7538A3 - 44 0F29 94 24 20010000  - movaps [rsp+00000120],xmm10
+WARNO.exe+7538AC - 44 0F29 8C 24 10010000  - movaps [rsp+00000110],xmm9
+WARNO.exe+7538B5 - 44 0F29 84 24 00010000  - movaps [rsp+00000100],xmm8
+WARNO.exe+7538BE - 0F29 BC 24 F0000000   - movaps [rsp+000000F0],xmm7
+WARNO.exe+7538C6 - 0F29 B4 24 E0000000   - movaps [rsp+000000E0],xmm6
+WARNO.exe+7538CE - 4C 89 CB              - mov rbx,r9
+------------------------------------ inject-------------------------------
+WARNO.exe+7538D1 - 0F28 F2               - movaps xmm6,xmm2
+WARNO.exe+7538D4 - 48 89 D7              - mov rdi,rdx
+WARNO.exe+7538D7 - 48 89 CE              - mov rsi,rcx
+WARNO.exe+7538DA - 4C 8B AC 24 A8010000  - mov r13,[rsp+000001A8]
+-------------------------------------done inject--------------------------
+WARNO.exe+7538E2 - 4C 8B B4 24 A0010000  - mov r14,[rsp+000001A0]
+WARNO.exe+7538EA - E8 A13B2600           - call WARNO.exe+9B7490
+WARNO.exe+7538EF - 0F28 F8               - movaps xmm7,xmm0
+WARNO.exe+7538F2 - 41 F6 85 B0020000 01  - test byte ptr [r13+000002B0],01
+WARNO.exe+7538FA - 74 57                 - je WARNO.exe+753953
+WARNO.exe+7538FC - 41 F6 46 34 40        - test byte ptr [r14+34],40
+WARNO.exe+753901 - 75 04                 - jne WARNO.exe+753907
+WARNO.exe+753903 - 31 C0                 - xor eax,eax
+WARNO.exe+753905 - EB 11                 - jmp WARNO.exe+753918
+WARNO.exe+753907 - 49 8B 46 68           - mov rax,[r14+68]
+WARNO.exe+75390B - 48 8B 88 30020000     - mov rcx,[rax+00000230]
+WARNO.exe+753912 - 48 8B 01              - mov rax,[rcx]
+WARNO.exe+753915 - FF 50 48              - call qword ptr [rax+48]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+754AE6
+
+WARNO.exe+754ADD: CC                    - int 3
+WARNO.exe+754ADE: CC                    - int 3
+WARNO.exe+754ADF: CC                    - int 3
+WARNO.exe+754AE0: 56                    - push rsi
+WARNO.exe+754AE1: 57                    - push rdi
+WARNO.exe+754AE2: 48 83 EC 58           - sub rsp,58
+// ---------- INJECTING HERE ----------
+WARNO.exe+754AE6: 0F 29 7C 24 40        - movaps [rsp+40],xmm7
+WARNO.exe+754AEB: 0F 29 74 24 30        - movaps [rsp+30],xmm6
+WARNO.exe+754AF0: 0F 28 FA              - movaps xmm7,xmm2
+WARNO.exe+754AF3: 48 89 D7              - mov rdi,rdx
+// ---------- DONE INJECTING  ----------
+WARNO.exe+754AF6: 48 89 CE              - mov rsi,rcx
+WARNO.exe+754AF9: 48 8B 05 28 03 A8 02  - mov rax,[WARNO.exe+31D4E28]
+WARNO.exe+754B00: 48 31 E0              - xor rax,rsp
+WARNO.exe+754B03: 48 89 44 24 28        - mov [rsp+28],rax
+WARNO.exe+754B08: F3 0F 10 42 2C        - movss xmm0,[rdx+2C]
+WARNO.exe+754B0D: F3 0F 10 72 50        - movss xmm6,[rdx+50]
+WARNO.exe+754B12: F3 0F 5D C2           - minss xmm0,xmm2
+WARNO.exe+754B16 - 0F57 C9               - xorps xmm1,xmm1
+WARNO.exe+754B19 - F3 0FC2 F9 01         - cmpltss xmm7,xmm1
+WARNO.exe+754B1E - 0F55 F8               - andnps xmm7,xmm0
+WARNO.exe+754B21 - 0F2E FE               - ucomiss xmm7,xmm6
+WARNO.exe+754B24 - 76 0E                 - jna WARNO.exe+754B34
+WARNO.exe+754B26 - E8 65292600           - call WARNO.exe+9B7490
+WARNO.exe+754B2B - 48 8B 46 50           - mov rax,[rsi+50]
+WARNO.exe+754B2F - F3 0F11 40 04         - movss [rax+04],xmm0
+WARNO.exe+754B34 - 48 89 F9              - mov rcx,rdi
+WARNO.exe+754B37 - 31 D2                 - xor edx,edx
+WARNO.exe+754B39 - E8 B2E7FCFF           - call WARNO.ImGui::SetWindowViewport+5E40
+WARNO.exe+754B3E - F3 0F11 78 38         - movss [rax+38],xmm7  <---------write suppression
+WARNO.exe+754B43 - 48 89 F9              - mov rcx,rdi
+WARNO.exe+754B46 - 31 D2                 - xor edx,edx
+WARNO.exe+754B48 - E8 03F8FFFF           - call WARNO.exe+754350
+WARNO.exe+754B4D - F3 0F10 57 50         - movss xmm2,[rdi+50]
+WARNO.exe+754B52 - 48 8B 46 08           - mov rax,[rsi+08]
+WARNO.exe+754B56 - 48 89 44 24 20        - mov [rsp+20],rax
+WARNO.exe+754B5B - 48 8D 4C 24 20        - lea rcx,[rsp+20]
+WARNO.exe+754B60 - 0F28 CE               - movaps xmm1,xmm6
+WARNO.exe+754B63 - E8 98FA4100           - call WARNO.exe+B74600
+WARNO.exe+754B68 - 48 8B 4C 24 28        - mov rcx,[rsp+28]
+WARNO.exe+754B6D - 48 31 E1              - xor rcx,rsp
+}"""
+
+[[cheat]]
+id = "damage-multiplier-human-player-only-x10-3"
+name = "Damage Multiplier (Human Player Only) x10"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v141373
+  Date   : 2024-12-18
+  Author : Administrator
+
+  This script multiplies dmg done by human plyr units
+  We inject just before the call that writes damage and check the stack for player's ID
+}
+
+[ENABLE]
+aobscanmodule(DmgMultiplierAOB,$process,F3 ?? ?? ?? 6C F3 ?? ?? ?? ?? 90 ?? ?? ?? 48 89 ?? 0F 28 ?? E8) // should be unique
+alloc(newmem,$1000)
+
+label(cleanup)
+label(loopingChk)
+label(presenceFound)
+label(return)
+label(multiplier)
+label(DmgMultiplierAOB_bytes)
+
+newmem:
+  // run orig codes first
+  readmem(DmgMultiplierAOB+5,15)
+  { movss xmm9,[rdi+00000090]
+  mov rcx,rdi
+  movaps xmm1,xmm7 }
+
+  // check the stack for presence of player's ID (eg, 302,402,etc), up to rsp+0x120
+  push rdi
+  push rcx
+  push rax
+  pushfq
+  mov rdi,HumanPlayerTeamID
+  mov rdi,[rdi]
+  xor rax,rax
+
+loopingChk:
+  cmp [rsp+rax*8+20],rdi
+  je presenceFound
+  inc eax
+  cmp eax,24
+  jne loopingChk
+  jmp cleanup
+
+presenceFound:
+  // If we arrived here, that means player's ID was found in stack and the attacker is human player
+  mulss xmm1,[multiplier]  //  multiply the dmg, beware xmm register may change with game updates
+  jmp cleanup
+
+cleanup:
+  popfq
+  pop rax
+  pop rcx
+  pop rdi
+  jmp return
+
+DmgMultiplierAOB_bytes:
+  readmem(DmgMultiplierAOB+5,15)
+
+align 10 CC
+multiplier:
+  dd (float)10.0       //  multiplier , you can change to whatever positive float number u want
+
+DmgMultiplierAOB+5:
+  jmp far newmem
+  nop
+return:
+registersymbol(DmgMultiplierAOB DmgMultiplierAOB_bytes)
+
+[DISABLE]
+DmgMultiplierAOB+5:
+  readmem(DmgMultiplierAOB_bytes,15)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+753B83
+
+WARNO.exe+753B4E: 48 8B 03                    - mov rax,[rbx]
+WARNO.exe+753B51: 48 89 44 24 40              - mov [rsp+40],rax
+WARNO.exe+753B56: 48 8B 45 00                 - mov rax,[rbp+00]
+WARNO.exe+753B5A: 48 89 84 24 80 00 00 00     - mov [rsp+00000080],rax
+WARNO.exe+753B62: F3 44 0F 11 54 24 20        - movss [rsp+20],xmm10
+WARNO.exe+753B69: 48 8D 4C 24 40              - lea rcx,[rsp+40]
+WARNO.exe+753B6E: 48 8D 94 24 80 00 00 00     - lea rdx,[rsp+00000080]
+WARNO.exe+753B76: 41 0F 28 D0                 - movaps xmm2,xmm8
+WARNO.exe+753B7A: 41 0F 28 D9                 - movaps xmm3,xmm9
+WARNO.exe+753B7E: E8 5D 53 03 00              - call WARNO.exe+788EE0
+WARNO.exe+753B83: F3 0F 10 77 6C              - movss xmm6,[rdi+6C]
+// ---------- INJECTING HERE ----------
+WARNO.exe+753B88: F3 44 0F 10 8F 90 00 00 00  - movss xmm9,[rdi+00000090]
+WARNO.exe+753B91: 48 89 F9                    - mov rcx,rdi
+WARNO.exe+753B94: 0F 28 CF                    - movaps xmm1,xmm7
+// ---------- DONE INJECTING  ----------
+WARNO.exe+753B97: E8 64 76 00 00              - call WARNO.exe+75B200
+WARNO.exe+753B9C: 0F C6 F6 00                 - shufps xmm6,xmm6,00
+WARNO.exe+753BA0: F3 0F 10 87 90 00 00 00     - movss xmm0,[rdi+00000090]
+WARNO.exe+753BA8: 44 0F 14 C8                 - unpcklps xmm9,xmm0
+WARNO.exe+753BAC: 41 0F 5C F1                 - subps xmm6,xmm9
+WARNO.exe+753BB0: F3 0F 5B C6                 - cvttps2dq xmm0,xmm6
+WARNO.exe+753BB4: 66 0F 70 C8 55              - pshufd xmm1,xmm055
+}"""
+
+[[cheat]]
+id = "human-player-id-don-t-change-5"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change-3"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "action-pts-don-t-decrease-deactivate-before-ending-your-turn-3"
+name = "Action Pts Don't Decrease (Deactivate Before ending your turn!)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v141373 steam
+  Date   : 2024-12-18
+
+  Action Pts stored in float
+}
+
+[ENABLE]
+
+aobscanmodule(AG_ActionPtsAOB,$process,F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+// rcx = Batallion's Eugen::IA::TActionPointsModule
+
+newmem:
+  xorps xmm1,xmm1
+code:
+  subss xmm7,xmm1
+  xorps xmm0,xmm0
+  maxss xmm7,xmm0
+  movss [rcx+40],xmm7
+  jmp return
+
+AG_ActionPtsAOB:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(AG_ActionPtsAOB)
+
+[DISABLE]
+
+AG_ActionPtsAOB:
+  db F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40
+
+unregistersymbol(AG_ActionPtsAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+6E2B6E
+
+WARNO.exe+6E2B4F: CC                    - int 3
+WARNO.exe+6E2B50: 56                    - push rsi
+WARNO.exe+6E2B51: 53                    - push rbx
+WARNO.exe+6E2B52: 48 83 EC 68           - sub rsp,68
+WARNO.exe+6E2B56: 0F 29 7C 24 50        - movaps [rsp+50],xmm7
+WARNO.exe+6E2B5B: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+WARNO.exe+6E2B60: 44 89 C3              - mov ebx,r8d
+WARNO.exe+6E2B63: 48 89 CE              - mov rsi,rcx
+WARNO.exe+6E2B66: F3 0F 10 71 40        - movss xmm6,[rcx+40]
+WARNO.exe+6E2B6B: 0F 28 FE              - movaps xmm7,xmm6
+// ---------- INJECTING HERE ----------
+WARNO.exe+6E2B6E: F3 0F 5C F9           - subss xmm7,xmm1
+// ---------- DONE INJECTING  ----------
+WARNO.exe+6E2B72: 0F 57 C0              - xorps xmm0,xmm0
+WARNO.exe+6E2B75: F3 0F 5F F8           - maxss xmm7,xmm0
+WARNO.exe+6E2B79: F3 0F 11 79 40        - movss [rcx+40],xmm7
+WARNO.exe+6E2B7E: E8 9D CD EF FF        - call WARNO.ImRect::GetCenter+88B0
+WARNO.exe+6E2B83: 48 8B 05 D6 84 2E 04  - mov rax,[WARNO.exe+49CB060]
+WARNO.exe+6E2B8A: 48 89 44 24 30        - mov [rsp+30],rax
+WARNO.exe+6E2B8F: 48 8D 05 C2 FD BE 01  - lea rax,[WARNO.exe+22D2958]
+WARNO.exe+6E2B96: 48 89 44 24 28        - mov [rsp+28],rax
+WARNO.exe+6E2B9B: 48 8B 46 08           - mov rax,[rsi+08]
+WARNO.exe+6E2B9F: 48 89 44 24 38        - mov [rsp+38],rax
+}"""
+
+[[cheat]]
+id = "player-s-fatigue-points-always-zero-takes-effect-after-battle-3"
+name = "Player's Fatigue Points Always Zero (takes effect after battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v141373 steam
+  Date   : 2024-12-18
+  Author : Administrator
+
+  Fatigue points is 4-byte integer,  at TStrategicFatigueModule+18
+}
+
+[ENABLE]
+aobscanmodule(WriteStrategicFatigueAOB,$process,8B 40 20 39 C6 0F 43 F0 89 77 18 48 89 F9) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup)
+
+newmem2:
+  // run part of the orig codes first
+  mov eax,[rax+20]
+  cmp esi,eax
+  cmovae esi,eax
+
+  // rdi = start of unit's instance of Eugen::IA::TStrategicFatigueModule
+  // HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+  // ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+
+  // don't use rdi/rsi
+  push r13
+  push r14
+  push rdx
+  mov rdx,[rdi+8]  // get raw unit ID from TStrategicFatigueModule
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TStrategicFatigueModule with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdi+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov rdx,[r13]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  xor esi,esi       // set Fatigue Points to zero for player
+cleanup:
+  pop rdx
+  pop r14
+  pop r13
+code2:
+  // continue with rest of orig code
+  mov [rdi+18],esi
+  mov rcx,rdi
+  jmp return2
+
+WriteStrategicFatigueAOB:
+  jmp far newmem2
+return2:
+registersymbol(WriteStrategicFatigueAOB)
+
+[DISABLE]
+
+WriteStrategicFatigueAOB:
+  db 8B 40 20 39 C6 0F 43 F0 89 77 18 48 89 F9
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AF0D35
+
+WARNO.exe+AF0D11: 57              - push rdi
+WARNO.exe+AF0D12: 48 83 EC 28     - sub rsp,28
+WARNO.exe+AF0D16: 89 D6           - mov esi,edx
+WARNO.exe+AF0D18: 48 89 CF        - mov rdi,rcx
+WARNO.exe+AF0D1B: 03 71 18        - add esi,[rcx+18]
+WARNO.exe+AF0D1E: 48 8B 41 08     - mov rax,[rcx+08]
+WARNO.exe+AF0D22: 0F B6 49 10     - movzx ecx,byte ptr [rcx+10]
+WARNO.exe+AF0D26: 48 89 44 24 20  - mov [rsp+20],rax
+WARNO.exe+AF0D2B: 48 8D 54 24 20  - lea rdx,[rsp+20]
+WARNO.exe+AF0D30: E8 3B EA AE FF  - call WARNO.ImRect::GetCenter+8700
+// ---------- INJECTING HERE ----------
+WARNO.exe+AF0D35: 8B 40 20        - mov eax,[rax+20]
+WARNO.exe+AF0D38: 39 C6           - cmp esi,eax
+WARNO.exe+AF0D3A: 0F 43 F0        - cmovae esi,eax
+WARNO.exe+AF0D3D: 89 77 18        - mov [rdi+18],esi  <-----written here
+WARNO.exe+AF0D40: 48 89 F9        - mov rcx,rdi
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AF0D43: E8 D8 EB AE FF  - call WARNO.ImRect::GetCenter+88B0
+WARNO.exe+AF0D48: 90              - nop
+WARNO.exe+AF0D49: 48 83 C4 28     - add rsp,28
+WARNO.exe+AF0D4D: 5F              - pop rdi
+WARNO.exe+AF0D4E: 5E              - pop rsi
+WARNO.exe+AF0D4F: C3              - ret
+}"""
+
+[[cheat]]
+id = "current-campaign-turn-3"
+name = "Current Campaign Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentCampaignTurn"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "human-player-id-don-t-change-6"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change-4"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "command-requisition-pts-display-value-x-100-4"
+name = "Command/Requisition Pts (Display Value x 100)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrToCommandPts"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "army-general-tactical-battles-team-score-team-morale-4"
+name = "Army General - Tactical Battles (Team Score, Team Morale)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v146198
+  Date   : 2025-02-11
+
+  This script collects pointer to structure containing addresses for Army General tactical battles
+  AOB accesses each team's Eugen::IA::TTeamScoreModule via rcx
+  TTeamScoreModule layout (structure is 0x50 bytes):
+     +8  team ID      (8 bytes hex)
+     +1C score representing units lost  (int32)
+     +20 team score      (int32)
+}
+
+[ENABLE]
+aobscanmodule(ArmyGeneralStatsAOB,$process,48 8B ?? ?? 18 C1 ?? ?? 25 ?? ?? ?? ?? 48 8B ?? ?? 48 83 ?? ?? 44 03 ?? ?? 18) // should be unique
+alloc(newmem,$1000)
+alloc(PtrArmyGeneralStats,8)
+
+registersymbol(PtrArmyGeneralStats)
+label(code)
+label(return)
+label(ArmyGeneralStatsAOB_bytes)
+
+newmem:
+// we want to capture rcx, it's pointing to array of TTeamScoreModule instances
+  push r15
+  mov r15,PtrArmyGeneralStats
+  mov [r15],rcx
+  pop r15
+code:
+  // proceed with orig codes
+  readmem(ArmyGeneralStatsAOB+5,16)
+  {  shr eax,05
+     and eax,03FFFFF8
+     mov rax,[rcx+rax]
+     and rax,-04 }
+  jmp return
+
+ArmyGeneralStatsAOB_bytes:
+  readmem(ArmyGeneralStatsAOB+5,16)
+
+ArmyGeneralStatsAOB+5:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(ArmyGeneralStatsAOB ArmyGeneralStatsAOB_bytes)
+
+[DISABLE]
+ArmyGeneralStatsAOB+5:
+  readmem(ArmyGeneralStatsAOB_bytes,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7AF120
+
+WARNO.exe+7AF0FE: 74 B0                    - je WARNO.exe+7AF0B0
+WARNO.exe+7AF100: 48 89 F9                 - mov rcx,rdi
+WARNO.exe+7AF103: E8 48 90 E1 FF           - call WARNO.exe+5C8150
+WARNO.exe+7AF108: 8B 47 04                 - mov eax,[rdi+04]
+WARNO.exe+7AF10B: 89 C1                    - mov ecx,eax
+WARNO.exe+7AF10D: C1 E9 1B                 - shr ecx,1B
+WARNO.exe+7AF110: 83 E1 F0                 - and ecx,-10
+WARNO.exe+7AF113: 48 8B 4C 31 18           - mov rcx,[rcx+rsi+18]
+// ---------- INJECTING HERE ----------
+WARNO.exe+7AF118: C1 E8 05                 - shr eax,05
+WARNO.exe+7AF11B: 25 F8 FF FF 03           - and eax,03FFFFF8
+WARNO.exe+7AF120: 48 8B 04 01              - mov rax,[rcx+rax]
+WARNO.exe+7AF124: 48 83 E0 FC              - and rax,-04
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7AF128: 44 03 6C 98 18           - add r13d,[rax+rbx*4+18]
+WARNO.exe+7AF12D: 48 83 C7 08              - add rdi,08
+WARNO.exe+7AF131: 49 83 C6 F8              - add r14,-08
+WARNO.exe+7AF135: 4D 85 F6                 - test r14,r14
+WARNO.exe+7AF138: 75 C6                    - jne WARNO.exe+7AF100
+WARNO.exe+7AF13A: E9 71 FF FF FF           - jmp WARNO.exe+7AF0B0
+WARNO.exe+7AF13F: 49 83 E4 FC              - and r12,-04
+WARNO.exe+7AF143: E9 3B FF FF FF           - jmp WARNO.exe+7AF083
+WARNO.exe+7AF148: 0F 28 B4 24 50 01 00 00  - movaps xmm6,[rsp+00000150]
+}"""
+
+[[cheat]]
+id = "combat-battalion-1-team-score-4"
+name = "Combat Battalion 1 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-1-units-lost-the-closer-to-0-the-higher-the-displayed-morale-4"
+name = "Combat Battalion 1 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-team-score-4"
+name = "Combat Battalion 2 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-units-lost-the-closer-to-0-the-higher-the-displayed-morale-4"
+name = "Combat Battalion 2 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-team-score-4"
+name = "Combat Battalion 3 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-units-lost-the-closer-to-0-the-higher-the-displayed-morale-4"
+name = "Combat Battalion 3 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-team-score-4"
+name = "Combat Battalion 4 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-units-lost-the-closer-to-0-the-higher-the-displayed-morale-4"
+name = "Combat Battalion 4 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "unlimited-fuel-player-only-3"
+name = "Unlimited Fuel (Player Only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v146198
+  Date   : 2025-02-11
+
+  TFuelModule+20 = unit's MaxFuel
+  TFuelModule+24 = unit's currentFuel
+}
+
+[ENABLE]
+aobscanmodule(FuelAOB,$process,F3 45 0F 11 44 24 24 4C)
+alloc(newmem,$1000,FuelAOB)
+label(code)
+label(return)
+label(cleanup)
+label(FuelAOB_bytes)
+
+// r12 = start address of unit's Eugen::IA::TFuelModule instance
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem:
+  // run original code first
+  movss [r12+24],xmm8
+  // don't use r12 and xmm8
+  push r13
+  push r14
+  push rdx
+  mov rdx,[r12+8]  // get raw unit ID from TFuelModule
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TFuelModule with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [r12+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov rdx,[r13]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+
+  // move unit's max fuel into current fuel
+  movss xmm8,[r12+20]
+  movss [r12+24],xmm8
+
+cleanup:
+  pop rdx
+  pop r14
+  pop r13
+  jmp code
+code:
+  jmp return
+
+FuelAOB_bytes:
+  readmem(FuelAOB,7)
+
+FuelAOB:
+  jmp newmem
+  nop 2
+return:
+registersymbol(FuelAOB FuelAOB_bytes)
+
+[DISABLE]
+FuelAOB:
+  readmem(FuelAOB_bytes,7)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7C64DC
+
+WARNO.exe+7C64AC: F3 41 0F 59 C2              - mulss xmm0,xmm10
+WARNO.exe+7C64B1: F3 41 0F 58 C1              - addss xmm0,xmm9
+WARNO.exe+7C64B6: 0F 2E C6                    - ucomiss xmm0,xmm6
+WARNO.exe+7C64B9: 0F 86 51 FE FF FF           - jbe WARNO.exe+7C6310
+WARNO.exe+7C64BF: F3 44 0F 5C C0              - subss xmm8,xmm0
+WARNO.exe+7C64C4: F3 44 0F 5F C6              - maxss xmm8,xmm6
+WARNO.exe+7C64C9: F3 41 0F 10 44 24 24        - movss xmm0,[r12+24]
+WARNO.exe+7C64D0: 41 0F 2E C0                 - ucomiss xmm0,xmm8
+WARNO.exe+7C64D4: 75 06                       - jne WARNO.exe+7C64DC
+WARNO.exe+7C64D6: 0F 8B 34 FE FF FF           - jnp WARNO.exe+7C6310
+// ---------- INJECTING HERE ----------
+WARNO.exe+7C64DC: F3 45 0F 11 44 24 24        - movss [r12+24],xmm8  <----write fuel
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7C64E3: 4C 89 E1                    - mov rcx,r12
+WARNO.exe+7C64E6: E8 A5 FD E3 FF              - call WARNO.ImRect::GetCenter+8590
+WARNO.exe+7C64EB: E9 20 FE FF FF              - jmp WARNO.exe+7C6310
+WARNO.exe+7C64F0: 0F 28 B4 24 50 01 00 00     - movaps xmm6,[rsp+00000150]
+WARNO.exe+7C64F8: 0F 28 BC 24 60 01 00 00     - movaps xmm7,[rsp+00000160]
+WARNO.exe+7C6500: 44 0F 28 84 24 70 01 00 00  - movaps xmm8,[rsp+00000170]
+WARNO.exe+7C6509: 44 0F 28 8C 24 80 01 00 00  - movaps xmm9,[rsp+00000180]
+WARNO.exe+7C6512: 44 0F 28 94 24 90 01 00 00  - movaps xmm10,[rsp+00000190]
+WARNO.exe+7C651B: 48 81 C4 A0 01 00 00        - add rsp,000001A0
+WARNO.exe+7C6522: 5B                          - pop rbx
+}"""
+
+[[cheat]]
+id = "unit-health-and-cohesion-always-full-player-only-4"
+name = "Unit Health and Cohesion Always Full (Player only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v146198
+  Date   : 2025-02-11
+  Author : Administrator
+
+  1st AOB: Conventional dmg/supression
+  2nd AOB: Suppression added by nearby SAM missile (New for air units since v141373)
+
+  TBaseDamageModule + 2C = (float)Max suppression
+  TBaseDamageModule + ?? = (float)Max damage
+  TBaseDamageModule + 50 = (float)suppression   (zero means NO supression)
+  TBaseDamageModule + 90 = (float)damage taken so far   (zero means NO damage, i.e full health)
+  Find what writes to values above and you'll land in an appropriate function depending on layout below:-
+
+  near the top of function is a movaps xmm,xmm2
+  that contains the dmg(or suppression)
+  ..
+  ..
+  call to another function that writes to dmg
+  ..
+  ..
+  write to supression
+  ..
+}
+
+[ENABLE]
+aobscanmodule(DamageAOB,$process,0F 28 ?? 48 89 ?? 48 89 ?? 4C ?? ?? ?? ?? ?? ?? ?? 4C ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F 28 ?? 41 F6)
+alloc(newmem1,$1000)
+
+label(code1)
+label(return1)
+label(cleanup1)
+label(DamageAOB_bytes)
+
+aobscanmodule(WriteSAMSupressionAOB,$process,0F 29 ?? ?? ?? 0F 29 ?? ?? ?? 0F 28 ?? 48 89 ?? 48 89 ?? F3 ?? ?? ?? 2C F3 ?? ?? ?? 50 F3 0F ?? ??)
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup2)
+label(WriteSAMSupressionAOB_bytes)
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem1:
+  // Always check if rdx is Eugen::IA::TBaseDamageModule
+  // Also check if xmm2 = amount of health/supress to add
+  // rcx shld be Eugen::IA::TDamageModule , possibly the attacker's module doing the damage
+  // rdx+8 contains unit ID that took dmg, eg. 00000000001F0100
+
+  // don't use rdx
+  push r13
+  push r14
+  push r15
+  push rax
+  mov r15,[rdx+8]  // get raw unit ID from TBaseDamageModule
+  shr r15,28
+  and r15d,007FFFFF  // now r15d is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+r15d*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup1
+
+  // compare the unit ID from TBaseDamageModule with the one from TLinkTeamModule
+  mov r15,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdx+8],r15
+  jne cleanup1       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov r15,[r13]
+  cmp [r14+20],r15  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup1       // not human player, no cheats for u
+  xorps xmm2,xmm2   // no damage/supression added
+  movss [rdx+50],xmm2   // damage=0 which means full health
+  movss [rdx+90],xmm2   // supression=0 which means high cohesion
+
+cleanup1:
+  pop rax
+  pop r15
+  pop r14
+  pop r13
+code1:
+  // proceed with orig codes
+  readmem(DamageAOB,17)
+  // movaps xmm6,xmm2  // xmm2 = amount of health/supress to add
+  // mov rdi,rdx
+  // mov rsi,rcx
+  // mov r12,[rsp+000001B8]
+  jmp return1
+
+DamageAOB_bytes:
+  readmem(DamageAOB,17)
+
+DamageAOB:
+  jmp far newmem1
+  nop 3
+return1:
+registersymbol(DamageAOB DamageAOB_bytes)
+
+newmem2:
+  // run some orig code first
+  readmem(WriteSAMSupressionAOB,10)
+  {  movaps [rsp+40],xmm7
+  movaps [rsp+30],xmm6 }
+code2:
+  // Always check if rdx is Eugen::IA::TBaseDamageModule and xmm2 is SAM supression
+  // rcx shld be Eugen::IA::TDamageModule
+  // rsi appears to always be Eugen::IA::TEffectInflictSuppressDamageDescriptor
+  // rdx+8 contains unit ID that took dmg, eg. 00000000001F0100
+
+  // don't use rdx
+  push r13
+  push r14
+  push r15
+  push rax
+  mov r15,[rdx+8]  // get raw unit ID from TBaseDamageModule
+  shr r15,28
+  and r15d,007FFFFF  // now r15d is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+r15d*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup2
+
+  // compare the unit ID from TBaseDamageModule with the one from TLinkTeamModule
+  mov r15,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdx+8],r15
+  jne cleanup2       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov r15,[r13]
+  cmp [r14+20],r15  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup2       // not human player, no cheats for u
+  xorps xmm2,xmm2   // set SAM supression to 0
+
+cleanup2:
+  pop rax
+  pop r15
+  pop r14
+  pop r13
+  readmem(WriteSAMSupressionAOB+A,6)
+  { movaps xmm7,xmm2
+  mov rdi,rdx  }
+  jmp return2
+
+WriteSAMSupressionAOB_bytes:
+  readmem(WriteSAMSupressionAOB,16)
+
+WriteSAMSupressionAOB:
+  jmp far newmem2
+  nop 2
+return2:
+registersymbol(WriteSAMSupressionAOB WriteSAMSupressionAOB_bytes)
+
+[DISABLE]
+DamageAOB:
+  readmem(DamageAOB_bytes,17)
+
+WriteSAMSupressionAOB:
+  readmem(WriteSAMSupressionAOB_bytes,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+77C7B1
+
+WARNO.exe+77C779: 57                          - push rdi
+WARNO.exe+77C77A: 55                          - push rbp
+WARNO.exe+77C77B: 53                          - push rbx
+WARNO.exe+77C77C: 48 81 EC 48 01 00 00        - sub rsp,00000148
+WARNO.exe+77C783: 44 0F 29 94 24 30 01 00 00  - movaps [rsp+00000130],xmm10
+WARNO.exe+77C78C: 44 0F 29 8C 24 20 01 00 00  - movaps [rsp+00000120],xmm9
+WARNO.exe+77C795: 44 0F 29 84 24 10 01 00 00  - movaps [rsp+00000110],xmm8
+WARNO.exe+77C79E: 0F 29 BC 24 00 01 00 00     - movaps [rsp+00000100],xmm7
+WARNO.exe+77C7A6: 0F 29 B4 24 F0 00 00 00     - movaps [rsp+000000F0],xmm6
+WARNO.exe+77C7AE: 4C 89 CB                    - mov rbx,r9
+// ---------- INJECTING HERE ----------
+WARNO.exe+77C7B1: 0F 28 F2                    - movaps xmm6,xmm2
+WARNO.exe+77C7B4: 48 89 D7                    - mov rdi,rdx
+WARNO.exe+77C7B7: 48 89 CE                    - mov rsi,rcx
+WARNO.exe+77C7BA: 4C 8B A4 24 B8 01 00 00     - mov r12,[rsp+000001B8]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+77C7C2: 4C 8B B4 24 B0 01 00 00     - mov r14,[rsp+000001B0]
+WARNO.exe+77C7CA: E8 21 D2 26 00              - call WARNO.exe+9E99F0
+WARNO.exe+77C7CF: 0F 28 F8                    - movaps xmm7,xmm0
+WARNO.exe+77C7D2: 41 F6 84 24 B0 02 00 00 01  - test byte ptr [r12+000002B0],01
+WARNO.exe+77C7DB: 74 58                       - je WARNO.exe+77C835
+WARNO.exe+77C7DD: 41 F6 46 3C 40              - test byte ptr [r14+3C],40
+WARNO.exe+77C7E2: 75 04                       - jne WARNO.exe+77C7E8
+WARNO.exe+77C7E4: 31 C0                       - xor eax,eax
+WARNO.exe+77C7E6: EB 11                       - jmp WARNO.exe+77C7F9
+WARNO.exe+77C7E8: 49 8B 46 70                 - mov rax,[r14+70]
+WARNO.exe+77C7EC: 48 8B 88 30 02 00 00        - mov rcx,[rax+00000230]
+WARNO.exe+77C7F3: 48 8B 01                    - mov rax,[rcx]
+WARNO.exe+77C7F6: FF 50 50                    - call qword ptr [rax+50]
+WARNO.exe+77C7F9: 41 8B 8C 24 C4 02 00 00     - mov ecx,[r12+000002C4]
+WARNO.exe+77C801: 3B 8E 5C 01 00 00           - cmp ecx,[rsi+0000015C]
+WARNO.exe+77C807: 74 15                       - je WARNO.exe+77C81E
+WARNO.exe+77C809: F3 0F 10 86 60 01 00 00     - movss xmm0,[rsi+00000160]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+77DA23
+
+WARNO.exe+77DA0C: CC              - int 3
+WARNO.exe+77DA0D: CC              - int 3
+WARNO.exe+77DA0E: CC              - int 3
+WARNO.exe+77DA0F: CC              - int 3
+WARNO.exe+77DA10: 56              - push rsi
+WARNO.exe+77DA11: 57              - push rdi
+WARNO.exe+77DA12: 48 83 EC 58     - sub rsp,58
+// ---------- INJECTING HERE ----------
+WARNO.exe+77DA16: 0F 29 7C 24 40  - movaps [rsp+40],xmm7
+WARNO.exe+77DA1B: 0F 29 74 24 30  - movaps [rsp+30],xmm6
+WARNO.exe+77DA20: 0F 28 FA        - movaps xmm7,xmm2
+WARNO.exe+77DA23: 48 89 D7        - mov rdi,rdx
+// ---------- DONE INJECTING  ----------
+WARNO.exe+77DA26: 48 89 CE        - mov rsi,rcx
+WARNO.exe+77DA29: F3 0F 10 42 2C  - movss xmm0,[rdx+2C]
+WARNO.exe+77DA2E: F3 0F 10 72 50  - movss xmm6,[rdx+50]
+WARNO.exe+77DA33: F3 0F 5D C2     - minss xmm0,xmm2
+WARNO.exe+77DA37: 0F 57 C9        - xorps xmm1,xmm1
+WARNO.exe+77DA3A: F3 0F C2 F9 01  - cmpltss xmm7,xmm1
+WARNO.exe+77DA3F: 0F 55 F8        - andnps xmm7,xmm0
+WARNO.exe+77DA42: 0F 2E FE        - ucomiss xmm7,xmm6
+WARNO.exe+77DA45: 76 0E           - jna WARNO.exe+77DA55
+WARNO.exe+77DA47: E8 A4 BF 26 00  - call WARNO.exe+9E99F0
+WARNO.exe+77DA4C - 48 8B 46 50           - mov rax,[rsi+50]
+WARNO.exe+77DA50 - F3 0F11 40 04         - movss [rax+04],xmm0
+WARNO.exe+77DA55 - 48 89 F9              - mov rcx,rdi
+WARNO.exe+77DA58 - 31 D2                 - xor edx,edx
+WARNO.exe+77DA5A - E8 61CBFCFF           - call WARNO.ImGui::SetWindowViewport+7010
+WARNO.exe+77DA5F - F3 0F11 78 38         - movss [rax+38],xmm7  <---------write suppression
+WARNO.exe+77DA64 - 48 89 F9              - mov rcx,rdi
+WARNO.exe+77DA67 - 31 D2                 - xor edx,edx
+WARNO.exe+77DA69 - E8 D2F7FFFF           - call WARNO.exe+77D240
+WARNO.exe+77DA6E - F3 0F10 57 50         - movss xmm2,[rdi+50]
+WARNO.exe+77DA73 - 48 8B 46 08           - mov rax,[rsi+08]
+WARNO.exe+77DA77 - 48 89 44 24 28        - mov [rsp+28],rax
+WARNO.exe+77DA7C - 48 8D 4C 24 28        - lea rcx,[rsp+28]
+}"""
+
+[[cheat]]
+id = "damage-multiplier-human-player-only-x10-4"
+name = "Damage Multiplier (Human Player Only) x10"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v146198
+  Date   : 2025-02-11
+  Author : Administrator
+
+  This script multiplies dmg done by human plyr units
+  We inject just before the call that writes damage and check the stack for player's ID
+}
+
+[ENABLE]
+aobscanmodule(DmgMultiplierAOB,$process,F3 ?? ?? ?? 6C F3 ?? ?? ?? ?? 90 ?? ?? ?? 48 89 ?? 0F 28 ?? E8) // should be unique
+alloc(newmem,$1000)
+
+label(cleanup)
+label(loopingChk)
+label(presenceFound)
+label(return)
+label(multiplier)
+label(DmgMultiplierAOB_bytes)
+
+newmem:
+  // run orig codes first
+  readmem(DmgMultiplierAOB+5,15)
+  { movss xmm9,[rdi+00000090]
+  mov rcx,rdi
+  movaps xmm1,xmm7 }
+
+  // check the stack for presence of player's ID (eg, 302,402,etc), up to rsp+0x120
+  push rdi
+  push rcx
+  push rax
+  pushfq
+  mov rdi,HumanPlayerTeamID
+  mov rdi,[rdi]
+  xor rax,rax
+
+loopingChk:
+  cmp [rsp+rax*8+20],rdi
+  je presenceFound
+  inc eax
+  cmp eax,24
+  jne loopingChk
+  jmp cleanup
+
+presenceFound:
+  // If we arrived here, that means player's ID was found in stack and the attacker is human player
+  mulss xmm1,[multiplier]  //  multiply the dmg, beware xmm register may change with game updates
+  jmp cleanup
+
+cleanup:
+  popfq
+  pop rax
+  pop rcx
+  pop rdi
+  jmp return
+
+DmgMultiplierAOB_bytes:
+  readmem(DmgMultiplierAOB+5,15)
+
+align 10 CC
+multiplier:
+  dd (float)10.0       //  multiplier , you can change to whatever positive float number u want
+
+DmgMultiplierAOB+5:
+  jmp far newmem
+  nop
+return:
+registersymbol(DmgMultiplierAOB DmgMultiplierAOB_bytes)
+
+[DISABLE]
+DmgMultiplierAOB+5:
+  readmem(DmgMultiplierAOB_bytes,15)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+753B83
+
+WARNO.exe+753B4E: 48 8B 03                    - mov rax,[rbx]
+WARNO.exe+753B51: 48 89 44 24 40              - mov [rsp+40],rax
+WARNO.exe+753B56: 48 8B 45 00                 - mov rax,[rbp+00]
+WARNO.exe+753B5A: 48 89 84 24 80 00 00 00     - mov [rsp+00000080],rax
+WARNO.exe+753B62: F3 44 0F 11 54 24 20        - movss [rsp+20],xmm10
+WARNO.exe+753B69: 48 8D 4C 24 40              - lea rcx,[rsp+40]
+WARNO.exe+753B6E: 48 8D 94 24 80 00 00 00     - lea rdx,[rsp+00000080]
+WARNO.exe+753B76: 41 0F 28 D0                 - movaps xmm2,xmm8
+WARNO.exe+753B7A: 41 0F 28 D9                 - movaps xmm3,xmm9
+WARNO.exe+753B7E: E8 5D 53 03 00              - call WARNO.exe+788EE0
+WARNO.exe+753B83: F3 0F 10 77 6C              - movss xmm6,[rdi+6C]
+// ---------- INJECTING HERE ----------
+WARNO.exe+753B88: F3 44 0F 10 8F 90 00 00 00  - movss xmm9,[rdi+00000090]
+WARNO.exe+753B91: 48 89 F9                    - mov rcx,rdi
+WARNO.exe+753B94: 0F 28 CF                    - movaps xmm1,xmm7
+// ---------- DONE INJECTING  ----------
+WARNO.exe+753B97: E8 64 76 00 00              - call WARNO.exe+75B200
+WARNO.exe+753B9C: 0F C6 F6 00                 - shufps xmm6,xmm6,00
+WARNO.exe+753BA0: F3 0F 10 87 90 00 00 00     - movss xmm0,[rdi+00000090]
+WARNO.exe+753BA8: 44 0F 14 C8                 - unpcklps xmm9,xmm0
+WARNO.exe+753BAC: 41 0F 5C F1                 - subps xmm6,xmm9
+WARNO.exe+753BB0: F3 0F 5B C6                 - cvttps2dq xmm0,xmm6
+WARNO.exe+753BB4: 66 0F 70 C8 55              - pshufd xmm1,xmm055
+}"""
+
+[[cheat]]
+id = "human-player-id-don-t-change-7"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change-5"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "action-pts-don-t-decrease-deactivate-before-ending-your-turn-4"
+name = "Action Pts Don't Decrease (Deactivate Before ending your turn!)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v146198
+  Date   : 2025-02-11
+
+  Action Pts stored in float
+}
+
+[ENABLE]
+
+aobscanmodule(AG_ActionPtsAOB,$process,F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+// rcx = Batallion's Eugen::IA::TActionPointsModule
+
+newmem:
+  xorps xmm1,xmm1
+code:
+  subss xmm7,xmm1
+  xorps xmm0,xmm0
+  maxss xmm7,xmm0
+  movss [rcx+40],xmm7
+  jmp return
+
+AG_ActionPtsAOB:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(AG_ActionPtsAOB)
+
+[DISABLE]
+
+AG_ActionPtsAOB:
+  db F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40
+
+unregistersymbol(AG_ActionPtsAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+6E2B6E
+
+WARNO.exe+6E2B4F: CC                    - int 3
+WARNO.exe+6E2B50: 56                    - push rsi
+WARNO.exe+6E2B51: 53                    - push rbx
+WARNO.exe+6E2B52: 48 83 EC 68           - sub rsp,68
+WARNO.exe+6E2B56: 0F 29 7C 24 50        - movaps [rsp+50],xmm7
+WARNO.exe+6E2B5B: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+WARNO.exe+6E2B60: 44 89 C3              - mov ebx,r8d
+WARNO.exe+6E2B63: 48 89 CE              - mov rsi,rcx
+WARNO.exe+6E2B66: F3 0F 10 71 40        - movss xmm6,[rcx+40]
+WARNO.exe+6E2B6B: 0F 28 FE              - movaps xmm7,xmm6
+// ---------- INJECTING HERE ----------
+WARNO.exe+6E2B6E: F3 0F 5C F9           - subss xmm7,xmm1
+// ---------- DONE INJECTING  ----------
+WARNO.exe+6E2B72: 0F 57 C0              - xorps xmm0,xmm0
+WARNO.exe+6E2B75: F3 0F 5F F8           - maxss xmm7,xmm0
+WARNO.exe+6E2B79: F3 0F 11 79 40        - movss [rcx+40],xmm7
+WARNO.exe+6E2B7E: E8 9D CD EF FF        - call WARNO.ImRect::GetCenter+88B0
+WARNO.exe+6E2B83: 48 8B 05 D6 84 2E 04  - mov rax,[WARNO.exe+49CB060]
+WARNO.exe+6E2B8A: 48 89 44 24 30        - mov [rsp+30],rax
+WARNO.exe+6E2B8F: 48 8D 05 C2 FD BE 01  - lea rax,[WARNO.exe+22D2958]
+WARNO.exe+6E2B96: 48 89 44 24 28        - mov [rsp+28],rax
+WARNO.exe+6E2B9B: 48 8B 46 08           - mov rax,[rsi+08]
+WARNO.exe+6E2B9F: 48 89 44 24 38        - mov [rsp+38],rax
+}"""
+
+[[cheat]]
+id = "player-s-fatigue-points-always-zero-takes-effect-after-battle-4"
+name = "Player's Fatigue Points Always Zero (takes effect after battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v146198
+  Date   : 2025-02-11
+  Author : Administrator
+
+  Fatigue points is 4-byte integer,  at TStrategicFatigueModule+18
+}
+
+[ENABLE]
+aobscanmodule(WriteStrategicFatigueAOB,$process,8B 40 20 39 C6 0F 43 F0 89 77 18 48 89 F9) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup)
+
+newmem2:
+  // run part of the orig codes first
+  mov eax,[rax+20]
+  cmp esi,eax
+  cmovae esi,eax
+
+  // rdi = start of unit's instance of Eugen::IA::TStrategicFatigueModule
+  // HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+  // ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+
+  // don't use rdi/rsi
+  push r13
+  push r14
+  push rdx
+  mov rdx,[rdi+8]  // get raw unit ID from TStrategicFatigueModule
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TStrategicFatigueModule with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdi+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov rdx,[r13]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  xor esi,esi       // set Fatigue Points to zero for player
+cleanup:
+  pop rdx
+  pop r14
+  pop r13
+code2:
+  // continue with rest of orig code
+  mov [rdi+18],esi
+  mov rcx,rdi
+  jmp return2
+
+WriteStrategicFatigueAOB:
+  jmp far newmem2
+return2:
+registersymbol(WriteStrategicFatigueAOB)
+
+[DISABLE]
+
+WriteStrategicFatigueAOB:
+  db 8B 40 20 39 C6 0F 43 F0 89 77 18 48 89 F9
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AF0D35
+
+WARNO.exe+AF0D11: 57              - push rdi
+WARNO.exe+AF0D12: 48 83 EC 28     - sub rsp,28
+WARNO.exe+AF0D16: 89 D6           - mov esi,edx
+WARNO.exe+AF0D18: 48 89 CF        - mov rdi,rcx
+WARNO.exe+AF0D1B: 03 71 18        - add esi,[rcx+18]
+WARNO.exe+AF0D1E: 48 8B 41 08     - mov rax,[rcx+08]
+WARNO.exe+AF0D22: 0F B6 49 10     - movzx ecx,byte ptr [rcx+10]
+WARNO.exe+AF0D26: 48 89 44 24 20  - mov [rsp+20],rax
+WARNO.exe+AF0D2B: 48 8D 54 24 20  - lea rdx,[rsp+20]
+WARNO.exe+AF0D30: E8 3B EA AE FF  - call WARNO.ImRect::GetCenter+8700
+// ---------- INJECTING HERE ----------
+WARNO.exe+AF0D35: 8B 40 20        - mov eax,[rax+20]
+WARNO.exe+AF0D38: 39 C6           - cmp esi,eax
+WARNO.exe+AF0D3A: 0F 43 F0        - cmovae esi,eax
+WARNO.exe+AF0D3D: 89 77 18        - mov [rdi+18],esi  <-----written here
+WARNO.exe+AF0D40: 48 89 F9        - mov rcx,rdi
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AF0D43: E8 D8 EB AE FF  - call WARNO.ImRect::GetCenter+88B0
+WARNO.exe+AF0D48: 90              - nop
+WARNO.exe+AF0D49: 48 83 C4 28     - add rsp,28
+WARNO.exe+AF0D4D: 5F              - pop rdi
+WARNO.exe+AF0D4E: 5E              - pop rsi
+WARNO.exe+AF0D4F: C3              - ret
+}"""
+
+[[cheat]]
+id = "current-campaign-turn-4"
+name = "Current Campaign Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentCampaignTurn"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "human-player-id-don-t-change-8"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change-6"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "current-pts-display-value-x-1000"
+name = "Current Pts (Display Value x 1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrToCommandPts"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "ag-battles-only-max-pts-display-value-without-x1000-multiplier"
+name = "[AG BATTLES ONLY] Max Pts (Display Value, without x1000 multiplier)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrToCommandPts"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "army-general-tactical-battles-team-score-team-morale-5"
+name = "Army General - Tactical Battles (Team Score, Team Morale)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v150731
+  Date   : 2025-03-28
+
+  This script collects pointer to structure containing addresses for Army General tactical battles
+  AOB accesses each team's Eugen::IA::TTeamScoreModule via rcx
+  TTeamScoreModule layout (structure is 0x50 bytes):
+     +8  team ID      (8 bytes hex)
+     +1C score representing units lost  (int32)
+     +20 team score      (int32)
+}
+
+[ENABLE]
+aobscanmodule(ArmyGeneralStatsAOB,$process,48 8B ?? ?? 18 C1 ?? ?? 25 ?? ?? ?? ?? 48 8B ?? ?? 48 83 ?? ?? 44 03 ?? ?? 18) // should be unique
+alloc(newmem,$1000)
+alloc(PtrArmyGeneralStats,8)
+
+registersymbol(PtrArmyGeneralStats)
+label(code)
+label(return)
+label(ArmyGeneralStatsAOB_bytes)
+
+newmem:
+// we want to capture rcx, it's pointing to array of TTeamScoreModule instances
+  push r15
+  mov r15,PtrArmyGeneralStats
+  mov [r15],rcx
+  pop r15
+code:
+  // proceed with orig codes
+  readmem(ArmyGeneralStatsAOB+5,16)
+  {  shr eax,05
+     and eax,03FFFFF8
+     mov rax,[rcx+rax]
+     and rax,-04 }
+  jmp return
+
+ArmyGeneralStatsAOB_bytes:
+  readmem(ArmyGeneralStatsAOB+5,16)
+
+ArmyGeneralStatsAOB+5:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(ArmyGeneralStatsAOB ArmyGeneralStatsAOB_bytes)
+
+[DISABLE]
+ArmyGeneralStatsAOB+5:
+  readmem(ArmyGeneralStatsAOB_bytes,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+7AF120
+
+WARNO.exe+7AF0FE: 74 B0                    - je WARNO.exe+7AF0B0
+WARNO.exe+7AF100: 48 89 F9                 - mov rcx,rdi
+WARNO.exe+7AF103: E8 48 90 E1 FF           - call WARNO.exe+5C8150
+WARNO.exe+7AF108: 8B 47 04                 - mov eax,[rdi+04]
+WARNO.exe+7AF10B: 89 C1                    - mov ecx,eax
+WARNO.exe+7AF10D: C1 E9 1B                 - shr ecx,1B
+WARNO.exe+7AF110: 83 E1 F0                 - and ecx,-10
+WARNO.exe+7AF113: 48 8B 4C 31 18           - mov rcx,[rcx+rsi+18]
+// ---------- INJECTING HERE ----------
+WARNO.exe+7AF118: C1 E8 05                 - shr eax,05
+WARNO.exe+7AF11B: 25 F8 FF FF 03           - and eax,03FFFFF8
+WARNO.exe+7AF120: 48 8B 04 01              - mov rax,[rcx+rax]
+WARNO.exe+7AF124: 48 83 E0 FC              - and rax,-04
+// ---------- DONE INJECTING  ----------
+WARNO.exe+7AF128: 44 03 6C 98 18           - add r13d,[rax+rbx*4+18]
+WARNO.exe+7AF12D: 48 83 C7 08              - add rdi,08
+WARNO.exe+7AF131: 49 83 C6 F8              - add r14,-08
+WARNO.exe+7AF135: 4D 85 F6                 - test r14,r14
+WARNO.exe+7AF138: 75 C6                    - jne WARNO.exe+7AF100
+WARNO.exe+7AF13A: E9 71 FF FF FF           - jmp WARNO.exe+7AF0B0
+WARNO.exe+7AF13F: 49 83 E4 FC              - and r12,-04
+WARNO.exe+7AF143: E9 3B FF FF FF           - jmp WARNO.exe+7AF083
+WARNO.exe+7AF148: 0F 28 B4 24 50 01 00 00  - movaps xmm6,[rsp+00000150]
+}"""
+
+[[cheat]]
+id = "combat-battalion-1-team-score-5"
+name = "Combat Battalion 1 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-1-units-lost-the-closer-to-0-the-higher-the-displayed-morale-5"
+name = "Combat Battalion 1 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-team-score-5"
+name = "Combat Battalion 2 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-2-units-lost-the-closer-to-0-the-higher-the-displayed-morale-5"
+name = "Combat Battalion 2 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-team-score-5"
+name = "Combat Battalion 3 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-3-units-lost-the-closer-to-0-the-higher-the-displayed-morale-5"
+name = "Combat Battalion 3 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-team-score-5"
+name = "Combat Battalion 4 - Team Score"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "combat-battalion-4-units-lost-the-closer-to-0-the-higher-the-displayed-morale-5"
+name = "Combat Battalion 4 - Units Lost (the closer to 0, the higher the displayed morale)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PtrArmyGeneralStats"
+hops = []
+
+[[cheat]]
+id = "unlimited-fuel-player-only-4"
+name = "Unlimited Fuel (Player Only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v150731
+  Date   : 2025-03-28
+
+  (unknown location) = unit's MaxFuel
+  TFuelModule+18 = unit's currentFuel
+}
+
+[ENABLE]
+aobscanmodule(FuelAOB,$process,F3 45 0F 11 45 18 4C 89 E9)
+alloc(newmem,$1000,FuelAOB)
+label(code)
+label(return)
+label(cleanup)
+label(FuelAOB_bytes)
+
+// r12 = start address of unit's Eugen::IA::TFuelModule instance
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem:
+  // run original code first
+  movss [r13+18],xmm8
+  // don't use r13 and xmm8
+  push r12
+  push r14
+  push rdx
+  mov rdx,[r13+8]  // get raw unit ID from TFuelModule
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r12,ArrayOfTeamLinkModule
+  mov r14,[r12]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TFuelModule with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [r13+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r12,HumanPlayerTeamID
+  mov rdx,[r12]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+
+  // set current fuel to minimum amount
+  mov dword ptr [r13+18],(float)2000
+
+cleanup:
+  pop rdx
+  pop r14
+  pop r12
+  jmp code
+code:
+  jmp return
+
+FuelAOB_bytes:
+  readmem(FuelAOB,6)
+
+FuelAOB:
+  jmp newmem
+  nop
+return:
+registersymbol(FuelAOB FuelAOB_bytes)
+
+[DISABLE]
+FuelAOB:
+  readmem(FuelAOB_bytes,6)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+78E678
+
+WARNO.exe+78E649: F3 41 0F 59 C2              - mulss xmm0,xmm10
+WARNO.exe+78E64E: F3 41 0F 58 C1              - addss xmm0,xmm9
+WARNO.exe+78E653: 0F 2E C6                    - ucomiss xmm0,xmm6
+WARNO.exe+78E656: 0F 86 34 FE FF FF           - jbe WARNO.exe+78E490
+WARNO.exe+78E65C: F3 44 0F 5C C0              - subss xmm8,xmm0
+WARNO.exe+78E661: F3 44 0F 5F C6              - maxss xmm8,xmm6
+WARNO.exe+78E666: F3 41 0F 10 45 18           - movss xmm0,[r13+18]
+WARNO.exe+78E66C: 41 0F 2E C0                 - ucomiss xmm0,xmm8
+WARNO.exe+78E670: 75 06                       - jne WARNO.exe+78E678
+WARNO.exe+78E672: 0F 8B 18 FE FF FF           - jnp WARNO.exe+78E490
+// ---------- INJECTING HERE ----------
+WARNO.exe+78E678: F3 45 0F 11 45 18           - movss [r13+18],xmm8  <---write fuel
+// ---------- DONE INJECTING  ----------
+WARNO.exe+78E67E: 4C 89 E9                    - mov rcx,r13
+WARNO.exe+78E681: E8 7A 9C E4 FF              - call WARNO.ImRect::GetCenter+8560
+WARNO.exe+78E686: E9 05 FE FF FF              - jmp WARNO.exe+78E490
+WARNO.exe+78E68B: 0F 28 B4 24 50 01 00 00     - movaps xmm6,[rsp+00000150]
+WARNO.exe+78E693: 0F 28 BC 24 60 01 00 00     - movaps xmm7,[rsp+00000160]
+WARNO.exe+78E69B: 44 0F 28 84 24 70 01 00 00  - movaps xmm8,[rsp+00000170]
+WARNO.exe+78E6A4: 44 0F 28 8C 24 80 01 00 00  - movaps xmm9,[rsp+00000180]
+WARNO.exe+78E6AD: 44 0F 28 94 24 90 01 00 00  - movaps xmm10,[rsp+00000190]
+WARNO.exe+78E6B6: 48 81 C4 A8 01 00 00        - add rsp,000001A8
+WARNO.exe+78E6BD: 5B                          - pop rbx
+}"""
+
+[[cheat]]
+id = "unit-health-and-cohesion-always-full-player-only-5"
+name = "Unit Health and Cohesion Always Full (Player only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v150731
+  Date   : 2025-03-28
+  Author : Administrator
+
+  1st AOB: Conventional dmg/supression
+  2nd AOB: Suppression added by nearby SAM missile (New for air units since v141373)
+
+  TBaseDamageModule + 2C = (float)Max suppression
+  TBaseDamageModule + ?? = (float)Max damage
+  TBaseDamageModule + 50 = (float)suppression   (zero means NO supression)
+  TBaseDamageModule + 90 = (float)damage taken so far   (zero means NO damage, i.e full health)
+  Find what writes to values above and you'll land in an appropriate function depending on layout below:-
+
+  near the top of function is a movaps xmm,xmm2
+  that contains the dmg(or suppression)
+  ..
+  ..
+  call to another function that writes to dmg
+  ..
+  ..
+  write to general(non-SAM) supression
+  ..
+}
+
+[ENABLE]
+aobscanmodule(DamageAOB,$process,0F 28 ?? 48 89 ?? 48 89 ?? 4C ?? ?? ?? ?? ?? ?? ?? 4C ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F 28 ?? 41 F6)
+alloc(newmem1,$1000)
+
+label(code1)
+label(return1)
+label(cleanup1)
+label(DamageAOB_bytes)
+
+aobscanmodule(WriteSAMSupressionAOB,$process,0F 29 ?? ?? ?? 0F 29 ?? ?? ?? 0F 28 ?? 48 89 ?? 48 89 ?? F3 ?? ?? ?? 2C F3 ?? ?? ?? 50 F3 0F ?? ??)
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup2)
+label(WriteSAMSupressionAOB_bytes)
+// ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+// HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+
+newmem1:
+  // Always check if rdx is Eugen::IA::TBaseDamageModule
+  // Also check if xmm2 = amount of health/supress to add
+  // rcx shld be Eugen::IA::TDamageModule , possibly the attacker's module doing the damage
+  // rdx+8 contains unit ID that took dmg, eg. 00000000001F0100
+
+  // don't use rdx
+  push r13
+  push r14
+  push r15
+  push rax
+  mov r15,[rdx+8]  // get raw unit ID from TBaseDamageModule
+  shr r15,28
+  and r15d,007FFFFF  // now r15d is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+r15d*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup1
+
+  // compare the unit ID from TBaseDamageModule with the one from TLinkTeamModule
+  mov r15,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdx+8],r15
+  jne cleanup1       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov r15,[r13]
+  cmp [r14+20],r15  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup1       // not human player, no cheats for u
+  xorps xmm2,xmm2   // no damage/supression added
+  movss [rdx+50],xmm2   // damage=0 which means full health
+  movss [rdx+90],xmm2   // supression=0 which means high cohesion
+
+cleanup1:
+  pop rax
+  pop r15
+  pop r14
+  pop r13
+code1:
+  // proceed with orig codes
+  readmem(DamageAOB,17)
+  // movaps xmm6,xmm2  // xmm2 = amount of health/supress to add
+  // mov rdi,rdx
+  // mov rsi,rcx
+  // mov r12,[rsp+000001E8]
+  jmp return1
+
+DamageAOB_bytes:
+  readmem(DamageAOB,17)
+
+DamageAOB:
+  jmp far newmem1
+  nop 3
+return1:
+registersymbol(DamageAOB DamageAOB_bytes)
+
+newmem2:
+  // run some orig code first
+  readmem(WriteSAMSupressionAOB,10)
+  {  movaps [rsp+40],xmm7
+  movaps [rsp+30],xmm6 }
+code2:
+  // Always check if rdx is Eugen::IA::TBaseDamageModule and xmm2 is SAM supression
+  // rcx shld be Eugen::IA::TDamageModule
+  // rdx+8 contains unit ID that took dmg, eg. 00000000001F0100
+  // rsi appears to always be Eugen::IA::TEffectInflictSuppressDamageDescriptor
+
+  // don't use rdx
+  push r13
+  push r14
+  push r15
+  push rax
+  mov r15,[rdx+8]  // get raw unit ID from TBaseDamageModule
+  shr r15,28
+  and r15d,007FFFFF  // now r15d is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+r15d*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup2
+
+  // compare the unit ID from TBaseDamageModule with the one from TLinkTeamModule
+  mov r15,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdx+8],r15
+  jne cleanup2       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov r15,[r13]
+  cmp [r14+20],r15  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup2       // not human player, no cheats for u
+  xorps xmm2,xmm2   // set SAM supression to 0
+
+cleanup2:
+  pop rax
+  pop r15
+  pop r14
+  pop r13
+  readmem(WriteSAMSupressionAOB+A,6)
+  { movaps xmm7,xmm2
+  mov rdi,rdx  }
+  jmp return2
+
+WriteSAMSupressionAOB_bytes:
+  readmem(WriteSAMSupressionAOB,16)
+
+WriteSAMSupressionAOB:
+  jmp far newmem2
+  nop 2
+return2:
+registersymbol(WriteSAMSupressionAOB WriteSAMSupressionAOB_bytes)
+
+[DISABLE]
+DamageAOB:
+  readmem(DamageAOB_bytes,17)
+
+WriteSAMSupressionAOB:
+  readmem(WriteSAMSupressionAOB_bytes,16)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+746151
+
+WARNO.exe+746119: 57                          - push rdi
+WARNO.exe+74611A: 55                          - push rbp
+WARNO.exe+74611B: 53                          - push rbx
+WARNO.exe+74611C: 48 81 EC 78 01 00 00        - sub rsp,00000178
+WARNO.exe+746123: 44 0F 29 94 24 60 01 00 00  - movaps [rsp+00000160],xmm10
+WARNO.exe+74612C: 44 0F 29 8C 24 50 01 00 00  - movaps [rsp+00000150],xmm9
+WARNO.exe+746135: 44 0F 29 84 24 40 01 00 00  - movaps [rsp+00000140],xmm8
+WARNO.exe+74613E: 0F 29 BC 24 30 01 00 00     - movaps [rsp+00000130],xmm7
+WARNO.exe+746146: 0F 29 B4 24 20 01 00 00     - movaps [rsp+00000120],xmm6
+WARNO.exe+74614E: 4C 89 CB                    - mov rbx,r9
+// ---------- INJECTING HERE ----------
+WARNO.exe+746151: 0F 28 F2                    - movaps xmm6,xmm2
+WARNO.exe+746154: 48 89 D7                    - mov rdi,rdx
+WARNO.exe+746157: 48 89 CE                    - mov rsi,rcx
+WARNO.exe+74615A: 4C 8B A4 24 E8 01 00 00     - mov r12,[rsp+000001E8]
+// ---------- DONE INJECTING  ----------
+WARNO.exe+746162: 4C 8B B4 24 E0 01 00 00     - mov r14,[rsp+000001E0]
+WARNO.exe+74616A: E8 F1 06 26 00              - call WARNO.exe+9A6860
+WARNO.exe+74616F: 0F 28 F8                    - movaps xmm7,xmm0
+WARNO.exe+746172: 41 F6 84 24 A8 02 00 00 01  - test byte ptr [r12+000002A8],01
+WARNO.exe+74617B: 74 58                       - je WARNO.exe+7461D5
+WARNO.exe+74617D: 41 F6 46 3C 40              - test byte ptr [r14+3C],40
+WARNO.exe+746182: 75 04                       - jne WARNO.exe+746188
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+747446
+
+WARNO.exe+74743E: CC              - int 3
+WARNO.exe+74743F: CC              - int 3
+WARNO.exe+747440: 56              - push rsi
+WARNO.exe+747441: 57              - push rdi
+WARNO.exe+747442: 48 83 EC 58     - sub rsp,58
+// ---------- INJECTING HERE ----------
+WARNO.exe+747446: 0F 29 7C 24 40  - movaps [rsp+40],xmm7
+WARNO.exe+74744B: 0F 29 74 24 30  - movaps [rsp+30],xmm6
+WARNO.exe+747450: 0F 28 FA        - movaps xmm7,xmm2
+WARNO.exe+747453: 48 89 D7        - mov rdi,rdx
+// ---------- DONE INJECTING  ----------
+WARNO.exe+747456: 48 89 CE        - mov rsi,rcx
+WARNO.exe+747459: F3 0F 10 42 2C  - movss xmm0,[rdx+2C]
+WARNO.exe+74745E: F3 0F 10 72 50  - movss xmm6,[rdx+50]
+WARNO.exe+747463: F3 0F 5D C2     - minss xmm0,xmm2
+WARNO.exe+747467: 0F 57 C9        - xorps xmm1,xmm1
+WARNO.exe+74746A: F3 0F C2 F9 01  - cmpltss xmm7,xmm1
+WARNO.exe+74746F: 0F 55 F8        - andnps xmm7,xmm0
+WARNO.exe+747472 - 0F2E FE               - ucomiss xmm7,xmm6
+WARNO.exe+747475 - 76 0E                 - jna WARNO.exe+747485
+WARNO.exe+747477 - E8 E4F32500           - call WARNO.exe+9A6860
+WARNO.exe+74747C - 48 8B 46 50           - mov rax,[rsi+50]
+WARNO.exe+747480 - F3 0F11 40 04         - movss [rax+04],xmm0
+WARNO.exe+747485 - 48 89 F9              - mov rcx,rdi
+WARNO.exe+747488 - 31 D2                 - xor edx,edx
+WARNO.exe+74748A - E8 B1A7FCFF           - call WARNO.ImGui::SetWindowViewport+1470
+WARNO.exe+74748F - F3 0F11 78 38         - movss [rax+38],xmm7   <---------write SAM suppression
+WARNO.exe+747494 - 48 89 F9              - mov rcx,rdi
+WARNO.exe+747497 - 31 D2                 - xor edx,edx
+WARNO.exe+747499 - E8 72F7FFFF           - call WARNO.exe+746C10
+WARNO.exe+74749E - F3 0F10 57 50         - movss xmm2,[rdi+50]
+}"""
+
+[[cheat]]
+id = "damage-multiplier-human-player-only-x10-5"
+name = "Damage Multiplier (Human Player Only) x10"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v150731
+  Date   : 2025-03-28
+  Author : Administrator
+
+  This script multiplies dmg done by human plyr units
+  We inject just before the call that writes damage and check the stack for player's ID
+  Injection place is in same function as the one for unit god mode, around 0x2D2 bytes down
+}
+
+[ENABLE]
+aobscanmodule(DmgMultiplierAOB,$process,F3 ?? ?? ?? ?? 6C F3 ?? ?? ?? ?? 90 ?? ?? ?? 48 89 ?? 0F 28 ?? E8) // should be unique
+alloc(newmem,$1000)
+
+label(cleanup)
+label(loopingChk)
+label(presenceFound)
+label(return)
+label(multiplier)
+label(DmgMultiplierAOB_bytes)
+
+newmem:
+  // run orig codes first
+  readmem(DmgMultiplierAOB+6,15)
+  { movss xmm10,[rdi+00000090]
+  mov rcx,rdi
+  movaps xmm1,xmm7 }
+
+  // check the stack for presence of player's ID (eg, 302,402,etc), up to rsp+0x120
+  push rdi
+  push rcx
+  push rax
+  pushfq
+  mov rdi,HumanPlayerTeamID
+  mov rdi,[rdi]
+  xor rax,rax
+
+loopingChk:
+  cmp [rsp+rax*8+20],rdi
+  je presenceFound
+  inc eax
+  cmp eax,24
+  jne loopingChk
+  jmp cleanup
+
+presenceFound:
+  // If we arrived here, that means player's ID was found in stack and the attacker is human player
+  mulss xmm1,[multiplier]  //  multiply the dmg, beware xmm register may change with game updates
+  jmp cleanup
+
+cleanup:
+  popfq
+  pop rax
+  pop rcx
+  pop rdi
+  jmp return
+
+DmgMultiplierAOB_bytes:
+  readmem(DmgMultiplierAOB+6,15)
+
+align 10 CC
+multiplier:
+  dd (float)10.0       //  multiplier , you can change to whatever positive float number u want
+
+DmgMultiplierAOB+6:
+  jmp far newmem
+  nop
+return:
+registersymbol(DmgMultiplierAOB DmgMultiplierAOB_bytes)
+
+[DISABLE]
+DmgMultiplierAOB+6:
+  readmem(DmgMultiplierAOB_bytes,15)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+746429
+
+WARNO.exe+7463F1: 48 89 44 24 48              - mov [rsp+48],rax
+WARNO.exe+7463F6: 48 8B 45 00                 - mov rax,[rbp+00]
+WARNO.exe+7463FA: 48 89 84 24 F8 00 00 00     - mov [rsp+000000F8],rax
+WARNO.exe+746402: F3 44 0F 11 54 24 20        - movss [rsp+20],xmm10
+WARNO.exe+746409: 48 8D 4C 24 48              - lea rcx,[rsp+48]
+WARNO.exe+74640E: 48 8D 94 24 F8 00 00 00     - lea rdx,[rsp+000000F8]
+WARNO.exe+746416: 41 0F 28 D0                 - movaps xmm2,xmm8
+WARNO.exe+74641A: 41 0F 28 D9                 - movaps xmm3,xmm9
+WARNO.exe+74641E: E8 FD 96 03 00              - call WARNO.exe+77FB20
+WARNO.exe+746423: F3 44 0F 10 4F 6C           - movss xmm9,[rdi+6C]
+// ---------- INJECTING HERE ----------
+WARNO.exe+746429: F3 44 0F 10 97 90 00 00 00  - movss xmm10,[rdi+00000090]
+WARNO.exe+746432: 48 89 F9                    - mov rcx,rdi
+WARNO.exe+746435: 0F 28 CF                    - movaps xmm1,xmm7
+// ---------- DONE INJECTING  ----------
+WARNO.exe+746438: E8 B3 79 00 00              - call WARNO.exe+74DDF0
+WARNO.exe+74643D: 45 0F C6 C9 00              - shufps xmm9,xmm9,00
+WARNO.exe+746442: F3 0F 10 87 90 00 00 00     - movss xmm0,[rdi+00000090]
+WARNO.exe+74644A: 44 0F 14 D0                 - unpcklps xmm10,xmm0
+WARNO.exe+74644E: 45 0F 5C CA                 - subps xmm9,xmm10
+WARNO.exe+746452: F3 41 0F 5B C1              - cvttps2dq xmm0,xmm9
+WARNO.exe+746457: 66 0F 70 C8 55              - pshufd xmm1,xmm055
+WARNO.exe+74645C: 66 0F FA C1                 - psubd xmm0,xmm1
+}"""
+
+[[cheat]]
+id = "human-player-id-don-t-change-9"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change-7"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "action-pts-don-t-decrease-deactivate-before-ending-your-turn-5"
+name = "Action Pts Don't Decrease (Deactivate Before ending your turn!)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v150731
+  Date   : 2025-03-28
+
+  Action Pts stored in float
+}
+
+[ENABLE]
+
+aobscanmodule(AG_ActionPtsAOB,$process,F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+// rcx = Batallion's Eugen::IA::TActionPointsModule
+
+newmem:
+  xorps xmm1,xmm1
+code:
+  subss xmm7,xmm1
+  xorps xmm0,xmm0
+  maxss xmm7,xmm0
+  movss [rcx+40],xmm7
+  jmp return
+
+AG_ActionPtsAOB:
+  jmp far newmem
+  nop 2
+return:
+registersymbol(AG_ActionPtsAOB)
+
+[DISABLE]
+
+AG_ActionPtsAOB:
+  db F3 0F 5C F9 0F 57 C0 F3 0F 5F F8 F3 0F 11 79 40
+
+unregistersymbol(AG_ActionPtsAOB)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+6E2B6E
+
+WARNO.exe+6E2B4F: CC                    - int 3
+WARNO.exe+6E2B50: 56                    - push rsi
+WARNO.exe+6E2B51: 53                    - push rbx
+WARNO.exe+6E2B52: 48 83 EC 68           - sub rsp,68
+WARNO.exe+6E2B56: 0F 29 7C 24 50        - movaps [rsp+50],xmm7
+WARNO.exe+6E2B5B: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+WARNO.exe+6E2B60: 44 89 C3              - mov ebx,r8d
+WARNO.exe+6E2B63: 48 89 CE              - mov rsi,rcx
+WARNO.exe+6E2B66: F3 0F 10 71 40        - movss xmm6,[rcx+40]
+WARNO.exe+6E2B6B: 0F 28 FE              - movaps xmm7,xmm6
+// ---------- INJECTING HERE ----------
+WARNO.exe+6E2B6E: F3 0F 5C F9           - subss xmm7,xmm1
+// ---------- DONE INJECTING  ----------
+WARNO.exe+6E2B72: 0F 57 C0              - xorps xmm0,xmm0
+WARNO.exe+6E2B75: F3 0F 5F F8           - maxss xmm7,xmm0
+WARNO.exe+6E2B79: F3 0F 11 79 40        - movss [rcx+40],xmm7
+WARNO.exe+6E2B7E: E8 9D CD EF FF        - call WARNO.ImRect::GetCenter+88B0
+WARNO.exe+6E2B83: 48 8B 05 D6 84 2E 04  - mov rax,[WARNO.exe+49CB060]
+WARNO.exe+6E2B8A: 48 89 44 24 30        - mov [rsp+30],rax
+WARNO.exe+6E2B8F: 48 8D 05 C2 FD BE 01  - lea rax,[WARNO.exe+22D2958]
+WARNO.exe+6E2B96: 48 89 44 24 28        - mov [rsp+28],rax
+WARNO.exe+6E2B9B: 48 8B 46 08           - mov rax,[rsi+08]
+WARNO.exe+6E2B9F: 48 89 44 24 38        - mov [rsp+38],rax
+}"""
+
+[[cheat]]
+id = "player-s-fatigue-points-always-zero-takes-effect-after-battle-5"
+name = "Player's Fatigue Points Always Zero (takes effect after battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : WARNO.exe
+  Version: v150731
+  Date   : 2025-03-28
+  Author : Administrator
+
+  Fatigue points is 4-byte integer,  at TStrategicFatigueModule+18
+}
+
+[ENABLE]
+aobscanmodule(WriteStrategicFatigueAOB,$process,8B 40 20 39 C6 0F 43 F0 89 77 18 48 89 F9) // should be unique
+alloc(newmem2,$1000)
+
+label(code2)
+label(return2)
+label(cleanup)
+
+newmem2:
+  // run part of the orig codes first
+  mov eax,[rax+20]
+  cmp esi,eax
+  cmovae esi,eax
+
+  // rdi = start of unit's instance of Eugen::IA::TStrategicFatigueModule
+  // HumanPlayerTeamID = example 0000000002030000,0000000002040000,0000000002050000,etc
+  // ArrayOfTeamLinkModule = start address of array of Eugen::IA::TLinkTeamModule instances
+
+  // don't use rdi/rsi
+  push r13
+  push r14
+  push rdx
+  mov rdx,[rdi+8]  // get raw unit ID from TStrategicFatigueModule
+  shr rdx,28
+  and edx,007FFFFF  // now rdx is ready to be used as array index
+
+  mov r13,ArrayOfTeamLinkModule
+  mov r14,[r13]
+  mov r14,[r14+rdx*8]
+  and r14,-04  // now r14 has the Eugen::IA::TLinkTeamModule instance of affected unit
+  test r14,r14  // test if we got some zero garbage
+  je cleanup
+
+  // compare the unit ID from TStrategicFatigueModule with the one from TLinkTeamModule
+  mov rdx,[r14+8]   // r14 = affected unit ID from TLinkTeamModule
+  cmp [rdi+8],rdx
+  jne cleanup       // get out man, somethin not right here if don't match
+
+  mov r13,HumanPlayerTeamID
+  mov rdx,[r13]
+  cmp [r14+20],rdx  // take faction ID from TLinkTeamModule and compare it against HumanPlayerTeamID
+  jne cleanup       // not human player, no cheats for u
+  xor esi,esi       // set Fatigue Points to zero for player
+cleanup:
+  pop rdx
+  pop r14
+  pop r13
+code2:
+  // continue with rest of orig code
+  mov [rdi+18],esi
+  mov rcx,rdi
+  jmp return2
+
+WriteStrategicFatigueAOB:
+  jmp far newmem2
+return2:
+registersymbol(WriteStrategicFatigueAOB)
+
+[DISABLE]
+
+WriteStrategicFatigueAOB:
+  db 8B 40 20 39 C6 0F 43 F0 89 77 18 48 89 F9
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: WARNO.exe+AF0D35
+
+WARNO.exe+AF0D11: 57              - push rdi
+WARNO.exe+AF0D12: 48 83 EC 28     - sub rsp,28
+WARNO.exe+AF0D16: 89 D6           - mov esi,edx
+WARNO.exe+AF0D18: 48 89 CF        - mov rdi,rcx
+WARNO.exe+AF0D1B: 03 71 18        - add esi,[rcx+18]
+WARNO.exe+AF0D1E: 48 8B 41 08     - mov rax,[rcx+08]
+WARNO.exe+AF0D22: 0F B6 49 10     - movzx ecx,byte ptr [rcx+10]
+WARNO.exe+AF0D26: 48 89 44 24 20  - mov [rsp+20],rax
+WARNO.exe+AF0D2B: 48 8D 54 24 20  - lea rdx,[rsp+20]
+WARNO.exe+AF0D30: E8 3B EA AE FF  - call WARNO.ImRect::GetCenter+8700
+// ---------- INJECTING HERE ----------
+WARNO.exe+AF0D35: 8B 40 20        - mov eax,[rax+20]
+WARNO.exe+AF0D38: 39 C6           - cmp esi,eax
+WARNO.exe+AF0D3A: 0F 43 F0        - cmovae esi,eax
+WARNO.exe+AF0D3D: 89 77 18        - mov [rdi+18],esi  <-----written here
+WARNO.exe+AF0D40: 48 89 F9        - mov rcx,rdi
+// ---------- DONE INJECTING  ----------
+WARNO.exe+AF0D43: E8 D8 EB AE FF  - call WARNO.ImRect::GetCenter+88B0
+WARNO.exe+AF0D48: 90              - nop
+WARNO.exe+AF0D49: 48 83 C4 28     - add rsp,28
+WARNO.exe+AF0D4D: 5F              - pop rdi
+WARNO.exe+AF0D4E: 5E              - pop rsi
+WARNO.exe+AF0D4F: C3              - ret
+}"""
+
+[[cheat]]
+id = "current-campaign-turn-5"
+name = "Current Campaign Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentCampaignTurn"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "human-player-id-don-t-change-10"
+name = "Human Player ID (Don't Change!!)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "HumanPlayerTeamID"
+hops = []
+
+[[cheat]]
+id = "arrayofteamlinkmodule-don-t-change-8"
+name = "ArrayOfTeamLinkModule (Don't Change!!)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ArrayOfTeamLinkModule"
+hops = ["+0x0"]

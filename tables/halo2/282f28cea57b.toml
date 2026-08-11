@@ -1,0 +1,845 @@
+[game]
+name = "Halo 2 Original"
+exe = "halo2.exe"
+notes = "Converted from a Cheat Engine table by Dread_Pony_Roberts. Source: https://fearlessrevolution.com/viewtopic.php?t=10063"
+verified = []
+author = "Dread_Pony_Roberts"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "halo-2"
+name = "Halo 2"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version:
+  Date   : 2019-07-29
+  Author : Dread Pony Roberts
+
+  This script does...something that I don't care about.
+}
+
+[ENABLE]
+
+aobscanmodule(SHIELD_VALUE,halo2.exe,D9 87 F0 00 00 00 D9 5D) // should be unique
+alloc(newmems,$100)
+globalalloc(shieldv,10)
+
+label(codes)
+label(returns)
+
+newmems:
+
+codes:
+  fld dword ptr [edi+000000F0]
+  mov [shieldv],edi
+  jmp returns
+
+SHIELD_VALUE:
+  jmp newmems
+  nop
+returns:
+registersymbol(SHIELD_VALUE)
+
+aobscanmodule(Shield_Code,halo2.exe,F3 0F 11 86 F0 00 00 00 76) // should be unique
+alloc(newmem,$100)
+globalalloc(shield_lock,10)
+globalalloc(EXTREME_SHIELD,10)
+globalalloc(one_hit_kill_shield,10)
+alloc(EXTREME_SHIELD_HELPER,$10)
+alloc(one_hit_kill_shield_helper,10)
+
+label(code)
+label(return)
+label(one_hit_kill_shield_code)
+label(EXTREME_SHIELD_CODE)
+
+newmem:
+  cmp [esi+C8],FFFFFFFF
+  je code
+  push eax
+  mov eax,[shieldv]
+  cmp eax,esi
+  pop eax
+  jne one_hit_kill_shield_code
+  cmp [EXTREME_SHIELD],1
+  je EXTREME_SHIELD_CODE
+  cmp [shield_lock],1
+  jne code
+  //movss [esi+000000F0],xmm0
+  jmp return
+
+EXTREME_SHIELD_CODE:
+  mov [EXTREME_SHIELD_HELPER],(float)3
+  subss xmm0,[EXTREME_SHIELD_HELPER]
+  movss [esi+000000F0],xmm0
+  jmp return
+
+one_hit_kill_shield_code:
+  cmp [one_hit_kill_shield],1
+  jne code
+  mov [one_hit_kill_shield_helper],(float)3
+  subss xmm0,[one_hit_kill_shield_helper]
+  movss [esi+000000F0],xmm0
+  jmp return
+
+code:
+  movss [esi+000000F0],xmm0
+  jmp return
+
+Shield_Code:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(Shield_Code)
+
+aobscanmodule(Health_Reader,halo2.exe,D9 87 EC 00 00 00) // should be unique
+alloc(newmemb,$100)
+globalalloc(healthv,10)
+
+label(codeb)
+label(returnb)
+
+newmemb:
+
+codeb:
+  mov [healthv],edi
+  fld dword ptr [edi+000000EC]
+  jmp returnb
+
+Health_Reader:
+  jmp newmemb
+  nop
+returnb:
+registersymbol(Health_Reader)
+
+aobscanmodule(Health_Manipulator,halo2.exe,F3 0F 11 86 EC 00 00 00 F6) // Greytide Cure
+alloc(newmemt,$100)
+alloc(kill,10)
+globalalloc(1_hit_kill,10)
+globalalloc(Health_Lock,10)
+
+label(codet)
+label(returnt)
+label(health_lock)
+label(TOO_EXTREME)
+
+newmemt:
+  cmp [healthv],esi
+  je health_lock
+  cmp [1_hit_kill],1
+  jne codet
+  mov [kill],(float)1.0
+  subss xmm0,[kill]
+  movss [esi+000000EC],xmm0
+  jmp returnt
+
+health_lock:
+  cmp [EXTREME_SHIELD],1
+  je TOO_EXTREME
+  cmp [Health_Lock],1
+  jne codet
+  //movss [esi+000000EC],xmm0
+  jmp returnt
+
+TOO_EXTREME:
+  mov [kill],(float)1.0
+  subss xmm0,[kill]
+  movss [esi+000000EC],xmm0
+  jmp returnt
+
+codet:
+  movss [esi+000000EC],xmm0
+  jmp returnt
+
+Health_Manipulator:
+  jmp newmemt
+  nop
+  nop
+  nop
+returnt:
+registersymbol(Health_Manipulator)
+
+aobscanmodule(Grenade_Value,halo2.exe,8B 74 8F 08 8B 16) // should be unique
+alloc(newmemk,$100)
+globalalloc(grenadev,10)
+
+label(codek)
+label(returnk)
+
+newmemk:
+  mov esi,[edi+ecx*4+08]
+  mov [grenadev],esi
+  mov edx,[esi]
+  jmp returnk
+
+codek:
+  mov esi,[edi+ecx*4+08]
+  mov [grenadev],esi
+  mov edx,[esi]
+  jmp returnk
+
+Grenade_Value:
+  jmp newmemk
+  nop
+returnk:
+registersymbol(Grenade_Value)
+
+aobscanmodule(Stealth,halo2.exe,D9 96 C4 02 00 00 D9 EE) // should be unique
+alloc(newmemvb,$100)
+
+label(codevb)
+label(returnvb)
+label(nostealth)
+label(stealthtoggle)
+registersymbol(stealthtoggle)
+label(sneaking)
+
+newmemvb:
+cmp [esi+24],0
+je codevb
+cmp byte ptr [stealthtoggle],1
+jne sneaking
+mov [esi+000002C4],(float)1
+mov byte ptr [nostealth],0
+jmp returnvb
+
+sneaking:
+cmp byte ptr [nostealth],1
+je codevb
+fst dword ptr [esi+000002C4]
+mov [esi+000002C4],00000000
+mov byte ptr [nostealth],1
+jmp returnvb
+
+nostealth:
+dd 00
+
+stealthtoggle:
+dd 00
+
+codevb:
+  fst dword ptr [esi+000002C4]
+  jmp returnvb
+
+Stealth:
+  jmp newmemvb
+  nop
+returnvb:
+registersymbol(Stealth)
+
+[DISABLE]
+
+SHIELD_VALUE:
+  db D9 87 F0 00 00 00
+
+unregistersymbol(SHIELD_VALUE)
+dealloc(newmems)
+dealloc(shieldv)
+
+Shield_Code:
+  db F3 0F 11 86 F0 00 00 00
+
+unregistersymbol(Shield_Code)
+dealloc(newmem)
+dealloc(shield_lock)
+dealloc(one_hit_kill_shield)
+dealloc(one_hit_kill_shield_helper)
+dealloc(EXTREME_SHIELD)
+dealloc(EXTREME_SHIELD_HELPER)
+
+Health_Reader:
+  db D9 87 EC 00 00 00
+
+unregistersymbol(Health_Reader)
+dealloc(newmemb)
+dealloc(healthv)
+
+Health_Manipulator:
+  db F3 0F 11 86 EC 00 00 00
+
+unregistersymbol(Health_Manipulator)
+dealloc(newmemt)
+dealloc(kill)
+dealloc(1_hit_kill)
+dealloc(Health_Lock)
+
+Grenade_Value:
+  db 8B 74 8F 08 8B 16
+
+unregistersymbol(Grenade_Value)
+dealloc(newmemk)
+dealloc(grenadev)
+
+Stealth:
+  db D9 96 C4 02 00 00
+
+unregistersymbol(Stealth)
+unregistersymbol(stealthtoggle)
+dealloc(newmemvb)
+
+{
+1. A robot may not injure a human being or, through inaction, allow a human being to come to harm.
+
+2. A robot must obey orders given it by human beings except where such orders would conflict with the First Law.
+
+3. A robot must protect its own existence as long as such protection does not conflict with the First or Second Law.
+}"""
+
+[[cheat]]
+id = "extreme-gameplay"
+name = "EXTREME GAMEPLAY"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-14
+  Author : Dread Pony Roberts
+
+  This script makes you sad.
+}
+
+[ENABLE]
+EXTREME_SHIELD:
+db 1
+
+[DISABLE]
+EXTREME_SHIELD:
+db 0"""
+
+[[cheat]]
+id = "shield-health-lock"
+name = "Shield/Health Lock"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-14
+  Author : Dread Pony Roberts
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+shield_lock:
+db 1
+
+Health_Lock:
+db 1
+
+[DISABLE]
+shield_lock:
+db 0
+
+Health_Lock:
+db 0"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-14
+  Author : Dread Pony Roberts
+
+  This script does something
+}
+
+[ENABLE]
+one_hit_kill_shield:
+db 1
+
+1_hit_kill:
+db 1
+
+[DISABLE]
+one_hit_kill_shield:
+db 0
+
+1_hit_kill:
+db 0"""
+
+[[cheat]]
+id = "stealth"
+name = "Stealth"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-14
+  Author : Dread Pony Roberts
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+stealthtoggle:
+db 1
+
+[DISABLE]
+stealthtoggle:
+db 0"""
+
+[[cheat]]
+id = "ammo-lock"
+name = "Ammo Lock"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-19
+  Author : Dread Pony Roberts
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(Human_Ammo,halo2.exe,74 04 66 29 70 08) // should be unique
+alloc(newmem,$100)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  jmp Human_Ammo+6
+  sub [eax+08],si
+  jmp return
+
+Human_Ammo:
+  jmp newmem
+  nop
+return:
+registersymbol(Human_Ammo)
+
+aobscanmodule(Human_Belt_Ammo,halo2.exe,85 FF 66 89 41 06) // should be unique
+alloc(newmemh,$100)
+
+label(codeh)
+label(returnh)
+
+newmemh:
+
+codeh:
+  test edi,edi
+  //mov [ecx+06],ax
+  jmp returnh
+
+Human_Belt_Ammo:
+  jmp newmemh
+  nop
+returnh:
+registersymbol(Human_Belt_Ammo)
+
+aobscanmodule(Plasma_Heat,halo2.exe,F3 0F 11 87 80 01 00 00 75) // should be unique
+alloc(newmemz,$100)
+
+label(codez)
+label(returnz)
+
+newmemz:
+
+codez:
+  //movss [edi+00000180],xmm0
+  jmp returnz
+
+Plasma_Heat:
+  jmp newmemz
+  nop
+  nop
+  nop
+returnz:
+registersymbol(Plasma_Heat)
+
+aobscanmodule(Plasma_Ammo,halo2.exe,F3 0F 11 87 84 01 00 00) // should be unique
+alloc(newmemx,$100)
+
+label(codex)
+label(returnx)
+
+newmemx:
+
+codex:
+  //movss [edi+00000184],xmm0
+  jmp returnx
+
+Plasma_Ammo:
+  jmp newmemx
+  nop
+  nop
+  nop
+returnx:
+registersymbol(Plasma_Ammo)
+
+[DISABLE]
+
+Human_Ammo:
+  db 74 04 66 29 70 08
+
+unregistersymbol(Human_Ammo)
+dealloc(newmem)
+
+Human_Belt_Ammo:
+  db 85 FF 66 89 41 06
+
+unregistersymbol(Human_Belt_Ammo)
+dealloc(newmemh)
+
+Plasma_Heat:
+  db F3 0F 11 87 80 01 00 00
+
+unregistersymbol(Plasma_Heat)
+dealloc(newmemz)
+
+Plasma_Ammo:
+  db F3 0F 11 87 84 01 00 00
+
+unregistersymbol(Plasma_Ammo)
+dealloc(newmemx)
+
+{
+Do you believe in magic in a young girl's heart
+How the music can free her, whenever it starts
+And it's magic, if the music is groovy
+It makes you feel happy like an old-time movie
+I'll tell you about the magic, and it'll free your soul
+But it's like trying to tell a stranger 'bout rock and roll
+
+If you believe in magic don't bother to choose
+If it's jug band music or rhythm and blues
+Just go and listen it'll start with a smile
+It won't wipe off your face no matter how hard you try
+Your feet start tapping and you can't seem to find
+How you got there, so just blow your mind
+
+If you believe in magic, come along with me
+We'll dance until morning 'til there's just you and me
+And maybe, if the music is right
+I'll meet you tomorrow, sort of late at night
+And we'll go dancing, baby, then you'll see
+How the magic's in the music and the music's in me
+
+Yeah, do you believe in magic
+Yeah, believe in the magic of a young girl's soul
+Believe in the magic of rock and roll
+Believe in the magic that can set you free
+Ohh, talking 'bout magic
+
+Do you believe like I believe Do you believe in magic
+Do you believe like I believe Do you believe, believer
+Do you believe like I believe Do you believe in magic
+}"""
+
+[[cheat]]
+id = "grenade-lock"
+name = "Grenade Lock"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-15
+  Author : Dread Pony Roberts
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(Grenade_Refill,halo2.exe,80 BC 3A 52 02 00 00 00) // should be unique
+alloc(newmems,$100)
+
+label(codes)
+label(returns)
+
+newmems:
+
+codes:
+  mov byte ptr [edx+edi+00000252],4
+  cmp byte ptr [edx+edi+00000252],00
+  jmp returns
+
+Grenade_Refill:
+  jmp newmems
+  nop 3
+returns:
+registersymbol(Grenade_Refill)
+
+aobscanmodule(Grenade_Lock,halo2.exe,80 84 30 52 02 00 00 FF) // should be unique
+alloc(newmem,$100)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  add byte ptr [eax+esi+00000252],00
+  jmp return
+
+Grenade_Lock:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(Grenade_Lock)
+
+[DISABLE]
+
+Grenade_Refill:
+  db 80 BC 3A 52 02 00 00 00
+
+unregistersymbol(Grenade_Refill)
+dealloc(newmems)
+
+Grenade_Lock:
+  db 80 84 30 52 02 00 00 FF
+
+unregistersymbol(Grenade_Lock)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-shield-recharge-delay"
+name = "No Shield Recharge Delay"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-19
+  Author : Dread Pony Roberts
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(Shield_Recharge_Delay,halo2.exe,66 89 86 04 01 00 00 8B) // should be unique
+alloc(newmem,$100)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [esi+24],0
+  je code
+  //mov [esi+00000104],ax
+  jmp return
+
+code:
+  mov [esi+00000104],ax
+  jmp return
+
+Shield_Recharge_Delay:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(Shield_Recharge_Delay)
+
+[DISABLE]
+
+Shield_Recharge_Delay:
+  db 66 89 86 04 01 00 00
+
+unregistersymbol(Shield_Recharge_Delay)
+dealloc(newmem)
+
+{
+Meglio stasera, che domani o mai
+Domani chi lo sa, quel che sarà?
+
+Non mi dire d'aspettare
+il domani che verrà
+è una porta che tu chiudi
+fra me e te
+
+Se stasera ti decidi
+a rispondermi di sì
+i domani che verranno
+li dedico solo a te
+
+Meglio stasera, che domani o mai
+Domani chi lo sa, quel che sarà?
+
+Nasce il giorno ed il giorno muore
+e la notte porterà
+l'incertezza del domani
+Chi sa, chi sa?
+
+Basta un desiderio solo
+a non farti riposar;
+è una pulce sul lenzuolo
+che dormire non ti fa
+
+Meglio stasera, che domani o mai
+Domani chi lo sa, quel che sarà?
+}"""
+
+[[cheat]]
+id = "no-damage-indicator"
+name = "No Damage Indicator"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : halo2.exe
+  Version: 
+  Date   : 2019-08-19
+  Author : Dread Pony Roberts
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(Hud_Shield_Indicator,halo2.exe,66 89 43 7E F3 0F 11 43 24) // should be unique
+alloc(newmem,$100)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //mov [ebx+7E],ax
+  movss [ebx+24],xmm0
+  jmp return
+
+Hud_Shield_Indicator:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(Hud_Shield_Indicator)
+
+aobscanmodule(Armor_Shield_Indicator,halo2.exe,F3 0F 11 87 F4 00 00 00 C6) // should be unique
+alloc(newmemg,$100)
+
+label(codeg)
+label(returng)
+
+newmemg:
+  cmp [edi+24],0
+  je codeg
+  //movss [edi+000000F4],xmm0
+  jmp returng
+
+codeg:
+  movss [edi+000000F4],xmm0
+  jmp returng
+
+Armor_Shield_Indicator:
+  jmp newmemg
+  nop
+  nop
+  nop
+returng:
+registersymbol(Armor_Shield_Indicator)
+
+[DISABLE]
+
+Hud_Shield_Indicator:
+  db 66 89 43 7E F3 0F 11 43 24
+
+unregistersymbol(Hud_Shield_Indicator)
+dealloc(newmem)
+
+Armor_Shield_Indicator:
+  db F3 0F 11 87 F4 00 00 00
+
+unregistersymbol(Armor_Shield_Indicator)
+dealloc(newmemg)"""
+
+[[cheat]]
+id = "frag-grenades"
+name = "Frag Grenades"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "grenadev"
+hops = ["+0x252"]
+
+[[cheat]]
+id = "plasma-grenades"
+name = "Plasma Grenades"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "grenadev"
+hops = ["+0x253"]
+
+[[cheat]]
+id = "shield-value"
+name = "Shield Value"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shieldv"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "health-value"
+name = "Health Value"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "healthv"
+hops = ["+0xec"]

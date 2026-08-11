@@ -1,0 +1,362 @@
+[game]
+name = "Heroes of Might and Magic: Olden Era"
+exe = "heroesoldenera.exe"
+notes = "Converted from a Cheat Engine table by Heaser. Source: https://fearlessrevolution.com/viewtopic.php?t=39245"
+verified = []
+author = "Heaser"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "multiply-slot-0-count-on-entry-hero-army"
+name = "Multiply slot 0 count on entry (Hero army)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game        : HeroesOldenEra.exe
+  Version     : Update May 2026
+  Author      : Heaser
+  Description : Multiply slot 0 count when units move into slot 0 of Hero army
+
+  HOOK DETAILS
+  ============
+  Class       : dss (army container)
+  Method      : Move(int _fromSlot, dss _toParty, int _toSlot, EListenerCallbackCall)
+  Hook site   : The unconditional jmp at AOB anchor +0x04 that runs after
+                the slotPos write. Original jmp targets the function epilogue
+                convergence point at AOB anchor +0x179.
+
+  REGISTER LAYOUT
+  ===============
+  rdi   = Unit (slot) whose slotPos just got set
+  r15d  = the new slotPos value
+  rbx   = source dss (the source army, preserved from prologue)
+
+  FIELD OFFSETS USED
+  ==================
+  Unit.count    : +0x18
+  Unit.slotPos  : +0x1C
+  dss.type      : +0x28  (1=Hero, 2=City, etc)
+
+  AOB PATTERN
+  ===========
+  44 89 7F 1C       mov [rdi+1C], r15d       (anchor: slotPos write)
+  E9 ?? ?? ?? ??    jmp <epilogue>            (volatile offset)
+  49 8B 55 10       mov rdx, [r13+10]         (field +0x10)
+  45 33 C0          xor r8d, r8d
+  48 8B 4F 10       mov rcx, [rdi+10]         (field +0x10)
+
+  RECOVERY IF BROKEN
+  ==================
+  1. Find dss.Move in dump.cs, note its RVA.
+  2. In CE Memory Viewer Ctrl+G to that RVA.
+  3. Scroll to find: mov [rdi+1C], r15d (bytes 44 89 7F 1C).
+  4. The next instruction should be: jmp <some address> (E9 ?? ?? ?? ??).
+  5. Note that jmp's target.
+  6. Update the (TARGET_OFFSET = ...) constant below to:
+     <jmp target absolute address> - <AOB anchor address>
+}
+
+[ENABLE]
+aobscanmodule(SLOTPOS_AOB,GameAssembly.dll,44 89 7F 1C E9 ?? ?? ?? ?? 49 8B 55 10 45 33 C0 48 8B 4F 10)
+alloc(newmem,$1000,SLOTPOS_AOB+04)
+alloc(multiplier,4)
+
+label(noOverride)
+
+registersymbol(SLOTPOS_AOB)
+registersymbol(multiplier)
+
+multiplier:
+  dd #2
+
+// Original jmp went to (AOB anchor + 0x179).
+// The original instruction at SLOTPOS_AOB+04 was `E9 X4 X3 X2 X1` which jumps
+// to (SLOTPOS_AOB + 9 + signed32(X4 X3 X2 X1)).
+// In current dump that target is SLOTPOS_AOB + 0x179.
+
+newmem:
+  cmp dword ptr [rdi+1C],00
+  jne noOverride
+  cmp dword ptr [rbx+28],01
+  jne noOverride
+  push rax
+  push rdx
+  mov eax,[rdi+18]
+  imul eax,[multiplier]
+  mov [rdi+18],eax
+  pop rdx
+  pop rax
+noOverride:
+  jmp SLOTPOS_AOB+179
+
+SLOTPOS_AOB+04:
+  jmp newmem
+
+[DISABLE]
+SLOTPOS_AOB+04:
+  db E9 70 01 00 00
+
+unregistersymbol(SLOTPOS_AOB)
+unregistersymbol(multiplier)
+
+dealloc(newmem)
+dealloc(multiplier)"""
+
+[[cheat]]
+id = "multiplier-1-off-2-double-etc"
+name = "Multiplier (1 = off, 2 = double, etc.)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "multiplier"
+hops = []
+
+[[cheat]]
+id = "infinite-movement"
+name = "Infinite Movement"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game        : HeroesOldenEra.exe
+  Last verified version: May 2026 update
+  Author      : Heaser
+  Description : Skip movement decrement when the moving hero belongs to a
+                Player side (Side.typeOnCreate == 0). AI/Bot heroes still
+                spend movement normally.
+
+  ────────────────────────────────────────────────
+  HOOK DETAILS
+  ────────────────────────────────────────────────
+  Class       : esx (energy/movement manager)
+  Method      : The "spend movement" function (takes int cost, returns bool)
+  Hook site   : The actual subtract instruction sub [rax+48], edi
+  Strategy    : Skip the subtract if the hero's Side is Player.
+
+  REGISTER LAYOUT AT HOOK SITE
+  ────────────────────────────────────────────────
+  rax   = points to movement counter object, +0x48 is the counter int
+  edi   = the cost being subtracted
+  rbx   = the esx (energy manager)
+
+  FIELD CHAIN (5 levels): rbx (esx) -> esq -> Hero -> dtb -> Side -> typeOnCreate
+  ────────────────────────────────────────────────
+  esx.esq         : +0x10  (runtime hero ref)
+  esq.Hero        : +0x10  (game-data hero ref)
+  Hero.dtb        : +0x18  (runtime side container)
+  dtb.Side        : +0x10  (Side ref)
+  Side.typeOnCreate : +0x2C  (0=Player, 1=Bot, 2=Empty, 3=BotAkaPlayer)
+
+  AOB ANCHOR
+  ────────────────────────────────────────────────
+  29 78 48          sub [rax+48], edi          (anchor: the subtract)
+  33 D2             xor edx, edx
+  48 8B CB          mov rcx, rbx
+  E8 ?? ?? ?? ??    call <something>           (volatile)
+  48 8B 4B 10       mov rcx, [rbx+10]          (field +0x10)
+  48 85 C9          test rcx, rcx
+
+  RECOVERY IF BROKEN
+  ────────────────────────────────────────────────
+  1. Open dump.cs, locate the esx class.
+  2. Find a method with signature "public bool xxx(int a)" that has the largest
+     RVA among methods on esx (typically the "spend movement" function).
+  3. CE Memory Viewer Ctrl+G to that RVA, scroll to find: sub [rax+48], edi
+     (bytes: 29 78 48).
+  4. If the bytes after match the AOB pattern, this script should still work.
+  5. If not, paste 6-8 instructions after the sub and rebuild the AOB.
+}
+
+[ENABLE]
+aobscanmodule(MOVEMENT_INJECT,GameAssembly.dll,29 78 48 33 D2 48 8B CB E8 ?? ?? ?? ?? 48 8B 4B 10 48 85 C9)
+alloc(newmem,$1000,MOVEMENT_INJECT)
+
+label(code)
+label(return)
+label(doSubtract)
+label(skipSubtract)
+
+registersymbol(MOVEMENT_INJECT)
+
+newmem:
+  push rcx
+  push rax
+  // walk esx -> esq
+  mov rax,[rbx+10]
+  test rax,rax
+  jz doSubtract
+  // walk esq -> Hero
+  mov rax,[rax+10]
+  test rax,rax
+  jz doSubtract
+  // walk Hero -> dtb
+  mov rax,[rax+18]
+  test rax,rax
+  jz doSubtract
+  // walk dtb -> Side
+  mov rax,[rax+10]
+  test rax,rax
+  jz doSubtract
+  // check Side.typeOnCreate == 0 (Player)
+  cmp dword ptr [rax+2C],00
+  jz skipSubtract
+
+doSubtract:
+  pop rax
+  pop rcx
+code:
+  sub [rax+48],edi
+  xor edx,edx
+  jmp return
+
+skipSubtract:
+  pop rax
+  pop rcx
+  xor edx,edx
+  jmp return
+
+MOVEMENT_INJECT:
+  jmp newmem
+return:
+
+[DISABLE]
+MOVEMENT_INJECT:
+  db 29 78 48 33 D2
+
+unregistersymbol(MOVEMENT_INJECT)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "unlimited-builds-per-turn"
+name = "Unlimited builds per turn"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game        : HeroesOldenEra.exe
+  Last verified version: May 2026 update
+  Author      : Heaser
+  Description : Skip the BuildingsData.todaysConstructionsCount increment
+                when the city belongs to a Player side. AI cities are still
+                limited to 1 construction per turn.
+
+  ────────────────────────────────────────────────
+  HOOK DETAILS
+  ────────────────────────────────────────────────
+  Class       : dwo (city build manager)
+  Method      : The function that performs the "build a structure" operation
+                inside the dwo class.
+  Hook site   : inc [rdx+A8] (where rdx is BuildingsData and +0xA8 is the
+                todaysConstructionsCount field).
+  Strategy    : Skip the increment if the city's Side is Player.
+
+  REGISTER LAYOUT AT HOOK SITE
+  ────────────────────────────────────────────────
+  rdx   = BuildingsData (the city's building lists + counter at +0xA8)
+  rbp   = dwo (the build manager wrapping BuildingsData)
+
+  FIELD CHAIN (5 levels): rbp (dwo) -> fbg -> fco -> dtb -> Side -> typeOnCreate
+  ────────────────────────────────────────────────
+  dwo.fbg              : +0x28  (city back-reference)
+  fbg.fco (via fcf)    : +0x28  (per-side runtime data)
+  fco.dtb              : +0x10  (runtime side container)
+  dtb.Side             : +0x10  (Side ref)
+  Side.typeOnCreate    : +0x2C  (0=Player, 1=Bot, 2=Empty, 3=BotAkaPlayer)
+
+  Also relevant:
+  BuildingsData.todaysConstructionsCount : +0xA8
+
+  AOB ANCHOR
+  ────────────────────────────────────────────────
+  FF 82 A8 00 00 00  inc [rdx+0xA8]              (anchor: the increment)
+  45 33 C0           xor r8d, r8d
+  41 8B D7           mov edx, r15d
+  49 8B CE           mov rcx, r14
+
+  Anchored on field offset +0xA8, plus 3 register-only instructions.
+  No wildcards needed - all bytes are stable.
+
+  RECOVERY IF BROKEN
+  ────────────────────────────────────────────────
+  1. Open dump.cs, locate the BuildingsData class.
+  2. Verify "public int todaysConstructionsCount; // 0xA8" still exists at
+     that offset. If offset changed, update both the AOB pattern (bytes
+     A8 00 00 00) and the inc instruction in the [DISABLE] section.
+  3. Verify dwo class still has fbg back-reference at +0x28.
+  4. Verify fcf still has fco at +0x28, fco still has dtb at +0x10,
+     dtb still has Side at +0x10, Side still has typeOnCreate at +0x2C.
+  5. If all class layouts intact, AOB should still match. If not, find
+     "inc [rdx+A8]" via "find what writes" on the build counter and
+     rebuild AOB from new surrounding code.
+}
+
+[ENABLE]
+aobscanmodule(BUILDLIMIT_INJECT,GameAssembly.dll,FF 82 A8 00 00 00 45 33 C0 41 8B D7 49 8B CE)
+alloc(newmem,$1000,BUILDLIMIT_INJECT)
+
+label(code)
+label(return)
+label(doIncrement)
+label(skipIncrement)
+
+registersymbol(BUILDLIMIT_INJECT)
+
+newmem:
+  push rax
+  // walk dwo -> fbg
+  mov rax,[rbp+28]
+  test rax,rax
+  jz doIncrement
+  // walk fbg -> fco
+  mov rax,[rax+28]
+  test rax,rax
+  jz doIncrement
+  // walk fco -> dtb
+  mov rax,[rax+10]
+  test rax,rax
+  jz doIncrement
+  // walk dtb -> Side
+  mov rax,[rax+10]
+  test rax,rax
+  jz doIncrement
+  // check Side.typeOnCreate == 0 (Player)
+  cmp dword ptr [rax+2C],00
+  jz skipIncrement
+
+doIncrement:
+  pop rax
+code:
+  inc [rdx+000000A8]
+  jmp return
+
+skipIncrement:
+  pop rax
+  jmp return
+
+BUILDLIMIT_INJECT:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+BUILDLIMIT_INJECT:
+  db FF 82 A8 00 00 00
+
+unregistersymbol(BUILDLIMIT_INJECT)
+
+dealloc(newmem)"""

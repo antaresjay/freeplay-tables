@@ -1,0 +1,1630 @@
+[game]
+name = "Startide"
+exe = "shinkansen_startide.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=4845"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playersmanager-base-address-scan-initialization-activate-this-first"
+name = "PlayersManager Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayersManager_basepointer)
+registersymbol(PlayersManager_update_enable)
+registersymbol(PlayersManager_set_enable)
+registersymbol(PlayersManager_hpset_enable)
+registersymbol(PlayersManager_shieldset_enable)
+
+alloc(PlayersManager_basepointer, 8)
+alloc(PlayersManager_update_enable, 4)
+alloc(PlayersManager_set_enable, 4)
+alloc(PlayersManager_hpset_enable, 4)
+alloc(PlayersManager_shieldset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayersManager_basepointer)
+unregistersymbol(PlayersManager_update_enable)
+unregistersymbol(PlayersManager_set_enable)
+unregistersymbol(PlayersManager_hpset_enable)
+unregistersymbol(PlayersManager_shieldset_enable)
+
+dealloc(PlayersManager_basepointer)
+dealloc(PlayersManager_update_enable)
+dealloc(PlayersManager_set_enable)
+dealloc(PlayersManager_hpset_enable)
+dealloc(PlayersManager_shieldset_enable)"""
+
+[[cheat]]
+id = "playersmanager-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "PlayersManager Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayersManager_savedAOB)
+label(PlayersManager_returnhere)
+label(PlayersManager_originalcode)
+label(PlayersManager_exit)
+
+label(PlayersManager_update_exit)
+label(PlayersManager_set_exit)
+label(PlayersManager_hpset_exit)
+label(PlayersManager_shieldset_exit)
+
+registersymbol(PlayersManager_savedAOB)
+
+//263C146A - 48 8D 64 24 00        - lea rsp,[rsp+00]
+//263C146F - 90                    - nop
+// PlayersManager:OnManagerUpdate+20
+//263C1470 - 48 8B 46 30           - mov rax,[rsi+30]
+//263C1474 - 48 63 CF              - movsxd  rcx,edi
+//263C1477 - 39 48 18              - cmp [rax+18],ecx
+//263C147A - 0F86 FC010000         - jbe 263C167C
+//263C1480 - 48 8D 44 C8 20        - lea rax,[rax+rcx*8+20]
+//263C1485 - 48 8B 00              - mov rax,[rax]
+//263C1488 - F3 0F10 80 48010000   - movss xmm0,[rax+00000148]
+aobscan(PlayersManager_searchedAOB, 48 8B 46 30 48 63 CF 39 48 18 * * * * * * 48 8D 44 C8 20 48 8B 00)
+
+alloc(PlayersManager_newmem, 2048, PlayersManager_searchedAOB)
+alloc(PlayersManager_temp1, 8, PlayersManager_searchedAOB)
+alloc(PlayersManager_temp2, 8, PlayersManager_searchedAOB)
+alloc(PlayersManager_temp3, 8, PlayersManager_searchedAOB)
+alloc(PlayersManager_temp4, 8, PlayersManager_searchedAOB)
+alloc(PlayersManager_temp5, 8, PlayersManager_searchedAOB)
+
+
+PlayersManager_newmem:
+mov [PlayersManager_temp1], rax
+mov [PlayersManager_temp2], rbx
+mov [PlayersManager_temp3], rcx
+mov [PlayersManager_temp4], rdx
+
+cmp dword ptr [PlayersManager_update_enable], #0
+je PlayersManager_update_exit
+mov [PlayersManager_basepointer], rsi
+PlayersManager_update_exit:
+
+cmp dword ptr [PlayersManager_set_enable], #0
+je PlayersManager_set_exit
+PlayersManager_set_exit:
+
+cmp dword ptr [PlayersManager_hpset_enable], #0
+je PlayersManager_hpset_exit
+mov rbx, [rsi+30]
+test rbx, rbx
+je PlayersManager_hpset_exit
+mov rbx, [rbx+20]
+test rbx, rbx
+je PlayersManager_hpset_exit
+mov [rbx+140], #9999
+mov [rbx+160], (float)9999
+PlayersManager_hpset_exit:
+
+cmp dword ptr [PlayersManager_shieldset_enable], #0
+je PlayersManager_shieldset_exit
+mov rbx, [rsi+30]
+test rbx, rbx
+je PlayersManager_shieldset_exit
+mov rbx, [rbx+20]
+test rbx, rbx
+je PlayersManager_shieldset_exit
+mov [rbx+144], #9999
+mov [rbx+154], $9999
+PlayersManager_shieldset_exit:
+
+mov rax, [PlayersManager_temp1]
+mov rbx, [PlayersManager_temp2]
+mov rcx, [PlayersManager_temp3]
+mov rdx, [PlayersManager_temp4]
+
+
+PlayersManager_originalcode:
+db 48 8B 46 30 48 63 CF
+//mov rax,[rsi+30]
+//movsxd  rcx,edi
+
+
+PlayersManager_exit:
+jmp PlayersManager_returnhere
+
+
+PlayersManager_searchedAOB:
+PlayersManager_savedAOB:
+jmp PlayersManager_newmem
+nop
+nop
+PlayersManager_returnhere:
+
+
+[DISABLE]
+PlayersManager_savedAOB:
+db 48 8B 46 30 48 63 CF
+//mov rax,[rsi+30]
+//movsxd  rcx,edi
+
+unregistersymbol(PlayersManager_savedAOB)
+
+dealloc(PlayersManager_newmem)
+dealloc(PlayersManager_temp1)
+dealloc(PlayersManager_temp2)
+dealloc(PlayersManager_temp3)
+dealloc(PlayersManager_temp4)
+dealloc(PlayersManager_temp5)"""
+
+[[cheat]]
+id = "hp-set-to-massive"
+name = "HP Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "shield-set-to-massive"
+name = "Shield Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_shieldset_enable"
+hops = []
+
+[[cheat]]
+id = "playersmanager-update-base-address"
+name = "PlayersManager Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x0",
+]
+
+[[cheat]]
+id = "playerid"
+name = "playerId"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x138",
+]
+
+[[cheat]]
+id = "currenthp"
+name = "currentHP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x140",
+]
+
+[[cheat]]
+id = "currentshields"
+name = "currentShields"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x144",
+]
+
+[[cheat]]
+id = "shieldscooldowntimer"
+name = "shieldsCooldownTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x148",
+]
+
+[[cheat]]
+id = "hpregenvalue"
+name = "hpRegenValue"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x150",
+]
+
+[[cheat]]
+id = "shieldsregenvalue"
+name = "shieldsRegenValue"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x154",
+]
+
+[[cheat]]
+id = "shieldscooldownvalue"
+name = "shieldsCooldownValue"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x158",
+]
+
+[[cheat]]
+id = "laserinvincibility"
+name = "laserInvincibility"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x15c",
+]
+
+[[cheat]]
+id = "hpregenrate"
+name = "HpRegenRate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x160",
+]
+
+[[cheat]]
+id = "chainlightingactive"
+name = "chainLightingActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x164",
+]
+
+[[cheat]]
+id = "chainlightingtimer"
+name = "chainLightingTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x168",
+]
+
+[[cheat]]
+id = "ismissilejammeractive"
+name = "isMissileJammerActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x16c",
+]
+
+[[cheat]]
+id = "bullettimesave"
+name = "bulletTimeSave"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x16d",
+]
+
+[[cheat]]
+id = "companionsave"
+name = "companionSave"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x16e",
+]
+
+[[cheat]]
+id = "helllives"
+name = "hellLives"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x170",
+]
+
+[[cheat]]
+id = "beingresurrected"
+name = "beingResurrected"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x174",
+]
+
+[[cheat]]
+id = "debug-angle"
+name = "debug_angle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = [
+    "+0x30",
+    "+0x20",
+    "+0x178",
+]
+
+[[cheat]]
+id = "numberofplayers"
+name = "_numberOfPlayers"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "canplaydmgsfx"
+name = "canPlayDMGSFX"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "focusedrobotchangerate"
+name = "focusedRobotChangeRate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "haxgodmode"
+name = "_HAXgodmode"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayersManager_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "playerbulletfire-base-address-scan-initialization-activate-this-first"
+name = "PlayerBulletFire Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerBulletFire_basepointer)
+registersymbol(PlayerBulletFire_update_enable)
+registersymbol(PlayerBulletFire_set_enable)
+registersymbol(PlayerBulletFire_rofset_enable)
+
+alloc(PlayerBulletFire_basepointer, 8)
+alloc(PlayerBulletFire_update_enable, 4)
+alloc(PlayerBulletFire_set_enable, 4)
+alloc(PlayerBulletFire_rofset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayerBulletFire_basepointer)
+unregistersymbol(PlayerBulletFire_update_enable)
+unregistersymbol(PlayerBulletFire_set_enable)
+unregistersymbol(PlayerBulletFire_rofset_enable)
+
+dealloc(PlayerBulletFire_basepointer)
+dealloc(PlayerBulletFire_update_enable)
+dealloc(PlayerBulletFire_set_enable)
+dealloc(PlayerBulletFire_rofset_enable)"""
+
+[[cheat]]
+id = "playerbulletfire-base-address-scan-to-activate-shoot-to-update-shoot"
+name = "PlayerBulletFire Base Address Scan (To Activate: Shoot, To Update: Shoot)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerBulletFire_savedAOB)
+label(PlayerBulletFire_returnhere)
+label(PlayerBulletFire_originalcode)
+label(PlayerBulletFire_exit)
+
+label(PlayerBulletFire_update_exit)
+label(PlayerBulletFire_set_exit)
+label(PlayerBulletFire_rofset_exit)
+
+registersymbol(PlayerBulletFire_savedAOB)
+
+//2B3BC404 - 48 89 34 24           - mov [rsp],rsi
+//2B3BC408 - 48 8B F1              - mov rsi,rcx
+// PlayerBulletFire:resumeShooting+b
+//2B3BC40B - 0FB6 86 04010000      - movzx eax,byte ptr [rsi+00000104]
+//2B3BC412 - 85 C0                 - test eax,eax
+//2B3BC414 - 75 07                 - jne 2B3BC41D
+//2B3BC416 - C6 86 FC000000 01     - mov byte ptr [rsi+000000FC],01
+//2B3BC41D - 0FB6 86 D0000000      - movzx eax,byte ptr [rsi+000000D0]
+aobscan(PlayerBulletFire_searchedAOB, 0F B6 86 04 01 00 00 85 C0 75 07)
+
+alloc(PlayerBulletFire_newmem, 2048, PlayerBulletFire_searchedAOB)
+alloc(PlayerBulletFire_temp1, 8, PlayerBulletFire_searchedAOB)
+alloc(PlayerBulletFire_temp2, 8, PlayerBulletFire_searchedAOB)
+alloc(PlayerBulletFire_temp3, 8, PlayerBulletFire_searchedAOB)
+alloc(PlayerBulletFire_temp4, 8, PlayerBulletFire_searchedAOB)
+alloc(PlayerBulletFire_temp5, 8, PlayerBulletFire_searchedAOB)
+
+
+PlayerBulletFire_newmem:
+mov [PlayerBulletFire_temp1], rax
+mov [PlayerBulletFire_temp2], rbx
+mov [PlayerBulletFire_temp3], rcx
+mov [PlayerBulletFire_temp4], rdx
+
+cmp dword ptr [PlayerBulletFire_update_enable], #0
+je PlayerBulletFire_update_exit
+mov [PlayerBulletFire_basepointer], rsi
+PlayerBulletFire_update_exit:
+
+cmp dword ptr [PlayerBulletFire_set_enable], #0
+je PlayerBulletFire_set_exit
+PlayerBulletFire_set_exit:
+
+cmp dword ptr [PlayerBulletFire_rofset_enable], #0
+je PlayerBulletFire_rofset_exit
+mov [rsi+98], (float)0
+mov [rsi+9c], (float)0
+mov [rsi+a0], (float)0
+mov [rsi+a4], (float)0
+mov [rsi+a8], (float)0
+PlayerBulletFire_rofset_exit:
+
+mov rax, [PlayerBulletFire_temp1]
+mov rbx, [PlayerBulletFire_temp2]
+mov rcx, [PlayerBulletFire_temp3]
+mov rdx, [PlayerBulletFire_temp4]
+
+
+PlayerBulletFire_originalcode:
+db 0F B6 86 04 01 00 00
+//movzx eax,byte ptr [rsi+00000104]
+
+
+PlayerBulletFire_exit:
+jmp PlayerBulletFire_returnhere
+
+
+PlayerBulletFire_searchedAOB:
+PlayerBulletFire_savedAOB:
+jmp PlayerBulletFire_newmem
+nop
+nop
+PlayerBulletFire_returnhere:
+
+
+[DISABLE]
+PlayerBulletFire_savedAOB:
+db 0F B6 86 04 01 00 00
+//movzx eax,byte ptr [rsi+00000104]
+
+unregistersymbol(PlayerBulletFire_savedAOB)
+
+dealloc(PlayerBulletFire_newmem)
+dealloc(PlayerBulletFire_temp1)
+dealloc(PlayerBulletFire_temp2)
+dealloc(PlayerBulletFire_temp3)
+dealloc(PlayerBulletFire_temp4)
+dealloc(PlayerBulletFire_temp5)"""
+
+[[cheat]]
+id = "rate-of-fire-set-to-massive"
+name = "Rate of Fire Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_rofset_enable"
+hops = []
+
+[[cheat]]
+id = "playerbulletfire-update-base-address"
+name = "PlayerBulletFire Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "isdoublefire"
+name = "isDoubleFire"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "startdelay"
+name = "startDelay"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "rateoffire"
+name = "rateOfFire"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "multirateoffire"
+name = "multiRateOfFire"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "reloadtime"
+name = "reloadTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "fastreloadtime"
+name = "fastReloadTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "shotsinseries"
+name = "shotsInSeries"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "fixeddelay"
+name = "fixedDelay"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "randomrotation"
+name = "randomRotation"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "startrotation"
+name = "startRotation"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xc0"]
+
+[[cheat]]
+id = "startposition"
+name = "startPosition"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "rotationmod"
+name = "rotationMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "positionmod"
+name = "positionMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "isrotatingfire"
+name = "isRotatingFire"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "hassound"
+name = "hasSound"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xd1"]
+
+[[cheat]]
+id = "soundid"
+name = "soundId"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "useautofire"
+name = "useAutoFire"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "side"
+name = "_side"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "shotsfiredinseries"
+name = "_shotsFiredInSeries"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "isshooting"
+name = "_isShooting"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "isstunned"
+name = "_isStunned"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xfd"]
+
+[[cheat]]
+id = "isstunning"
+name = "_isStunning"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0xfe"]
+
+[[cheat]]
+id = "stunnedtime"
+name = "_stunnedTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "shootinglock"
+name = "_shootingLock"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "multifire"
+name = "_multiFire"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x105"]
+
+[[cheat]]
+id = "rotationmod-2"
+name = "_rotationMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "positionmod-2"
+name = "_positionMod"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "currentrotation"
+name = "_currentRotation"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "currentposition"
+name = "_currentPosition"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x114"]
+
+[[cheat]]
+id = "myplayerid"
+name = "_myPlayerId"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "disablemuzzle"
+name = "disableMuzzle"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerBulletFire_basepointer"
+hops = ["+0x12c"]
+
+[[cheat]]
+id = "driversmanager-base-address-scan-initialization-activate-this-first"
+name = "DriversManager Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(DriversManager_basepointer)
+registersymbol(DriversManager_update_enable)
+registersymbol(DriversManager_set_enable)
+registersymbol(DriversManager_driverset_enable)
+
+alloc(DriversManager_basepointer, 8)
+alloc(DriversManager_update_enable, 4)
+alloc(DriversManager_set_enable, 4)
+alloc(DriversManager_driverset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(DriversManager_basepointer)
+unregistersymbol(DriversManager_update_enable)
+unregistersymbol(DriversManager_set_enable)
+unregistersymbol(DriversManager_driverset_enable)
+
+dealloc(DriversManager_basepointer)
+dealloc(DriversManager_update_enable)
+dealloc(DriversManager_set_enable)
+dealloc(DriversManager_driverset_enable)"""
+
+[[cheat]]
+id = "driversmanager-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "DriversManager Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(DriversManager_savedAOB)
+label(DriversManager_returnhere)
+label(DriversManager_originalcode)
+label(DriversManager_exit)
+
+label(DriversManager_update_exit)
+label(DriversManager_set_exit)
+label(DriversManager_driverset_exit)
+
+registersymbol(DriversManager_savedAOB)
+
+//2B3D9398 - 48 89 7C 24 08        - mov [rsp+08],rdi
+//2B3D939D - 48 8B F9              - mov rdi,rcx
+//2B3D93A0 - 48 8B F2              - mov rsi,rdx
+//2B3D93A3 - 85 F6                 - test esi,esi
+//2B3D93A5 - 75 1A                 - jne 2B3D93C1
+//2B3D93A7 - 48 63 87 B8010000     - movsxd  rax,dword ptr [rdi+000001B8]
+//2B3D93AE - 48 63 8F B4010000     - movsxd  rcx,dword ptr [rdi+000001B4]
+//2B3D93B5 - 3B C1                 - cmp eax,ecx
+//2B3D93B7 - 40 0F94 C6            - sete sil
+aobscan(DriversManager_searchedAOB, 48 8B F2 85 F6 75 1A 48 63 87 B8 01 00 00 48 63 8F B4 01 00 00)
+
+alloc(DriversManager_newmem, 2048, DriversManager_searchedAOB)
+alloc(DriversManager_temp1, 8, DriversManager_searchedAOB)
+alloc(DriversManager_temp2, 8, DriversManager_searchedAOB)
+alloc(DriversManager_temp3, 8, DriversManager_searchedAOB)
+alloc(DriversManager_temp4, 8, DriversManager_searchedAOB)
+alloc(DriversManager_temp5, 8, DriversManager_searchedAOB)
+
+
+DriversManager_newmem:
+mov [DriversManager_temp1], rax
+mov [DriversManager_temp2], rbx
+mov [DriversManager_temp3], rcx
+mov [DriversManager_temp4], rdx
+
+cmp dword ptr [DriversManager_update_enable], #0
+je DriversManager_update_exit
+mov [DriversManager_basepointer], rdi
+DriversManager_update_exit:
+
+cmp dword ptr [DriversManager_set_enable], #0
+je DriversManager_set_exit
+DriversManager_set_exit:
+
+cmp dword ptr [DriversManager_driverset_enable], #0
+je DriversManager_driverset_exit
+mov ebx, [rdi+1b4]
+add ebx, [rdi+1b4]
+mov [rdi+1b0], ebx
+mov [rdi+1b8], ebx
+mov [rdi+1bc], ebx
+DriversManager_driverset_exit:
+
+mov rax, [DriversManager_temp1]
+mov rbx, [DriversManager_temp2]
+mov rcx, [DriversManager_temp3]
+mov rdx, [DriversManager_temp4]
+
+
+DriversManager_originalcode:
+db 48 8B F2 85 F6
+//mov rsi,rdx
+//test esi,esi
+
+
+DriversManager_exit:
+jmp DriversManager_returnhere
+
+
+DriversManager_searchedAOB:
+DriversManager_savedAOB:
+jmp DriversManager_newmem
+DriversManager_returnhere:
+
+
+[DISABLE]
+DriversManager_savedAOB:
+db 48 8B F2 85 F6
+//mov rsi,rdx
+//test esi,esi
+
+unregistersymbol(DriversManager_savedAOB)
+
+dealloc(DriversManager_newmem)
+dealloc(DriversManager_temp1)
+dealloc(DriversManager_temp2)
+dealloc(DriversManager_temp3)
+dealloc(DriversManager_temp4)
+dealloc(DriversManager_temp5)"""
+
+[[cheat]]
+id = "driver-poiints-set-to-massive"
+name = "Driver Poiints Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_driverset_enable"
+hops = []
+
+[[cheat]]
+id = "driversmanager-update-base-address"
+name = "DriversManager Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "currentdriverpoints"
+name = "_currentDriverPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "maxdriverpoints"
+name = "_maxDriverPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "player1currentpoints"
+name = "_player1CurrentPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "player2currentpoints"
+name = "_player2CurrentPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_basepointer"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "driverpointsregenvalue"
+name = "_driverPointsRegenValue"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "ach-triggerhappy"
+name = "_ACH_TriggerHappy"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "DriversManager_basepointer"
+hops = ["+0x1c4"]

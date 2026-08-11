@@ -1,0 +1,408 @@
+[game]
+name = "The Hurricane of the Varstray"
+exe = "shinkansen_the_hurricane_of_the_varstray_-collateral_hazard.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1154"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_livesset_enable)
+registersymbol(playerstats_shieldgaugeset_enable)
+registersymbol(playerstats_grabustergaugeset_enable)
+registersymbol(playerstats_powerupset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_livesset_enable, 4)
+alloc(playerstats_shieldgaugeset_enable, 4)
+alloc(playerstats_grabustergaugeset_enable, 4)
+alloc(playerstats_powerupset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_livesset_enable)
+unregistersymbol(playerstats_shieldgaugeset_enable)
+unregistersymbol(playerstats_grabustergaugeset_enable)
+unregistersymbol(playerstats_powerupset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_livesset_enable)
+dealloc(playerstats_shieldgaugeset_enable)
+dealloc(playerstats_grabustergaugeset_enable)
+dealloc(playerstats_powerupset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Player Stats Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_livesset_exit)
+label(playerstats_shieldgaugeset_exit)
+label(playerstats_grabustergaugeset_exit)
+label(playerstats_powerupset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//00E0B08E - E8 9D2FFDFF           - call 00DDE030
+//00E0B093 - E9 07010000           - jmp 00E0B19F
+// Accesses Lives
+//00E0B098 - 0FBF 8E 0CB90000      - movsx ecx,word ptr [esi+0000B90C]
+//00E0B09F - 8D 44 24 14           - lea eax,[esp+14]
+//00E0B0A3 - 83 F9 1E              - cmp ecx,1E
+//00E0B0A6 - 89 4C 24 14           - mov [esp+14],ecx
+aobscan(playerstats_searchedAOB, 0F BF 8E 0C B9 00 00 8D 44 24 14)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], esi
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_livesset_enable], #0
+je playerstats_livesset_exit
+mov word ptr [esi+b90c], #99
+playerstats_livesset_exit:
+
+cmp dword ptr [playerstats_shieldgaugeset_enable], #0
+je playerstats_shieldgaugeset_exit
+mov word ptr [esi+b906], #6300
+playerstats_shieldgaugeset_exit:
+
+cmp dword ptr [playerstats_grabustergaugeset_enable], #0
+je playerstats_grabustergaugeset_exit
+mov word ptr [esi+b908], #5000
+playerstats_grabustergaugeset_exit:
+
+cmp dword ptr [playerstats_powerupset_enable], #0
+je playerstats_powerupset_exit
+mov byte ptr [esi+b90f], #3
+playerstats_powerupset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+db 0F BF 8E 0C B9 00 00
+//movsx ecx,word ptr [esi+0000B90C]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 0F BF 8E 0C B9 00 00
+//movsx ecx,word ptr [esi+0000B90C]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)"""
+
+[[cheat]]
+id = "lives-set-to-massive"
+name = "Lives Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_livesset_enable"
+hops = []
+
+[[cheat]]
+id = "shield-gauge-set-to-massive"
+name = "Shield Gauge Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_shieldgaugeset_enable"
+hops = []
+
+[[cheat]]
+id = "grabuster-gauge-set-to-massive"
+name = "Grabuster Gauge Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_grabustergaugeset_enable"
+hops = []
+
+[[cheat]]
+id = "powerup-set-to-massive"
+name = "Powerup Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_powerupset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "score"
+name = "Score"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb8e8"]
+
+[[cheat]]
+id = "score-2"
+name = "Score"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb8f0"]
+
+[[cheat]]
+id = "cheat"
+name = "?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb8f8"]
+
+[[cheat]]
+id = "shield-gauge"
+name = "Shield Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb906"]
+
+[[cheat]]
+id = "grabuster-gauge"
+name = "Grabuster Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb908"]
+
+[[cheat]]
+id = "lives"
+name = "Lives"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb90c"]
+
+[[cheat]]
+id = "powerup"
+name = "Powerup"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb90f"]
+
+[[cheat]]
+id = "secondary-weapon-selected"
+name = "Secondary Weapon Selected"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb910"]
+
+[[cheat]]
+id = "secondary-weapon"
+name = "Secondary Weapon"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:LASER",
+    "1:H.LASER",
+    "2:A.BOMB",
+    "3:SUPER NOVA",
+    "4:T.T.NULL",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb911"]

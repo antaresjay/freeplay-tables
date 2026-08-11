@@ -1,0 +1,1149 @@
+[game]
+name = "Mr. Shifty"
+exe = "shinkansen_mr._shifty.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=1581"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-base-address-scan-initialization-activate-this-first"
+name = "Player Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Player_basepointer)
+registersymbol(Player_update_enable)
+registersymbol(Player_set_enable)
+registersymbol(Player_healthset_enable)
+registersymbol(Player_slowmoset_enable)
+registersymbol(Player_shiftset_enable)
+
+alloc(Player_basepointer, 4)
+alloc(Player_update_enable, 4)
+alloc(Player_set_enable, 4)
+alloc(Player_healthset_enable, 4)
+alloc(Player_slowmoset_enable, 4)
+alloc(Player_shiftset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Player_basepointer)
+unregistersymbol(Player_update_enable)
+unregistersymbol(Player_set_enable)
+unregistersymbol(Player_healthset_enable)
+unregistersymbol(Player_slowmoset_enable)
+unregistersymbol(Player_shiftset_enable)
+
+dealloc(Player_basepointer)
+dealloc(Player_update_enable)
+dealloc(Player_set_enable)
+dealloc(Player_healthset_enable)
+dealloc(Player_slowmoset_enable)
+dealloc(Player_shiftset_enable)"""
+
+[[cheat]]
+id = "player-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Player Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Player_savedAOB)
+label(Player_returnhere)
+label(Player_originalcode)
+label(Player_exit)
+
+label(Player_update_exit)
+label(Player_set_exit)
+label(Player_healthset_exit)
+label(Player_slowmoset_exit)
+label(Player_shiftset_exit)
+
+registersymbol(Player_savedAOB)
+
+//1E69BEAB - E8 10020000           - call 1E69C0C0
+//1E69BEB0 - 83 C4 10              - add esp,10
+// Player:Update+2b
+//1E69BEB3 - D9 87 D8000000        - fld dword ptr [edi+000000D8]
+//1E69BEB9 - D9EE                  - fldz
+//1E69BEBB - DFF1                  - fcomip st(0),st(1)
+//1E69BEBD - DDD8                  - fstp st(0)
+//1E69BEBF - 0F8A EB000000         - jp 1E69BFB0 : [MrShifty.Mesh::AcquireSharedMeshData+B2F9]
+//1E69BEC5 - 0F83 E5000000         - jae 1E69BFB0 : [MrShifty.Mesh::AcquireSharedMeshData+B2F9]
+aobscan(Player_searchedAOB, D9 87 D8 00 00 00 D9 EE DF F1)
+
+alloc(Player_newmem, 2048, Player_searchedAOB)
+alloc(Player_temp1, 4, Player_searchedAOB)
+alloc(Player_temp2, 4, Player_searchedAOB)
+alloc(Player_temp3, 4, Player_searchedAOB)
+alloc(Player_temp4, 4, Player_searchedAOB)
+alloc(Player_temp5, 4, Player_searchedAOB)
+
+
+Player_newmem:
+mov [Player_temp1], eax
+mov [Player_temp2], ebx
+mov [Player_temp3], ecx
+mov [Player_temp4], edx
+
+cmp dword ptr [Player_update_enable], #0
+je Player_update_exit
+mov [Player_basepointer], edi
+Player_update_exit:
+
+cmp dword ptr [Player_set_enable], #0
+je Player_set_exit
+Player_set_exit:
+
+cmp dword ptr [Player_healthset_enable], #0
+je Player_healthset_exit
+mov [Player_temp5], (float)0.01
+fld [Player_temp5]
+fld [edi+110]
+fcomi ST(0), ST(1)
+fstp ST(0)
+fstp ST(0)
+jb Player_healthset_exit
+mov [edi+110], (float)9999999
+Player_healthset_exit:
+
+cmp dword ptr [Player_slowmoset_enable], #0
+je Player_slowmoset_exit
+mov [edi+14c], (float)30
+mov [edi+150], (float)30
+Player_slowmoset_exit:
+
+cmp dword ptr [Player_shiftset_enable], #0
+je Player_shiftset_exit
+cmp dword ptr [edi+10], #0
+je Player_shiftset_exit
+mov ebx, [edi+10]
+mov ecx, [ebx+74]
+mov [ebx+78], ecx
+mov [ebx+a0], (float)9999999
+mov byte ptr [ebx+a4], #1
+mov byte ptr [ebx+a5], #0
+Player_shiftset_exit:
+
+
+mov eax, [Player_temp1]
+mov ebx, [Player_temp2]
+mov ecx, [Player_temp3]
+mov edx, [Player_temp4]
+
+
+Player_originalcode:
+db D9 87 D8 00 00 00
+//fld dword ptr [edi+000000D8]
+
+
+Player_exit:
+jmp Player_returnhere
+
+
+Player_searchedAOB:
+Player_savedAOB:
+jmp Player_newmem
+nop
+Player_returnhere:
+
+
+[DISABLE]
+Player_savedAOB:
+db D9 87 D8 00 00 00
+//fld dword ptr [edi+000000D8]
+
+unregistersymbol(Player_savedAOB)
+
+dealloc(Player_newmem)
+dealloc(Player_temp1)
+dealloc(Player_temp2)
+dealloc(Player_temp3)
+dealloc(Player_temp4)
+dealloc(Player_temp5)"""
+
+[[cheat]]
+id = "health-set-to-massive"
+name = "Health Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "slowmo-set-to-massive"
+name = "Slowmo Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_slowmoset_enable"
+hops = []
+
+[[cheat]]
+id = "shift-set-to-massive"
+name = "Shift Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_shiftset_enable"
+hops = []
+
+[[cheat]]
+id = "player-update-base-address"
+name = "Player Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x0",
+]
+
+[[cheat]]
+id = "m-shiftminrange"
+name = "m_shiftMinRange"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "m-shiftmaxrange"
+name = "m_shiftMaxRange"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "m-shiftcursoractive"
+name = "m_shiftCursorActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x54",
+]
+
+[[cheat]]
+id = "m-shiftreload"
+name = "m_shiftReload"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x58",
+]
+
+[[cheat]]
+id = "m-shiftreloadtimer"
+name = "m_shiftReloadTimer"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "m-shiftcursorreturn"
+name = "m_shiftCursorReturn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x60",
+]
+
+[[cheat]]
+id = "m-shiftcursortargetrange"
+name = "m_shiftCursorTargetRange"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x70",
+]
+
+[[cheat]]
+id = "m-numshifts"
+name = "m_numShifts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x74",
+]
+
+[[cheat]]
+id = "m-numshiftsleft"
+name = "m_numShiftsLeft"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x78",
+]
+
+[[cheat]]
+id = "m-shiftrestoreduration"
+name = "m_shiftRestoreDuration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "m-shiftrestoreacceleration"
+name = "m_shiftRestoreAcceleration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x80",
+]
+
+[[cheat]]
+id = "m-shiftrestoreaccelkickin"
+name = "m_shiftRestoreAccelKickIn"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x84",
+]
+
+[[cheat]]
+id = "m-shiftrestoreallduration"
+name = "m_shiftRestoreAllDuration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x88",
+]
+
+[[cheat]]
+id = "m-shiftrestoretimer"
+name = "m_shiftRestoreTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x8c",
+]
+
+[[cheat]]
+id = "m-timesincelastshift"
+name = "m_timeSinceLastShift"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x90",
+]
+
+[[cheat]]
+id = "m-fovangle"
+name = "m_fovAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x94",
+]
+
+[[cheat]]
+id = "m-cacherange"
+name = "m_cacheRange"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x98",
+]
+
+[[cheat]]
+id = "m-bulletprooftime"
+name = "m_bulletProofTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "m-bulletprooftimer"
+name = "m_bulletProofTimer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0xa0",
+]
+
+[[cheat]]
+id = "m-canshift"
+name = "m_canShift"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0xa4",
+]
+
+[[cheat]]
+id = "m-wasinblocker"
+name = "m_wasInBlocker"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0xa5",
+]
+
+[[cheat]]
+id = "m-disableshift"
+name = "m_disableShift"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x10",
+    "+0xa6",
+]
+
+[[cheat]]
+id = "m-tauntcooldown"
+name = "m_tauntCooldown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "m-taunttimer"
+name = "m_tauntTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "m-grabradius"
+name = "m_grabRadius"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "m-targetlock"
+name = "m_targetLock"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "m-automove"
+name = "m_autoMove"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xad"]
+
+[[cheat]]
+id = "m-freezeframe"
+name = "m_freezeFrame"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "m-attackdistneeded"
+name = "m_attackDistNeeded"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "m-attacktimer"
+name = "m_attackTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "m-attackreloadtimer"
+name = "m_attackReloadTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "m-isattackdashing"
+name = "m_isAttackDashing"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "m-misstimer"
+name = "m_missTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "m-combotimer"
+name = "m_comboTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "m-hitzoomtime"
+name = "m_hitZoomTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "m-hitzoomdist"
+name = "m_hitZoomDist"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "m-ragdollwakeupcomplete"
+name = "m_ragdollWakeupComplete"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "m-healthmax"
+name = "m_healthMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "m-health"
+name = "m_health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "m-deathtimer"
+name = "m_deathTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x114"]
+
+[[cheat]]
+id = "m-cachedattack"
+name = "m_cachedAttack"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "m-cachedsecondaryattack"
+name = "m_cachedSecondaryAttack"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x11d"]
+
+[[cheat]]
+id = "m-cachedshift"
+name = "m_cachedShift"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x11e"]
+
+[[cheat]]
+id = "m-slowmotimer"
+name = "m_slowMoTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x14c"]
+
+[[cheat]]
+id = "m-slowmojuice"
+name = "m_slowMoJuice"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "m-dangertimelast"
+name = "m_dangerTimeLast"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "m-slowmobarfadetimer"
+name = "m_slowmoBarFadeTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "m-slowmobarfadeduration"
+name = "m_slowmoBarFadeDuration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x15c"]
+
+[[cheat]]
+id = "m-slomorechargecooldowntimer"
+name = "m_sloMoRechargeCooldownTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "m-fulltimer"
+name = "m_fullTimer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x164"]
+
+[[cheat]]
+id = "m-slowmokillcount"
+name = "m_slowmoKillCount"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "currentcombok-backingfield"
+name = "CurrentCombok__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x170"]
+
+[[cheat]]
+id = "justshiftedk-backingfield"
+name = "JustShiftedk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x174"]

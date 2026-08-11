@@ -1,0 +1,376 @@
+[game]
+name = "Road to Vostok"
+exe = "rtv.exe"
+notes = "Converted from a Cheat Engine table by cfemen. Source: https://fearlessrevolution.com/viewtopic.php?t=38934"
+verified = []
+author = "cfemen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-0-1"
+name = "Enable 0.1"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(StringString,$process,41 54 55 57 56 53 48 83 EC 50 48 8B 42 08 48 89 CB 48 89 D6 48 85 C0)
+registersymbol(StringString)
+
+aobscanmodule(GDScript_Reload,$process,41 57 41 56 41 55 41 54 55 57 56 53 48 81 EC E8 02 00 00 48 C7 44 24 50 00 00 00 00 48 89 CB 41 89 D6 4C 8D A1 50 03 00 00 48 83 B9 50 03 00 00 00)
+registersymbol(GDScript_Reload)
+
+aobscanmodule(ObjectSetScript,$process,FF 90 40 01 00 00 48 89 46) // should be unique
+alloc(newmem,$1000,ObjectSetScript)
+
+label(code)
+label(return)
+label(pScriptVT)
+registersymbol(pScriptVT)
+newmem:
+
+code:
+  call qword ptr [rax+00000140] // GDScript::Instance_Create
+  cmp qword ptr[pScriptVT],0
+  jne return
+  mov r9,[rax+18] // ScriptInstance->Script
+  mov r9,[r9]
+  mov [pScriptVT],r9
+  jmp return
+pScriptVT:
+dq 0
+
+ObjectSetScript:
+  jmp newmem
+  nop
+return:
+registersymbol(ObjectSetScript)
+
+[DISABLE]
+
+ObjectSetScript:
+  db FF 90 40 01 00 00
+
+unregistersymbol(*)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "misc-scripts-pointers"
+name = "[Misc Scripts/Pointers]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : RTV.exe
+  Version: 
+  Date   : 2026-04-09
+  Author : cfemen
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(aobReadVectorFromScriptInstance,$process,48 8B 40 28 48 85 C0 74 49) // should be unique
+alloc(newmem,$1000,aobReadVectorFromScriptInstance)
+
+label(code)
+label(return)
+label(UT32Controller)
+label(pControllerScriptInstance)
+registersymbol(pControllerScriptInstance)
+label(pSimulationScriptInstance)
+registersymbol(pSimulationScriptInstance)
+newmem:
+  pushfq //save flags
+  push rax
+  mov rax,rsp
+  and rsp,fffffffffffffff0 //align stack
+  sub rsp,2A0 //allocate local space for scratchspace, the registers, and sse registers. And keep alignment
+  //store state
+  fxsave qword [rsp+20]
+  mov [rsp+220],rbx
+  mov [rsp+228],rcx
+  mov [rsp+230],rdx
+  mov [rsp+238],rsi
+  mov [rsp+240],rdi
+  mov [rsp+248],rax //rsp
+  mov [rsp+250],rbp
+  mov [rsp+258],r8
+  mov [rsp+260],r9
+  mov [rsp+268],r10
+  mov [rsp+270],r11
+  mov [rsp+278],r12
+  mov [rsp+280],r13
+  mov [rsp+288],r14
+  mov [rsp+290],r15
+
+  mov rax,[rbp+230]
+  mov rax,[rax+18] // Script
+  mov rcx,[rax+350]
+  mov rdx,UT32Controller
+  call UTCompare
+  test eax,eax
+  je short @f
+    mov rax,[rbp+230]
+    mov [pControllerScriptInstance],rax
+  @@:
+
+  mov rax,[rbp+230]
+  mov rax,[rax+18] // Script
+  mov rcx,[rax+350]
+  mov rdx,UT32Simulation
+  call UTCompare
+  test eax,eax
+  je short @f
+    mov rax,[rbp+230]
+    mov [pSimulationScriptInstance],rax
+  @@:
+
+  mov r15,[rsp+290]
+  mov r14,[rsp+288]
+  mov r13,[rsp+280]
+  mov r12,[rsp+278]
+  mov r11,[rsp+270]
+  mov r10,[rsp+268]
+  mov r9,[rsp+260]
+  mov r8,[rsp+258]
+  mov rbp,[rsp+250]
+  mov rdi,[rsp+240]
+  mov rsi,[rsp+238]
+  mov rdx,[rsp+230]
+  mov rcx,[rsp+228]
+  mov rbx,[rsp+220]
+  fxrstor qword [rsp+20]
+  mov rsp,[rsp+248] //restore rsp
+  pop rax
+  popfq
+
+  mov rax,[rbp+230]
+code:
+  mov rax,[rax+28]
+  test rax,rax
+  jmp return
+UTCompare:
+ xor rbx,rbx
+_Cmp:
+ mov r8d,[rdx+rbx]
+ mov r9d,[rcx+rbx]
+ cmp r8d,r9d
+ jne _Skip
+ cmp r8d,0
+ jne short @f
+  mov eax,1
+  ret
+ @@:
+ add rbx,4
+ jmp _Cmp
+ _Skip:
+ xor eax,eax
+ ret
+align 10 00
+pControllerScriptInstance:
+dq 0
+pSimulationScriptInstance:
+dq 0
+UT32Controller: // Controller.gd
+DD 72
+DD 65
+DD 73
+DD 3a
+DD 2f
+DD 2f
+DD 53
+DD 63
+DD 72
+DD 69
+DD 70
+DD 74
+DD 73
+DD 2f
+DD 43
+DD 6f
+DD 6e
+DD 74
+DD 72
+DD 6f
+DD 6c
+DD 6c
+DD 65
+DD 72
+DD 2e
+DD 67
+DD 64
+DD 0
+UT32Simulation: // Simulation.gd
+DD 72
+DD 65
+DD 73
+DD 3a
+DD 2f
+DD 2f
+DD 53
+DD 63
+DD 72
+DD 69
+DD 70
+DD 74
+DD 73
+DD 2f
+DD 53
+DD 69
+DD 6d
+DD 75
+DD 6c
+DD 61
+DD 74
+DD 69
+DD 6f
+DD 6e
+DD 2e
+DD 67
+DD 64
+DD 0
+aobReadVectorFromScriptInstance:
+  jmp newmem
+  nop 2
+return:
+registersymbol(aobReadVectorFromScriptInstance)
+
+[DISABLE]
+
+aobReadVectorFromScriptInstance:
+  db 48 8B 40 28 48 85 C0
+
+unregistersymbol(*)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "pointer-walk-speed"
+name = "[Pointer] Walk Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pControllerScriptInstance"
+hops = [
+    "+0x28",
+    "+0x188",
+]
+
+[[cheat]]
+id = "pointer-sprint-speed"
+name = "[Pointer] Sprint Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pControllerScriptInstance"
+hops = [
+    "+0x28",
+    "+0x1a0",
+]
+
+[[cheat]]
+id = "pointer-crouch-speed"
+name = "[Pointer] Crouch Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pControllerScriptInstance"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "pointer-jump-velocity"
+name = "[Pointer] Jump Velocity"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pControllerScriptInstance"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "pointer-season"
+name = "[Pointer] Season"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSimulationScriptInstance"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "pointer-day"
+name = "[Pointer] Day"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSimulationScriptInstance"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "pointer-time"
+name = "[Pointer] Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSimulationScriptInstance"
+hops = [
+    "+0x28",
+    "+0x50",
+]
+
+[[cheat]]
+id = "pointer-weathertime-if-0-it-changes-to-a-random-weather"
+name = "[Pointer] weatherTime (if 0 it changes to a random weather)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSimulationScriptInstance"
+hops = [
+    "+0x28",
+    "+0x98",
+]

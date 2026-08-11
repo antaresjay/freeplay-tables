@@ -1,0 +1,1095 @@
+[game]
+name = "BoneTown"
+exe = "bonetown.exe"
+notes = "Converted from a Cheat Engine table by abystus. Source: https://fearlessrevolution.com/viewtopic.php?t=375"
+verified = []
+author = "abystus"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "untouchable"
+name = "Untouchable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Allocate space for custom routine
+alloc(newmem,2048)
+//Allocate space for originalbytes
+alloc(originaluntouchablebytes, 6)
+//Register symbol for originalbytes
+Registersymbol(originaluntouchablebytes)
+//Scan to find hook location for jump
+aobscanmodule(Untouchable, BoneTown.exe, 0F 8? ?? ?? ?? ?? 80 BE 91 04 00 00 02 75 12 80 BE 93 04 00 00 00 74 09 6A 06 6A 02 E8 ?? ?? ?? ?? 8B 8E 08 09 00 00 8B 11 8B 42 0C FF D0)
+//Register symbol for hook location
+registersymbol(Untouchable)
+//Initialize Exit location
+label(exit)
+
+//Store origial instruction bytes in originalbytes
+originaluntouchablebytes:
+readmem(Untouchable, 6)
+
+//Handle splitting shared routine
+newmem:
+
+cmp [esi+1C], C8   //Test for player
+je Untouchable+A9B //If player found jump
+test al, al        //Test al, al
+je Untouchable+A9B //If equal jump
+jmp exit           //Exit routine
+
+//Modify hook location for jump to custom routine
+Untouchable:
+jmp newmem
+nop
+//Exit JMP location
+exit:
+ 
+[DISABLE]
+//Restore hook location with originalbytes
+Untouchable:
+readmem(originaluntouchablebytes, 6)
+
+//Unregister symbol
+unregistersymbol(originaluntouchablebytes)
+//Unregister symbol
+unregistersymbol(Untouchable)
+//Deallocate custom routine
+dealloc(newmem)
+//Deallocate originalbytes
+dealloc(originaluntouchablebytes)"""
+
+[[cheat]]
+id = "one-hit-knockouts"
+name = "One Hit Knockouts"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Allocate space for custom routine
+alloc(newmem,2048)
+//Scan to find hook location for jump
+aobscanmodule(OneHitKills, BoneTown.exe, D9 86 6C 04 00 00 D8 44 24 08 D9 9E 6C 04 00 00 83 EC 0C D9 E8 D9 5C 24 08 D9 5C 24 04 D9 86 6C 04 00 00)
+//Register symbol for hook location
+registersymbol(OneHitKills)
+//Initialize Exit location
+label(exit)
+
+//Handle splitting shared routine
+newmem:
+fldz                         //Load 0
+cmp [esi+1C], C8             //Test for player
+jne exit                     //Player not found, exit routine
+fld dword ptr [esi+0000046C] //Load player health
+fadd dword ptr [esp+08]      //Add damage to health
+jmp exit                     //Exit routine
+
+//Modify hook location for jump to custom routine
+OneHitKills:
+jmp newmem
+db 90 90 90 90 90
+//Exit JMP location
+exit:
+ 
+[DISABLE]
+//Restore hook location with original instructions
+OneHitKills:
+fld dword ptr [esi+0000046C] //Load player health
+fadd dword ptr [esp+08]      //Add damage to health
+
+//Unregister symbol
+unregistersymbol(OneHitKills)
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "super-speed-faster-than-crack"
+name = "Super Speed (Faster than crack.)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Allocate space for custom routine
+alloc(newmem,2048)
+//Scan to find hook location for jump
+aobscanmodule(SuperSpeed, BoneTown.exe, D8 8E 68 04 00 00 D8 86 68 04 00 00 D8 4C 24 74 D9 5C 24 74 74 04 3C 02 75 0E D9 81 5C 01 00 00)
+//Register symbol for hook location
+registersymbol(SuperSpeed)
+//Initialize Exit location
+label(exit)
+
+//Handle splitting shared routine
+newmem:
+fmul dword ptr [esi+00000468]//Original instruction
+cmp [esi+1C], C8             //Test for player
+jne exit                     //Player not found, exit routine
+fadd dword ptr [esp+74]      //Modify player speed
+jmp exit                     //Exit routine
+
+//Modify hook location for jump to custom routine
+SuperSpeed:
+jmp newmem
+nop
+
+//Exit JMP location
+exit:
+ 
+[DISABLE]
+//Restore hook location with original instructions
+SuperSpeed:
+fmul dword ptr [esi+00000468]
+
+//Unregister symbol
+unregistersymbol(SuperSpeed)
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-breath"
+name = "Infinite Breath"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(InfBreath, BoneTown.exe, 7A 28 6A 01 8B CD E8 ?? ?? ?? ?? 8B CD E8 ?? ?? ?? ??)
+//Register symbol for location
+registersymbol(InfBreath)
+
+//Modify JP to JMP
+InfBreath:
+db EB
+ 
+[DISABLE]
+//Restore JP
+InfBreath:
+db 7A
+
+//Unregister symbol
+unregistersymbol(InfBreath)"""
+
+[[cheat]]
+id = "attacked-women-still-flirt"
+name = "Attacked Women Still Flirt"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(AlwaysFlirt, BoneTown.exe, 84 C0 0F ?? ?? ?? ?? ?? 8B 86 94 07 00 00 80 B8 91 04 00 00 00)
+//Register symbol for location
+registersymbol(AlwaysFlirt)
+
+//Modify Test to JMP
+AlwaysFlirt:
+db EB 5B
+ 
+[DISABLE]
+//Restore Test
+AlwaysFlirt:
+db 84 C0
+
+//Unregister symbol
+unregistersymbol(AlwaysFlirt)"""
+
+[[cheat]]
+id = "steal-identity-without-knockout-disables-target-info-flirting"
+name = "Steal Identity Without Knockout (Disables Target Info/Flirting!)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(StealIdentities, BoneTown.exe, 7A 46 39 B7 98 07 00 00 8D 8F 98 07 00 00 0F ?? ?? ?? ?? ?? 80 BE 90 04 00 00 00)
+//Register symbol for location
+registersymbol(StealIdentities)
+
+//Nop JP
+StealIdentities:
+db 90 90
+ 
+[DISABLE]
+//Restore JP
+StealIdentities:
+db 7A 46
+
+//Unregister symbol
+unregistersymbol(StealIdentities)"""
+
+[[cheat]]
+id = "always-have-toad-effect-you-will-look-normal"
+name = "Always Have Toad Effect (You will look normal.)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Allocate space for custom routine
+alloc(newmem,2048)
+
+//Scan to find location for modifications
+aobscanmodule(ActivateToad, BoneTown.exe, DF E0 F6 C4 01 0F ?? ?? ?? ?? ?? 8B FA 56 8B CF E8 ?? ?? ?? ?? 84 C0 0F ?? ?? ?? ?? ?? 8D 44 24 40)
+//Register symbol for location
+registersymbol(ActivateToad)
+//Initialize Exit location
+label(exit)
+
+//Handle splitting shared routine
+newmem:
+fnstsw ax          //Original Instruction
+cmp [esi+1C], C8   //Test for player
+je ActivateToad+B  //If player found jump to allow
+test ah,01         //Original Instruction
+jmp exit           //Exit routine and run original routine
+
+//Jump to custom routine
+ActivateToad:
+jmp newmem
+exit:
+ 
+[DISABLE]
+//Restore original instructions
+ActivateToad:
+db DF E0 F6 C4 01
+
+//Unregister symbol
+unregistersymbol(ActivateToad)
+
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "all-women-want-you-regardless-of-ball-size"
+name = "All Women Want You (Regardless of ball size.)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(BallTest, BoneTown.exe, 7B 09 C6 86 30 09 00 00 00 EB 16 8B 8E 94 07 00 00 6A 05 6A 05 C6 86 30 09 00 00 01)
+//Register symbol for location
+registersymbol(BallTest)
+
+//Modify JNP to JMP
+BallTest:
+db EB
+ 
+[DISABLE]
+//Restore JNP
+BallTest:
+db 7B
+
+//Unregister symbol
+unregistersymbol(BallTest)"""
+
+[[cheat]]
+id = "all-men-beg-nearby-women-for-fellatio"
+name = "All Men Beg Nearby Women For Fellatio"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Allocate space for custom routine
+alloc(newmem,2048)
+//Allocate space for custom routine
+alloc(newmem1,2048)
+
+//Scan to find location for modifications
+aobscanmodule(BegBlowJob, BoneTown.exe, DF E0 F6 C4 41 ?? 09 C6 86 30 09 00 00 00 EB 16 8B 8E 94 07 00 00 6A 05 6A 05 C6 86 30 09 00 00 01)
+aobscanmodule(BegBlowJob1, BoneTown.exe, 38 59 38 74 53 38 9E 68 07 00 00 0F ?? ?? ?? ?? ?? 80 FA 01 75 0A 53 6A 01 8B CE)
+//Register symbol for location
+registersymbol(BegBlowJob)
+//Register symbol for location
+registersymbol(BegBlowJob1)
+//Initialize Exit location
+label(exit)
+//Initialize Exit location
+label(exit1)
+
+//Custom routine 1
+newmem:
+fnstsw ax                 //Original instruction
+test ah,41                //Original instruction
+cmp [esi+1C], C8          //Test for player
+je exit                   //If the player then run original routine
+jmp exit+2                //If not the player then fail the ball size test
+
+//Custom routine 2
+newmem1:
+cmp [esi+1C], C8          //Test for player
+jne exit1                 //If not player auto ask for sexual favor, else run original routine
+cmp [ecx+38], bl          //Original instruction
+je BegBlowJob1+58         //Original instruction
+jmp exit1                 //If enter was pressed by player then ask for sexual favor
+
+//Jump to custom routine 1
+BegBlowJob:
+jmp newmem                //Jump to custom routine
+exit:                     //Exit JMP location
+
+//Jump to custom routine 2
+BegBlowJob1:
+jmp newmem1               //Jump to custom routine
+exit1:                    //Exit JMP location
+ 
+[DISABLE]
+//Restore original instructions
+BegBlowJob:
+db DF E0 F6 C4 41
+
+//Restore original instructions
+BegBlowJob1:
+db 38 59 38 74 53
+
+//Unregister symbol
+unregistersymbol(BegBlowJob)
+//Unregister symbol
+unregistersymbol(BegBlowJob1)
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "all-purchases-are-free-regardless-of-money"
+name = "All Purchases Are Free (Regardless of money.)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(FreeItems1, BoneTown.exe, 7D 06 D8 05 C0 8B 5D 00 C3 CC CC CC CC CC 8B 44 24 04 80 B8 91 04 00 00 02)
+//Register symbol for location
+registersymbol(FreeItems1)
+//Scan to find location for modifications
+aobscanmodule(FreeItems2, BoneTown.exe, 89 82 78 04 00 00 C3 CC CC CC CC CC CC 8B 44 24 04)
+//Register symbol for location
+registersymbol(FreeItems2)
+
+//Nop JNL
+FreeItems1:
+db 90 90
+
+//Nop MOV
+FreeItems2:
+db 90 90 90 90 90 90
+ 
+[DISABLE]
+//Restore JNL
+FreeItems1:
+db 7D 06
+
+//Restore MOV
+FreeItems2:
+db 89 82 78 04 00 00
+
+//Unregister symbol
+unregistersymbol(FreeItems1)
+//Unregister symbol
+unregistersymbol(FreeItems2)"""
+
+[[cheat]]
+id = "hold-jump-to-rise-release-to-fall"
+name = "Hold Jump to Rise (Release to fall.)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(Levitate, BoneTown.exe, 74 0B 6A 04 8B CE 6A 04)
+//Register symbol for location
+registersymbol(Levitate)
+
+//Nop JE
+Levitate:
+db 90 90
+ 
+[DISABLE]
+//Restore JE
+Levitate:
+db 74 0B
+
+//Unregister symbol
+unregistersymbol(Levitate)"""
+
+[[cheat]]
+id = "weapon-sex-notifications-when-near"
+name = "Weapon/Sex Notifications When Near"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(WeaponSexNot, BoneTown.exe, 7A 0F 8B 44 24 30 8B 0C B0 51 8B CF E8 ?? ?? ?? ??)
+//Register symbol for location
+registersymbol(WeaponSexNot)
+
+//Nop JP
+WeaponSexNot:
+db 90 90
+ 
+[DISABLE]
+//Restore JP
+WeaponSexNot:
+db 7A 0F
+
+//Unregister symbol
+unregistersymbol(WeaponSexNot)"""
+
+[[cheat]]
+id = "flirt-from-a-distance"
+name = "Flirt From A Distance"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(FlirtDistance, BoneTown.exe, 74 0C 57 E8 ?? ?? ?? ?? C7 07 00 00 00 00 83 BE F4 08 00 00 00)
+//Register symbol for location
+registersymbol(FlirtDistance)
+
+//Modify JP to JMP
+FlirtDistance:
+db EB
+
+[DISABLE]
+//Restore JP
+FlirtDistance:
+db 74
+
+//Unregister symbol
+unregistersymbol(FlirtDistance)"""
+
+[[cheat]]
+id = "freeze-all-npcs"
+name = "Freeze All NPCs"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(FreezeNPC, BoneTown.exe, 75 10 83 BE B8 09 00 00 00 74 07 8B CE E8 ?? ?? ?? ?? 8B 06 8B 90 A0 01 00 00)
+//Register symbol for location
+registersymbol(FreezeNPC)
+
+//Nop JNE
+FreezeNPC:
+db 90 90
+ 
+[DISABLE]
+//Restore JNE
+FreezeNPC:
+db 75 10
+
+//Unregister symbol
+unregistersymbol(FreezeNPC)"""
+
+[[cheat]]
+id = "women-can-be-knocked-out-attack-able-only"
+name = "Women Can Be Knocked Out (Attack-able only.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(KillWomen, BoneTown.exe, 75 24 D9 47 10 6A 00 51 D9 E0 8B CE D9 1C 24)
+//Register symbol for location
+registersymbol(KillWomen)
+
+//Nop JNE
+KillWomen:
+db 90 90
+ 
+[DISABLE]
+//Restore JNE
+KillWomen:
+db 75 24
+
+//Unregister symbol
+unregistersymbol(KillWomen)"""
+
+[[cheat]]
+id = "instant-female-orgasm-do-not-use-on-tutorial"
+name = "Instant Female Orgasm (Do not use on tutorial!)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(InstantOrgasm, BoneTown.exe, 75 08 DD D8 D9 5C 24 08 EB 15 DD D9 D9 54 24 08 D9 EE D8 D1 DF E0 DD D9 F6 C4 05 7A 06 DD D8 D9 44 24 08 D9 5C 24 08 D9 44 24 08 D9 99 0C 08 00 00 C7 44 24 08 00 00 00 00 C7 44 24 04 83 00 00 00)
+//Register symbol for location
+registersymbol(InstantOrgasm)
+
+//Nop JNE
+InstantOrgasm:
+db 90 90
+ 
+[DISABLE]
+//Restore JNE
+InstantOrgasm:
+db 75 08
+
+//Unregister symbol
+unregistersymbol(InstantOrgasm)"""
+
+[[cheat]]
+id = "men-run-from-fights-like-women"
+name = "Men Run From Fights Like Women"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(MenRun, BoneTown.exe, 74 17 8B 0F 51 8B CE E8 7F EB FF FF)
+//Register symbol for location
+registersymbol(MenRun)
+
+//Nop JE
+MenRun:
+db 90 90
+ 
+[DISABLE]
+//Restore JE
+MenRun:
+db 74 17
+
+//Unregister symbol
+unregistersymbol(MenRun)"""
+
+[[cheat]]
+id = "attack-non-attack-ables-even-in-fantasy-mode"
+name = "Attack Non Attack-ables (Even in Fantasy mode.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(NonAttackables, BoneTown.exe, 74 1B 8B 44 24 04 85 C0 74 0E 8B 90 88 06 00 00 3B 91 88 06 00 00)
+//Register symbol for location
+registersymbol(NonAttackables)
+
+//Nop JE
+NonAttackables:
+db 90 90
+ 
+[DISABLE]
+//Restore JE
+NonAttackables:
+db 74 1B
+
+//Unregister symbol
+unregistersymbol(NonAttackables)"""
+
+[[cheat]]
+id = "npcs-can-attack-one-another"
+name = "NPCs Can Attack One Another"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Scan to find location for modifications
+aobscanmodule(NPCSAttackEachOther, BoneTown.exe, 74 05 B0 01 C2 04 00 32 C0 C2 04 00 17 52 53 00 CD 51 53 00 00 00 00 00 00)
+//Register symbol for location
+registersymbol(NPCSAttackEachOther)
+
+//Nop JE
+NPCSAttackEachOther:
+db 90 90
+ 
+[DISABLE]
+//Restore JE
+NPCSAttackEachOther:
+db 74 05
+
+//Unregister symbol
+unregistersymbol(NPCSAttackEachOther)"""
+
+[[cheat]]
+id = "enemies-hit-themselves"
+name = "Enemies Hit Themselves"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Allocate space for custom routine
+alloc(newmem,2048)
+//Scan to find location for modifications
+aobscanmodule(EnemiesHitThemselves, BoneTown.exe, 83 EC 40 56 57 8B 7C 24 4C 8B 07 50 8B F1)
+//Register symbol for location
+registersymbol(EnemiesHitThemselves)
+//Initialize Exit location
+label(exit)
+
+//Handle splitting of shared routine
+newmem:
+mov eax,[edi]                //Original instruction
+push eax                     //Original instruction
+mov esi,ecx                  //Original instruction
+cmp [esi+1C], C8             //Test for player
+jne exit                     //layer not found, exit routine
+mov esi,eax                  //If player, load attacker structure pointer into esi (attacked)
+jmp exit                     //Exit routine
+
+//JMP to Custom Routine
+EnemiesHitThemselves+09:
+jmp newmem
+exit:
+
+[DISABLE]
+//Restore Original Instructions
+EnemiesHitThemselves+09:
+mov eax,[edi]
+push eax
+mov esi,ecx
+
+//Unregister symbol
+unregistersymbol(EnemiesHitThemselves)
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "npc-vac-set-position-numpad-0"
+name = "NPC Vac - Set Position (Numpad 0)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//Allocate space for custom routine
+alloc(newmem,2048)
+//Create Labels
+label(returnhere)
+label(exit)
+//Scan to find location for modifications
+aobscanmodule(VacData, BoneTown.exe, D9 1C 24 8B F1 E8 7C 8E ?? ?? ?? ?? FC 07 00 00 01 D9 86 E0 07 00 00)
+//Register symbol for location
+registersymbol(VacData)
+
+newmem:
+fstp dword ptr [esp]          //Original Instruction
+mov esi,ecx                   //Original Instruction
+cmp byte ptr [00A20000],0     //Check to see if we need to set the position
+jne exit                      //If position already set then exit
+cmp [esi+1C], C8              //Test offset 1C for player value
+jne exit                      //If not a match exit
+push ecx                      //Push current ecx as we need this register
+mov ecx,[esi+000007C4]        //Store Player X in ecx
+add ecx, 3000                 //Add 3000 to offset from player position
+mov [00A20000], ecx           //Move ecx into position storage offset 00
+mov ecx,[esi+000007C8]        //Store Payer Y in ecx
+add ecx, 3000                 //Add 3000 to offset from player position
+mov [00A20000+04], ecx        //Move ecx into position storage offset 04
+mov ecx,[esi+000007CC]        //Store Payer Z in ecx
+mov [00A20000+08], ecx        //Move ecx into position storage offset 08
+pop ecx                       //Return ecx to its original value
+
+exit:
+jmp returnhere
+
+VacData:
+//JMP to Custom Routine
+jmp newmem
+returnhere:
+
+[DISABLE]
+VacData:
+//Restore original instructions
+fstp dword ptr [esp]
+mov esi,ecx
+
+//Clear saved coordinates
+00A20000:
+dd 0
+00A20000+04:
+dd 0
+00A20000+08:
+dd 0
+
+//Unregister symbols
+unregistersymbol(VacData)
+
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-vac-men-numpad-1"
+name = "Enable Vac - Men      (Numpad 1)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+//Create labels
+label(returnhere)
+label(skip)
+label(exit)
+//Scan to find location for modifications
+aobscanmodule(EnableVac, BoneTown.exe, 89 8D C4 07 00 00 8B 0F 89 95 C8 07 00 00 8B 57 04 89 85 CC 07 00 00 8B 47 08)
+//Register symbol for location
+registersymbol(EnableVac)
+
+newmem:
+cmp byte ptr [00A20000], 0         //Check to see if position is set
+je skip                            //If not set then skip
+cmp [ebp+1C], C8                   //Test offset 1C for player value
+je skip                            //If match then skip
+push ebp                           //Store ebp as we need this register
+mov ebp, [ebp+00000444]            //Checking Gender Pointer
+cmp byte ptr [ebp+00000128], 01    //Checking Gender Pointer
+pop ebp                            //Restore ebp original value
+je skip                            //If not correct gender then skip
+mov ecx,[00A20000]                 //Set NPC X
+mov edx,[00A20000+04]              //Set NPC Y
+mov eax,[00A20000+08]              //Set NPC Z
+skip:
+mov [ebp+000007C4],ecx             //Original Instruction
+exit:
+jmp returnhere
+
+EnableVac:
+//JMP to Custom Routine
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+EnableVac:
+//Restore Original Instruction
+mov [ebp+000007C4],ecx
+
+//Unregister symbol
+unregistersymbol(EnableVac)
+
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-vac-women-numpad-2"
+name = "Enable Vac - Women (Numpad 2)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+//Create labels
+label(returnhere)
+label(skip)
+label(exit)
+//Scan to find location for modifications
+aobscanmodule(EnableVac, BoneTown.exe, 89 8D C4 07 00 00 8B 0F 89 95 C8 07 00 00 8B 57 04 89 85 CC 07 00 00 8B 47 08)
+//Register symbol for location
+registersymbol(EnableVac)
+
+newmem:
+cmp byte ptr [00A20000], 0         //Check to see if position is set
+je skip                            //If not set then skip
+cmp [ebp+1C], C8                   //Test offset 1C for player value
+je skip                            //If match then skip
+push ebp                           //Store ebp as we need this register
+mov ebp, [ebp+00000444]            //Checking Gender Pointer
+cmp byte ptr [ebp+00000128], 01    //Checking Gender Pointer
+pop ebp                            //Restore ebp original value
+jne skip                           //If not correct gender then skip
+mov ecx,[00A20000]                 //Set NPC X
+mov edx,[00A20000+04]              //Set NPC Y
+mov eax,[00A20000+08]              //Set NPC Z
+skip:
+mov [ebp+000007C4],ecx             //Original Instruction
+exit:
+jmp returnhere
+
+EnableVac:
+//JMP to Custom Routine
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+EnableVac:
+//Restore Original Instruction
+mov [ebp+000007C4],ecx
+
+//Unregister symbol
+unregistersymbol(EnableVac)
+
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-vac-all-npc-numpad-3"
+name = "Enable Vac - All NPC (Numpad 3)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//|******** Author: Abystus *********|
+//|********** Game: BoneTown ********|
+//|********* Build: 1.1.1.0 *********|
+
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048)
+//Create labels
+label(returnhere)
+label(skip)
+label(exit)
+//Scan to find location for modifications
+aobscanmodule(EnableVac, BoneTown.exe, 89 8D C4 07 00 00 8B 0F 89 95 C8 07 00 00 8B 57 04 89 85 CC 07 00 00 8B 47 08)
+//Register symbol for location
+registersymbol(EnableVac)
+
+newmem:
+cmp byte ptr [00A20000], 0    //Check to see if position is set
+je skip                       //If not set then skip
+cmp [ebp+1C], C8              //Test offset 1C for player value
+je skip                       //If match then skip
+mov ecx,[00A20000]            //Set NPC X
+mov edx,[00A20000+04]         //Set NPC Y
+mov eax,[00A20000+08]         //Set NPC Z
+skip:
+mov [ebp+000007C4],ecx        //Original Instruction
+exit:
+jmp returnhere
+
+EnableVac:
+//JMP to Custom Routine
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+EnableVac:
+//Restore Original Instruction
+mov [ebp+000007C4],ecx
+
+//Unregister symbol
+unregistersymbol(EnableVac)
+
+//Deallocate custom routine
+dealloc(newmem)"""
+
+[[cheat]]
+id = "camera-hook"
+name = "Camera Hook"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+globalalloc(cameraBase,4)
+alloc(newmem,$1000)
+aobscan(cameraBaseHook,D9 02 D9 5C 24 14 D9 42 04 D9 5C 24 18 D9 42 08 D9 5C 24 1C D9 40 0C D9 5C 24 28 D9 44 24 28) // should be unique
+registersymbol(cameraBaseHook)
+
+label(skip)
+label(return)
+
+newmem:
+cmp ax, 5F3C
+jne skip
+  mov [cameraBase], eax
+skip:
+  fld dword ptr [edx]
+  fstp dword ptr [esp+14]
+  jmp return
+
+cameraBaseHook:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+cameraBaseHook:
+  db D9 02 D9 5C 24 14
+
+unregistersymbol(cameraBaseHook)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "x"
+name = "X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 1325.593994
+
+[cheat.locator]
+find = "symbol"
+symbol = "camerabase"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "y"
+name = "Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 3.141584396
+
+[cheat.locator]
+find = "symbol"
+symbol = "camerabase"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "z"
+name = "Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 55.81116867
+
+[cheat.locator]
+find = "symbol"
+symbol = "camerabase"
+hops = ["+0x2c"]

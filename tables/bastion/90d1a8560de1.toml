@@ -1,0 +1,662 @@
+[game]
+name = "Bastion [AOB]"
+exe = "bastion.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3206"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "inf-health-undead"
+name = "Inf. Health - Undead"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,1024) //2kb should be enough
+label(returnhere)
+label(originalcode)
+label(exit)
+label(start_undead)
+registersymbol(start_undead)
+aobscan(aob_undead,89 83 80 02 00 00 8B 45 F0 29 83 58 02 00 00 8B 83 54 02 00 00)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+
+cmp [ebx+00000288],0    //check player
+je originalcode         //do the subtracting code if it's not player
+
+cmp [ebx+00000258],eax  //check the health after damage
+jle exit                //skip the subtracting code if health is lower than the damage
+
+originalcode:
+sub [ebx+00000258],eax
+
+exit:
+jmp returnhere
+
+aob_undead+9:
+start_undead:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+start_undead:
+sub [ebx+00000258],eax
+//Alt: db 29 83 58 02 00 00
+unregistersymbol(start_undead)"""
+
+[[cheat]]
+id = "inf-health-lock-always"
+name = "Inf. Health - Lock always"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,1024) //2kb should be enough
+label(returnhere)
+label(originalcode)
+label(exit)
+label(start_inf_health)
+registersymbol(start_inf_health)
+aobscan(aob_inf_health,89 83 80 02 00 00 8B 45 F0 29 83 58 02 00 00 8B 83 54 02 00 00)
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+cmp [ebx+00000288],0        //check player
+jg exit                     //skip the subtracting code if it's the player
+
+originalcode:
+sub [ebx+00000258],eax
+
+exit:
+jmp returnhere
+
+aob_inf_health+9:
+start_inf_health:
+jmp newmem
+nop
+returnhere:
+
+
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+start_inf_health:
+sub [ebx+00000258],eax
+//Alt: db 29 83 58 02 00 00
+unregistersymbol(start_inf_health)"""
+
+[[cheat]]
+id = "inf-ammo-v1-lock-when-wpn-not-fully-loaded"
+name = "Inf. Ammo V1 - Lock when wpn not fully loaded"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,1024) //2kb should be enough
+label(FAmmo_start1)
+label(FAmmo_start2)
+label(FAmmo_returnhere)
+label(FAmmo_originalcode)
+label(FAmmo_exit)
+label(pFAmmo)
+label(pRAmmo)
+label(RAmmo_start1)
+label(RAmmo_start2)
+label(RAmmo_returnhere)
+label(RAmmo_originalcode)
+label(RAmmo_exit)
+registersymbol(FAmmo_start1)
+registersymbol(pFAmmo)
+registersymbol(pRAmmo)
+registersymbol(RAmmo_start1)
+aobscan(aob_FAmmo,89 81 3C 01 00 00 8B CA)
+aobscan(aob_RAmmo,89 86 80 00 00 00 8B 46 14) //aob scan the game code that write the actual ammo
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+
+//=========================================//
+//add lines to the game code that store the pointers of ammo whenever the game
+// is writing the current ammo of the wpn using to the screen
+FAmmo_start2:
+mov [pFAmmo],eax          //store the pointer for the ammo on screen
+mov [pRAmmo],esi          //store the pointer for the real ammo
+
+FAmmo_originalcode:
+mov [ecx+0000013C],eax    //original game code that write the ammo on screen
+
+FAmmo_exit:
+jmp FAmmo_returnhere
+
+//=========================================//
+//add codes that stop writing the value of ammo if the ammo of the player's
+//weapon isn't fully loaded
+RAmmo_start2:
+cmp esi,[pRAmmo]          //check if it's one of the player's weapon,
+jne RAmmo_originalcode    //continue the game code if it's not a player weapon
+
+cmp [esi+00000080],1      //check if the value of real ammo is 1 (fully loaded)
+jne RAmmo_exit            //skip the game code if not.
+
+RAmmo_originalcode:
+mov [esi+00000080],eax    //original game code that write the ammo
+
+RAmmo_exit:
+jmp RAmmo_returnhere
+
+//=========================================//
+//decalre the variable
+pFAmmo:
+dd 0
+
+pRAmmo:
+dd 0
+
+//=========================================//
+//code injection
+aob_FAmmo:
+FAmmo_start1:
+jmp FAmmo_start2
+nop
+FAmmo_returnhere:
+
+aob_RAmmo:
+RAmmo_start1:
+jmp RAmmo_start2
+nop
+RAmmo_returnhere:
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+FAmmo_start1:
+mov [ecx+0000013C],eax
+//Alt: db 89 81 3C 01 00 00
+RAmmo_start1:
+mov [esi+00000080],eax
+//Alt: db 89 86 80 00 00 00
+unregistersymbol(FAmmo_start1)
+unregistersymbol(pFAmmo)
+unregistersymbol(pRAmmo)
+unregistersymbol(RAmmo_start1)"""
+
+[[cheat]]
+id = "inf-ammo-v2-lock-always"
+name = "Inf. Ammo V2 - Lock always"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,1024) //2kb should be enough
+label(FAmmo_start1)
+label(FAmmo_start2)
+label(FAmmo_returnhere)
+label(FAmmo_originalcode)
+label(FAmmo_exit)
+label(pFAmmo)
+label(pRAmmo)
+label(RAmmo_start1)
+label(RAmmo_start2)
+label(RAmmo_returnhere)
+label(RAmmo_originalcode)
+label(RAmmo_exit)
+registersymbol(FAmmo_start1)
+registersymbol(pFAmmo)
+registersymbol(pRAmmo)
+registersymbol(RAmmo_start1)
+aobscan(aob_FAmmo,89 81 3C 01 00 00 8B CA)    //aob scan the game code that write the ammo on screen
+aobscan(aob_RAmmo,89 86 80 00 00 00 8B 46 14) //aob scan the game code that write the actual ammo
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+
+//=========================================//
+//add lines to the game code that store the pointers of ammo whenever the game
+// is writing the current ammo of the wpn using to the screen
+FAmmo_start2:
+mov [pFAmmo],eax          //store the pointer for the ammo on screen
+mov [pRAmmo],esi          //store the pointer for the real ammo
+
+FAmmo_originalcode:
+mov [ecx+0000013C],eax    //original game code that write the ammo on screen
+
+FAmmo_exit:
+jmp FAmmo_returnhere
+
+//=========================================//
+//add codes that stop writing the value of real ammo if it's a player weapon
+RAmmo_start2:
+cmp esi,[pRAmmo]          //check if it's one of the player's weapon,
+je RAmmo_exit             //skip the game code if it's a player weapon
+
+RAmmo_originalcode:
+mov [esi+00000080],eax    //original game code that write the real ammo
+
+RAmmo_exit:
+jmp RAmmo_returnhere
+
+//=========================================//
+//decalre the variable
+pFAmmo:
+dd 0
+
+pRAmmo:
+dd 0
+
+//=========================================//
+//code injection
+aob_FAmmo:
+FAmmo_start1:
+jmp FAmmo_start2
+nop
+FAmmo_returnhere:
+
+aob_RAmmo:
+RAmmo_start1:
+jmp RAmmo_start2
+nop
+RAmmo_returnhere:
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+FAmmo_start1:
+mov [ecx+0000013C],eax
+//Alt: db 89 81 3C 01 00 00
+RAmmo_start1:
+mov [esi+00000080],eax
+//Alt: db 89 86 80 00 00 00
+unregistersymbol(FAmmo_start1)
+unregistersymbol(pFAmmo)
+unregistersymbol(pRAmmo)
+unregistersymbol(RAmmo_start1)"""
+
+[[cheat]]
+id = "inf-ammo-v3-lock-when-1-bullet-left"
+name = "Inf. Ammo V3 - Lock when 1 bullet left"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,1024) //2kb should be enough
+label(FAmmo_start1)
+label(FAmmo_start2)
+label(FAmmo_returnhere)
+label(FAmmo_originalcode)
+label(FAmmo_exit)
+label(pFAmmo)
+label(pRAmmo)
+label(RAmmo_start1)
+label(RAmmo_start2)
+label(RAmmo_returnhere)
+label(RAmmo_originalcode)
+label(RAmmo_exit)
+registersymbol(FAmmo_start1)
+registersymbol(pFAmmo)
+registersymbol(pRAmmo)
+registersymbol(RAmmo_start1)
+aobscan(aob_FAmmo,89 81 3C 01 00 00 8B CA)    //aob scan the game code that write the ammo on screen
+aobscan(aob_RAmmo,89 86 80 00 00 00 8B 46 14) //aob scan the game code that write the actual ammo
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+
+//=========================================//
+//add lines to the game code that store the pointers of ammo whenever the game
+// is writing the current ammo of the wpn using to the screen
+FAmmo_start2:
+mov [pFAmmo],eax          //store the pointer for the ammo on screen
+mov [pRAmmo],esi          //store the pointer for the real ammo
+
+FAmmo_originalcode:
+mov [ecx+0000013C],eax    //original game code that write the ammo on screen
+
+FAmmo_exit:
+jmp FAmmo_returnhere
+
+//=========================================//
+//add codes that stop writing the value of real ammo if there's only
+//one fake ammo (i.e. ammo on screen) left
+RAmmo_start2:
+cmp esi,[pRAmmo]          //check if it's one of the player's weapon,
+jne RAmmo_originalcode    //continue the game code if it's not a player weapon
+
+cmp [pFAmmo],1            //check if the current ammo on screen is 1 or lesser,
+jle RAmmo_exit            //skip the game code if true
+
+RAmmo_originalcode:
+mov [esi+00000080],eax    //original game code that write the real ammo
+
+RAmmo_exit:
+jmp RAmmo_returnhere
+
+//=========================================//
+//decalre the variable
+pFAmmo:
+dd 0
+
+pRAmmo:
+dd 0
+
+//=========================================//
+//code injection
+aob_FAmmo:
+FAmmo_start1:
+jmp FAmmo_start2
+nop
+FAmmo_returnhere:
+
+aob_RAmmo:
+RAmmo_start1:
+jmp RAmmo_start2
+nop
+RAmmo_returnhere:
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+FAmmo_start1:
+mov [ecx+0000013C],eax
+//Alt: db 89 81 3C 01 00 00
+RAmmo_start1:
+mov [esi+00000080],eax
+//Alt: db 89 86 80 00 00 00
+unregistersymbol(FAmmo_start1)
+unregistersymbol(pFAmmo)
+unregistersymbol(pRAmmo)
+unregistersymbol(RAmmo_start1)"""
+
+[[cheat]]
+id = "inf-health-tonic-black-tonic"
+name = "Inf. Health Tonic & Black Tonic"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+label(start_inf_tonic)
+registersymbol(start_inf_tonic)
+aobscan(aob_inf_tonic,29 56 40 8B 4E 40 8B 46 14)
+
+aob_inf_tonic:
+start_inf_tonic:
+nop
+nop
+nop
+
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+start_inf_tonic:
+sub [esi+40],edx
+//Alt: db 29 56 40
+unregistersymbol(start_inf_tonic)"""
+
+[[cheat]]
+id = "search-tonic-s-pointer"
+name = "Search Tonic's Pointer"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,2048) //2kb should be enough
+label(HT_returnhere)
+label(HT_originalcode)
+label(HT_exit)
+label(BT_returnhere)
+label(BT_originalcode)
+label(BT_exit)
+label(sHT1)
+label(sHT2)
+label(sBT1)
+label(sBT2)
+label(pHT)
+label(pBT)
+registersymbol(sHT1)
+registersymbol(sBT1)
+registersymbol(pHT)
+registersymbol(pBT)
+aobscan(aob_sHT,8B 42 40 89 45 E8 8B 4E 44) //aob scan the game code that access the health tonic address
+aobscan(aob_sBT,8B 42 40 89 45 E4 8B 4E 48) //aob scan the game code that access the black tonic address
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+
+//=======================================//
+//add a line to the game code to store the pointer for health tonic
+//every time the game code reading the health tonic value
+sHT2:
+mov [pHT],edx     //store the pointer for health tonic
+
+HT_originalcode:
+mov eax,[edx+40]  //that's when the game code read the health tonic originally
+mov [ebp-18],eax
+
+HT_exit:
+jmp HT_returnhere
+
+//=======================================//
+//add a line to the game code to store the pointer for black tonic
+//every time the game code reading the black tonic value
+sBT2:
+mov [pBT],edx     //store the pointer for black tonic
+
+BT_originalcode:
+mov eax,[edx+40]  //that's when the game code read the black tonic originally
+mov [ebp-1C],eax
+
+BT_exit:
+jmp BT_returnhere
+
+//=======================================//
+//decalre the variables
+pHT:
+dd 0
+
+pBT:
+dd 0
+
+//=======================================//
+//code injection
+aob_sHT:
+sHT1:
+jmp sHT2
+nop
+HT_returnhere:
+
+aob_sBT:
+sBT1:
+jmp sBT2
+nop
+BT_returnhere:
+
+
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+sHT1:
+mov eax,[edx+40]
+mov [ebp-18],eax
+//Alt: db 8B 42 40 89 45 E8
+sBT1:
+mov eax,[edx+40]
+mov [ebp-1C],eax
+//Alt: db 8B 42 40 89 45 E4
+unregistersymbol(sHT1)
+unregistersymbol(sBT1)
+unregistersymbol(pHT)
+unregistersymbol(pBT)"""
+
+[[cheat]]
+id = "health-tonic"
+name = "Health Tonic"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHT"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "black-tonic"
+name = "Black Tonic"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pBT"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "special-skill-reference-only"
+name = "Special Skill (Reference only)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pBT"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "inf-ammo-old-version"
+name = "Inf. Ammo - OLD VERSION"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(newmem,1024) //2kb should be enough
+label(FAmmo_start1)
+label(FAmmo_start2)
+label(FAmmo_returnhere)
+label(FAmmo_originalcode)
+label(FAmmo_exit)
+label(pFAmmo)
+label(RAmmo_start1)
+label(RAmmo_start2)
+label(RAmmo_returnhere)
+label(RAmmo_originalcode)
+label(RAmmo_exit)
+registersymbol(FAmmo_start1)
+registersymbol(pFAmmo)
+registersymbol(RAmmo_start1)
+aobscan(aob_FAmmo,89 81 3C 01 00 00 8B CA)    //aob scan the game code that write the ammo on screen
+aobscan(aob_RAmmo,89 86 80 00 00 00 8B 46 14) //aob scan the game code that write the actual ammo
+
+newmem: //this is allocated memory, you have read,write,execute access
+//place your code here
+
+//=========================================//
+//add a line to the game code that store the value of the ammo on screen
+//whenever the game is writing the current ammo of the wpn using to the screen
+FAmmo_start2:
+mov [pFAmmo],eax          //store the pointer for the ammo on screen
+
+FAmmo_originalcode:
+mov [ecx+0000013C],eax    //original game code that write the ammo on screen
+
+FAmmo_exit:
+jmp FAmmo_returnhere
+
+//=========================================//
+//add codes that stop writing the value of real ammo if there's only
+//one fake ammo (i.e. ammo on screen) left
+RAmmo_start2:
+cmp ebp,0013ED60          //check if it's one of the player's weapon,
+jne RAmmo_originalcode    //continue the game code if it's not a player weapon
+
+cmp [pFAmmo],1            //check if the current ammo on screen is 1 or lesser,
+jle RAmmo_exit            //skip the game code if true
+
+RAmmo_originalcode:
+mov [esi+00000080],eax    //original game code that write the real ammo
+
+RAmmo_exit:
+jmp RAmmo_returnhere
+
+//=========================================//
+//decalre the variable
+pFAmmo:
+dd 0
+
+//=========================================//
+//code injection
+aob_FAmmo:
+FAmmo_start1:
+jmp FAmmo_start2
+nop
+FAmmo_returnhere:
+
+aob_RAmmo:
+RAmmo_start1:
+jmp RAmmo_start2
+nop
+RAmmo_returnhere:
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(newmem)
+FAmmo_start1:
+mov [ecx+0000013C],eax
+//Alt: db 89 81 3C 01 00 00
+RAmmo_start1:
+mov [esi+00000080],eax
+//Alt: db 89 86 80 00 00 00
+unregistersymbol(FAmmo_start1)
+unregistersymbol(pFAmmo)
+unregistersymbol(RAmmo_start1)"""

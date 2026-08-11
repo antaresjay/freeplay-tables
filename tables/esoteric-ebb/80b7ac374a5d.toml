@@ -1,0 +1,695 @@
+[game]
+name = "Esoteric Ebb"
+exe = "esoteric ebb.exe"
+notes = "Converted from a Cheat Engine table by wajrak. Source: https://fearlessrevolution.com/viewtopic.php?t=38460"
+verified = []
+author = "wajrak"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "character-creation-only"
+name = "Character Creation Only"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Esoteric Ebb.exe
+  Version: 
+  Date   : 2026-03-06
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// Scan for the exact subtraction and the following mov instruction to ensure a unique hit
+aobscanmodule(StatPointsGrabber,GameAssembly.dll,29 BB 78 01 00 00 48 8B 83 60 01 00 00)
+alloc(newmem,$1000,StatPointsGrabber)
+
+label(code)
+label(return)
+label(pStatPoints)
+
+registersymbol(pStatPoints)
+registersymbol(StatPointsGrabber)
+
+newmem:
+code:
+  mov [pStatPoints],rbx      // Siphon the base address
+  sub [rbx+00000178],edi     // Original instruction: subtract spent points
+  jmp return
+
+pStatPoints:
+  dq 0
+
+StatPointsGrabber:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+StatPointsGrabber:
+  db 29 BB 78 01 00 00
+
+unregistersymbol(pStatPoints)
+unregistersymbol(StatPointsGrabber)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "stat-points"
+name = "Stat Points:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStatPoints"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Esoteric Ebb.exe
+  Version:
+  Date   : 2026-03-06
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+
+[ENABLE]
+aobscanmodule(HPGrabber,GameAssembly.dll,01 BA EC 00 00 00 48 8B 46 58 48 85 C0)
+alloc(newmem,$1000,HPGrabber)
+
+label(code)
+label(return)
+label(check_heal)
+label(pHealth)
+label(bGodMode)
+label(bHealMultEnable)
+label(iHealMult)
+
+registersymbol(pHealth)
+registersymbol(bGodMode)
+registersymbol(bHealMultEnable)
+registersymbol(iHealMult)
+registersymbol(HPGrabber)
+
+newmem:
+  mov [pHealth],rdx          // Siphon the base address
+
+  test edi, edi              // Check if EDI is positive or negative
+  jns check_heal             // If positive (Sign flag is 0), it's a heal. Jump to heal logic.
+
+  // --- DAMAGE LOGIC ---
+  cmp dword ptr [bGodMode], 1 // Are we taking damage AND is God Mode on?
+  jne code                   // If God Mode is off, let the damage happen normally.
+
+  xor edi, edi               // God Mode is ON. Nullify the damage by setting EDI to 0.
+  jmp code
+
+check_heal:
+  // --- HEAL LOGIC ---
+  cmp dword ptr [bHealMultEnable], 1
+  jne code                   // If heal multiplier is off, proceed normally.
+
+  imul edi,[iHealMult]       // Multiply the heal amount in EDI!
+
+code:
+  add [rdx+000000EC],edi     // Original instruction executes here
+  jmp return
+
+// Variables
+pHealth:
+  dq 0
+bGodMode:
+  dd 0                       // Default to 0 (Off)
+bHealMultEnable:
+  dd 0                       // Default to 0 (Off)
+iHealMult:
+  dd (int)10
+
+HPGrabber:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+HPGrabber:
+  db 01 BA EC 00 00 00
+
+unregistersymbol(pHealth)
+unregistersymbol(bGodMode)
+unregistersymbol(bHealMultEnable)
+unregistersymbol(iHealMult)
+unregistersymbol(HPGrabber)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bGodMode:
+  dd 1
+[DISABLE]
+bGodMode:
+  dd 0"""
+
+[[cheat]]
+id = "super-healing"
+name = "Super Healing"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bHealMultEnable:
+  dd 1
+[DISABLE]
+bHealMultEnable:
+  dd 0"""
+
+[[cheat]]
+id = "healing-multiplier"
+name = "Healing Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iHealMult"
+hops = []
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHealth"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "xp"
+name = "XP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Esoteric Ebb.exe
+  Version:
+  Date   : 2026-03-06
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+aobscanmodule(XPGrabber,GameAssembly.dll,41 01 B0 08 01 00 00 48 8B 5F 58)
+alloc(newmem,$1000,XPGrabber)
+
+label(code)
+label(return)
+label(pPlayerBase)
+label(bXPMultEnable)
+label(iXPMult)
+
+registersymbol(pPlayerBase)
+registersymbol(bXPMultEnable)
+registersymbol(iXPMult)
+registersymbol(XPGrabber)
+
+newmem:
+  // Always siphon the base address for our pointers
+  mov [pPlayerBase],r8
+
+  // Check if our toggle is flipped on
+  cmp dword ptr [bXPMultEnable],1
+  jne code                 // If it's not 1, jump straight to the original code
+
+  // If we didn't jump, the toggle is on. Multiply ESI.
+  imul esi,[iXPMult]
+
+code:
+  // Original instruction (executes with normal or multiplied ESI)
+  add [r8+00000108],esi
+  jmp return
+
+// Variables
+pPlayerBase:
+  dq 0
+
+bXPMultEnable:
+  dd 0                     // Defaults to 0 (Disabled)
+
+iXPMult:
+  dd (int)2                // Defaults to a 2x multiplier
+
+XPGrabber:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+XPGrabber:
+  db 41 01 B0 08 01 00 00
+
+unregistersymbol(pPlayerBase)
+unregistersymbol(bXPMultEnable)
+unregistersymbol(iXPMult)
+unregistersymbol(XPGrabber)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "xp-multiplier"
+name = "XP Multiplier:"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bXPMultEnable:
+  dd 1
+
+[DISABLE]
+bXPMultEnable:
+  dd 0"""
+
+[[cheat]]
+id = "ixpmult"
+name = "iXPMult"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iXPMult"
+hops = []
+
+[[cheat]]
+id = "xp-2"
+name = "XP:"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayerBase"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "stats-open-inventory-to-populate"
+name = "Stats (Open Inventory to populate)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Esoteric Ebb.exe
+  Version:
+  Date   : 2026-03-06
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+
+[ENABLE]
+// Scanning for the UI write and the immediate load of the master pointer
+aobscanmodule(RealStatGrabber,GameAssembly.dll,89 47 24 49 8B 45 58 48 85 C0)
+alloc(newmem,$1000,RealStatGrabber)
+
+label(code)
+label(return)
+label(pMasterStats)
+
+registersymbol(pMasterStats)
+registersymbol(RealStatGrabber)
+
+newmem:
+  // We use RBX safely to steal the master pointer from [R13+58]
+  push rbx
+  mov rbx,[r13+58]
+  mov [pMasterStats],rbx
+  pop rbx
+
+code:
+  // Execute the original instructions untouched
+  mov [rdi+24],eax
+  mov rax,[r13+58]
+  jmp return
+
+pMasterStats:
+  dq 0
+
+RealStatGrabber:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+RealStatGrabber:
+  db 89 47 24 49 8B 45 58
+
+unregistersymbol(pMasterStats)
+unregistersymbol(RealStatGrabber)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "str"
+name = "STR"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMasterStats"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "dex"
+name = "DEX"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMasterStats"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "con"
+name = "CON"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMasterStats"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "int"
+name = "INT"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMasterStats"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "wis"
+name = "WIS"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMasterStats"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "cha"
+name = "CHA"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pMasterStats"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "inventory-select-item-to-populate"
+name = "Inventory (Select item to populate)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Esoteric Ebb.exe
+  Version:
+  Date   : 2026-03-06
+  Author : wajrak
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+// Scanning for the mov, the following call, and the xor to ensure a unique hit
+aobscanmodule(HoveredItemGrabber,GameAssembly.dll,48 89 93 80 00 00 00 E8 ? ? ? ? 33 D2)
+alloc(newmem,$1000,HoveredItemGrabber)
+
+label(code)
+label(return)
+label(pHoveredItem)
+
+registersymbol(pHoveredItem)
+registersymbol(HoveredItemGrabber)
+
+newmem:
+  // Null-check: if RDX is 0 (empty slot), skip saving so we don't lose the last item
+  test rdx, rdx
+  je code
+
+  // Siphon the true item base address
+  mov [pHoveredItem], rdx
+
+code:
+  // Original instruction
+  mov [rbx+00000080],rdx
+  jmp return
+
+pHoveredItem:
+  dq 0
+
+HoveredItemGrabber:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+HoveredItemGrabber:
+  db 48 89 93 80 00 00 00
+
+unregistersymbol(pHoveredItem)
+unregistersymbol(HoveredItemGrabber)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "item-address"
+name = "Item Address:"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHoveredItem"
+hops = []
+
+[[cheat]]
+id = "quantity"
+name = "Quantity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pHoveredItem"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "last-item-picked-qunatity"
+name = "Last item picked qunatity"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Scanning for the load, add, and save
+aobscanmodule(ItemPointerGrabber,GameAssembly.dll,41 8B 46 48 03 47 48 41 89 46 48)
+alloc(newmem,$1000,ItemPointerGrabber)
+
+label(code)
+label(return)
+label(pLastItem)
+
+registersymbol(pLastItem)
+registersymbol(ItemPointerGrabber)
+
+newmem:
+  // Passively siphon the item base address
+  mov [pLastItem], r14
+
+code:
+  // Execute original code untouched
+  mov eax,[r14+48]
+  add eax,[rdi+48]
+  jmp return
+
+pLastItem:
+  dq 0
+
+ItemPointerGrabber:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+ItemPointerGrabber:
+  db 41 8B 46 48 03 47 48
+
+unregistersymbol(pLastItem)
+unregistersymbol(ItemPointerGrabber)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "plastitem"
+name = "pLastItem"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pLastItem"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "always-roll-20"
+name = "Always Roll 20"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Fixed AOB: Added the missing '00' at the end of the cmp instruction wildcard
+aobscanmodule(TrueGodRoll,GameAssembly.dll,55 55 56 57 41 56 48 8B EC 48 83 EC 78 80 3D ? ? ? ? 00 48 8B F9)
+alloc(newmem,$1000,TrueGodRoll)
+
+label(code)
+label(return)
+label(bForceGodRoll)
+
+registersymbol(bForceGodRoll)
+registersymbol(TrueGodRoll)
+
+newmem:
+  // Check our toggle
+  cmp dword ptr [bForceGodRoll], 1
+  jne code
+
+  // Toggle is ON. RCX holds the RollDice structure pointer.
+  // 1. Flip the developer's "alwaysNat20" switch (Offset 59)
+  mov byte ptr [rcx+59], 1
+
+  // 2. Force the ability modifier to +99 for visual disrespect (Offset 88)
+  mov dword ptr [rcx+88], (int)99
+
+code:
+  // Execute the 6-byte prologue exactly as the engine wrote it
+  db 55 55 56 57 41 56
+  jmp return
+
+// Variables
+bForceGodRoll:
+  dd 1                     // Defaults to ON.
+
+TrueGodRoll:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+TrueGodRoll:
+  db 55 55 56 57 41 56
+
+unregistersymbol(bForceGodRoll)
+unregistersymbol(TrueGodRoll)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bforcegodroll"
+name = "bForceGodRoll"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bForceGodRoll"
+hops = []

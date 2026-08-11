@@ -1,0 +1,318 @@
+[game]
+name = "Call to Arms"
+exe = "call_to_arms.exe"
+notes = "Converted from a Cheat Engine table by WhiteSnoop. Source: https://fearlessrevolution.com/viewtopic.php?t=2865"
+verified = []
+author = "WhiteSnoop"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "call-to-arms-1-018-1-activate-this-first"
+name = "Call to Arms 1.018.1 [activate this first]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(gPlayer,call_to_arms.exe,0F B6 05 ?? ?? ?? ?? 88 01 48 8B C1 C3)
+aobscanmodule(godmode,call_to_arms.exe,F7 82 C4 09 00 00 00 80 01 00)
+aobscanmodule(infammo,call_to_arms.exe,CC 89 51 58 C3 CC)
+aobscanmodule(stamina,call_to_arms.exe,89 87 A4 00 00 00 E8)
+aobscanmodule(infFuel,call_to_arms.exe,8B 02 89 43 08)
+
+alloc(script,2048,godmode)
+
+label(gmcode)
+label(return)
+
+
+script:
+{ **************
+  *  GET PLAYER *
+ *************** }
+getPlayer:
+  mov [iPlayer],eax
+  mov [rcx],al
+  mov rax,rcx
+  ret
+
+{ ***********
+ *  GODMODE *
+ ************ }
+godmodeCode:
+  cmp [iGodmode],1
+  jne short gmcode
+    //fetch iPlayer
+    test [rdx+9C4],4400
+    je short gmcode
+      push rcx
+      mov cl, byte ptr [iPlayer]
+      mov ch, byte ptr [rdx+BA0]
+      cmp ch,cl
+      pop rcx
+      jne short gmcode
+        test rdx,rdx    //force godmode for players
+        jmp long return
+
+gmcode:
+  test [rdx+000009C4],18000
+jmp long return
+
+{ ******************
+ *  INFINITE AMMO  *
+ ******************* }
+infAmmoCode:
+cmp [iAmmo],1
+jne short exitInfAmmo
+  push rax
+  mov rax, [rcx+30]
+  test rax, rax
+  je short @f
+    mov rax, [rax+38]
+    test rax, rax
+    je short @f
+      mov al, byte ptr [rax+BA0] //AF8
+      mov ah, byte ptr [iPlayer]
+      cmp ah, al
+      jne short @f
+        mov rax,[rcx+40]
+        test rax,rax
+        je short @f
+          mov edx, [rax+470]
+          add edx, [rax+474]
+          dec edx
+@@:
+  pop rax
+exitInfAmmo:
+  mov [rcx+58],edx
+  ret
+
+{ *********************
+ *  INFINITE STAMINA  *
+ ********************** }
+infStaminaCode:
+  cmp [iStamina],1
+  jne short @f
+    mov eax,42C80000
+  @@:
+    mov [rdi+000000A4],eax
+    jmp long returnStamina
+
+{ *******************
+ *  INFINITE FUEL  *
+ ******************** }
+infFuelCode:
+  mov eax,[rdx]
+  cmp [iFuel],1
+  jne short @f
+      mov eax,[rbx+10]
+@@:
+  mov [rbx+08],eax
+  jmp long returnFuel
+
+{ **************
+ *  VARIABLES  *
+ *************** }
+iGodmode:
+  dd 0
+  registersymbol(iGodmode)
+
+iPlayer:
+  dd 0
+  registersymbol(iPlayer)
+
+iAmmo:
+  dd 0
+  registersymbol(iAmmo)
+
+iStamina:
+  dd 0
+  registersymbol(iStamina)
+
+iFuel:
+  dd 0
+  registersymbol(iFuel)
+
+{ *********************
+ *  INJECTION POINTS  *
+ ********************** }
+
+// GODMODE
+godmode:
+  jmp godmodeCode
+  nop
+  nop
+  nop
+  nop
+  nop
+  return:
+  registersymbol(godmode)
+
+// GET PLAYER
+gPlayer+7:
+  jmp getPlayer
+  nop
+  registersymbol(gPlayer)
+
+// INFINITE AMMO
+infammo+1:
+  jmp infAmmoCode
+  registersymbol(infammo)
+
+// INFINITE STAMINA
+stamina:
+  jmp infStaminaCode
+  nop
+  returnStamina:
+  registersymbol(stamina)
+
+
+// INFINITE FUEL
+infFuel:
+  jmp infFuelCode
+  returnFuel:
+  registersymbol(infFuel)
+
+[DISABLE]
+unregistersymbol(iPlayer)
+unregistersymbol(iGodmode)
+unregistersymbol(iAmmo)
+unregistersymbol(iStamina)
+unregistersymbol(iFuel)
+
+godmode:
+  db F7 82 C4 09 00 00 00 80 01 00
+  unregistersymbol(godmode)
+
+gPlayer+7:
+  db 88 01 48 8B C1 C3 CC
+  unregistersymbol(gPlayer)
+
+infammo:
+  db CC 89 51 58 C3 CC
+  unregistersymbol(infammo)
+
+stamina:
+  db 89 87 A4 00 00 00
+  unregistersymbol(stamina)
+
+infFuel:
+  db 8B 02 89 43 08
+  unregistersymbol(infFuel)
+
+dealloc(script)
+dealloc(iPlayer)"""
+
+[[cheat]]
+id = "godmode-any-player-entity"
+name = "Godmode (any player entity)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+iGodmode:
+dd 1
+ 
+[DISABLE]
+iGodmode:
+dd 0"""
+
+[[cheat]]
+id = "infinite-stamina"
+name = "Infinite Stamina"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+iStamina:
+dd 1
+ 
+[DISABLE]
+iStamina:
+dd 0"""
+
+[[cheat]]
+id = "infinite-fuel"
+name = "Infinite Fuel"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+iFuel:
+dd 1
+ 
+[DISABLE]
+iFuel:
+dd 0"""
+
+[[cheat]]
+id = "free-reinforcements"
+name = "Free Reinforcements"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(buycheck,call_to_arms.exe,0F 8F EA 00 00 00 C7)
+aobscanmodule(buydisplaycheck,call_to_arms.exe,39 81 ?? 00 00 00 7F 03 B0 01)
+aobscanmodule(buyChargeMp,call_to_arms.exe,E8 ?? ?? ?? ?? 8B 83 D4 00 00 00 48)
+
+buycheck:
+db 90 90 90 90 90 90
+registersymbol(buycheck)
+
+buydisplaycheck+6:
+db 90 90
+registersymbol(buydisplaycheck)
+
+buyChargeMp+5:
+  db B8 00 00 00 00 90
+registersymbol(buyChargeMp)
+
+buycheck+13:
+  db 00
+
+[DISABLE]
+buycheck+13:
+  db FF
+
+buycheck:
+  db 0F 8F EA 00 00 00
+  unregistersymbol(buycheck)
+
+buydisplaycheck+6:
+  db 7F 03
+  unregistersymbol(buydisplaycheck)
+
+buyChargeMp+5:
+  db 8B 83 D4 00 00 00
+  unregistersymbol(buyChargeMp)"""
+
+[[cheat]]
+id = "infinite-ammo-infantry-only"
+name = "Infinite Ammo (infantry only)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+iAmmo:
+dd 1
+ 
+[DISABLE]
+iAmmo:
+dd 0"""

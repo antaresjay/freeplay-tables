@@ -1,0 +1,1528 @@
+[game]
+name = "AIRHEART - Tales of broken Wings"
+exe = "shinkansen_airheart_-_tales_of_broken_wings.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=7555"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playermodel-base-address-scan-initialization-activate-this-first"
+name = "PlayerModel Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerModel_basepointer)
+registersymbol(PlayerModel_update_enable)
+registersymbol(PlayerModel_set_enable)
+registersymbol(PlayerModel_healthset_enable)
+registersymbol(PlayerModel_invulnerableset_enable)
+
+alloc(PlayerModel_basepointer, 4)
+alloc(PlayerModel_update_enable, 4)
+alloc(PlayerModel_set_enable, 4)
+alloc(PlayerModel_healthset_enable, 4)
+alloc(PlayerModel_invulnerableset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayerModel_basepointer)
+unregistersymbol(PlayerModel_update_enable)
+unregistersymbol(PlayerModel_set_enable)
+unregistersymbol(PlayerModel_healthset_enable)
+unregistersymbol(PlayerModel_invulnerableset_enable)
+
+dealloc(PlayerModel_basepointer)
+dealloc(PlayerModel_update_enable)
+dealloc(PlayerModel_set_enable)
+dealloc(PlayerModel_healthset_enable)
+dealloc(PlayerModel_invulnerableset_enable)"""
+
+[[cheat]]
+id = "playermodel-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "PlayerModel Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerModel_savedAOB)
+label(PlayerModel_returnhere)
+label(PlayerModel_originalcode)
+label(PlayerModel_exit)
+
+label(PlayerModel_update_exit)
+label(PlayerModel_set_exit)
+label(PlayerModel_healthset_exit)
+label(PlayerModel_invulnerableset_exit)
+
+registersymbol(PlayerModel_savedAOB)
+
+//35AF637A - 8B 45 08              - mov eax,[ebp+08]
+//35AF637D - 8B 40 14              - mov eax,[eax+14]
+// Blindflug:PlayerView:OnReelIn+78
+//35AF6380 - 8B 80 8C000000        - mov eax,[eax+0000008C]
+//35AF6386 - 8B 80 8C000000        - mov eax,[eax+0000008C]
+//35AF638C - 83 EC 08              - sub esp,08
+//35AF638F - 6A 00                 - push 00
+//35AF6391 - 50                    - push eax
+//35AF6392 - E8 D1939ACE           - call 0449F768
+//35AF6397 - 83 C4 10              - add esp,10
+//35AF639A - 85 C0                 - test eax,eax
+//35AF639C - 0F85 2E010000         - jne 35AF64D0
+//35AF63A2 - 39 36                 - cmp [esi],esi
+//35AF63A4 - 8B 46 7C              - mov eax,[esi+7C]
+//35AF63A7 - 8B C8                 - mov ecx,eax
+aobscan(PlayerModel_searchedAOB, 8B 80 8C 00 00 00 8B 80 8C 00 00 00 83 EC 08 6A 00 50 * * * * * 83 C4 10 85 C0 0F * * * * * 39 36)
+
+alloc(PlayerModel_newmem, 2048, PlayerModel_searchedAOB)
+alloc(PlayerModel_temp1, 4, PlayerModel_searchedAOB)
+alloc(PlayerModel_temp2, 4, PlayerModel_searchedAOB)
+alloc(PlayerModel_temp3, 4, PlayerModel_searchedAOB)
+alloc(PlayerModel_temp4, 4, PlayerModel_searchedAOB)
+alloc(PlayerModel_temp5, 4, PlayerModel_searchedAOB)
+
+
+PlayerModel_newmem:
+mov [PlayerModel_temp1], eax
+mov [PlayerModel_temp2], ebx
+mov [PlayerModel_temp3], ecx
+mov [PlayerModel_temp4], edx
+
+cmp dword ptr [PlayerModel_update_enable], #0
+je PlayerModel_update_exit
+mov [PlayerModel_basepointer], eax
+PlayerModel_update_exit:
+
+cmp dword ptr [PlayerModel_set_enable], #0
+je PlayerModel_set_exit
+PlayerModel_set_exit:
+
+cmp dword ptr [PlayerModel_healthset_enable], #0
+je PlayerModel_healthset_exit
+mov ebx, [eax+8]
+test ebx, ebx
+je PlayerModel_healthset_exit
+mov [ebx+14], (float)9999
+fld [ebx+14]
+fstp [ebx+10]
+PlayerModel_healthset_exit:
+
+cmp dword ptr [PlayerModel_invulnerableset_enable], #0
+je PlayerModel_invulnerableset_exit
+mov byte ptr [eax+26], #1
+PlayerModel_invulnerableset_exit:
+
+mov eax, [PlayerModel_temp1]
+mov ebx, [PlayerModel_temp2]
+mov ecx, [PlayerModel_temp3]
+mov edx, [PlayerModel_temp4]
+
+
+PlayerModel_originalcode:
+db 8B 80 8C 00 00 00
+//mov eax,[eax+0000008C]
+
+
+PlayerModel_exit:
+jmp PlayerModel_returnhere
+
+
+PlayerModel_searchedAOB:
+PlayerModel_savedAOB:
+jmp PlayerModel_newmem
+nop
+PlayerModel_returnhere:
+
+
+[DISABLE]
+PlayerModel_savedAOB:
+db 8B 80 8C 00 00 00
+//mov eax,[eax+0000008C]
+
+unregistersymbol(PlayerModel_savedAOB)
+
+dealloc(PlayerModel_newmem)
+dealloc(PlayerModel_temp1)
+dealloc(PlayerModel_temp2)
+dealloc(PlayerModel_temp3)
+dealloc(PlayerModel_temp4)
+dealloc(PlayerModel_temp5)"""
+
+[[cheat]]
+id = "health-set-to-massive"
+name = "Health Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "invulnerable-set-to-invulnerable"
+name = "Invulnerable Set to Invulnerable?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_invulnerableset_enable"
+hops = []
+
+[[cheat]]
+id = "playermodel-update-base-address"
+name = "PlayerModel Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = [
+    "+0x8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "health"
+name = "_health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = [
+    "+0x8",
+    "+0x10",
+]
+
+[[cheat]]
+id = "maxhealth"
+name = "_maxHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = [
+    "+0x8",
+    "+0x14",
+]
+
+[[cheat]]
+id = "harpoonedk-backingfield"
+name = "Harpoonedk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "canuseportal"
+name = "CanUsePortal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x25"]
+
+[[cheat]]
+id = "isinvulnerable"
+name = "IsInvulnerable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x26"]
+
+[[cheat]]
+id = "basearmor"
+name = "baseArmor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "currentarmork-backingfield"
+name = "CurrentArmork__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "dealingcollisiondamage"
+name = "DealingCollisionDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "collisiondmg"
+name = "_collisionDmg"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "dontcountfriendlyfire"
+name = "DontCountFriendlyFire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "speed"
+name = "speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "isdeadk-backingfield"
+name = "IsDeadk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "isactive"
+name = "isActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x41"]
+
+[[cheat]]
+id = "lowhealthpercentage"
+name = "lowHealthPercentage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "overdriveamplifierk-backingfield"
+name = "OverdriveAmplifierk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "overdrivecooldownk-backingfield"
+name = "OverdriveCooldownk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x4c"]
+
+[[cheat]]
+id = "useoverdrivek-backingfield"
+name = "UseOverdrivek__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "aftershotcancelk-backingfield"
+name = "AfterShotCancelk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x51"]
+
+[[cheat]]
+id = "rageamplifierk-backingfield"
+name = "RageAmplifierk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "useragek-backingfield"
+name = "UseRagek__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "outlinewhenhidden"
+name = "OutlineWhenHidden"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x59"]
+
+[[cheat]]
+id = "takesbumpdamage"
+name = "takesBumpDamage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x5a"]
+
+[[cheat]]
+id = "mytype-type-actortype-unknown"
+name = "myType (type: ActorType) UNKNOWN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "reflectingbulletsk-backingfield"
+name = "ReflectingBulletsk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "preventgameobjectdestruction"
+name = "PreventGameObjectDestruction"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x65"]
+
+[[cheat]]
+id = "divespeeddamping"
+name = "DiveSpeedDamping"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "divetransitionduration"
+name = "DiveTransitionDuration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "finaldivespeed"
+name = "FinalDiveSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "deleteafterdive"
+name = "DeleteAfterDive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "healthbarsize"
+name = "HealthBarSize"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "healthbarthickness"
+name = "HealthBarThickness"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "healthbarlinearsegmentpadding"
+name = "HealthBarLinearSegmentPadding"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "nohealthbar"
+name = "NoHealthBar"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "playerid"
+name = "PlayerID"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "followme"
+name = "FollowMe"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "usingalternateweaponk-backingfield"
+name = "UsingAlternateWeaponk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0xb1"]
+
+[[cheat]]
+id = "usingtemporaryweaponk-backingfield"
+name = "UsingTemporaryWeaponk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0xb2"]
+
+[[cheat]]
+id = "divecollisiondamage"
+name = "DiveCollisionDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "timetostartdive"
+name = "TimeToStartDive"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "tutorialshown"
+name = "TutorialShown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerModel_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "repositoryitem-base-address-scan-initialization-activate-this-first"
+name = "RepositoryItem Base Address Scan Initialization (Activate This First)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(RepositoryItem_basepointer)
+registersymbol(RepositoryItem_update_enable)
+registersymbol(RepositoryItem_set_enable)
+registersymbol(RepositoryItem_quantityset_enable)
+
+alloc(RepositoryItem_basepointer, 4)
+alloc(RepositoryItem_update_enable, 4)
+alloc(RepositoryItem_set_enable, 4)
+alloc(RepositoryItem_quantityset_enable, 4)
+
+[DISABLE]
+unregistersymbol(RepositoryItem_basepointer)
+unregistersymbol(RepositoryItem_update_enable)
+unregistersymbol(RepositoryItem_set_enable)
+unregistersymbol(RepositoryItem_quantityset_enable)
+
+dealloc(RepositoryItem_basepointer)
+dealloc(RepositoryItem_update_enable)
+dealloc(RepositoryItem_set_enable)
+dealloc(RepositoryItem_quantityset_enable)"""
+
+[[cheat]]
+id = "repositoryitem-base-address-scan-to-activate-view-workbench-to-update-view-workbench"
+name = "RepositoryItem Base Address Scan (To Activate: View Workbench, To Update: View Workbench)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(RepositoryItem_savedAOB)
+label(RepositoryItem_returnhere)
+label(RepositoryItem_originalcode)
+label(RepositoryItem_exit)
+
+label(RepositoryItem_update_exit)
+label(RepositoryItem_set_exit)
+label(RepositoryItem_quantityset_exit)
+
+registersymbol(RepositoryItem_savedAOB)
+
+//07E60E99 - 8B C8                 - mov ecx,eax
+//07E60E9B - 39 09                 - cmp [ecx],ecx
+// Blindflug.Items.Crafting:CraftingManager:spawnResources+3a5
+//07E60E9D - 8B 40 18              - mov eax,[eax+18]
+//07E60EA0 - 89 85 7CFFFFFF        - mov [ebp-00000084],eax
+//07E60EA6 - 8D 85 7CFFFFFF        - lea eax,[ebp-00000084]
+//07E60EAC - 83 EC 0C              - sub esp,0C
+//07E60EAF - 50                    - push eax
+//07E60EB0 - E8 CBC57AFC           - call 0460D480
+//07E60EB5 - 83 C4 10              - add esp,10
+aobscan(RepositoryItem_searchedAOB, 8B 40 18 89 85 7C FF FF FF 8D 85 7C FF FF FF 83 EC 0C 50)
+
+alloc(RepositoryItem_newmem, 2048, RepositoryItem_searchedAOB)
+alloc(RepositoryItem_temp1, 4, RepositoryItem_searchedAOB)
+alloc(RepositoryItem_temp2, 4, RepositoryItem_searchedAOB)
+alloc(RepositoryItem_temp3, 4, RepositoryItem_searchedAOB)
+alloc(RepositoryItem_temp4, 4, RepositoryItem_searchedAOB)
+alloc(RepositoryItem_temp5, 4, RepositoryItem_searchedAOB)
+
+
+RepositoryItem_newmem:
+mov [RepositoryItem_temp1], eax
+mov [RepositoryItem_temp2], ebx
+mov [RepositoryItem_temp3], ecx
+mov [RepositoryItem_temp4], edx
+
+cmp dword ptr [RepositoryItem_update_enable], #0
+je RepositoryItem_update_exit
+mov [RepositoryItem_basepointer], eax
+RepositoryItem_update_exit:
+
+cmp dword ptr [RepositoryItem_set_enable], #0
+je RepositoryItem_set_exit
+RepositoryItem_set_exit:
+
+cmp dword ptr [RepositoryItem_quantityset_enable], #0
+je RepositoryItem_quantityset_exit
+mov [eax+18], #999
+RepositoryItem_quantityset_exit:
+
+mov eax, [RepositoryItem_temp1]
+mov ebx, [RepositoryItem_temp2]
+mov ecx, [RepositoryItem_temp3]
+mov edx, [RepositoryItem_temp4]
+
+
+RepositoryItem_originalcode:
+db 8B 40 18 89 85 7C FF FF FF
+//mov eax,[eax+18]
+//mov [ebp-00000084],eax
+
+
+RepositoryItem_exit:
+jmp RepositoryItem_returnhere
+
+
+RepositoryItem_searchedAOB:
+RepositoryItem_savedAOB:
+jmp RepositoryItem_newmem
+nop
+nop
+nop
+nop
+RepositoryItem_returnhere:
+
+
+[DISABLE]
+RepositoryItem_savedAOB:
+db 8B 40 18 89 85 7C FF FF FF
+//mov eax,[eax+18]
+//mov [ebp-00000084],eax
+
+unregistersymbol(RepositoryItem_savedAOB)
+
+dealloc(RepositoryItem_newmem)
+dealloc(RepositoryItem_temp1)
+dealloc(RepositoryItem_temp2)
+dealloc(RepositoryItem_temp3)
+dealloc(RepositoryItem_temp4)
+dealloc(RepositoryItem_temp5)"""
+
+[[cheat]]
+id = "quantity-set-to-massive"
+name = "Quantity Set to Massive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_quantityset_enable"
+hops = []
+
+[[cheat]]
+id = "repositoryitem-update-base-address"
+name = "RepositoryItem Update Base Address?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "hidefromplayer"
+name = "hideFromPlayer"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "notusable"
+name = "notUsable"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x15"]
+
+[[cheat]]
+id = "numowned"
+name = "_numOwned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "numscrapsowned"
+name = "_numScrapsOwned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "hasblueprintowned"
+name = "_hasBlueprintOwned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "isdirty"
+name = "_isDirty"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x21"]
+
+[[cheat]]
+id = "invented"
+name = "_invented"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x22"]
+
+[[cheat]]
+id = "everowned"
+name = "_everOwned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x23"]
+
+[[cheat]]
+id = "seenininventory"
+name = "_seenInInventory"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "RepositoryItem_basepointer"
+hops = ["+0x24"]
+
+[[cheat]]
+id = "gamestatusmanagermodel-base-address-scan-initialization-activate-this-first"
+name = "GameStatusManagerModel Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GameStatusManagerModel_basepointer)
+registersymbol(GameStatusManagerModel_update_enable)
+registersymbol(GameStatusManagerModel_set_enable)
+registersymbol(GameStatusManagerModel_moneyset_enable)
+registersymbol(GameStatusManagerModel_oilset_enable)
+
+alloc(GameStatusManagerModel_basepointer, 4)
+alloc(GameStatusManagerModel_update_enable, 4)
+alloc(GameStatusManagerModel_set_enable, 4)
+alloc(GameStatusManagerModel_moneyset_enable, 4)
+alloc(GameStatusManagerModel_oilset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(GameStatusManagerModel_basepointer)
+unregistersymbol(GameStatusManagerModel_update_enable)
+unregistersymbol(GameStatusManagerModel_set_enable)
+unregistersymbol(GameStatusManagerModel_moneyset_enable)
+unregistersymbol(GameStatusManagerModel_oilset_enable)
+
+dealloc(GameStatusManagerModel_basepointer)
+dealloc(GameStatusManagerModel_update_enable)
+dealloc(GameStatusManagerModel_set_enable)
+dealloc(GameStatusManagerModel_moneyset_enable)
+dealloc(GameStatusManagerModel_oilset_enable)"""
+
+[[cheat]]
+id = "gamestatusmanagermodel-base-address-scan-to-activate-view-shop-to-update-view-shop"
+name = "GameStatusManagerModel Base Address Scan (To Activate: View Shop, To Update: View Shop)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GameStatusManagerModel_savedAOB)
+label(GameStatusManagerModel_returnhere)
+label(GameStatusManagerModel_originalcode)
+label(GameStatusManagerModel_exit)
+
+label(GameStatusManagerModel_update_exit)
+label(GameStatusManagerModel_set_exit)
+label(GameStatusManagerModel_moneyset_exit)
+label(GameStatusManagerModel_oilset_exit)
+
+registersymbol(GameStatusManagerModel_savedAOB)
+
+//1AEE55EB - 8B C8                 - mov ecx,eax
+//1AEE55ED - 39 09                 - cmp [ecx],ecx
+// Blindflug.Items:Inventory:CanBuy+7f
+//1AEE55EF - 8B 40 30              - mov eax,[eax+30]
+//1AEE55F2 - 50                    - push eax
+//1AEE55F3 - DB 04 24              - fild dword ptr [esp]
+//1AEE55F6 - D9 1C 24              - fstp dword ptr [esp]
+//1AEE55F9 - D9 04 24              - fld dword ptr [esp]
+//1AEE55FC - 83 C4 04              - add esp,04
+//1AEE55FF - DFF1                  - fcomip st(0),st(1)
+//1AEE5601 - DDD8                  - fstp st(0)
+//1AEE5603 - 72 05                 - jb 1AEE560A
+aobscan(GameStatusManagerModel_searchedAOB, 8B 40 30 50 DB 04 24 D9 1C 24 D9 04 24 83 C4 04 DF F1)
+
+alloc(GameStatusManagerModel_newmem, 2048, GameStatusManagerModel_searchedAOB)
+alloc(GameStatusManagerModel_temp1, 4, GameStatusManagerModel_searchedAOB)
+alloc(GameStatusManagerModel_temp2, 4, GameStatusManagerModel_searchedAOB)
+alloc(GameStatusManagerModel_temp3, 4, GameStatusManagerModel_searchedAOB)
+alloc(GameStatusManagerModel_temp4, 4, GameStatusManagerModel_searchedAOB)
+alloc(GameStatusManagerModel_temp5, 4, GameStatusManagerModel_searchedAOB)
+
+
+GameStatusManagerModel_newmem:
+mov [GameStatusManagerModel_temp1], eax
+mov [GameStatusManagerModel_temp2], ebx
+mov [GameStatusManagerModel_temp3], ecx
+mov [GameStatusManagerModel_temp4], edx
+
+cmp dword ptr [GameStatusManagerModel_update_enable], #0
+je GameStatusManagerModel_update_exit
+mov [GameStatusManagerModel_basepointer], eax
+GameStatusManagerModel_update_exit:
+
+cmp dword ptr [GameStatusManagerModel_set_enable], #0
+je GameStatusManagerModel_set_exit
+GameStatusManagerModel_set_exit:
+
+cmp dword ptr [GameStatusManagerModel_moneyset_enable], #0
+je GameStatusManagerModel_moneyset_exit
+mov [eax+30], #9999999
+GameStatusManagerModel_moneyset_exit:
+
+cmp dword ptr [GameStatusManagerModel_oilset_enable], #0
+je GameStatusManagerModel_oilset_exit
+mov [eax+2c], (float)9999
+GameStatusManagerModel_oilset_exit:
+
+mov eax, [GameStatusManagerModel_temp1]
+mov ebx, [GameStatusManagerModel_temp2]
+mov ecx, [GameStatusManagerModel_temp3]
+mov edx, [GameStatusManagerModel_temp4]
+
+
+GameStatusManagerModel_originalcode:
+db 8B 40 30 50 DB 04 24
+//mov eax,[eax+30]
+//push eax
+//fild dword ptr [esp]
+
+
+GameStatusManagerModel_exit:
+jmp GameStatusManagerModel_returnhere
+
+
+GameStatusManagerModel_searchedAOB:
+GameStatusManagerModel_savedAOB:
+jmp GameStatusManagerModel_newmem
+nop
+nop
+GameStatusManagerModel_returnhere:
+
+
+[DISABLE]
+GameStatusManagerModel_savedAOB:
+db 8B 40 30 50 DB 04 24
+//mov eax,[eax+30]
+//push eax
+//fild dword ptr [esp]
+
+unregistersymbol(GameStatusManagerModel_savedAOB)
+
+dealloc(GameStatusManagerModel_newmem)
+dealloc(GameStatusManagerModel_temp1)
+dealloc(GameStatusManagerModel_temp2)
+dealloc(GameStatusManagerModel_temp3)
+dealloc(GameStatusManagerModel_temp4)
+dealloc(GameStatusManagerModel_temp5)"""
+
+[[cheat]]
+id = "money-set-to-massive"
+name = "Money Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStatusManagerModel_moneyset_enable"
+hops = []
+
+[[cheat]]
+id = "oil-set-to-massive"
+name = "Oil Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStatusManagerModel_oilset_enable"
+hops = []
+
+[[cheat]]
+id = "gamestatusmanagermodel-update-base-address"
+name = "GameStatusManagerModel Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStatusManagerModel_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStatusManagerModel_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "isdisposed"
+name = "_isDisposed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStatusManagerModel_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "currentoilk-backingfield"
+name = "CurrentOilk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStatusManagerModel_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "currentmoney"
+name = "_currentMoney"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameStatusManagerModel_basepointer"
+hops = ["+0x30"]

@@ -1,0 +1,1422 @@
+[game]
+name = "Door Kickers: Action Squad"
+exe = "shinkansen_door_kickers_action_squad.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=7852"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_healthset_enable)
+registersymbol(playerstats_ammoset_enable)
+registersymbol(playerstats_cooldownset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_healthset_enable, 4)
+alloc(playerstats_ammoset_enable, 4)
+alloc(playerstats_cooldownset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_healthset_enable)
+unregistersymbol(playerstats_ammoset_enable)
+unregistersymbol(playerstats_cooldownset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_healthset_enable)
+dealloc(playerstats_ammoset_enable)
+dealloc(playerstats_cooldownset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_healthset_exit)
+label(playerstats_ammoset_exit)
+label(playerstats_cooldownset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//004F8A02 - C6 45 AF 01           - mov byte ptr [ebp-51],01
+//004F8A06 - 83 BC B7 E0290000 00  - cmp dword ptr [edi+esi*4+000029E0],00
+// Accesses Visual Strategic Points
+//004F8A0E - 8B 84 B7 C8290000     - mov eax,[edi+esi*4+000029C8]
+//004F8A15 - 0F94 85 73FFFFFF      - sete [ebp-0000008D]
+//004F8A1C - 89 45 E4              - mov [ebp-1C],eax
+//004F8A1F - D9 45 E4              - fld dword ptr [ebp-1C]
+//004F8A22 - 83 EC 08              - sub esp,08
+//004F8A25 - DD 1C 24              - fstp qword ptr [esp]
+aobscan(playerstats_searchedAOB, 83 BC B7 E0 29 00 00 00 8B 84 B7 C8 29 00 00 0F 94 85 73 FF FF FF 89 45 E4 D9 45 E4)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+alloc(playerstats_temp5, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], edi
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_healthset_enable], #0
+je playerstats_healthset_exit
+mov ebx, [edi+24]
+test ebx, ebx
+je playerstats_healthset_exit
+mov [ebx+11d0], (float)9999
+fld [ebx+11d0]
+fstp [ebx+33e0]
+mov [ebx+11d4], (float)9999
+fld [ebx+11d4]
+fstp [ebx+33e4]
+playerstats_healthset_exit:
+
+cmp dword ptr [playerstats_ammoset_enable], #0
+je playerstats_ammoset_exit
+mov ebx, [edi+24]
+test ebx, ebx
+je playerstats_ammoset_exit
+mov ecx, [ebx+8ed8]
+test ecx, ecx
+je playerstats_ammoset_exit
+mov [ecx+af4], #99
+mov ecx, [ebx+8edc]
+test ecx, ecx
+je playerstats_ammoset_exit
+mov [ecx+af4], #99
+mov ecx, [ebx+8ee0]
+test ecx, ecx
+je playerstats_ammoset_exit
+mov [ecx+af4], #99
+playerstats_ammoset_exit:
+
+cmp dword ptr [playerstats_cooldownset_enable], #0
+je playerstats_cooldownset_exit
+mov ebx, [edi+24]
+test ebx, ebx
+je playerstats_cooldownset_exit
+mov ecx, [ebx+8ed8]
+test ecx, ecx
+je playerstats_cooldownset_exit
+mov [ecx+af8], (float)0
+mov ecx, [ebx+8edc]
+test ecx, ecx
+je playerstats_cooldownset_exit
+mov [ecx+af8], (float)0
+mov ecx, [ebx+8ee0]
+test ecx, ecx
+je playerstats_cooldownset_exit
+mov [ecx+af8], (float)0
+playerstats_cooldownset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+db 83 BC B7 E0 29 00 00 00
+//cmp dword ptr [edi+esi*4+000029E0],00
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 83 BC B7 E0 29 00 00 00
+//cmp dword ptr [edi+esi*4+000029E0],00
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "health-body-armor-set-to-max"
+name = "Health, Body Armor Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "ammo-set-to-massive"
+name = "Ammo Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_ammoset_enable"
+hops = []
+
+[[cheat]]
+id = "cooldown-set-to-0"
+name = "Cooldown Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_cooldownset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "visual-strategic-points"
+name = "Visual Strategic Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x29c8"]
+
+[[cheat]]
+id = "visual-extra-points"
+name = "Visual Extra Points"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x29e0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x0",
+]
+
+[[cheat]]
+id = "horizontal-position-hotkey"
+name = "Horizontal Position (Hotkey)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x24",
+]
+
+[[cheat]]
+id = "vertical-position-hotkey"
+name = "Vertical Position (Hotkey)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x28",
+]
+
+[[cheat]]
+id = "max-health"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x11d0",
+]
+
+[[cheat]]
+id = "max-body-armor"
+name = "Max Body Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x11d4",
+]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x33e0",
+]
+
+[[cheat]]
+id = "body-armor"
+name = "Body Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x33e4",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ed8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "ammo"
+name = "Ammo"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ed8",
+    "+0xaf4",
+]
+
+[[cheat]]
+id = "cooldown"
+name = "Cooldown"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ed8",
+    "+0xaf8",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8edc",
+    "+0x0",
+]
+
+[[cheat]]
+id = "ammo-2"
+name = "Ammo"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8edc",
+    "+0xaf4",
+]
+
+[[cheat]]
+id = "cooldown-2"
+name = "Cooldown"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8edc",
+    "+0xaf8",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee0",
+    "+0x0",
+]
+
+[[cheat]]
+id = "ammo-3"
+name = "Ammo"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee0",
+    "+0xaf4",
+]
+
+[[cheat]]
+id = "cooldown-3"
+name = "Cooldown"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee0",
+    "+0xaf8",
+]
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee4",
+    "+0x0",
+]
+
+[[cheat]]
+id = "ammo-4"
+name = "Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee4",
+    "+0xaf4",
+]
+
+[[cheat]]
+id = "cooldown-4"
+name = "Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee4",
+    "+0xaf8",
+]
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "ammo-5"
+name = "Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee8",
+    "+0xaf4",
+]
+
+[[cheat]]
+id = "cooldown-5"
+name = "Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0x24",
+    "+0x8ee8",
+    "+0xaf8",
+]
+
+[[cheat]]
+id = "strategic-stats-base-address-scan-initialization-activate-this-first"
+name = "Strategic Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(strategicstats_basepointer)
+registersymbol(strategicstats_update_enable)
+registersymbol(strategicstats_set_enable)
+registersymbol(strategicstats_pointsset_enable)
+registersymbol(strategicstats_lifeset_enable)
+
+alloc(strategicstats_basepointer, 4)
+alloc(strategicstats_update_enable, 4)
+alloc(strategicstats_set_enable, 4)
+alloc(strategicstats_pointsset_enable, 4)
+alloc(strategicstats_lifeset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(strategicstats_basepointer)
+unregistersymbol(strategicstats_update_enable)
+unregistersymbol(strategicstats_set_enable)
+unregistersymbol(strategicstats_pointsset_enable)
+unregistersymbol(strategicstats_lifeset_enable)
+
+dealloc(strategicstats_basepointer)
+dealloc(strategicstats_update_enable)
+dealloc(strategicstats_set_enable)
+dealloc(strategicstats_pointsset_enable)
+dealloc(strategicstats_lifeset_enable)"""
+
+[[cheat]]
+id = "strategic-stats-base-address-scan-to-update-scroll-through-gear-refill-strategic-ability"
+name = "Strategic Stats Base Address Scan (To Update: Scroll Through Gear Refill Strategic Ability)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(strategicstats_savedAOB)
+label(strategicstats_returnhere)
+label(strategicstats_originalcode)
+label(strategicstats_exit)
+
+label(strategicstats_update_exit)
+label(strategicstats_set_exit)
+label(strategicstats_pointsset_exit)
+label(strategicstats_lifeset_exit)
+
+registersymbol(strategicstats_savedAOB)
+
+//0053B975 - 03 C0                 - add eax,eax
+//0053B977 - 51                    - push ecx
+// Accesses Strategic
+//0053B978 - DB 04 C7              - fild dword ptr [edi+eax*8]
+//0053B97B - D9 5D E4              - fstp dword ptr [ebp-1C]
+//0053B97E - D9 45 E4              - fld dword ptr [ebp-1C]
+//0053B981 - D8 35 6C535D00        - fdiv dword ptr [005D536C] : [(float)1000.0000]
+//0053B987 - D9 5D E4              - fstp dword ptr [ebp-1C]
+aobscan(strategicstats_searchedAOB, DB 04 C7 D9 5D E4 D9 45 E4)
+
+alloc(strategicstats_newmem, 2048, strategicstats_searchedAOB)
+alloc(strategicstats_temp1, 4, strategicstats_searchedAOB)
+alloc(strategicstats_temp2, 4, strategicstats_searchedAOB)
+alloc(strategicstats_temp3, 4, strategicstats_searchedAOB)
+alloc(strategicstats_temp4, 4, strategicstats_searchedAOB)
+alloc(strategicstats_temp5, 4, strategicstats_searchedAOB)
+
+
+strategicstats_newmem:
+mov [strategicstats_temp1], eax
+mov [strategicstats_temp2], ebx
+mov [strategicstats_temp3], ecx
+mov [strategicstats_temp4], edx
+
+cmp dword ptr [strategicstats_update_enable], #0
+je strategicstats_update_exit
+mov [strategicstats_basepointer], edi
+strategicstats_update_exit:
+
+cmp dword ptr [strategicstats_set_enable], #0
+je strategicstats_set_exit
+strategicstats_set_exit:
+
+cmp dword ptr [strategicstats_pointsset_enable], #0
+je strategicstats_pointsset_exit
+mov [edi+1d40], #10000
+strategicstats_pointsset_exit:
+
+cmp dword ptr [strategicstats_lifeset_enable], #0
+je strategicstats_lifeset_exit
+mov [edi+1d44], #9
+strategicstats_lifeset_exit:
+
+mov eax, [strategicstats_temp1]
+mov ebx, [strategicstats_temp2]
+mov ecx, [strategicstats_temp3]
+mov edx, [strategicstats_temp4]
+
+
+strategicstats_originalcode:
+db DB 04 C7 D9 5D E4
+//fild dword ptr [edi+eax*8]
+//fstp dword ptr [ebp-1C]
+
+
+strategicstats_exit:
+jmp strategicstats_returnhere
+
+
+strategicstats_searchedAOB:
+strategicstats_savedAOB:
+jmp strategicstats_newmem
+nop
+strategicstats_returnhere:
+
+
+[DISABLE]
+strategicstats_savedAOB:
+db DB 04 C7 D9 5D E4
+//fild dword ptr [edi+eax*8]
+//fstp dword ptr [ebp-1C]
+
+unregistersymbol(strategicstats_savedAOB)
+
+dealloc(strategicstats_newmem)
+dealloc(strategicstats_temp1)
+dealloc(strategicstats_temp2)
+dealloc(strategicstats_temp3)
+dealloc(strategicstats_temp4)
+dealloc(strategicstats_temp5)"""
+
+[[cheat]]
+id = "strategic-points-set-to-massive"
+name = "Strategic Points Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategicstats_pointsset_enable"
+hops = []
+
+[[cheat]]
+id = "extra-life-set-to-massive"
+name = "Extra Life Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategicstats_lifeset_enable"
+hops = []
+
+[[cheat]]
+id = "strategic-stats-update-base-address"
+name = "Strategic Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategicstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategicstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "strategic-1000"
+name = "Strategic (* 1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategicstats_basepointer"
+hops = ["+0x1d40"]
+
+[[cheat]]
+id = "extra-life"
+name = "Extra Life"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategicstats_basepointer"
+hops = ["+0x1d44"]
+
+[[cheat]]
+id = "bomb-stats-base-address-scan-initialization-activate-this-first"
+name = "Bomb Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(bombstats_basepointer)
+registersymbol(bombstats_update_enable)
+registersymbol(bombstats_set_enable)
+registersymbol(bombstats_timerset_enable)
+
+alloc(bombstats_basepointer, 4)
+alloc(bombstats_update_enable, 4)
+alloc(bombstats_set_enable, 4)
+alloc(bombstats_timerset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(bombstats_basepointer)
+unregistersymbol(bombstats_update_enable)
+unregistersymbol(bombstats_set_enable)
+unregistersymbol(bombstats_timerset_enable)
+
+dealloc(bombstats_basepointer)
+dealloc(bombstats_update_enable)
+dealloc(bombstats_set_enable)
+dealloc(bombstats_timerset_enable)"""
+
+[[cheat]]
+id = "bomb-stats-base-address-scan-to-update-play-level"
+name = "Bomb Stats Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(bombstats_savedAOB)
+label(bombstats_returnhere)
+label(bombstats_originalcode)
+label(bombstats_exit)
+
+label(bombstats_update_exit)
+label(bombstats_set_exit)
+label(bombstats_timerset_exit)
+
+registersymbol(bombstats_savedAOB)
+
+//0051C84C - DDD9                  - fstp st(1)
+//0051C84E - 0F85 47080000         - jne 0051D09B
+// Accesses Bomb Timer
+//0051C854 - D8 AE 28070000        - fsubr dword ptr [esi+00000728]
+//0051C85A - 8B 9E 28070000        - mov ebx,[esi+00000728]
+//0051C860 - 8D 8F F0200000        - lea ecx,[edi+000020F0]
+//0051C866 - 51                    - push ecx
+aobscan(bombstats_searchedAOB, D8 AE 28 07 00 00 8B 9E 28 07 00 00)
+
+alloc(bombstats_newmem, 2048, bombstats_searchedAOB)
+alloc(bombstats_temp1, 4, bombstats_searchedAOB)
+alloc(bombstats_temp2, 4, bombstats_searchedAOB)
+alloc(bombstats_temp3, 4, bombstats_searchedAOB)
+alloc(bombstats_temp4, 4, bombstats_searchedAOB)
+alloc(bombstats_temp5, 4, bombstats_searchedAOB)
+
+
+bombstats_newmem:
+mov [bombstats_temp1], eax
+mov [bombstats_temp2], ebx
+mov [bombstats_temp3], ecx
+mov [bombstats_temp4], edx
+
+cmp dword ptr [bombstats_update_enable], #0
+je bombstats_update_exit
+mov [bombstats_basepointer], esi
+bombstats_update_exit:
+
+cmp dword ptr [bombstats_set_enable], #0
+je bombstats_set_exit
+bombstats_set_exit:
+
+cmp dword ptr [bombstats_timerset_enable], #0
+je bombstats_timerset_exit
+mov [esi+728], (float)3600.5
+bombstats_timerset_exit:
+
+mov eax, [bombstats_temp1]
+mov ebx, [bombstats_temp2]
+mov ecx, [bombstats_temp3]
+mov edx, [bombstats_temp4]
+
+
+bombstats_originalcode:
+db D8 AE 28 07 00 00
+//fsubr dword ptr [esi+00000728]
+
+
+bombstats_exit:
+jmp bombstats_returnhere
+
+
+bombstats_searchedAOB:
+bombstats_savedAOB:
+jmp bombstats_newmem
+nop
+bombstats_returnhere:
+
+
+[DISABLE]
+bombstats_savedAOB:
+db D8 AE 28 07 00 00
+//fsubr dword ptr [esi+00000728]
+
+unregistersymbol(bombstats_savedAOB)
+
+dealloc(bombstats_newmem)
+dealloc(bombstats_temp1)
+dealloc(bombstats_temp2)
+dealloc(bombstats_temp3)
+dealloc(bombstats_temp4)
+dealloc(bombstats_temp5)"""
+
+[[cheat]]
+id = "timer-set-to-massive"
+name = "Timer Set to Massive?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bombstats_timerset_enable"
+hops = []
+
+[[cheat]]
+id = "bomb-stats-update-base-address"
+name = "Bomb Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bombstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-9"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bombstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "bomb-timer"
+name = "Bomb Timer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bombstats_basepointer"
+hops = ["+0x728"]
+
+[[cheat]]
+id = "swat-stats-base-address-scan-initialization-activate-this-first"
+name = "Swat Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(swatstats_basepointer)
+registersymbol(swatstats_update_enable)
+registersymbol(swatstats_set_enable)
+
+alloc(swatstats_basepointer, 4)
+alloc(swatstats_update_enable, 4)
+alloc(swatstats_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(swatstats_basepointer)
+unregistersymbol(swatstats_update_enable)
+unregistersymbol(swatstats_set_enable)
+
+dealloc(swatstats_basepointer)
+dealloc(swatstats_update_enable)
+dealloc(swatstats_set_enable)"""
+
+[[cheat]]
+id = "swat-stats-base-address-scan-to-update-select-swat"
+name = "Swat Stats Base Address Scan (To Update: Select Swat)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(swatstats_savedAOB)
+label(swatstats_returnhere)
+label(swatstats_originalcode)
+label(swatstats_exit)
+
+label(swatstats_update_exit)
+label(swatstats_set_exit)
+
+registersymbol(swatstats_savedAOB)
+
+//004E53A3 - 8B 55 08              - mov edx,[ebp+08]
+//004E53A6 - 33 C0                 - xor eax,eax
+// Accesses Exp
+//004E53A8 - 8B 0C 95 30516400     - mov ecx,[edx*4+00645130]
+//004E53AF - 90                    - nop
+//004E53B0 - 3B 0C 85 78FA6200     - cmp ecx,[eax*4+0062FA78]
+//004E53B7 - 72 0B                 - jb 004E53C4
+//004E53B9 - 40                    - inc eax
+aobscan(swatstats_searchedAOB, 8B 55 08 33 C0 8B 0C 95 30 51 64 00 90 3B 0C 85 78 FA 62 00)
+
+alloc(swatstats_newmem, 2048, swatstats_searchedAOB)
+alloc(swatstats_temp1, 4, swatstats_searchedAOB)
+alloc(swatstats_temp2, 4, swatstats_searchedAOB)
+alloc(swatstats_temp3, 4, swatstats_searchedAOB)
+alloc(swatstats_temp4, 4, swatstats_searchedAOB)
+alloc(swatstats_temp5, 4, swatstats_searchedAOB)
+
+
+swatstats_newmem:
+mov [swatstats_temp1], eax
+mov [swatstats_temp2], ebx
+mov [swatstats_temp3], ecx
+mov [swatstats_temp4], edx
+
+mov ebx, [swatstats_savedAOB+8]
+
+cmp dword ptr [swatstats_update_enable], #0
+je swatstats_update_exit
+mov [swatstats_basepointer], ebx
+swatstats_update_exit:
+
+cmp dword ptr [swatstats_set_enable], #0
+je swatstats_set_exit
+swatstats_set_exit:
+
+mov eax, [swatstats_temp1]
+mov ebx, [swatstats_temp2]
+mov ecx, [swatstats_temp3]
+mov edx, [swatstats_temp4]
+
+
+swatstats_originalcode:
+db 8B 55 08 33 C0
+//mov edx,[ebp+08]
+//xor eax,eax
+
+
+swatstats_exit:
+jmp swatstats_returnhere
+
+
+swatstats_searchedAOB:
+swatstats_savedAOB:
+jmp swatstats_newmem
+swatstats_returnhere:
+
+
+[DISABLE]
+swatstats_savedAOB:
+db 8B 55 08 33 C0
+//mov edx,[ebp+08]
+//xor eax,eax
+
+unregistersymbol(swatstats_savedAOB)
+
+dealloc(swatstats_newmem)
+dealloc(swatstats_temp1)
+dealloc(swatstats_temp2)
+dealloc(swatstats_temp3)
+dealloc(swatstats_temp4)
+dealloc(swatstats_temp5)"""
+
+[[cheat]]
+id = "swat-stats-update-base-address"
+name = "Swat Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-10"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "assaulter"
+name = "Assaulter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "breacher"
+name = "Breacher"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "shield"
+name = "Shield"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "agent-fergie"
+name = "Agent Fergie"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "recon"
+name = "Recon"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "assaulter-2"
+name = "Assaulter"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "breacher-2"
+name = "Breacher"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "shield-2"
+name = "Shield"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "agent-fergie-2"
+name = "Agent Fergie"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "recon-2"
+name = "Recon"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swatstats_basepointer"
+hops = ["+0xbc"]

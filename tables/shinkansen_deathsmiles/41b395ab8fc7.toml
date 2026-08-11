@@ -1,0 +1,436 @@
+[game]
+name = "Deathsmiles"
+exe = "shinkansen_deathsmiles.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1875"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_healthset_enable)
+registersymbol(playerstats_invincibleset_enable)
+registersymbol(playerstats_itemcountset_enable)
+registersymbol(playerstats_bombset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_healthset_enable, 4)
+alloc(playerstats_invincibleset_enable, 4)
+alloc(playerstats_itemcountset_enable, 4)
+alloc(playerstats_bombset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_healthset_enable)
+unregistersymbol(playerstats_invincibleset_enable)
+unregistersymbol(playerstats_itemcountset_enable)
+unregistersymbol(playerstats_bombset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_healthset_enable)
+dealloc(playerstats_invincibleset_enable)
+dealloc(playerstats_itemcountset_enable)
+dealloc(playerstats_bombset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_healthset_exit)
+label(playerstats_invincibleset_exit)
+label(playerstats_itemcountset_exit)
+label(playerstats_bombset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//5DA8EC80 - 55                    - push ebp
+//5DA8EC81 - 8B EC                 - mov ebp,esp
+//5DA8EC83 - 8B 45 08              - mov eax,[ebp+08]
+//5DA8EC86 - 66 8B 40 06           - mov ax,[eax+06]
+//5DA8EC8A - 5D                    - pop ebp
+//5DA8EC8B - C3                    - ret
+aobscan(playerstats_searchedAOB, 55 8B EC 8B 45 08 66 8B 40 06 5D C3)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], ecx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], eax
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_healthset_enable], #0
+je playerstats_healthset_exit
+mov word ptr [eax+6], #389
+playerstats_healthset_exit:
+
+cmp dword ptr [playerstats_invincibleset_enable], #0
+je playerstats_invincibleset_exit
+mov word ptr [eax+b8], #64
+mov word ptr [eax+dc], #64
+playerstats_invincibleset_exit:
+
+cmp dword ptr [playerstats_itemcountset_enable], #0
+je playerstats_itemcountset_exit
+mov [eax+10c], #1000
+mov [eax+134], #265
+playerstats_itemcountset_exit:
+
+cmp dword ptr [playerstats_bombset_enable], #0
+je playerstats_bombset_exit
+cmp dword ptr [eax+c8], #0
+je playerstats_bombset_exit
+mov ecx, [eax+c8]
+mov [ecx+154], #5
+cmp dword ptr [eax+ec], #0
+je playerstats_bombset_exit
+mov ecx, [eax+ec]
+mov [ecx+154], #5
+playerstats_bombset_exit:
+
+mov ecx, [playerstats_temp1]
+
+
+playerstats_originalcode:
+db 66 8B 40 06 5D
+//mov ax,[eax+06]
+//pop ebp
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB + 6:
+playerstats_savedAOB:
+jmp playerstats_newmem
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 66 8B 40 06 5D
+//mov ax,[eax+06]
+//pop ebp
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)"""
+
+[[cheat]]
+id = "health-set-to-massive"
+name = "Health Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "invincible-timers-set-to-massive"
+name = "Invincible Timers Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_invincibleset_enable"
+hops = []
+
+[[cheat]]
+id = "item-count-mega-black-label-charging-set-to-massive"
+name = "Item Count & Mega Black Label Charging Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_itemcountset_enable"
+hops = []
+
+[[cheat]]
+id = "bombs-set-to-massive"
+name = "Bombs Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_bombset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x6"]
+
+[[cheat]]
+id = "score"
+name = "Score"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "hits"
+name = "Hits"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "invincibility-timer"
+name = "Invincibility Timer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "mega-black-label-invincibility-timer"
+name = "Mega Black Label Invincibility Timer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "mega-black-label-charging"
+name = "Mega Black Label Charging"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc8",
+    "+0x0",
+]
+
+[[cheat]]
+id = "bomb"
+name = "Bomb"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xc8",
+    "+0x154",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xec",
+    "+0x0",
+]
+
+[[cheat]]
+id = "bomb-2"
+name = "Bomb"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = [
+    "+0xec",
+    "+0x154",
+]
+
+[[cheat]]
+id = "item-count"
+name = "Item Count"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x10c"]

@@ -1,0 +1,927 @@
+[game]
+name = "The Long Dark"
+exe = "tld.exe"
+notes = "Converted from a Cheat Engine table by JLee3D. Source: https://fearlessrevolution.com/viewtopic.php?t=10805"
+verified = []
+author = "JLee3D"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "guns-inf-loaded-ammo"
+name = "[Guns] INF Loaded Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-04
+  Author : JLee
+
+  * Guns will not consume loaded ammo.
+  * Works with Rifle and Revolver.
+  * At least 1 ammo is still needed in the gun.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,FF 48 2C 48 8B 0D A5 70 C2 02) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+DF2E11)
+
+label(code)
+label(return)
+
+newmem:
+  // RAX is our base address for the ammo's class structure.
+  // Do not use ADD as it sets the carry flag
+  // which is sometimes used by TLD functions
+  // and crash the game if we do not restore it.
+  // Enable INC if gun ammo is not full.
+  //inc [rax+2C]
+
+code:
+  // do not DECrease our ammo quantity
+  //dec [rax+2C]
+  mov rcx,[GameAssembly.dll+3A19EC0]
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db FF 48 2C 48 8B 0D A5 70 C2 02
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+DF2E11
+
+"GameAssembly.dll"+DF2DE8: 48 8B CB              -  mov rcx,rbx
+"GameAssembly.dll"+DF2DEB: E8 70 4F 33 01        -  call GameAssembly.dll+2127D60
+"GameAssembly.dll"+DF2DF0: 84 C0                 -  test al,al
+"GameAssembly.dll"+DF2DF2: 74 52                 -  je GameAssembly.dll+DF2E46
+"GameAssembly.dll"+DF2DF4: 48 8B 46 40           -  mov rax,[rsi+40]
+"GameAssembly.dll"+DF2DF8: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+DF2DFB: 0F 84 5E 11 00 00     -  je GameAssembly.dll+DF3F5F
+"GameAssembly.dll"+DF2E01: 48 8B 80 00 02 00 00  -  mov rax,[rax+00000200]
+"GameAssembly.dll"+DF2E08: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+DF2E0B: 0F 84 4E 11 00 00     -  je GameAssembly.dll+DF3F5F
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+DF2E11: FF 48 2C              -  dec [rax+2C]
+"GameAssembly.dll"+DF2E14: 48 8B 0D A5 70 C2 02  -  mov rcx,[GameAssembly.dll+3A19EC0]
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+DF2E1B: F6 81 27 01 00 00 02  -  test byte ptr [rcx+00000127],02
+"GameAssembly.dll"+DF2E22: 74 0E                 -  je GameAssembly.dll+DF2E32
+"GameAssembly.dll"+DF2E24: 83 B9 D8 00 00 00 00  -  cmp dword ptr [rcx+000000D8],00
+"GameAssembly.dll"+DF2E2B: 75 05                 -  jne GameAssembly.dll+DF2E32
+"GameAssembly.dll"+DF2E2D: E8 4E 5B 47 FF        -  call GameAssembly.dll+268980
+"GameAssembly.dll"+DF2E32: 33 C9                 -  xor ecx,ecx
+"GameAssembly.dll"+DF2E34: E8 A7 5F 58 FF        -  call GameAssembly.dll+378DE0
+"GameAssembly.dll"+DF2E39: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+DF2E3C: 0F 84 1D 11 00 00     -  je GameAssembly.dll+DF3F5F
+"GameAssembly.dll"+DF2E42: C6 40 26 01           -  mov byte ptr [rax+26],01
+}"""
+
+[[cheat]]
+id = "campfire-inf-usage-of-coal-wood-stick"
+name = "[Campfire] INF Usage of Coal/Wood/Stick"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-02
+  Author : JLee
+
+  * Adding fuel into fire (barrel/campfire/forge) will not
+    consume the item. Works with stackable wood/coal/sticks.
+  * Starting fires will also not consume matches, tinder plugs
+    & accelerants.
+  * Non-stackable items like books will be consumed.
+}
+
+[ENABLE]
+
+aobscanmodule(NODECREASE,GameAssembly.dll,FF 4B 18 40 0F B6 FF) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+3398A0)
+
+label(code)
+label(return)
+
+newmem:
+  // rbx is our base address which holds the
+  // fuel's quantity in its structure at
+  // offset 0x18
+
+code:
+  // do not DECrease our fuel quantity
+  //dec [rbx+18]
+  movzx edi,dil
+  jmp return
+
+NODECREASE:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(NODECREASE)
+
+[DISABLE]
+
+NODECREASE:
+  db FF 4B 18 40 0F B6 FF
+
+unregistersymbol(NODECREASE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+3398A0
+
+"GameAssembly.dll"+33987B: 83 B9 D8 00 00 00 00  -  cmp dword ptr [rcx+000000D8],00
+"GameAssembly.dll"+339882: 75 05                 -  jne GameAssembly.dll+339889
+"GameAssembly.dll"+339884: E8 F7 F0 F2 FF        -  call GameAssembly.dll+268980
+"GameAssembly.dll"+339889: 33 D2                 -  xor edx,edx
+"GameAssembly.dll"+33988B: 48 8B CB              -  mov rcx,rbx
+"GameAssembly.dll"+33988E: E8 CD E4 DE 01        -  call GameAssembly.dll+2127D60
+"GameAssembly.dll"+339893: 84 C0                 -  test al,al
+"GameAssembly.dll"+339895: 74 17                 -  je GameAssembly.dll+3398AE
+"GameAssembly.dll"+339897: 48 85 DB              -  test rbx,rbx
+"GameAssembly.dll"+33989A: 0F 84 44 01 00 00     -  je GameAssembly.dll+3399E4
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+3398A0: FF 4B 18              -  dec [rbx+18]
+"GameAssembly.dll"+3398A3: 40 0F B6 FF           -  movzx edi,dil
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+3398A7: 83 7B 18 00           -  cmp dword ptr [rbx+18],00
+"GameAssembly.dll"+3398AB: 0F 4F FD              -  cmovg edi,ebp
+"GameAssembly.dll"+3398AE: 48 8B 15 93 3B 6B 03  -  mov rdx,[GameAssembly.dll+39ED448]
+"GameAssembly.dll"+3398B5: 48 8B CE              -  mov rcx,rsi
+"GameAssembly.dll"+3398B8: E8 E3 49 B3 01        -  call GameAssembly.dll+1E6E2A0
+"GameAssembly.dll"+3398BD: 48 8B D8              -  mov rbx,rax
+"GameAssembly.dll"+3398C0: 48 8B 0D 29 5E 6C 03  -  mov rcx,[GameAssembly.dll+39FF6F0]
+"GameAssembly.dll"+3398C7: F6 81 27 01 00 00 02  -  test byte ptr [rcx+00000127],02
+"GameAssembly.dll"+3398CE: 74 0E                 -  je GameAssembly.dll+3398DE
+"GameAssembly.dll"+3398D0: 83 B9 D8 00 00 00 00  -  cmp dword ptr [rcx+000000D8],00
+}"""
+
+[[cheat]]
+id = "containers-2-items-when-stacking-existing-item"
+name = "[Containers] +2 Items When Stacking Existing Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-04
+  Author : JLee
+
+  * Stacking existing items in a container will
+    get two additional extra items per transfer.
+  * The same item must already be present in the
+    container for it to stack & get extra items.
+  * Currently set to 2 extra items.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,01 68 18 B0 01) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+6E2262)
+
+label(code)
+label(return)
+
+newmem:
+  // Do not use 'add', just increment.
+  // We do not want to set/clear the
+  // carry flag and crash the game.
+  inc [rax+18] // -> total +1 extra item
+  inc [rax+18] // -> total +2 extra items
+  // etc.. add more if needed.
+
+code:
+  add [rax+18],ebp
+  mov al,01
+  jmp return
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db 01 68 18 B0 01
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+6E2262
+
+"GameAssembly.dll"+6E2232: E8 49 67 B8 FF           -  call GameAssembly.dll+268980
+"GameAssembly.dll"+6E2237: F3 0F 5C F7              -  subss xmm6,xmm7
+"GameAssembly.dll"+6E223B: 0F 5A C6                 -  vcvtps2pd xmm0,xmm6
+"GameAssembly.dll"+6E223E: 0F 54 05 AB A6 A6 02     -  andps xmm0,[GameAssembly.dll+314C8F0]
+"GameAssembly.dll"+6E2245: 66 0F 5A C0              -  cvtpd2ps xmm0,xmm0
+"GameAssembly.dll"+6E2249: 0F 2F 05 34 58 A6 02     -  comiss xmm0,[GameAssembly.dll+3147A84]
+"GameAssembly.dll"+6E2250: 0F 87 A1 FE FF FF        -  ja GameAssembly.dll+6E20F7
+"GameAssembly.dll"+6E2256: 48 8B 87 E8 01 00 00     -  mov rax,[rdi+000001E8]
+"GameAssembly.dll"+6E225D: 48 85 C0                 -  test rax,rax
+"GameAssembly.dll"+6E2260: 74 0A                    -  je GameAssembly.dll+6E226C
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+6E2262: 01 68 18                 -  add [rax+18],ebp
+"GameAssembly.dll"+6E2265: B0 01                    -  mov al,01
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+6E2267: E9 8D FE FF FF           -  jmp GameAssembly.dll+6E20F9
+"GameAssembly.dll"+6E226C: E8 CF 77 BA FF           -  call GameAssembly.dll+289A40
+"GameAssembly.dll"+6E2271: CC                       -  int 3 
+"GameAssembly.dll"+6E2272: E8 C9 77 BA FF           -  call GameAssembly.dll+289A40
+"GameAssembly.dll"+6E2277: CC                       -  int 3 
+"GameAssembly.dll"+6E2278: E8 C3 77 BA FF           -  call GameAssembly.dll+289A40
+"GameAssembly.dll"+6E227D: CC                       -  int 3 
+"GameAssembly.dll"+6E227E: E8 BD 77 BA FF           -  call GameAssembly.dll+289A40
+"GameAssembly.dll"+6E2283: CC                       -  int 3 
+"GameAssembly.dll"+6E2284: E8 B7 77 BA FF           -  call GameAssembly.dll+289A40
+}"""
+
+[[cheat]]
+id = "items-max-durability-on-most-items"
+name = "[Items] MAX Durability on Most Items"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-04
+  Author : JLee
+
+  * Find item condition and fully repair it.
+  > Using guns & tools will repair it 100%.
+  > Clothes will also have 100% durability.
+  > Meat in-game are always fresh.
+  > Most items placed in the world should have maximum
+    freshness or durability.
+  ex. 00 00 16 43 00 00 16 43
+  float 1st 4 bytes is the degradation
+  float 2nd 4 bytes is the max condition of the item
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,F3 0F 11 B3 C0 02 00 00 48 8B 0D) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+A50D97)
+
+label(code)
+label(return)
+
+alloc(condition_ptr,4)
+registersymbol(condition_ptr)
+
+newmem:
+  mov [condition_ptr],rbx    // for debugging
+
+code:
+  movss xmm6,[rbx+000002C4]
+  movss [rbx+000002C0],xmm6
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db F3 0F 11 B3 C0 02 00 00
+
+unregistersymbol(INJECT)
+unregistersymbol(condition_ptr)
+dealloc(condition_ptr)
+dealloc(newmem)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+A50D97
+
+"GameAssembly.dll"+A50D7B: 75 05                    -  jne GameAssembly.dll+A50D82
+"GameAssembly.dll"+A50D7D: E8 FE 7B 81 FF           -  call GameAssembly.dll+268980
+"GameAssembly.dll"+A50D82: 0F 57 C0                 -  xorps xmm0,xmm0
+"GameAssembly.dll"+A50D85: 0F 2F C6                 -  comiss xmm0,xmm6
+"GameAssembly.dll"+A50D88: 77 0A                    -  ja GameAssembly.dll+A50D94
+"GameAssembly.dll"+A50D8A: 0F 2F F7                 -  comiss xmm6,xmm7
+"GameAssembly.dll"+A50D8D: 76 08                    -  jna GameAssembly.dll+A50D97
+"GameAssembly.dll"+A50D8F: 0F 28 F7                 -  movaps xmm6,xmm7
+"GameAssembly.dll"+A50D92: EB 03                    -  jmp GameAssembly.dll+A50D97
+"GameAssembly.dll"+A50D94: 0F 57 F6                 -  xorps xmm6,xmm6
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+A50D97: F3 0F 11 B3 C0 02 00 00  -  movss [rbx+000002C0],xmm6
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+A50D9F: 48 8B 0D 32 BD F9 02     -  mov rcx,[GameAssembly.dll+39ECAD8]
+"GameAssembly.dll"+A50DA6: F6 81 27 01 00 00 02     -  test byte ptr [rcx+00000127],02
+"GameAssembly.dll"+A50DAD: 74 0E                    -  je GameAssembly.dll+A50DBD
+"GameAssembly.dll"+A50DAF: 83 B9 D8 00 00 00 00     -  cmp dword ptr [rcx+000000D8],00
+"GameAssembly.dll"+A50DB6: 75 05                    -  jne GameAssembly.dll+A50DBD
+"GameAssembly.dll"+A50DB8: E8 C3 7B 81 FF           -  call GameAssembly.dll+268980
+"GameAssembly.dll"+A50DBD: 33 D2                    -  xor edx,edx
+"GameAssembly.dll"+A50DBF: 0F 28 C6                 -  movaps xmm0,xmm6
+"GameAssembly.dll"+A50DC2: E8 C9 3F EE FF           -  call GameAssembly.dll+934D90
+"GameAssembly.dll"+A50DC7: 84 C0                    -  test al,al
+}"""
+
+[[cheat]]
+id = "lantern-always-full"
+name = "[Lantern] Always Full"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-05
+  Author : JLee
+
+  Lantern is always full.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,F3 0F 11 73 64 F3 0F 10 7B) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+68BADE)
+
+label(code)
+label(return)
+label(lantern_fuel)
+
+newmem:
+  // fill XMM6 with lantern fuel, 1.00 is the maximum
+  movss xmm6,[lantern_fuel]
+
+code:
+  movss [rbx+64],xmm6
+  jmp return
+
+lantern_fuel:
+  // dd for dword/float/int32 (4 bytes)
+  dd (float)1
+
+INJECT:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db F3 0F 11 73 64
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+68BADE
+
+"GameAssembly.dll"+68BAB1: 48 8B C8                    -  mov rcx,rax
+"GameAssembly.dll"+68BAB4: E8 C7 CE BD FF              -  call GameAssembly.dll+268980
+"GameAssembly.dll"+68BAB9: 48 8B 05 50 2E 36 03        -  mov rax,[GameAssembly.dll+39EE910]
+"GameAssembly.dll"+68BAC0: 48 8B 80 B8 00 00 00        -  mov rax,[rax+000000B8]
+"GameAssembly.dll"+68BAC7: 80 38 00                    -  cmp byte ptr [rax],00
+"GameAssembly.dll"+68BACA: 75 54                       -  jne GameAssembly.dll+68BB20
+"GameAssembly.dll"+68BACC: F3 0F 10 73 64              -  movss xmm6,[rbx+64]
+"GameAssembly.dll"+68BAD1: F3 0F 10 43 1C              -  movss xmm0,[rbx+1C]
+"GameAssembly.dll"+68BAD6: F3 0F 59 C7                 -  mulss xmm0,xmm7
+"GameAssembly.dll"+68BADA: F3 0F 5C F0                 -  subss xmm6,xmm0
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+68BADE: F3 0F 11 73 64              -  movss [rbx+64],xmm6
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+68BAE3: F3 0F 10 7B 18              -  movss xmm7,[rbx+18]
+"GameAssembly.dll"+68BAE8: 48 8B 0D 71 96 36 03        -  mov rcx,[GameAssembly.dll+39F5160]
+"GameAssembly.dll"+68BAEF: F6 81 27 01 00 00 02        -  test byte ptr [rcx+00000127],02
+"GameAssembly.dll"+68BAF6: 74 0E                       -  je GameAssembly.dll+68BB06
+"GameAssembly.dll"+68BAF8: 83 B9 D8 00 00 00 00        -  cmp dword ptr [rcx+000000D8],00
+"GameAssembly.dll"+68BAFF: 75 05                       -  jne GameAssembly.dll+68BB06
+"GameAssembly.dll"+68BB01: E8 7A CE BD FF              -  call GameAssembly.dll+268980
+"GameAssembly.dll"+68BB06: 0F 57 C0                    -  xorps xmm0,xmm0
+"GameAssembly.dll"+68BB09: 0F 2F C6                    -  comiss xmm0,xmm6
+"GameAssembly.dll"+68BB0C: 77 0A                       -  ja GameAssembly.dll+68BB18
+}"""
+
+[[cheat]]
+id = "survey-does-not-consume-charcoal"
+name = "[Survey] Does Not Consume Charcoal"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-04
+  Author : JLee
+
+  * Cartographer/Survey: will not use up the charcoal.
+  * Must have at least one charcoal in inventory.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,FF 48 18 48 8B 43 28) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+7FAD01)
+
+label(code)
+label(return)
+
+alloc(charcoal_ptr,4)
+registersymbol(charcoal_ptr)
+
+newmem:
+  mov [charcoal_ptr],rax    // for debugging
+  inc [rax+18]
+
+code:
+  dec [rax+18]
+  mov rax,[rbx+28]
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db FF 48 18 48 8B 43 28
+
+unregistersymbol(INJECT)
+unregistersymbol(charcoal_ptr)
+dealloc(charcoal_ptr)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+7FAD01
+
+"GameAssembly.dll"+7FACD4: 48 8B CF              -  mov rcx,rdi
+"GameAssembly.dll"+7FACD7: E8 84 D0 92 01        -  call GameAssembly.dll+2127D60
+"GameAssembly.dll"+7FACDC: 84 C0                 -  test al,al
+"GameAssembly.dll"+7FACDE: 0F 84 A7 00 00 00     -  je GameAssembly.dll+7FAD8B
+"GameAssembly.dll"+7FACE4: 48 8B 43 28           -  mov rax,[rbx+28]
+"GameAssembly.dll"+7FACE8: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+7FACEB: 0F 84 14 01 00 00     -  je GameAssembly.dll+7FAE05
+"GameAssembly.dll"+7FACF1: 48 8B 80 E8 01 00 00  -  mov rax,[rax+000001E8]
+"GameAssembly.dll"+7FACF8: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+7FACFB: 0F 84 FE 00 00 00     -  je GameAssembly.dll+7FADFF
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+7FAD01: FF 48 18              -  dec [rax+18]
+"GameAssembly.dll"+7FAD04: 48 8B 43 28           -  mov rax,[rbx+28]
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+7FAD08: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+7FAD0B: 0F 84 E8 00 00 00     -  je GameAssembly.dll+7FADF9
+"GameAssembly.dll"+7FAD11: 48 8B 80 E8 01 00 00  -  mov rax,[rax+000001E8]
+"GameAssembly.dll"+7FAD18: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+7FAD1B: 0F 84 D2 00 00 00     -  je GameAssembly.dll+7FADF3
+"GameAssembly.dll"+7FAD21: 83 78 18 00           -  cmp dword ptr [rax+18],00
+"GameAssembly.dll"+7FAD25: 7F 64                 -  jg GameAssembly.dll+7FAD8B
+"GameAssembly.dll"+7FAD27: 48 8B 0D 92 F1 21 03  -  mov rcx,[GameAssembly.dll+3A19EC0]
+"GameAssembly.dll"+7FAD2E: F6 81 27 01 00 00 02  -  test byte ptr [rcx+00000127],02
+"GameAssembly.dll"+7FAD35: 74 0E                 -  je GameAssembly.dll+7FAD45
+}"""
+
+[[cheat]]
+id = "stamina-sprinting-does-not-consume-stamina"
+name = "[Stamina] Sprinting Does Not Consume Stamina"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-05
+  Author : JLee
+
+  * Does not spend stamina. Ever.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,F1 F3 0F 11 73 78) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+544737)
+
+label(code)
+label(return)
+
+newmem:
+  // get max stamina and put it in current stamina
+  movss xmm6,[rbx+74]
+
+code:
+  movss [rbx+78],xmm6
+  jmp return
+
+INJECT+01:
+  jmp newmem
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT+01:
+  db F3 0F 11 73 78
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+544737
+
+"GameAssembly.dll"+54470A: 75 1C                 -  jne GameAssembly.dll+544728
+"GameAssembly.dll"+54470C: 48 8D 0D 35 BC AF 02  -  lea rcx,[GameAssembly.dll+3040348]
+"GameAssembly.dll"+544713: E8 08 CB D7 FF        -  call GameAssembly.dll+2C1220
+"GameAssembly.dll"+544718: 48 85 C0              -  test rax,rax
+"GameAssembly.dll"+54471B: 0F 84 32 05 00 00     -  je GameAssembly.dll+544C53
+"GameAssembly.dll"+544721: 48 89 05 90 73 51 03  -  mov [GameAssembly.dll+3A5BAB8],rax
+"GameAssembly.dll"+544728: FF D0                 -  call rax
+"GameAssembly.dll"+54472A: F3 0F 10 4B 5C        -  movss xmm1,[rbx+5C]
+"GameAssembly.dll"+54472F: F3 0F 59 C8           -  mulss xmm1,xmm0
+"GameAssembly.dll"+544733: F3 0F 5C F1           -  subss xmm6,xmm1
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+544737: F3 0F 11 73 78        -  movss [rbx+78],xmm6
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+54473C: 33 D2                 -  xor edx,edx
+"GameAssembly.dll"+54473E: 48 8B CB              -  mov rcx,rbx
+"GameAssembly.dll"+544741: E8 2A 0B 00 00        -  call GameAssembly.dll+545270
+"GameAssembly.dll"+544746: 0F 28 F8              -  movaps xmm7,xmm0
+"GameAssembly.dll"+544749: 48 8B 0D 10 0A 4B 03  -  mov rcx,[GameAssembly.dll+39F5160]
+"GameAssembly.dll"+544750: F6 81 27 01 00 00 02  -  test byte ptr [rcx+00000127],02
+"GameAssembly.dll"+544757: 74 0E                 -  je GameAssembly.dll+544767
+"GameAssembly.dll"+544759: 83 B9 D8 00 00 00 00  -  cmp dword ptr [rcx+000000D8],00
+"GameAssembly.dll"+544760: 75 05                 -  jne GameAssembly.dll+544767
+"GameAssembly.dll"+544762: E8 19 42 D2 FF        -  call GameAssembly.dll+268980
+}"""
+
+[[cheat]]
+id = "drinking-does-not-consume-water-in-inv"
+name = "[Drinking] Does Not Consume Water in INV"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-05
+  Author : JLee
+
+  * Drinking will not consume your water in inventory.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,F3 0F 5C F7 F3 0F 11 73 1C) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+33C773)
+
+label(code)
+label(return)
+
+newmem:
+  // just comment SUBSS
+
+code:
+  //subss xmm6,xmm7
+  movss [rbx+1C],xmm6
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db F3 0F 5C F7 F3 0F 11 73 1C
+
+unregistersymbol(INJECT)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+33C773
+
+"GameAssembly.dll"+33C74E: 4C 8D 44 24 28              -  lea r8,[rsp+28]
+"GameAssembly.dll"+33C753: E8 D8 99 F1 FF              -  call GameAssembly.dll+256130
+"GameAssembly.dll"+33C758: 90                          -  nop 
+"GameAssembly.dll"+33C759: 33 C9                       -  xor ecx,ecx
+"GameAssembly.dll"+33C75B: FF 15 17 C6 64 03           -  call qword ptr [GameAssembly.dll+3988D78]
+"GameAssembly.dll"+33C761: 90                          -  nop 
+"GameAssembly.dll"+33C762: C6 05 F7 86 70 03 01        -  mov byte ptr [GameAssembly.dll+3A44E60],01
+"GameAssembly.dll"+33C769: 48 85 DB                    -  test rbx,rbx
+"GameAssembly.dll"+33C76C: 74 48                       -  je GameAssembly.dll+33C7B6
+"GameAssembly.dll"+33C76E: F3 0F 10 73 1C              -  movss xmm6,[rbx+1C]
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+33C773: F3 0F 5C F7                 -  subss xmm6,xmm7
+"GameAssembly.dll"+33C777: F3 0F 11 73 1C              -  movss [rbx+1C],xmm6
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+33C77C: 48 8B 0D DD 89 6B 03        -  mov rcx,[GameAssembly.dll+39F5160]
+"GameAssembly.dll"+33C783: F6 81 27 01 00 00 02        -  test byte ptr [rcx+00000127],02
+"GameAssembly.dll"+33C78A: 74 0E                       -  je GameAssembly.dll+33C79A
+"GameAssembly.dll"+33C78C: 83 B9 D8 00 00 00 00        -  cmp dword ptr [rcx+000000D8],00
+"GameAssembly.dll"+33C793: 75 05                       -  jne GameAssembly.dll+33C79A
+"GameAssembly.dll"+33C795: E8 E6 C1 F2 FF              -  call GameAssembly.dll+268980
+"GameAssembly.dll"+33C79A: 0F 57 C0                    -  xorps xmm0,xmm0
+"GameAssembly.dll"+33C79D: F3 0F 5F C6                 -  maxss xmm0,xmm6
+"GameAssembly.dll"+33C7A1: F3 0F 11 43 1C              -  movss [rbx+1C],xmm0
+"GameAssembly.dll"+33C7A6: 0F 28 74 24 50              -  movaps xmm6,[rsp+50]
+}"""
+
+[[cheat]]
+id = "backpack-zero-carry-weight"
+name = "[Backpack] Zero Carry Weight"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-10
+  Author : JLee
+
+  This script does blah blah blah
+}
+
+define(address,"GameAssembly.dll"+6CE003)
+define(bytes,F3 44 0F 11 45 48)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,"GameAssembly.dll"+6CE003)
+
+label(code)
+label(return)
+label(new_float_value)
+
+newmem:
+
+code:
+  movss xmm8, [new_float_value]
+  movss [rbp+48],xmm8
+  jmp return
+
+new_float_value:
+  dd 0
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // movss [rbp+48],xmm8
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+6CE003
+
+"GameAssembly.dll"+6CDFE2: F3 0F 11 4D 40           -  movss [rbp+40],xmm1
+"GameAssembly.dll"+6CDFE7: F3 0F 10 4D 44           -  movss xmm1,[rbp+44]
+"GameAssembly.dll"+6CDFEC: 0F 2F F9                 -  comiss xmm7,xmm1
+"GameAssembly.dll"+6CDFEF: 77 0A                    -  ja GameAssembly.dll+6CDFFB
+"GameAssembly.dll"+6CDFF1: 0F 2F C8                 -  comiss xmm1,xmm0
+"GameAssembly.dll"+6CDFF4: 76 08                    -  jna GameAssembly.dll+6CDFFE
+"GameAssembly.dll"+6CDFF6: 0F 28 C8                 -  movaps xmm1,xmm0
+"GameAssembly.dll"+6CDFF9: EB 03                    -  jmp GameAssembly.dll+6CDFFE
+"GameAssembly.dll"+6CDFFB: 0F 28 CF                 -  movaps xmm1,xmm7
+"GameAssembly.dll"+6CDFFE: F3 0F 11 4D 44           -  movss [rbp+44],xmm1
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+6CE003: F3 44 0F 11 45 48        -  movss [rbp+48],xmm8
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+6CE009: F3 44 0F 11 4D 64        -  movss [rbp+64],xmm9
+"GameAssembly.dll"+6CE00F: 41 8B D6                 -  mov edx,r14d
+"GameAssembly.dll"+6CE012: 48 8B 4D 20              -  mov rcx,[rbp+20]
+"GameAssembly.dll"+6CE016: 48 85 C9                 -  test rcx,rcx
+"GameAssembly.dll"+6CE019: 0F 84 C6 00 00 00        -  je GameAssembly.dll+6CE0E5
+"GameAssembly.dll"+6CE01F: 48 8B C1                 -  mov rax,rcx
+"GameAssembly.dll"+6CE022: BF 20 00 00 00           -  mov edi,00000020
+"GameAssembly.dll"+6CE027: 3B 51 18                 -  cmp edx,[rcx+18]
+"GameAssembly.dll"+6CE02A: 7D 77                    -  jnl GameAssembly.dll+6CE0A3
+"GameAssembly.dll"+6CE02C: 48 85 C0                 -  test rax,rax
+}"""
+
+[[cheat]]
+id = "eating-does-not-consume-food"
+name = "[Eating] Does Not Consume Food"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-10
+  Author : JLee
+
+  * Food is not consumed (+1000 Left).
+}
+
+define(address,"GameAssembly.dll"+7B485A)
+define(bytes,F3 0F 11 77 20)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,"GameAssembly.dll"+7B485A)
+
+label(code)
+label(return)
+label(remaining_food)
+
+newmem:
+  movss xmm6,[remaining_food]
+code:
+  movss [rdi+20],xmm6
+  jmp return
+
+remaining_food:
+  dd (float)1000
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // movss [rdi+20],xmm6
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+7B485A
+
+"GameAssembly.dll"+7B483C: E8 3F 41 AB FF              -  call GameAssembly.dll+268980
+"GameAssembly.dll"+7B4841: 0F 2F FE                    -  comiss xmm7,xmm6
+"GameAssembly.dll"+7B4844: 77 0C                       -  ja GameAssembly.dll+7B4852
+"GameAssembly.dll"+7B4846: 41 0F 2F F0                 -  comiss xmm6,xmm8
+"GameAssembly.dll"+7B484A: 76 09                       -  jna GameAssembly.dll+7B4855
+"GameAssembly.dll"+7B484C: 41 0F 28 F0                 -  movaps xmm6,xmm8
+"GameAssembly.dll"+7B4850: EB 03                       -  jmp GameAssembly.dll+7B4855
+"GameAssembly.dll"+7B4852: 0F 57 F6                    -  xorps xmm6,xmm6
+"GameAssembly.dll"+7B4855: 48 85 FF                    -  test rdi,rdi
+"GameAssembly.dll"+7B4858: 74 46                       -  je GameAssembly.dll+7B48A0
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+7B485A: F3 0F 11 77 20              -  movss [rdi+20],xmm6
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+7B485F: E9 25 FD FF FF              -  jmp GameAssembly.dll+7B4589
+"GameAssembly.dll"+7B4864: E8 D7 51 AD FF              -  call GameAssembly.dll+289A40
+"GameAssembly.dll"+7B4869: CC                          -  int 3 
+"GameAssembly.dll"+7B486A: E8 D1 51 AD FF              -  call GameAssembly.dll+289A40
+"GameAssembly.dll"+7B486F: CC                          -  int 3 
+"GameAssembly.dll"+7B4870: 48 8D 0D D1 BA 88 02        -  lea rcx,[GameAssembly.dll+3040348]
+"GameAssembly.dll"+7B4877: E8 C4 68 AD FF              -  call GameAssembly.dll+28B140
+"GameAssembly.dll"+7B487C: 48 8B C8                    -  mov rcx,rax
+"GameAssembly.dll"+7B487F: 45 33 C0                    -  xor r8d,r8d
+"GameAssembly.dll"+7B4882: E8 39 51 AD FF              -  call GameAssembly.dll+2899C0
+}"""
+
+[[cheat]]
+id = "animal-meat-harvest"
+name = "[Animal] Meat Harvest"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+  Game   : The Long Dark (tld.exe)
+  Version: v1.62 (Steam Build 55870)
+  Date   : 2019-11-04
+  Author : JLee
+
+  * When harvesting meat from animals, set meat to 20.
+  * Also works on 'quartered' animal.
+}
+
+[ENABLE]
+
+aobscanmodule(INJECT,GameAssembly.dll,F3 0F 11 88 AC 00 00 00 48 85 C0) // should be unique
+alloc(newmem,$1000,"GameAssembly.dll"+756278)
+
+label(code)
+label(return)
+label(new_meat_value)
+
+alloc(animal_meat_ptr,4)
+registersymbol(animal_meat_ptr)
+
+newmem:
+  mov [animal_meat_ptr],rax    // for debugging
+  // movss for float (4 bytes)
+  // movq for double (8 bytes)
+  movss xmm1,[new_meat_value]
+
+code:
+  movss [rax+000000AC],xmm1
+  jmp return
+
+new_meat_value:
+  // db for byte/char/int8 (1 byte)
+  // dw for word/short/int16 (2 bytes)
+  // dd for dword/float/int32 (4 bytes)
+  // dq for qword/double/int64 (8 bytes)
+  // will always use this value after harvesting
+  dd (float)3
+
+INJECT:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+
+INJECT:
+  db F3 0F 11 88 AC 00 00 00
+
+unregistersymbol(INJECT)
+unregistersymbol(animal_meat_ptr)
+dealloc(animal_meat_ptr)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "GameAssembly.dll"+756278
+
+"GameAssembly.dll"+756240: 66 41 0F 2F C2           -  comisd xmm0,xmm10
+"GameAssembly.dll"+756245: 0F 87 35 FE FF FF        -  ja GameAssembly.dll+756080
+"GameAssembly.dll"+75624B: 48 8B 87 E8 01 00 00     -  mov rax,[rdi+000001E8]
+"GameAssembly.dll"+756252: 48 85 C0                 -  test rax,rax
+"GameAssembly.dll"+756255: 0F 84 40 02 00 00        -  je GameAssembly.dll+75649B
+"GameAssembly.dll"+75625B: 48 8B 8F 18 01 00 00     -  mov rcx,[rdi+00000118]
+"GameAssembly.dll"+756262: 48 85 C9                 -  test rcx,rcx
+"GameAssembly.dll"+756265: 0F 84 2A 02 00 00        -  je GameAssembly.dll+756495
+"GameAssembly.dll"+75626B: F3 0F 10 88 AC 00 00 00  -  movss xmm1,[rax+000000AC]
+"GameAssembly.dll"+756273: F3 0F 5C 49 38           -  subss xmm1,[rcx+38]
+// ---------- INJECTING HERE ----------
+"GameAssembly.dll"+756278: F3 0F 11 88 AC 00 00 00  -  movss [rax+000000AC],xmm1
+// ---------- DONE INJECTING  ----------
+"GameAssembly.dll"+756280: 48 85 C0                 -  test rax,rax
+"GameAssembly.dll"+756283: 0F 84 06 02 00 00        -  je GameAssembly.dll+75648F
+"GameAssembly.dll"+756289: F3 0F 10 05 4F 19 9F 02  -  movss xmm0,[GameAssembly.dll+3147BE0]
+"GameAssembly.dll"+756291: 0F 2F C1                 -  comiss xmm0,xmm1
+"GameAssembly.dll"+756294: 76 07                    -  jna GameAssembly.dll+75629D
+"GameAssembly.dll"+756296: 44 89 B0 AC 00 00 00     -  mov [rax+000000AC],r14d
+"GameAssembly.dll"+75629D: 48 85 C9                 -  test rcx,rcx
+"GameAssembly.dll"+7562A0: 0F 84 E3 01 00 00        -  je GameAssembly.dll+756489
+"GameAssembly.dll"+7562A6: F3 0F 10 41 38           -  movss xmm0,[rcx+38]
+"GameAssembly.dll"+7562AB: 41 0F 2F C0              -  comiss xmm0,xmm8
+}"""

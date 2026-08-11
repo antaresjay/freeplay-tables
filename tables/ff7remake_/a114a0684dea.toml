@@ -1,0 +1,1986 @@
+[game]
+name = "Final Fantasy VII Remake Intergrade [Steam,Epic]"
+exe = "ff7remake_.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=19007"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-damage-modifier-options-god-mode-one-hit-kill-etc"
+name = "Enable Damage Modifier Options (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This is for ally hits
+aobscanmodule(DamageModAOB,$process,0F B6 CB 48 C1 E1 06 89 7C 01 30) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,1024,DamageModAOB)
+
+/// This is for enemy hits, but ally hits also appear here
+aobscanmodule(DamageModAOB2,$process,8B D6 89 87 C4 04 00 00 48 8B 01 FF 50 50) // should be unique
+registersymbol(DamageModAOB2)
+alloc(newmem2,1024,DamageModAOB2)
+
+///
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(fHeroHealingMult)
+registersymbol(fHeroHealingMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+///
+label(return2)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fEnemyHealingMult)
+registersymbol(fEnemyHealingMult)
+
+newmem:
+  mov [R15Save],r15
+  movzx ecx,bl
+  shl rcx,06
+  xor r15,r15
+  mov r15d,[rcx+rax+30]
+  sub r15d,edi
+  cmp r15d,0
+  jl HeroHealingHit
+  jg HeroDamageHit
+  jmp originalcode
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push r15d
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [rsp]
+  pop r15d
+  cmp r15d,0
+  jne CheckGodMode
+  mov r15d,1
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor r15d,r15d
+  jmp MyCleanUp1
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne MyCleanUp1
+  cmp edi,0
+  jg @F
+  xor r15d,r15d
+@@:
+  jmp MyCleanUp1  
+HeroHealingHit:
+  cmp [fHeroHealingMult],(float)0.0
+  je MyCleanUp1
+  neg r15d
+  push r15d
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroHealingMult]
+  fistp dword ptr [rsp]
+  pop r15d
+  neg r15d
+  jmp MyCleanUp1
+
+MyCleanUp1:  
+  mov edi,[rcx+rax+30]
+  sub edi,r15d
+  cmp edi,[rcx+rax+34]
+  jle SkipCheckMaxHP1
+  mov edi,[rcx+rax+34]
+SkipCheckMaxHP1:
+  cmp edi,0
+  jge SkipCheckMaxHP2
+  xor edi,edi
+SkipCheckMaxHP2:
+originalcode:
+  mov r15,[R15Save]
+  jmp return
+
+R15Save:
+dq 0
+GodMode:
+dq 0
+fHeroDamageMult:
+dq (float)0.25
+fHeroHealingMult:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+
+newmem2:
+  mov [R14Save2],r14
+  mov [R15Save2],r15
+  mov r14,[rcx]
+  test r14,r14
+  je originalcode2
+  mov r14,[r14+50]
+  test r14,r14
+  je originalcode2
+  mov r15d,C3185189
+  cmp r15d,[r14]
+  mov r14,[R14Save2]
+  jne originalcode2
+  xor r15,r15
+  mov r15d,[rcx+18]
+  sub r15d,esi
+  cmp r15d,0
+  jl EnemyHealingHit
+  jg EnemyDamageHit
+  jmp originalcode2
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  push r15d
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [rsp]
+  pop r15d
+  cmp r15d,0
+  jne CheckOneHitKill
+  mov r15d,1
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne MyCleanUp2
+  mov r15d,[rcx+18]
+  jmp MyCleanUp2
+EnemyHealingHit:
+  cmp [fEnemyHealingMult],(float)0.0
+  je MyCleanUp2
+  neg r15d
+  push r15d
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyHealingMult]
+  fistp dword ptr [rsp]
+  pop r15d
+  neg r15d
+
+MyCleanUp2:
+  mov esi,[rcx+18]
+  sub esi,r15d
+  cmp esi,[rcx+1C]
+  jle SkipCheckMaxHP3
+  mov esi,[rcx+1C]
+SkipCheckMaxHP3:
+  cmp esi,0
+  jge SkipCheckMaxHP4
+  xor esi,esi
+SkipCheckMaxHP4:
+originalcode2:
+  mov r15,[R15Save2]
+  mov edx,esi
+  mov [rdi+000004C4],eax
+  jmp return2
+
+R14Save2:
+dq 0
+R15Save2:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)2.0
+fEnemyHealingMult:
+dq (float)0.5
+
+///
+DamageModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+DamageModAOB2:
+  jmp newmem2
+  nop
+  nop
+  nop
+return2:
+
+[DISABLE]
+
+DamageModAOB:
+  db 0F B6 CB 48 C1 E1 06
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(fHeroHealingMult)
+
+///
+DamageModAOB2:
+  db 8B D6 89 87 C4 04 00 00
+
+unregistersymbol(DamageModAOB2)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fEnemyHealingMult)
+  
+///
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-hp"
+name = "Hero Damage Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-hp"
+name = "Hero Healing Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die"
+name = "Hero Cannot Die"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-hp"
+name = "Enemy Damage Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-hp"
+name = "Enemy Healing Multiplier HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []
+
+[[cheat]]
+id = "enable-mp-damage-modifier-options-infinite-mp-etc"
+name = "Enable MP Damage Modifier Options (Infinite MP, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This is for ally hits
+aobscanmodule(MPDamageModAOB,$process,48 8B 80 60 3E 00 00 89 7C 08 38) // should be unique
+registersymbol(MPDamageModAOB)
+alloc(newmem,1024,MPDamageModAOB)
+
+///
+label(return)
+label(bInfiniteMP)
+registersymbol(bInfiniteMP)
+label(fHeroMPDamageMult)
+registersymbol(fHeroMPDamageMult)
+label(fHeroMPHealingMult)
+registersymbol(fHeroMPHealingMult)
+
+newmem:
+  mov [R15Save],r15
+  mov rax,[rax+00003E60]
+  xor r15,r15
+  mov r15d,[rax+rcx+38]
+  sub r15d,edi
+  cmp r15d,0
+  jl HeroHealingHit
+  jg HeroDamageHit
+  jmp MyCleanUp1
+HeroDamageHit:
+  cmp [fHeroMPDamageMult],(float)0.0
+  je CheckInfiniteMP
+  push r15d
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroMPDamageMult]
+  fistp dword ptr [rsp]
+  pop r15d
+CheckInfiniteMP:
+  cmp [bInfiniteMP],1
+  jne MyCleanUp1
+  xor r15d,r15d
+  jmp MyCleanUp1
+HeroHealingHit:
+  cmp [fHeroMPHealingMult],(float)0.0
+  je MyCleanUp1
+  neg r15d
+  push r15d
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroMPHealingMult]
+  fistp dword ptr [rsp]
+  pop r15d
+  neg r15d
+  jmp MyCleanUp1
+
+MyCleanUp1:  
+  mov edi,[rax+rcx+38]
+  sub edi,r15d
+  cmp edi,[rax+rcx+3C]
+  jle SkipCheckMaxMP
+  mov edi,[rax+rcx+3C]
+SkipCheckMaxMP:
+  mov r15,[R15Save]
+  jmp return
+
+R15Save:
+dq 0
+bInfiniteMP:
+dq 0
+fHeroMPDamageMult:
+dq (float)0.25
+fHeroMPHealingMult:
+dq (float)2.0
+
+///
+MPDamageModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+MPDamageModAOB:
+  db 48 8B 80 60 3E 00 00
+
+unregistersymbol(MPDamageModAOB)
+unregistersymbol(bInfiniteMP)
+unregistersymbol(fHeroMPDamageMult)
+unregistersymbol(fHeroMPHealingMult)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInfiniteMP"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-mp"
+name = "Hero Damage Multiplier MP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-mp"
+name = "Hero Healing Multiplier MP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPHealingMult"
+hops = []
+
+[[cheat]]
+id = "enable-atb-gauge-multiplier"
+name = "Enable ATB Gauge Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CharATBMultAOB1,$process,F3 0F 11 74 08 44 0F 28 74 24 20) // should be unique
+registersymbol(CharATBMultAOB1)
+alloc(newmem,1024,CharATBMultAOB1)
+
+///
+label(return)
+label(fCharATBMultiplier)
+registersymbol(fCharATBMultiplier)
+
+newmem:
+  movss [XMM15Save],xmm15
+  movss xmm15,xmm6
+  subss xmm15,[rax+rcx+44]
+  comiss xmm15,[ZeroFloat]
+  jbe originalcode
+  mulss xmm15,dword ptr [fCharATBMultiplier]
+  addss xmm15,[rax+rcx+44]
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  movss xmm6,xmm15
+  
+originalcode:
+  movss xmm15,[XMM15Save]
+  movss [rax+rcx+44],xmm6
+  jmp return
+  
+ZeroFloat:
+dq (float)0.0
+XMM15Save:
+dq 0
+fCharATBMultiplier:
+dq (float)5.0
+
+CharATBMultAOB1:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+CharATBMultAOB1:
+  db F3 0F 11 74 08 44
+
+unregistersymbol(CharATBMultAOB1)
+unregistersymbol(fCharATBMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "atb-gauge-multiplier"
+name = "ATB Gauge Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCharATBMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-character-exp-multiplier"
+name = "Enable Character EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CharEXPMultAOB1,$process,F3 0F 2C C1 44 03 F0 48 8B 05) // should be unique
+registersymbol(CharEXPMultAOB1)
+alloc(newmem,1024,CharEXPMultAOB1)
+
+///
+label(return)
+label(fCharEXPMultiplier)
+registersymbol(fCharEXPMultiplier)
+
+newmem:
+  mulss xmm1,dword ptr [fCharEXPMultiplier]
+  cvttss2si eax,xmm1
+originalcode:
+  add r14d,eax
+  jmp return
+  
+fCharEXPMultiplier:
+dq (float)10.0
+
+CharEXPMultAOB1:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+CharEXPMultAOB1:
+  db F3 0F 2C C1 44 03 F0
+
+unregistersymbol(CharEXPMultAOB1)
+unregistersymbol(fCharEXPMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "char-exp-multiplier"
+name = "Char EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCharEXPMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-infinite-item-usage-set-minimum-on-use-sell"
+name = "Enable Infinite Item Usage / Set Minimum On Use/Sell"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+/// This is code called upon use from Menu
+aobscanmodule(ItemUsageAOB1,$process,41 8B C6 2B 4B 0C 0F 49 C1 89 42 0C) // should be unique
+registersymbol(ItemUsageAOB1)
+alloc(newmem,1024,ItemUsageAOB1)
+
+/// This is code called upon selling items
+aobscanmodule(ItemUsageAOB2,$process,8B 42 0C 2B C7 0F 49 D8 89 5A 0C) // should be unique
+registersymbol(ItemUsageAOB2)
+alloc(newmem2,1024,ItemUsageAOB2)
+
+///
+label(return)
+label(bInfiniteItemUsage)
+registersymbol(bInfiniteItemUsage)
+label(iSetMinAmount)
+registersymbol(iSetMinAmount)
+
+///
+label(return2)
+
+newmem:
+  mov [R15Save],r15
+  mov eax,[rbx+0C]
+  cmp [bInfiniteItemUsage],1
+  jne SkipInfiniteItemUsage
+  xor eax,eax
+SkipInfiniteItemUsage:
+  mov [OurItemSubtraction], eax
+  xor r15,r15
+  mov r15d,ecx
+  sub r15d,eax
+  cmp r15d,[iSetMinAmount]
+  jge SkipSetMinAmount
+  mov ecx,[iSetMinAmount]
+  add ecx,[OurItemSubtraction]
+SkipSetMinAmount:
+  mov r15,[R15Save]
+originalcode:
+  mov eax,r14d
+  sub ecx,[OurItemSubtraction]
+  jmp return  
+  
+OurItemSubtraction:
+dq 0
+R15Save:
+dq 0
+bInfiniteItemUsage:
+dq 1
+iSetMinAmount:
+dq #10
+
+newmem2:
+  mov [R15Save2],r15
+  mov eax,edi
+  cmp [bInfiniteItemUsage],1
+  jne SkipInfiniteItemUsage2
+  xor eax,eax
+SkipInfiniteItemUsage2:
+  mov [OurItemSubtraction2], eax
+  xor r15,r15
+  mov r15d,[rdx+0C]
+  sub r15d,eax
+  cmp r15d,[iSetMinAmount]
+  jge SkipSetMinAmount2
+  mov r15d,[iSetMinAmount]
+  add r15d,[OurItemSubtraction2]
+SkipSetMinAmount2:
+  mov [rdx+0C],r15d
+  mov r15,[R15Save2]
+originalcode2:
+  mov eax,[rdx+0C]
+  sub eax,[OurItemSubtraction2]
+  jmp return2 
+  
+OurItemSubtraction2:
+dq 0
+R15Save2:
+dq 0
+
+///
+ItemUsageAOB1:
+  jmp newmem
+  nop
+return:
+
+///
+ItemUsageAOB2:
+  jmp newmem2
+return2:
+  
+[DISABLE]
+
+ItemUsageAOB1:
+  db 41 8B C6 2B 4B 0C
+
+unregistersymbol(ItemUsageAOB1)
+unregistersymbol(bInfiniteItemUsage)
+unregistersymbol(iSetMinAmount)
+
+///
+ItemUsageAOB2:
+  db 8B 42 0C 2B C7
+
+unregistersymbol(ItemUsageAOB2)
+  
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "infinite-item-usage"
+name = "Infinite Item Usage"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bInfiniteItemUsage"
+hops = []
+
+[[cheat]]
+id = "set-minimum-item-amount-on-use-sell"
+name = "Set Minimum Item Amount On Use/Sell"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iSetMinAmount"
+hops = []
+
+[[cheat]]
+id = "enable-limit-gauge-multiplier"
+name = "Enable LIMIT Gauge Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CharLIMITMultAOB1,$process,F3 0F 11 74 08 24 0F 28 74 24 20) // should be unique
+registersymbol(CharLIMITMultAOB1)
+alloc(newmem,1024,CharLIMITMultAOB1)
+
+///
+label(return)
+label(fCharLIMITMultiplier)
+registersymbol(fCharLIMITMultiplier)
+
+newmem:
+  movss [XMM15Save],xmm15
+  movss xmm15,xmm6
+  subss xmm15,[rax+rcx+24]
+  comiss xmm15,[ZeroFloat]
+  jbe originalcode
+  mulss xmm15,dword ptr [fCharLIMITMultiplier]
+  addss xmm15,[rax+rcx+24]
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  movss xmm6,xmm15
+  
+originalcode:
+  movss xmm15,[XMM15Save]
+  movss [rax+rcx+24],xmm6
+  jmp return
+  
+ZeroFloat:
+dq (float)0.0
+XMM15Save:
+dq 0
+fCharLIMITMultiplier:
+dq (float)10.0
+
+CharLIMITMultAOB1:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+CharLIMITMultAOB1:
+  db F3 0F 11 74 08 24
+
+unregistersymbol(CharLIMITMultAOB1)
+unregistersymbol(fCharLIMITMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "limit-gauge-multiplier"
+name = "LIMIT Gauge Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCharLIMITMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-materia-xp-ap-multiplier"
+name = "Enable Materia XP (AP) Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(MateriaXPMultAOB1,$process,44 8D 04 08 41 B1 01 49 8B CA) // should be unique
+registersymbol(MateriaXPMultAOB1)
+alloc(newmem,1024,MateriaXPMultAOB1)
+
+///
+label(return)
+label(fMateriaXPMultiplier)
+registersymbol(fMateriaXPMultiplier)
+
+newmem:
+  push ecx
+  fild dword ptr [rsp]
+  fmul dword ptr [fMateriaXPMultiplier]
+  fistp dword ptr [rsp]
+  pop ecx
+originalcode:
+  lea r8d,[rax+rcx]
+  mov r9l,01
+  jmp return
+    
+fMateriaXPMultiplier:
+dq (float)100.0
+
+MateriaXPMultAOB1:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+MateriaXPMultAOB1:
+  db 44 8D 04 08 41 B1 01
+
+unregistersymbol(MateriaXPMultAOB1)
+unregistersymbol(fMateriaXPMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "materia-xp-ap-multiplier"
+name = "Materia XP (AP) Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMateriaXPMultiplier"
+hops = []
+
+[[cheat]]
+id = "make-all-unlocked-weapon-upgrades-cost-1-sp-after-purchasing-1"
+name = "Make All Unlocked Weapon Upgrades Cost 1 SP After Purchasing 1"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(UnlockedWeaponUpgradesAOB1,$process,43 03 7C C8 10 48 83 C2 08 48 3B D1) // should be unique
+registersymbol(UnlockedWeaponUpgradesAOB1)
+alloc(newmem,1024,UnlockedWeaponUpgradesAOB1)
+
+///
+label(return)
+
+newmem:
+  mov [R15Save],r15
+  xor r15,r15
+  cmp [r8+r9*8+10],r15d
+  je SkipSettingLowSPCost
+  inc r15
+  add edi,r15d
+SkipSettingLowSPCost:
+  mov r15,[R15Save]
+  
+originalcode:
+  //add edi,[r8+r9*8+10]
+  jmp return
+    
+R15Save:
+dq 0
+
+UnlockedWeaponUpgradesAOB1:
+  jmp newmem
+return:
+  
+[DISABLE]
+
+UnlockedWeaponUpgradesAOB1:
+  db 43 03 7C C8 10
+
+unregistersymbol(UnlockedWeaponUpgradesAOB1)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "fast-stagger"
+name = "Fast Stagger"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OneHitStaggerAOB1,$process,F3 41 0F 58 44 24 08 0F 2F C8) // should be unique
+registersymbol(OneHitStaggerAOB1)
+alloc(newmem,1024,OneHitStaggerAOB1)
+
+///
+label(return)
+
+newmem:
+  comiss xmm0,[fOneHitStaggerFloat]
+  ja originalcode
+  movss xmm0,[fOneHitStaggerFloat]
+  
+originalcode:
+  addss xmm0,[r12+08]
+  jmp return
+      
+fOneHitStaggerFloat:
+dq (float)24.0
+
+OneHitStaggerAOB1:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+OneHitStaggerAOB1:
+  db F3 41 0F 58 44 24 08
+
+unregistersymbol(OneHitStaggerAOB1)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-override-item-id-on-purchase-of-items-do-not-leave-on"
+name = "Enable Override Item ID On Purchase OF ITEMS (DO NOT LEAVE ON)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OverrideItemIDOnPurchaseAOB1,$process,49 8B 4D 00 8B F0 E8 ?? ?? ?? ?? 49 8B 4D 00) // should be unique
+registersymbol(OverrideItemIDOnPurchaseAOB1)
+alloc(newmem,1024,OverrideItemIDOnPurchaseAOB1)
+
+///
+aobscanmodule(OverrideItemIDOnPurchaseAOB12,$process,49 8B 4D 00 44 8B F8 44 89 7D 03) // should be unique
+registersymbol(OverrideItemIDOnPurchaseAOB12)
+alloc(newmem2,1024,OverrideItemIDOnPurchaseAOB12)
+
+///
+aobscanmodule(OverrideItemIDOnPurchaseAOB13,$process,4D 8B 45 00 48 8D 55 CB 48 8D 0D ?? ?? ?? ?? 89 45 FF) // should be unique
+registersymbol(OverrideItemIDOnPurchaseAOB13)
+alloc(newmem3,1024,OverrideItemIDOnPurchaseAOB13)
+
+///
+label(return)
+label(iOverrideItemID)
+registersymbol(iOverrideItemID)
+label(iItemTypeOverride)
+registersymbol(iItemTypeOverride)
+
+///
+label(return2)
+
+///
+label(return3)
+
+///
+newmem:
+  mov rcx,[r13+00]
+  cmp [iOverrideItemID],0
+  je originalcode
+  mov esi,[iOverrideItemID]
+  jmp return
+  
+originalcode:
+  mov esi,eax
+  jmp return
+      
+iOverrideItemID:
+dq 0
+iItemTypeOverride:
+dq 0
+
+///
+newmem2:
+  cmp [iItemTypeOverride],2
+  jne originalcode2
+  mov eax,2
+  
+originalcode2:
+  mov rcx,[r13+00]
+  mov r15d,eax
+  jmp return2
+
+///
+newmem3:
+  cmp [iItemTypeOverride],2
+  jne originalcode3
+  mov eax,1
+  
+originalcode3:
+  mov r8,[r13+00]
+  lea rdx,[rbp-35]
+  jmp return3
+  
+///
+OverrideItemIDOnPurchaseAOB1:
+  jmp newmem
+  nop
+return:
+
+///
+OverrideItemIDOnPurchaseAOB12:
+  jmp newmem2
+  nop
+  nop
+  return2:
+
+///
+OverrideItemIDOnPurchaseAOB13:
+  jmp newmem3
+  nop
+  nop
+  nop
+  return3:
+  
+[DISABLE]
+
+OverrideItemIDOnPurchaseAOB1:
+  db 49 8B 4D 00 8B F0
+
+unregistersymbol(OverrideItemIDOnPurchaseAOB1)
+unregistersymbol(iOverrideItemID)
+unregistersymbol(iItemTypeOverride)
+
+///
+OverrideItemIDOnPurchaseAOB12:
+  db 49 8B 4D 00 44 8B F8
+
+unregistersymbol(OverrideItemIDOnPurchaseAOB12)
+
+///
+OverrideItemIDOnPurchaseAOB13:
+  db 4D 8B 45 00 48 8D 55 CB
+
+unregistersymbol(OverrideItemIDOnPurchaseAOB13)
+  
+dealloc(newmem)
+dealloc(newmem2)
+dealloc(newmem3)"""
+
+[[cheat]]
+id = "override-item-id-for-items"
+name = "Override Item ID FOR ITEMS"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Nothing",
+    "1:Potion",
+    "2:Hi-Potion",
+    "3:Ether",
+    "4:Turbo Ether",
+    "5:Elixir",
+    "6:Phoenix Down",
+    "7:Antidote",
+    "8:Echo Mist",
+    "9:Adrenaline",
+    "10:Sedative",
+    "11:Remedy",
+    "12:Celeris",
+    "13:Grenade",
+    "14:Spiderweb",
+    "15:Hazardous Material",
+    "16:Big Bomber",
+    "17:Molotov Cocktail",
+    "18:Orb of Gravity",
+    "19:Smelling Salts",
+    "21:Maiden's Kiss",
+    "22:Mega-Potion",
+    "118:Moogle Medal",
+    "174:Condor Coin",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "iOverrideItemID"
+hops = []
+
+[[cheat]]
+id = "enable-override-item-id-on-purchase-of-materia-do-not-leave-on"
+name = "Enable Override Item ID On Purchase OF MATERIA (DO NOT LEAVE ON)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OverrideItemIDOnPurchaseAOB2,$process,4C 8B E9 44 8B D2 R8 8B 49 08 E8 ?? ?? ?? ?? 85 C0) // should be unique
+registersymbol(OverrideItemIDOnPurchaseAOB2)
+alloc(newmem,1024,OverrideItemIDOnPurchaseAOB2)
+
+///
+label(return)
+label(iOverrideItemIDMateria)
+registersymbol(iOverrideItemIDMateria)
+
+newmem:
+  mov r13,rcx
+  cmp [iOverrideItemIDMateria],0
+  je originalcode
+  mov r10d,[iOverrideItemIDMateria]
+  mov [rsp+00000088],r10d
+  jmp originalcode
+  
+originalcode:
+  mov r10d,edx
+  jmp return
+      
+iOverrideItemIDMateria:
+dq 0
+
+OverrideItemIDOnPurchaseAOB2:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+OverrideItemIDOnPurchaseAOB2:
+  db 4C 8B E9 44 8B D2
+
+unregistersymbol(OverrideItemIDOnPurchaseAOB2)
+unregistersymbol(iOverrideItemIDMateria)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "override-item-id-for-materia"
+name = "Override Item ID FOR MATERIA"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Nothing",
+    "10001:Healing",
+    "10002:Cleansing",
+    "10003:Revival",
+    "10004:Fire",
+    "10005:Ice",
+    "10006:Lightning",
+    "10007:Wind",
+    "10008:Poison",
+    "10009:Binding",
+    "10010:Time",
+    "10011:Barrier",
+    "10012:Subversion",
+    "11001:Magnify",
+    "11002:Elemental",
+    "11003:Warding",
+    "11004:HP Absorption",
+    "11005:MP Absorption",
+    "11006:Synergy",
+    "11007:AP Up",
+    "11008:Ninja Cannonball",
+    "12001:Steal",
+    "12002:Assess",
+    "12003:Enemy Skill",
+    "12004:Chakra",
+    "12005:Prayer",
+    "12006:ATB Boost",
+    "13001:HP Up",
+    "13002:MP Up",
+    "13003:Magic Up",
+    "13004:Luck Up",
+    "13005:Gil Up",
+    "13006:EXP Up",
+    "13007:Item Master",
+    "13008:ATB Stagger",
+    "13009:First Strike",
+    "13010:Steadfast Block",
+    "13011:Skill Master",
+    "13012:Deadly Dodge",
+    "13013:Parry",
+    "13014:ATB Assist",
+    "13015:Auto-Cure",
+    "13016:Provoke",
+    "13017:Pedometer",
+    "13018:Refocus",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "iOverrideItemIDMateria"
+hops = []
+
+[[cheat]]
+id = "easy-win-fort-condor-enemies-low-hp"
+name = "Easy Win Fort Condor (Enemies Low HP)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanmodule(EasyWinFortCondorAOB1,$process,48 8B 8F E8 05 00 00 48 8B 01 FF 50 48 8B C0 0F 57 C9) // should be unique
+registersymbol(EasyWinFortCondorAOB1)
+alloc(newmem,1024,EasyWinFortCondorAOB1)
+
+{
+/// This is before loop starts
+aobscanmodule(EasyWinFortCondorAOB2,$process,44 0F 29 8C 24 B0 02 00 00 66 66 66 0F 1F 84 00 00 00 00 00) // should be unique
+registersymbol(EasyWinFortCondorAOB2)
+alloc(newmem,1024,EasyWinFortCondorAOB2)
+}
+
+///
+label(return)
+
+{
+///
+label(return2)
+label(iLoopCount)
+}
+
+newmem:
+  mov rcx,[rdi+00000940]
+  test rcx,rcx
+  je originalcode
+  mov rcx,[rcx+00000F68]
+  test rcx,rcx
+  je originalcode
+  cmp dword ptr [rcx+00000164],0
+  je HeroUnit
+  jmp EnemyUnit
+HeroUnit:
+  mov rcx,[rdi+000005E8]
+  mov [R15Save],r15
+  xor r15,r15
+  mov r15d,[rcx+1C]
+  mov [rcx+18],r15d
+  mov r15,[R15Save]
+  jmp originalcode
+EnemyUnit:
+  mov rcx,[rdi+000005E8]
+  cmp dword ptr [rcx+18],1
+  jle originalcode
+  mov dword ptr [rcx+18],1
+  jmp originalcode
+  
+originalcode:
+  mov rcx,[rdi+000005E8]
+  jmp return
+      
+R15Save:
+dq 0
+
+{
+///
+newmem2:
+  mov [iLoopCount],0
+  
+originalcode2:
+  movaps [rsp+000002B0],xmm9
+  jmp return2
+
+iLoopCount:
+dq 0
+}
+  
+///
+EasyWinFortCondorAOB1:
+  jmp newmem
+  nop
+  nop
+return:
+
+{
+///
+EasyWinFortCondorAOB2:
+  jmp newmem2
+  nop
+  nop
+  nop
+  nop
+  return2:
+}
+  
+[DISABLE]
+
+EasyWinFortCondorAOB1:
+  db 48 8B 8F E8 05 00 00
+
+unregistersymbol(EasyWinFortCondorAOB1)
+
+{
+///
+EasyWinFortCondorAOB2:
+  db 44 0F 29 8C 24 B0 02 00 00
+
+unregistersymbol(EasyWinFortCondorAOB2)
+}
+  
+dealloc(newmem)
+{dealloc(newmem2)}"""
+
+[[cheat]]
+id = "can-always-perform-long-range-attack-with-bike-chapter-4"
+name = "Can Always Perform Long-Range Attack With Bike (Chapter 4)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CanAlwaysLimitOnBikeAOB1,$process,73 05 0F 57 C0 EB 07 0F 28 C2 F3 0F 5D C1) // should be unique
+registersymbol(CanAlwaysLimitOnBikeAOB1)
+
+CanAlwaysLimitOnBikeAOB1:
+  db EB
+
+CanAlwaysLimitOnBikeAOB1+A:
+  db F3 0F 5F C2
+  
+[DISABLE]
+
+CanAlwaysLimitOnBikeAOB1:
+  db 73
+
+CanAlwaysLimitOnBikeAOB1+A:
+  db F3 0F 5D C1
+
+unregistersymbol(CanAlwaysLimitOnBikeAOB1)"""
+
+[[cheat]]
+id = "win-dart-game-in-one-throw"
+name = "Win Dart Game In One Throw"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(WinDartGameAOB1,$process,8B 8E 78 04 00 00 83 EA 02 74 0A) // should be unique
+registersymbol(WinDartGameAOB1)
+alloc(newmem,1024,WinDartGameAOB1)
+
+///
+label(return)
+
+///
+newmem:
+  mov ecx,[rsi+000003B0]
+  mov [rsi+00000478],ecx
+  
+originalcode:
+  mov ecx,[rsi+00000478]
+  jmp return
+
+WinDartGameAOB1:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+WinDartGameAOB1:
+  db 8B 8E 78 04 00 00
+
+unregistersymbol(WinDartGameAOB1)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "fulfill-battle-reports-10x-faster-chadley-s-requests"
+name = "Fulfill Battle Reports 10x Faster (Chadley's Requests)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(FulfillBattleReportsFasterAOB1,$process,0F B7 91 C0 45 03 00 42 8D 04 3A 44 3B C0) // should be unique
+registersymbol(FulfillBattleReportsFasterAOB1)
+alloc(newmem,1024,FulfillBattleReportsFasterAOB1)
+
+///
+label(return)
+
+///
+newmem:
+  imul r15d,#10
+  
+originalcode:
+  movzx edx,word ptr [rcx+000345C0]
+  // lea eax,[rdx+r15]
+  jmp return
+
+FulfillBattleReportsFasterAOB1:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+FulfillBattleReportsFasterAOB1:
+  db 0F B7 91 C0 45 03 00
+
+unregistersymbol(FulfillBattleReportsFasterAOB1)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-add-bonus-sp-to-all-weapons-load-a-save-game-to-take-effect"
+name = "Enable Add Bonus SP To All Weapons (Load A Save Game To Take Effect)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+aobscanmodule(EarnedSPMultiplierAOB1,$process,0F AF C7 44 03 E0 45 33 D2) // should be unique
+registersymbol(EarnedSPMultiplierAOB1)
+alloc(newmem,1024,EarnedSPMultiplierAOB1)
+}
+
+aobscanmodule(EarnedSPMultiplierAOB1,$process,41 8B C4 48 83 C4 48 41 5C 5F C3) // should be unique
+registersymbol(EarnedSPMultiplierAOB1)
+alloc(newmem,1024,EarnedSPMultiplierAOB1)
+
+///
+label(return)
+label(iBonusSP)
+registersymbol(iBonusSP)
+
+///
+newmem:
+  add r12d,[iBonusSP]
+  
+originalcode:
+  mov eax,r12d
+  add rsp,48
+  jmp return
+
+iBonusSP:
+dq #250
+  
+EarnedSPMultiplierAOB1:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+EarnedSPMultiplierAOB1:
+  db 41 8B C4 48 83 C4 48
+
+unregistersymbol(EarnedSPMultiplierAOB1)
+unregistersymbol(iBonusSP)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bonus-sp"
+name = "Bonus SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iBonusSP"
+hops = []
+
+[[cheat]]
+id = "enable-whack-a-box-points-earned-multiplier-easy-high-score"
+name = "Enable Whack-A-Box Points Earned Multiplier (Easy High Score)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(WhackABoxPointMultiplierAOB1,$process,01 81 E8 01 00 00 FF 84 91 EC 01 00 00) // should be unique
+registersymbol(WhackABoxPointMultiplierAOB1)
+alloc(newmem,1024,WhackABoxPointMultiplierAOB1)
+
+///
+label(return)
+label(fWhackABoxPointMultiplier)
+registersymbol(fWhackABoxPointMultiplier)
+
+///
+newmem:
+  push eax
+  fild dword ptr [rsp]
+  fmul dword ptr [fWhackABoxPointMultiplier]
+  fistp dword ptr [rsp]
+  pop eax
+  
+originalcode:
+  add [rcx+000001E8],eax
+  jmp return
+
+fWhackABoxPointMultiplier:
+dq (float)1000.0
+
+WhackABoxPointMultiplierAOB1:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+WhackABoxPointMultiplierAOB1:
+  db 01 81 E8 01 00 00
+
+unregistersymbol(WhackABoxPointMultiplierAOB1)
+unregistersymbol(fWhackABoxPointMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "whack-a-box-point-multiplier"
+name = "Whack-A-Box Point Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fWhackABoxPointMultiplier"
+hops = []
+
+[[cheat]]
+id = "easy-win-gym-squats-cloud"
+name = "Easy Win Gym Squats (Cloud)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(EasyWinGymSquatsAOB1,$process,48 8B 40 20 8B 50 3C 89 13) // should be unique
+registersymbol(EasyWinGymSquatsAOB1)
+alloc(newmem,1024,EasyWinGymSquatsAOB1)
+
+///
+label(return)
+
+///
+newmem:
+  mov rax,[rax+20]
+  cmp [rax+1C],0
+  jne HeroHit
+  jmp EnemyHit
+HeroHit:
+  cmp [rax+3C],#99
+  jge originalcode
+  mov [rax+3C],#99
+  jmp originalcode
+EnemyHit:
+  mov [rax+3C],0
+  jmp originalcode
+  
+originalcode:
+  mov edx,[rax+3C]
+  jmp return
+
+EasyWinGymSquatsAOB1:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+EasyWinGymSquatsAOB1:
+  db 48 8B 40 20 8B 50 3C
+
+unregistersymbol(EasyWinGymSquatsAOB1)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enemy-skill-materia-has-all-abilities-doesn-t-save"
+name = "Enemy Skill Materia Has All Abilities (Doesn't Save)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(AllEnemySkillsAOB1,$process,44 8B 01 45 85 C0 74 32 44 3B C0 74 0D FF C2) // should be unique
+registersymbol(AllEnemySkillsAOB1)
+
+AllEnemySkillsAOB1+6:
+  db 90 90
+
+AllEnemySkillsAOB1+B:
+  db EB
+    
+[DISABLE]
+
+AllEnemySkillsAOB1+6:
+  db 74 32
+
+AllEnemySkillsAOB1+B:
+  db 74
+
+unregistersymbol(AllEnemySkillsAOB1)"""
+
+[[cheat]]
+id = "able-to-use-items-in-hard-mode"
+name = "Able To Use Items In HARD Mode"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+aobscanmodule(UseItemsInHardModeAOB1,$process,80 BB 79 2F 04 00 00 75 1C) // should be unique
+registersymbol(UseItemsInHardModeAOB1)
+}
+
+///
+aobscanmodule(UseItemsInHardModeAOB2,$process,80 BB F9 37 04 00 00 75 2C) // should be unique
+registersymbol(UseItemsInHardModeAOB2)
+
+///
+aobscanmodule(UseItemsInHardModeAOB3,$process,44 38 A7 F9 37 04 00 75 09) // should be unique
+registersymbol(UseItemsInHardModeAOB3)
+
+///
+aobscanmodule(UseItemsInHardModeAOB4,$process,44 38 B7 79 2F 04 00 48 8B 7C 24 60 75 23) // should be unique
+registersymbol(UseItemsInHardModeAOB4)
+
+{ 
+///
+UseItemsInHardModeAOB1+7:
+  db 90 90
+
+UseItemsInHardModeAOB1+10:
+  db 90 90
+
+UseItemsInHardModeAOB1+16:
+  db 90 90
+}
+
+///
+UseItemsInHardModeAOB2+7:
+  db EB 1F
+
+///
+UseItemsInHardModeAOB3+7:
+  db 90 90
+
+UseItemsInHardModeAOB3+10:
+  db EB 12
+
+///
+UseItemsInHardModeAOB4+C:
+  db EB 1F
+  
+[DISABLE]
+
+{
+UseItemsInHardModeAOB1+7:
+  db 75 1C
+
+UseItemsInHardModeAOB1+10:
+  db 74 13
+
+UseItemsInHardModeAOB1+16:
+  db 74 0D
+
+unregistersymbol(UseItemsInHardModeAOB1)
+}
+
+///
+UseItemsInHardModeAOB2+7:
+  db 75 2C
+
+unregistersymbol(UseItemsInHardModeAOB2)
+
+///
+UseItemsInHardModeAOB3+7:
+  db 75 09
+
+UseItemsInHardModeAOB3+10:
+  db 75 12
+
+unregistersymbol(UseItemsInHardModeAOB3)  
+
+///
+UseItemsInHardModeAOB4+C:
+  db 75 23
+
+unregistersymbol(UseItemsInHardModeAOB4)"""
+
+[[cheat]]
+id = "enable-change-item-id-of-first-2-slots-in-shop-view-shop-after-enabling"
+name = "Enable Change Item ID Of First 2 Slots In Shop (View Shop After Enabling)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OverrideItemIDOnPurchaseAOB31,$process,49 8B 7E 14 49 8B CF 48 89 7D F7) // should be unique
+registersymbol(OverrideItemIDOnPurchaseAOB31)
+alloc(newmem,1024,OverrideItemIDOnPurchaseAOB31)
+
+/// This is before main loop of code, so we reset things here
+aobscanmodule(OverrideItemIDOnPurchaseAOB32,$process,48 C7 45 AF 3D 00 00 00 49 8B CF) // should be unique
+registersymbol(OverrideItemIDOnPurchaseAOB32)
+alloc(newmem2,1024,OverrideItemIDOnPurchaseAOB32)
+
+///
+label(return)
+label(WeaponShopFirstItemSlotPtr)
+registersymbol(WeaponShopFirstItemSlotPtr)
+label(WeaponShopSecondItemSlotPtr)
+registersymbol(WeaponShopSecondItemSlotPtr)
+
+///
+label(ItemShopFirstItemSlotPtr)
+registersymbol(ItemShopFirstItemSlotPtr)
+label(ItemShopSecondItemSlotPtr)
+registersymbol(ItemShopSecondItemSlotPtr)
+
+///
+label(MateriaShopFirstItemSlotPtr)
+registersymbol(MateriaShopFirstItemSlotPtr)
+label(MateriaShopSecondItemSlotPtr)
+registersymbol(MateriaShopSecondItemSlotPtr)
+
+///
+label(return2)
+
+///
+newmem:
+  cmp byte ptr [rbp+7F],00
+  je FoundItemShopItem
+  cmp byte ptr [rbp+7F],02
+  je FoundMateriaShopItem
+  cmp byte ptr [rbp+7F],03
+  je FoundWeaponShopItem
+  cmp byte ptr [rbp+7F],04
+  je FoundWeaponShopItem
+  jmp originalcode
+
+FoundItemShopItem:
+  cmp [ItemShopTotalFound],0
+  jne SkipFirstItemSlot
+  mov [ItemShopFirstItemSlotPtr],r14
+  inc [ItemShopTotalFound]
+  jmp originalcode
+SkipFirstItemSlot:
+  cmp [ItemShopTotalFound],1
+  jne originalcode
+  mov [ItemShopSecondItemSlotPtr],r14
+  inc [ItemShopTotalFound]
+  jmp originalcode
+
+FoundMateriaShopItem:
+  cmp [MateriaShopTotalFound],0
+  jne SkipFirstMateriaSlot
+  mov [MateriaShopFirstItemSlotPtr],r14
+  inc [MateriaShopTotalFound]
+  jmp originalcode
+SkipFirstMateriaSlot:
+  cmp [MateriaShopTotalFound],1
+  jne originalcode
+  mov [MateriaShopSecondItemSlotPtr],r14
+  inc [MateriaShopTotalFound]
+  jmp originalcode
+
+FoundWeaponShopItem:
+  cmp [WeaponShopTotalFound],0
+  jne SkipFirstWeaponSlot
+  mov [WeaponShopFirstItemSlotPtr],r14
+  inc [WeaponShopTotalFound]
+  jmp originalcode
+SkipFirstWeaponSlot:
+  cmp [WeaponShopTotalFound],1
+  jne originalcode
+  mov [WeaponShopSecondItemSlotPtr],r14
+  inc [WeaponShopTotalFound]
+  jmp originalcode
+  
+originalcode:
+  mov rdi,[r14+14]
+  mov rcx,r15
+  jmp return
+      
+WeaponShopTotalFound:
+dq 0
+WeaponShopFirstItemSlotPtr:
+dq 0
+WeaponShopSecondItemSlotPtr:
+dq 0
+
+ItemShopTotalFound:
+dq 0
+ItemShopFirstItemSlotPtr:
+dq 0
+ItemShopSecondItemSlotPtr:
+dq 0
+
+MateriaShopTotalFound:
+dq 0
+MateriaShopFirstItemSlotPtr:
+dq 0
+MateriaShopSecondItemSlotPtr:
+dq 0
+
+///
+newmem2:
+  mov [R15Save2],r15
+  xor r15,r15
+  mov [WeaponShopTotalFound],r15
+  mov [ItemShopTotalFound],r15
+  mov [MateriaShopTotalFound],r15
+  mov r15,[R15Save2]
+  jmp originalcode2
+  
+originalcode2:
+  mov qword ptr [rbp-51],0000003D
+  jmp return2
+
+R15Save2:
+dq 0
+  
+///
+OverrideItemIDOnPurchaseAOB31:
+  jmp newmem
+  nop
+  nop
+  return:
+
+///
+OverrideItemIDOnPurchaseAOB32:
+  jmp newmem2
+  nop
+  nop
+  nop
+  return2:
+  
+[DISABLE]
+
+OverrideItemIDOnPurchaseAOB31:
+  db 49 8B 7E 14 49 8B CF
+
+unregistersymbol(OverrideItemIDOnPurchaseAOB31)
+unregistersymbol(WeaponShopFirstItemSlotPtr)
+unregistersymbol(WeaponShopSecondItemSlotPtr)
+unregistersymbol(ItemShopFirstItemSlotPtr)
+unregistersymbol(ItemShopSecondItemSlotPtr)
+unregistersymbol(MateriaShopFirstItemSlotPtr)
+unregistersymbol(MateriaShopSecondItemSlotPtr)
+
+///
+OverrideItemIDOnPurchaseAOB32:
+  db 48 C7 45 AF 3D 00 00 00
+
+unregistersymbol(OverrideItemIDOnPurchaseAOB32)
+  
+///
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "gil"
+name = "Gil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GilPtr"
+hops = ["+0x0"]

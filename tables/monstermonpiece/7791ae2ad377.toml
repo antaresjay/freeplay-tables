@@ -1,0 +1,5471 @@
+[game]
+name = "Monster Monpiece"
+exe = "monstermonpiece.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=523"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-initialization-activate-this-first"
+name = "Battle Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(battlestats_basepointer)
+registersymbol(battlestats_enemy_basepointer)
+registersymbol(battlestats_update_enable)
+registersymbol(battlestats_set_enable)
+registersymbol(battlestats_manaset_enable)
+registersymbol(battlestats_durabilityset_enable)
+registersymbol(battlestats_enemymanaset_enable)
+registersymbol(battlestats_enemydurabilityset_enable)
+
+alloc(battlestats_basepointer, 4)
+alloc(battlestats_enemy_basepointer, 4)
+alloc(battlestats_update_enable, 4)
+alloc(battlestats_set_enable, 4)
+alloc(battlestats_manaset_enable, 4)
+alloc(battlestats_durabilityset_enable, 4)
+alloc(battlestats_enemymanaset_enable, 4)
+alloc(battlestats_enemydurabilityset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestats_enemy_basepointer)
+unregistersymbol(battlestats_update_enable)
+unregistersymbol(battlestats_set_enable)
+unregistersymbol(battlestats_manaset_enable)
+unregistersymbol(battlestats_durabilityset_enable)
+unregistersymbol(battlestats_enemymanaset_enable)
+unregistersymbol(battlestats_enemydurabilityset_enable)
+
+dealloc(battlestats_basepointer)
+dealloc(battlestats_enemy_basepointer)
+dealloc(battlestats_update_enable)
+dealloc(battlestats_set_enable)
+dealloc(battlestats_manaset_enable)
+dealloc(battlestats_durabilityset_enable)
+dealloc(battlestats_enemymanaset_enable)
+dealloc(battlestats_enemydurabilityset_enable)"""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-to-activate-battle-to-update-battle"
+name = "Battle Stats Base Address Scan (To Activate: Battle, To Update: Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(battlestats_savedAOB)
+label(battlestats_returnhere)
+label(battlestats_originalcode)
+label(battlestats_exit)
+
+label(battlestats_update_exit)
+label(battlestats_set_exit)
+label(battlestats_manaset_exit)
+label(battlestats_durabilityset_exit)
+label(battlestats_enemyset_entry)
+label(battlestats_enemyupdate_exit)
+label(battlestats_enemymanaset_exit)
+label(battlestats_enemydurabilityset_exit)
+
+registersymbol(battlestats_savedAOB)
+
+//MonsterMonpiece.CAsyncReader::GetPin+7B62A - 5D                    - pop ebp
+//MonsterMonpiece.CAsyncReader::GetPin+7B62B - C3                    - ret
+// Accesses Mana
+//MonsterMonpiece.CAsyncReader::GetPin+7B62C - 0FBE 40 04            - movsx eax,byte ptr [eax+04]
+//MonsterMonpiece.CAsyncReader::GetPin+7B630 - 5D                    - pop ebp
+//MonsterMonpiece.CAsyncReader::GetPin+7B631 - C3                    - ret
+aobscan(battlestats_searchedAOB, 0F BE 40 04 5D C3)
+
+alloc(battlestats_newmem, 2048, battlestats_searchedAOB)
+alloc(battlestats_temp1, 4, battlestats_searchedAOB)
+alloc(battlestats_temp2, 4, battlestats_searchedAOB)
+alloc(battlestats_temp3, 4, battlestats_searchedAOB)
+alloc(battlestats_temp4, 4, battlestats_searchedAOB)
+
+
+battlestats_newmem:
+mov [battlestats_temp1], eax
+mov [battlestats_temp2], ebx
+mov [battlestats_temp3], ecx
+mov [battlestats_temp4], edx
+
+cmp dword ptr [eax], #0
+jne battlestats_enemyset_entry
+
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_update_exit
+mov [battlestats_basepointer], eax
+battlestats_update_exit:
+
+cmp dword ptr [battlestats_set_enable], #0
+je battlestats_set_exit
+battlestats_set_exit:
+
+cmp dword ptr [battlestats_manaset_enable], #0
+je battlestats_manaset_exit
+mov bl, [eax+5]
+mov byte ptr [eax+4], bl
+battlestats_manaset_exit:
+
+cmp dword ptr [battlestats_durabilityset_enable], #0
+je battlestats_durabilityset_exit
+mov bl, [eax+8]
+mov byte ptr [eax+7], bl
+battlestats_durabilityset_exit:
+
+jmp battlestats_enemydurabilityset_exit
+
+battlestats_enemyset_entry:
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_enemyupdate_exit
+mov [battlestats_enemy_basepointer], eax
+battlestats_enemyupdate_exit:
+
+cmp dword ptr [battlestats_enemymanaset_enable], #0
+je battlestats_enemymanaset_exit
+mov byte ptr [eax+4], #0
+battlestats_enemymanaset_exit:
+
+cmp dword ptr [battlestats_enemydurabilityset_enable], #0
+je battlestats_enemydurabilityset_exit
+cmp byte ptr [battlestats_enemydurabilityset_enable], #1
+jl battlestats_enemydurabilityset_exit
+mov byte ptr [eax+7], #1
+battlestats_enemydurabilityset_exit:
+
+
+mov eax, [battlestats_temp1]
+mov ebx, [battlestats_temp2]
+mov ecx, [battlestats_temp3]
+mov edx, [battlestats_temp4]
+
+
+battlestats_originalcode:
+db 0F BE 40 04 5D
+//movsx eax,byte ptr [eax+04]
+//pop ebp
+
+
+battlestats_exit:
+jmp battlestats_returnhere
+
+
+battlestats_searchedAOB:
+battlestats_savedAOB:
+jmp battlestats_newmem
+battlestats_returnhere:
+
+
+[DISABLE]
+battlestats_savedAOB:
+db 0F BE 40 04 5D
+//movsx eax,byte ptr [eax+04]
+//pop ebp
+
+unregistersymbol(battlestats_savedAOB)
+
+dealloc(battlestats_newmem)
+dealloc(battlestats_temp1)
+dealloc(battlestats_temp2)
+dealloc(battlestats_temp3)
+dealloc(battlestats_temp4)"""
+
+[[cheat]]
+id = "mana-set-to-max"
+name = "Mana Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_manaset_enable"
+hops = []
+
+[[cheat]]
+id = "hq-durability-set-to-max"
+name = "HQ Durability Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_durabilityset_enable"
+hops = []
+
+[[cheat]]
+id = "enemy-mana-set-to-0"
+name = "Enemy Mana Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemymanaset_enable"
+hops = []
+
+[[cheat]]
+id = "enemy-hq-durability-set-to-1"
+name = "Enemy HQ Durability Set to 1?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemydurabilityset_enable"
+hops = []
+
+[[cheat]]
+id = "battle-stats-update-base-address"
+name = "Battle Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "battle"
+name = "Battle"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "mana"
+name = "Mana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "max-mana"
+name = "Max Mana"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x5"]
+
+[[cheat]]
+id = "mana-regeneration-rate"
+name = "Mana Regeneration Rate"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x6"]
+
+[[cheat]]
+id = "hq-durability"
+name = "HQ Durability"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x7"]
+
+[[cheat]]
+id = "max-hq-durability"
+name = "Max HQ Durability"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "battle-2"
+name = "Battle"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "mana-2"
+name = "Mana"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "max-mana-2"
+name = "Max Mana"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x5"]
+
+[[cheat]]
+id = "mana-regeneration-rate-2"
+name = "Mana Regeneration Rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x6"]
+
+[[cheat]]
+id = "hq-durability-2"
+name = "HQ Durability"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x7"]
+
+[[cheat]]
+id = "max-hq-durability-2"
+name = "Max HQ Durability"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_timeset_enable)
+
+alloc(playerstats_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_timeset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_timeset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_timeset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-activate-visit-card-gym-to-update-visit-card-gym"
+name = "Player Stats Base Address Scan (To Activate: Visit Card Gym, To Update: Visit Card Gym)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_set_exit)
+label(playerstats_timeset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//MonsterMonpiece.exe+128A37 - 75 01                 - jne MonsterMonpiece.exe+128A3A
+//MonsterMonpiece.exe+128A39 - C3                    - ret
+// Accesses Rub P
+//MonsterMonpiece.exe+128A3A - 8B 80 28A70100        - mov eax,[eax+0001A728]
+//MonsterMonpiece.exe+128A40 - C3                    - ret
+aobscan(playerstats_searchedAOB, 8B 80 28 A7 01 00 C3)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], eax
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_set_enable], #0
+je playerstats_set_exit
+playerstats_set_exit:
+
+cmp dword ptr [playerstats_timeset_enable], #0
+je playerstats_timeset_exit
+playerstats_timeset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+db 8B 80 28 A7 01 00
+//mov eax,[eax+0001A728]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db 8B 80 28 A7 01 00
+//mov eax,[eax+0001A728]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)"""
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "fertile-1"
+name = "Fertile 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19788"]
+
+[[cheat]]
+id = "fertile-3"
+name = "Fertile 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1978a"]
+
+[[cheat]]
+id = "mystery-1"
+name = "Mystery 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1978c"]
+
+[[cheat]]
+id = "mystery-3"
+name = "Mystery 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1978e"]
+
+[[cheat]]
+id = "requiem-1"
+name = "Requiem 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19790"]
+
+[[cheat]]
+id = "requiem-3"
+name = "Requiem 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19792"]
+
+[[cheat]]
+id = "tundra-1"
+name = "Tundra 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19794"]
+
+[[cheat]]
+id = "tundra-3"
+name = "Tundra 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19796"]
+
+[[cheat]]
+id = "eternal-1"
+name = "Eternal 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19798"]
+
+[[cheat]]
+id = "eternal-3"
+name = "Eternal 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1979a"]
+
+[[cheat]]
+id = "eternal-5"
+name = "Eternal 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1979c"]
+
+[[cheat]]
+id = "fortress-1"
+name = "Fortress 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1979e"]
+
+[[cheat]]
+id = "fortress-3"
+name = "Fortress 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a0"]
+
+[[cheat]]
+id = "fortress-5"
+name = "Fortress 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a2"]
+
+[[cheat]]
+id = "inferno-1"
+name = "Inferno 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a4"]
+
+[[cheat]]
+id = "inferno-3"
+name = "Inferno 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a6"]
+
+[[cheat]]
+id = "inferno-5"
+name = "Inferno 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a8"]
+
+[[cheat]]
+id = "dawn-1"
+name = "Dawn 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197aa"]
+
+[[cheat]]
+id = "dawn-3"
+name = "Dawn 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ac"]
+
+[[cheat]]
+id = "dawn-5"
+name = "Dawn 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ae"]
+
+[[cheat]]
+id = "awakening-1"
+name = "Awakening 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b0"]
+
+[[cheat]]
+id = "awakening-3"
+name = "Awakening 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b2"]
+
+[[cheat]]
+id = "awakening-5"
+name = "Awakening 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b4"]
+
+[[cheat]]
+id = "assault-1"
+name = "Assault 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b6"]
+
+[[cheat]]
+id = "assault-3"
+name = "Assault 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b8"]
+
+[[cheat]]
+id = "assault-5"
+name = "Assault 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ba"]
+
+[[cheat]]
+id = "revolution-1"
+name = "Revolution 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197bc"]
+
+[[cheat]]
+id = "revolution-3"
+name = "Revolution 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197be"]
+
+[[cheat]]
+id = "revolution-5"
+name = "Revolution 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c0"]
+
+[[cheat]]
+id = "ascension-1"
+name = "Ascension 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c2"]
+
+[[cheat]]
+id = "ascension-3"
+name = "Ascension 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c4"]
+
+[[cheat]]
+id = "ascension-5"
+name = "Ascension 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c6"]
+
+[[cheat]]
+id = "necropolis-1"
+name = "Necropolis 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c8"]
+
+[[cheat]]
+id = "necropolis-3"
+name = "Necropolis 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ca"]
+
+[[cheat]]
+id = "necropolis-5"
+name = "Necropolis 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197cc"]
+
+[[cheat]]
+id = "clear-bonus-3"
+name = "Clear Bonus 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ce"]
+
+[[cheat]]
+id = "overthrown-a-3"
+name = "Overthrown A 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d0"]
+
+[[cheat]]
+id = "overthrown-b-3"
+name = "Overthrown B 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d2"]
+
+[[cheat]]
+id = "overthrown-c-3"
+name = "Overthrown C 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d4"]
+
+[[cheat]]
+id = "rogue-3"
+name = "Rogue 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d6"]
+
+[[cheat]]
+id = "thug-3"
+name = "Thug 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d8"]
+
+[[cheat]]
+id = "soldier-3"
+name = "Soldier 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197da"]
+
+[[cheat]]
+id = "defender-3"
+name = "Defender 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197dc"]
+
+[[cheat]]
+id = "warrior-3"
+name = "Warrior 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197de"]
+
+[[cheat]]
+id = "brigand-3"
+name = "Brigand 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e0"]
+
+[[cheat]]
+id = "knight-3"
+name = "Knight 3"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e2"]
+
+[[cheat]]
+id = "invader-3"
+name = "Invader 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e4"]
+
+[[cheat]]
+id = "tyrant-3"
+name = "TYrant 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e6"]
+
+[[cheat]]
+id = "ruler-3"
+name = "Ruler 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e8"]
+
+[[cheat]]
+id = "1st-rare-card"
+name = "1st Rare Card"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ea"]
+
+[[cheat]]
+id = "2nd-rare-card"
+name = "2nd Rare Card!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ec"]
+
+[[cheat]]
+id = "3rd-rare-card"
+name = "3rd Rare Card!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ee"]
+
+[[cheat]]
+id = "1st-rare-power-up"
+name = "1st Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f0"]
+
+[[cheat]]
+id = "2nd-rare-power-up"
+name = "2nd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f2"]
+
+[[cheat]]
+id = "3rd-rare-power-up"
+name = "3rd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f4"]
+
+[[cheat]]
+id = "1st-rare-power-up-2"
+name = "1st Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f6"]
+
+[[cheat]]
+id = "2nd-rare-power-up-2"
+name = "2nd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f8"]
+
+[[cheat]]
+id = "3rd-rare-power-up-2"
+name = "3rd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197fa"]
+
+[[cheat]]
+id = "fertile-1-2"
+name = "Fertile 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19789"]
+
+[[cheat]]
+id = "fertile-3-2"
+name = "Fertile 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1978b"]
+
+[[cheat]]
+id = "mystery-1-2"
+name = "Mystery 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1978d"]
+
+[[cheat]]
+id = "mystery-3-2"
+name = "Mystery 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1978f"]
+
+[[cheat]]
+id = "requiem-1-2"
+name = "Requiem 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19791"]
+
+[[cheat]]
+id = "requiem-3-2"
+name = "Requiem 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19793"]
+
+[[cheat]]
+id = "tundra-1-2"
+name = "Tundra 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19795"]
+
+[[cheat]]
+id = "tundra-3-2"
+name = "Tundra 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19797"]
+
+[[cheat]]
+id = "eternal-1-2"
+name = "Eternal 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19799"]
+
+[[cheat]]
+id = "eternal-3-2"
+name = "Eternal 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1979b"]
+
+[[cheat]]
+id = "eternal-5-2"
+name = "Eternal 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1979d"]
+
+[[cheat]]
+id = "fortress-1-2"
+name = "Fortress 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1979f"]
+
+[[cheat]]
+id = "fortress-3-2"
+name = "Fortress 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a1"]
+
+[[cheat]]
+id = "fortress-5-2"
+name = "Fortress 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a3"]
+
+[[cheat]]
+id = "inferno-1-2"
+name = "Inferno 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a5"]
+
+[[cheat]]
+id = "inferno-3-2"
+name = "Inferno 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a7"]
+
+[[cheat]]
+id = "inferno-5-2"
+name = "Inferno 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197a9"]
+
+[[cheat]]
+id = "dawn-1-2"
+name = "Dawn 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ab"]
+
+[[cheat]]
+id = "dawn-3-2"
+name = "Dawn 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ad"]
+
+[[cheat]]
+id = "dawn-5-2"
+name = "Dawn 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197af"]
+
+[[cheat]]
+id = "awakening-1-2"
+name = "Awakening 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b1"]
+
+[[cheat]]
+id = "awakening-3-2"
+name = "Awakening 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b3"]
+
+[[cheat]]
+id = "awakening-5-2"
+name = "Awakening 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b5"]
+
+[[cheat]]
+id = "assault-1-2"
+name = "Assault 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b7"]
+
+[[cheat]]
+id = "assault-3-2"
+name = "Assault 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197b9"]
+
+[[cheat]]
+id = "assault-5-2"
+name = "Assault 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197bb"]
+
+[[cheat]]
+id = "revolution-1-2"
+name = "Revolution 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197bd"]
+
+[[cheat]]
+id = "revolution-3-2"
+name = "Revolution 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197bf"]
+
+[[cheat]]
+id = "revolution-5-2"
+name = "Revolution 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c1"]
+
+[[cheat]]
+id = "ascension-1-2"
+name = "Ascension 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c3"]
+
+[[cheat]]
+id = "ascension-3-2"
+name = "Ascension 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c5"]
+
+[[cheat]]
+id = "ascension-5-2"
+name = "Ascension 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c7"]
+
+[[cheat]]
+id = "necropolis-1-2"
+name = "Necropolis 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197c9"]
+
+[[cheat]]
+id = "necropolis-3-2"
+name = "Necropolis 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197cb"]
+
+[[cheat]]
+id = "necropolis-5-2"
+name = "Necropolis 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197cd"]
+
+[[cheat]]
+id = "clear-bonus-3-2"
+name = "Clear Bonus 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197cf"]
+
+[[cheat]]
+id = "overthrown-a-3-2"
+name = "Overthrown A 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d1"]
+
+[[cheat]]
+id = "overthrown-b-3-2"
+name = "Overthrown B 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d3"]
+
+[[cheat]]
+id = "overthrown-c-3-2"
+name = "Overthrown C 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d5"]
+
+[[cheat]]
+id = "rogue-3-2"
+name = "Rogue 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d7"]
+
+[[cheat]]
+id = "thug-3-2"
+name = "Thug 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197d9"]
+
+[[cheat]]
+id = "soldier-3-2"
+name = "Soldier 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197db"]
+
+[[cheat]]
+id = "defender-3-2"
+name = "Defender 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197dd"]
+
+[[cheat]]
+id = "warrior-3-2"
+name = "Warrior 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197df"]
+
+[[cheat]]
+id = "brigand-3-2"
+name = "Brigand 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e1"]
+
+[[cheat]]
+id = "knight-3-2"
+name = "Knight 3"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e3"]
+
+[[cheat]]
+id = "invader-3-2"
+name = "Invader 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e5"]
+
+[[cheat]]
+id = "tyrant-3-2"
+name = "TYrant 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e7"]
+
+[[cheat]]
+id = "ruler-3-2"
+name = "Ruler 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197e9"]
+
+[[cheat]]
+id = "1st-rare-card-2"
+name = "1st Rare Card"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197eb"]
+
+[[cheat]]
+id = "2nd-rare-card-2"
+name = "2nd Rare Card!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ed"]
+
+[[cheat]]
+id = "3rd-rare-card-2"
+name = "3rd Rare Card!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197ef"]
+
+[[cheat]]
+id = "1st-rare-power-up-3"
+name = "1st Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f1"]
+
+[[cheat]]
+id = "2nd-rare-power-up-3"
+name = "2nd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f3"]
+
+[[cheat]]
+id = "3rd-rare-power-up-3"
+name = "3rd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f5"]
+
+[[cheat]]
+id = "1st-rare-power-up-4"
+name = "1st Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f7"]
+
+[[cheat]]
+id = "2nd-rare-power-up-4"
+name = "2nd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197f9"]
+
+[[cheat]]
+id = "3rd-rare-power-up-4"
+name = "3rd Rare Power Up!"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x197fb"]
+
+[[cheat]]
+id = "childhood-friend"
+name = "Childhood Friend"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f58"]
+
+[[cheat]]
+id = "energetic-girl"
+name = "Energetic Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f5a"]
+
+[[cheat]]
+id = "tsundere-girl"
+name = "Tsundere Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f5c"]
+
+[[cheat]]
+id = "noble-girl"
+name = "Noble Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f5e"]
+
+[[cheat]]
+id = "sheltered-girl"
+name = "Sheltered Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f60"]
+
+[[cheat]]
+id = "cool-girl"
+name = "Cool Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f62"]
+
+[[cheat]]
+id = "fiery-girl"
+name = "Fiery Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f64"]
+
+[[cheat]]
+id = "mellow-sis"
+name = "Mellow Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f66"]
+
+[[cheat]]
+id = "big-sis"
+name = "Big Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f68"]
+
+[[cheat]]
+id = "tomboy"
+name = "Tomboy"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f6a"]
+
+[[cheat]]
+id = "spoiled-sis"
+name = "Spoiled Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f6c"]
+
+[[cheat]]
+id = "smart-ass-sis"
+name = "Smart-Ass Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f6e"]
+
+[[cheat]]
+id = "queen"
+name = "Queen"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f70"]
+
+[[cheat]]
+id = "demure-girl"
+name = "Demure Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f72"]
+
+[[cheat]]
+id = "goth-girl"
+name = "Goth Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f74"]
+
+[[cheat]]
+id = "punk-girl"
+name = "Punk Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f76"]
+
+[[cheat]]
+id = "reclusive-girl"
+name = "Reclusive Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f78"]
+
+[[cheat]]
+id = "tough-girl"
+name = "Tough Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f7a"]
+
+[[cheat]]
+id = "kansai-girl"
+name = "Kansai Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f7c"]
+
+[[cheat]]
+id = "dynamic"
+name = "Dynamic"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f7e"]
+
+[[cheat]]
+id = "withdrawn-girl"
+name = "Withdrawn Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f80"]
+
+[[cheat]]
+id = "gal-type"
+name = "Gal-type"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f82"]
+
+[[cheat]]
+id = "intellectual-girl"
+name = "Intellectual Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f84"]
+
+[[cheat]]
+id = "spacy-girl"
+name = "Spacy Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f86"]
+
+[[cheat]]
+id = "free-rub-coupon"
+name = "Free rub coupon"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f88"]
+
+[[cheat]]
+id = "rub-time-extension"
+name = "Rub time extension"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f8a"]
+
+[[cheat]]
+id = "clairdia-cut-in"
+name = "Clairdia Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f8c"]
+
+[[cheat]]
+id = "leanne-cut-in"
+name = "Leanne Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f8e"]
+
+[[cheat]]
+id = "karen-cut-in"
+name = "Karen Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f90"]
+
+[[cheat]]
+id = "otton-cut-in"
+name = "Otton Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f92"]
+
+[[cheat]]
+id = "rub-p"
+name = "Rub P"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f94"]
+
+[[cheat]]
+id = "red-sph-master-ring"
+name = "Red SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f96"]
+
+[[cheat]]
+id = "blue-sph-master-ring"
+name = "Blue SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f98"]
+
+[[cheat]]
+id = "diamond-master-ring"
+name = "Diamond Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f9a"]
+
+[[cheat]]
+id = "green-sph-master-ring"
+name = "Green SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f9c"]
+
+[[cheat]]
+id = "gold-sph-master-ring"
+name = "Gold SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f9e"]
+
+[[cheat]]
+id = "amethyst-master-ring"
+name = "Amethyst Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa0"]
+
+[[cheat]]
+id = "red-seal-stone"
+name = "Red Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa2"]
+
+[[cheat]]
+id = "blue-seal-stone"
+name = "Blue Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa4"]
+
+[[cheat]]
+id = "yellow-seal-stone"
+name = "Yellow Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa6"]
+
+[[cheat]]
+id = "green-seal-stone"
+name = "Green Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa8"]
+
+[[cheat]]
+id = "purple-seal-stone"
+name = "Purple Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19faa"]
+
+[[cheat]]
+id = "monster-maids"
+name = "Monster Maids!?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fac"]
+
+[[cheat]]
+id = "clairdia-reborn"
+name = "Clairdia Reborn!?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fae"]
+
+[[cheat]]
+id = "seaside-go-go-go"
+name = "Seaside Go-Go-Go!"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb0"]
+
+[[cheat]]
+id = "ogasa"
+name = "Ogasa"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb2"]
+
+[[cheat]]
+id = "awaji"
+name = "Awaji"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb4"]
+
+[[cheat]]
+id = "sadoga-island"
+name = "Sadoga Island"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb6"]
+
+[[cheat]]
+id = "colosseum-ticket"
+name = "Colosseum Ticket"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb8"]
+
+[[cheat]]
+id = "otton-cup"
+name = "Otton Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fba"]
+
+[[cheat]]
+id = "elza-cup"
+name = "Elza Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fbc"]
+
+[[cheat]]
+id = "may-cup"
+name = "May Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fbe"]
+
+[[cheat]]
+id = "karen-cup"
+name = "Karen Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc0"]
+
+[[cheat]]
+id = "rocket-cup"
+name = "Rocket Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc2"]
+
+[[cheat]]
+id = "advance-sph"
+name = "Advance SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc4"]
+
+[[cheat]]
+id = "bloody-sph"
+name = "Bloody SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc6"]
+
+[[cheat]]
+id = "charge-sph"
+name = "Charge SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc8"]
+
+[[cheat]]
+id = "sacrifice-sph"
+name = "Sacrifice SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fca"]
+
+[[cheat]]
+id = "obliteration-sph"
+name = "Obliteration SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fcc"]
+
+[[cheat]]
+id = "offer-sph"
+name = "Offer SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fce"]
+
+[[cheat]]
+id = "withdrawal-sph"
+name = "Withdrawal SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd0"]
+
+[[cheat]]
+id = "recall-sph"
+name = "Recall SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd2"]
+
+[[cheat]]
+id = "intercept-sph"
+name = "INTERCEPT SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd4"]
+
+[[cheat]]
+id = "hypersonic-sph"
+name = "HYPERSONIC SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd6"]
+
+[[cheat]]
+id = "staunch-sph"
+name = "STAUNCH SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd8"]
+
+[[cheat]]
+id = "exhausted-sph"
+name = "EXHAUSTED SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fda"]
+
+[[cheat]]
+id = "nullifying-sph"
+name = "NULLIFYING SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fdc"]
+
+[[cheat]]
+id = "hp-regen-sph"
+name = "HP REGEN SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fde"]
+
+[[cheat]]
+id = "mp-regen-sph"
+name = "MP REGEN SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe0"]
+
+[[cheat]]
+id = "mystic-sph"
+name = "Mystic SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe2"]
+
+[[cheat]]
+id = "curse-sph"
+name = "Curse SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe4"]
+
+[[cheat]]
+id = "fun-size-parfait"
+name = "Fun Size Parfait"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe6"]
+
+[[cheat]]
+id = "fruit-parfait"
+name = "Fruit Parfait"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe8"]
+
+[[cheat]]
+id = "deluxe-parfait"
+name = "Deluxe Parfait"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fea"]
+
+[[cheat]]
+id = "attack-scroll"
+name = "Attack Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fec"]
+
+[[cheat]]
+id = "adv-attack-scroll"
+name = "ADV Attack Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fee"]
+
+[[cheat]]
+id = "lgd-attack-scroll"
+name = "LGD Attack Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff0"]
+
+[[cheat]]
+id = "shock-scroll"
+name = "Shock Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff2"]
+
+[[cheat]]
+id = "adv-shock-scroll"
+name = "ADV Shock Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff4"]
+
+[[cheat]]
+id = "lgd-shock-scroll"
+name = "LGD Shock Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff6"]
+
+[[cheat]]
+id = "spirit-gel"
+name = "Spirit Gel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff8"]
+
+[[cheat]]
+id = "hyper-spirit-gel"
+name = "Hyper Spirit Gel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ffa"]
+
+[[cheat]]
+id = "divine-spirit-gel"
+name = "Divine Spirit Gel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ffc"]
+
+[[cheat]]
+id = "spirit-mist"
+name = "Spirit Mist"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ffe"]
+
+[[cheat]]
+id = "hyper-spirit-mist"
+name = "Hyper Spirit Mist"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a000"]
+
+[[cheat]]
+id = "divine-spirit-mist"
+name = "Divine Spirit Mist"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a002"]
+
+[[cheat]]
+id = "exorcism"
+name = "Exorcism"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a004"]
+
+[[cheat]]
+id = "hyper-exorcism"
+name = "Hyper Exorcism"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a006"]
+
+[[cheat]]
+id = "divine-exorcism"
+name = "Divine Exorcism"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a008"]
+
+[[cheat]]
+id = "cloak-sph"
+name = "Cloak SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a00a"]
+
+[[cheat]]
+id = "stealth-sph"
+name = "Stealth SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a00c"]
+
+[[cheat]]
+id = "construction-sph"
+name = "Construction SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a00e"]
+
+[[cheat]]
+id = "seal-sph"
+name = "Seal SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a010"]
+
+[[cheat]]
+id = "advanced-seal-sph"
+name = "Advanced Seal SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a012"]
+
+[[cheat]]
+id = "retreat-sph"
+name = "Retreat SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a014"]
+
+[[cheat]]
+id = "revive-sph"
+name = "Revive SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a016"]
+
+[[cheat]]
+id = "adv-revive-sph"
+name = "ADV Revive SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a018"]
+
+[[cheat]]
+id = "lgd-revive-sph"
+name = "LGD Revive SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a01a"]
+
+[[cheat]]
+id = "friendship-sph"
+name = "Friendship SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a01c"]
+
+[[cheat]]
+id = "lucre-sph"
+name = "Lucre SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a01e"]
+
+[[cheat]]
+id = "neptunia-card"
+name = "Neptunia Card"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a020"]
+
+[[cheat]]
+id = "fear-rub-lv-4-release"
+name = "Fear Rub Lv. 4 Release"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a022"]
+
+[[cheat]]
+id = "thor-card"
+name = "Thor Card"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a024"]
+
+[[cheat]]
+id = "enlightenment-sph"
+name = "Enlightenment SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a026"]
+
+[[cheat]]
+id = "childhood-friend-2"
+name = "Childhood Friend"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f59"]
+
+[[cheat]]
+id = "energetic-girl-2"
+name = "Energetic Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f5b"]
+
+[[cheat]]
+id = "tsundere-girl-2"
+name = "Tsundere Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f5d"]
+
+[[cheat]]
+id = "noble-girl-2"
+name = "Noble Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f5f"]
+
+[[cheat]]
+id = "sheltered-girl-2"
+name = "Sheltered Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f61"]
+
+[[cheat]]
+id = "cool-girl-2"
+name = "Cool Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f63"]
+
+[[cheat]]
+id = "fiery-girl-2"
+name = "Fiery Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f65"]
+
+[[cheat]]
+id = "mellow-sis-2"
+name = "Mellow Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f67"]
+
+[[cheat]]
+id = "big-sis-2"
+name = "Big Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f69"]
+
+[[cheat]]
+id = "tomboy-2"
+name = "Tomboy"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f6b"]
+
+[[cheat]]
+id = "spoiled-sis-2"
+name = "Spoiled Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f6d"]
+
+[[cheat]]
+id = "smart-ass-sis-2"
+name = "Smart-Ass Sis"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f6f"]
+
+[[cheat]]
+id = "queen-2"
+name = "Queen"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f71"]
+
+[[cheat]]
+id = "demure-girl-2"
+name = "Demure Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f73"]
+
+[[cheat]]
+id = "goth-girl-2"
+name = "Goth Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f75"]
+
+[[cheat]]
+id = "punk-girl-2"
+name = "Punk Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f77"]
+
+[[cheat]]
+id = "reclusive-girl-2"
+name = "Reclusive Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f79"]
+
+[[cheat]]
+id = "tough-girl-2"
+name = "Tough Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f7b"]
+
+[[cheat]]
+id = "kansai-girl-2"
+name = "Kansai Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f7d"]
+
+[[cheat]]
+id = "dynamic-2"
+name = "Dynamic"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f7f"]
+
+[[cheat]]
+id = "withdrawn-girl-2"
+name = "Withdrawn Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f81"]
+
+[[cheat]]
+id = "gal-type-2"
+name = "Gal-type"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f83"]
+
+[[cheat]]
+id = "intellectual-girl-2"
+name = "Intellectual Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f85"]
+
+[[cheat]]
+id = "spacy-girl-2"
+name = "Spacy Girl"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f87"]
+
+[[cheat]]
+id = "free-rub-coupon-2"
+name = "Free rub coupon"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f89"]
+
+[[cheat]]
+id = "rub-time-extension-2"
+name = "Rub time extension"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f8b"]
+
+[[cheat]]
+id = "clairdia-cut-in-2"
+name = "Clairdia Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f8d"]
+
+[[cheat]]
+id = "leanne-cut-in-2"
+name = "Leanne Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f8f"]
+
+[[cheat]]
+id = "karen-cut-in-2"
+name = "Karen Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f91"]
+
+[[cheat]]
+id = "otton-cut-in-2"
+name = "Otton Cut-in"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f93"]
+
+[[cheat]]
+id = "rub-p-2"
+name = "Rub P"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f95"]
+
+[[cheat]]
+id = "red-sph-master-ring-2"
+name = "Red SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f97"]
+
+[[cheat]]
+id = "blue-sph-master-ring-2"
+name = "Blue SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f99"]
+
+[[cheat]]
+id = "diamond-master-ring-2"
+name = "Diamond Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f9b"]
+
+[[cheat]]
+id = "green-sph-master-ring-2"
+name = "Green SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f9d"]
+
+[[cheat]]
+id = "gold-sph-master-ring-2"
+name = "Gold SPH Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19f9f"]
+
+[[cheat]]
+id = "amethyst-master-ring-2"
+name = "Amethyst Master Ring"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa1"]
+
+[[cheat]]
+id = "red-seal-stone-2"
+name = "Red Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa3"]
+
+[[cheat]]
+id = "blue-seal-stone-2"
+name = "Blue Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa5"]
+
+[[cheat]]
+id = "yellow-seal-stone-2"
+name = "Yellow Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa7"]
+
+[[cheat]]
+id = "green-seal-stone-2"
+name = "Green Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fa9"]
+
+[[cheat]]
+id = "purple-seal-stone-2"
+name = "Purple Seal Stone"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fab"]
+
+[[cheat]]
+id = "monster-maids-2"
+name = "Monster Maids!?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fad"]
+
+[[cheat]]
+id = "clairdia-reborn-2"
+name = "Clairdia Reborn!?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19faf"]
+
+[[cheat]]
+id = "seaside-go-go-go-2"
+name = "Seaside Go-Go-Go!"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb1"]
+
+[[cheat]]
+id = "ogasa-2"
+name = "Ogasa"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb3"]
+
+[[cheat]]
+id = "awaji-2"
+name = "Awaji"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb5"]
+
+[[cheat]]
+id = "sadoga-island-2"
+name = "Sadoga Island"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb7"]
+
+[[cheat]]
+id = "colosseum-ticket-2"
+name = "Colosseum Ticket"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fb9"]
+
+[[cheat]]
+id = "otton-cup-2"
+name = "Otton Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fbb"]
+
+[[cheat]]
+id = "elza-cup-2"
+name = "Elza Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fbd"]
+
+[[cheat]]
+id = "may-cup-2"
+name = "May Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fbf"]
+
+[[cheat]]
+id = "karen-cup-2"
+name = "Karen Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc1"]
+
+[[cheat]]
+id = "rocket-cup-2"
+name = "Rocket Cup"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc3"]
+
+[[cheat]]
+id = "advance-sph-2"
+name = "Advance SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc5"]
+
+[[cheat]]
+id = "bloody-sph-2"
+name = "Bloody SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc7"]
+
+[[cheat]]
+id = "charge-sph-2"
+name = "Charge SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fc9"]
+
+[[cheat]]
+id = "sacrifice-sph-2"
+name = "Sacrifice SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fcb"]
+
+[[cheat]]
+id = "obliteration-sph-2"
+name = "Obliteration SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fcd"]
+
+[[cheat]]
+id = "offer-sph-2"
+name = "Offer SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fcf"]
+
+[[cheat]]
+id = "withdrawal-sph-2"
+name = "Withdrawal SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd1"]
+
+[[cheat]]
+id = "recall-sph-2"
+name = "Recall SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd3"]
+
+[[cheat]]
+id = "intercept-sph-2"
+name = "INTERCEPT SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd5"]
+
+[[cheat]]
+id = "hypersonic-sph-2"
+name = "HYPERSONIC SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd7"]
+
+[[cheat]]
+id = "staunch-sph-2"
+name = "STAUNCH SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fd9"]
+
+[[cheat]]
+id = "exhausted-sph-2"
+name = "EXHAUSTED SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fdb"]
+
+[[cheat]]
+id = "nullifying-sph-2"
+name = "NULLIFYING SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fdd"]
+
+[[cheat]]
+id = "hp-regen-sph-2"
+name = "HP REGEN SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fdf"]
+
+[[cheat]]
+id = "mp-regen-sph-2"
+name = "MP REGEN SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe1"]
+
+[[cheat]]
+id = "mystic-sph-2"
+name = "Mystic SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe3"]
+
+[[cheat]]
+id = "curse-sph-2"
+name = "Curse SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe5"]
+
+[[cheat]]
+id = "fun-size-parfait-2"
+name = "Fun Size Parfait"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe7"]
+
+[[cheat]]
+id = "fruit-parfait-2"
+name = "Fruit Parfait"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fe9"]
+
+[[cheat]]
+id = "deluxe-parfait-2"
+name = "Deluxe Parfait"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19feb"]
+
+[[cheat]]
+id = "attack-scroll-2"
+name = "Attack Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fed"]
+
+[[cheat]]
+id = "adv-attack-scroll-2"
+name = "ADV Attack Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fef"]
+
+[[cheat]]
+id = "lgd-attack-scroll-2"
+name = "LGD Attack Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff1"]
+
+[[cheat]]
+id = "shock-scroll-2"
+name = "Shock Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff3"]
+
+[[cheat]]
+id = "adv-shock-scroll-2"
+name = "ADV Shock Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff5"]
+
+[[cheat]]
+id = "lgd-shock-scroll-2"
+name = "LGD Shock Scroll"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff7"]
+
+[[cheat]]
+id = "spirit-gel-2"
+name = "Spirit Gel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ff9"]
+
+[[cheat]]
+id = "hyper-spirit-gel-2"
+name = "Hyper Spirit Gel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ffb"]
+
+[[cheat]]
+id = "divine-spirit-gel-2"
+name = "Divine Spirit Gel"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19ffd"]
+
+[[cheat]]
+id = "spirit-mist-2"
+name = "Spirit Mist"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x19fff"]
+
+[[cheat]]
+id = "hyper-spirit-mist-2"
+name = "Hyper Spirit Mist"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a001"]
+
+[[cheat]]
+id = "divine-spirit-mist-2"
+name = "Divine Spirit Mist"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a003"]
+
+[[cheat]]
+id = "exorcism-2"
+name = "Exorcism"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a005"]
+
+[[cheat]]
+id = "hyper-exorcism-2"
+name = "Hyper Exorcism"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a007"]
+
+[[cheat]]
+id = "divine-exorcism-2"
+name = "Divine Exorcism"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a009"]
+
+[[cheat]]
+id = "cloak-sph-2"
+name = "Cloak SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a00b"]
+
+[[cheat]]
+id = "stealth-sph-2"
+name = "Stealth SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a00d"]
+
+[[cheat]]
+id = "construction-sph-2"
+name = "Construction SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a00f"]
+
+[[cheat]]
+id = "seal-sph-2"
+name = "Seal SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a011"]
+
+[[cheat]]
+id = "advanced-seal-sph-2"
+name = "Advanced Seal SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a013"]
+
+[[cheat]]
+id = "retreat-sph-2"
+name = "Retreat SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a015"]
+
+[[cheat]]
+id = "revive-sph-2"
+name = "Revive SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a017"]
+
+[[cheat]]
+id = "adv-revive-sph-2"
+name = "ADV Revive SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a019"]
+
+[[cheat]]
+id = "lgd-revive-sph-2"
+name = "LGD Revive SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a01b"]
+
+[[cheat]]
+id = "friendship-sph-2"
+name = "Friendship SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a01d"]
+
+[[cheat]]
+id = "lucre-sph-2"
+name = "Lucre SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a01f"]
+
+[[cheat]]
+id = "neptunia-card-2"
+name = "Neptunia Card"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a021"]
+
+[[cheat]]
+id = "fear-rub-lv-4-release-2"
+name = "Fear Rub Lv. 4 Release"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a023"]
+
+[[cheat]]
+id = "thor-card-2"
+name = "Thor Card"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a025"]
+
+[[cheat]]
+id = "enlightenment-sph-2"
+name = "Enlightenment SPH"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a027"]
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a724"]
+
+[[cheat]]
+id = "rub-p-3"
+name = "Rub P"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a728"]
+
+[[cheat]]
+id = "red-seal-stone-3"
+name = "Red Seal Stone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a72c"]
+
+[[cheat]]
+id = "blue-seal-stone-3"
+name = "Blue Seal Stone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a730"]
+
+[[cheat]]
+id = "yellow-seal-stone-3"
+name = "Yellow Seal Stone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a734"]
+
+[[cheat]]
+id = "green-seal-stone-3"
+name = "Green Seal Stone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a738"]
+
+[[cheat]]
+id = "purple-seal-stone-3"
+name = "Purple Seal Stone"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x1a73c"]
+
+[[cheat]]
+id = "first-crush-rub-stats-base-address-scan-initialization-activate-this-first"
+name = "First Crush Rub Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(firstcrushrubstats_basepointer)
+registersymbol(firstcrushrubstats_update_enable)
+registersymbol(firstcrushrubstats_set_enable)
+registersymbol(firstcrushrubstats_timeset_enable)
+
+alloc(firstcrushrubstats_basepointer, 4)
+alloc(firstcrushrubstats_update_enable, 4)
+alloc(firstcrushrubstats_set_enable, 4)
+alloc(firstcrushrubstats_timeset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(firstcrushrubstats_basepointer)
+unregistersymbol(firstcrushrubstats_update_enable)
+unregistersymbol(firstcrushrubstats_set_enable)
+unregistersymbol(firstcrushrubstats_timeset_enable)
+
+dealloc(firstcrushrubstats_basepointer)
+dealloc(firstcrushrubstats_update_enable)
+dealloc(firstcrushrubstats_set_enable)
+dealloc(firstcrushrubstats_timeset_enable)"""
+
+[[cheat]]
+id = "first-crush-rub-stats-base-address-scan-to-activate-first-crush-rub-to-update-first-crush-rub"
+name = "First Crush Rub Stats Base Address Scan (To Activate: First Crush Rub, To Update: First Crush Rub)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(firstcrushrubstats_savedAOB)
+label(firstcrushrubstats_returnhere)
+label(firstcrushrubstats_originalcode)
+label(firstcrushrubstats_exit)
+
+label(firstcrushrubstats_update_exit)
+label(firstcrushrubstats_set_exit)
+label(firstcrushrubstats_timeset_exit)
+
+registersymbol(firstcrushrubstats_savedAOB)
+
+//MonsterMonpiece.exe+E6267 - FF 76 10              - push [esi+10]
+//MonsterMonpiece.exe+E626A - E8 915C0400           - call MonsterMonpiece.exe+12BF00
+// Accesses Tension Gauge
+//MonsterMonpiece.exe+E626F - F3 0F10 96 D4130000   - movss xmm2,[esi+000013D4]
+//MonsterMonpiece.exe+E6277 - 83 C4 04              - add esp,04
+//MonsterMonpiece.exe+E627A - 85 C0                 - test eax,eax
+//MonsterMonpiece.exe+E627C - B9 01000000           - mov ecx,00000001
+aobscan(firstcrushrubstats_searchedAOB, F3 0F 10 96 D4 13 00 00 83 C4 04)
+
+alloc(firstcrushrubstats_newmem, 2048, firstcrushrubstats_searchedAOB)
+alloc(firstcrushrubstats_temp1, 4, firstcrushrubstats_searchedAOB)
+alloc(firstcrushrubstats_temp2, 4, firstcrushrubstats_searchedAOB)
+alloc(firstcrushrubstats_temp3, 4, firstcrushrubstats_searchedAOB)
+alloc(firstcrushrubstats_temp4, 4, firstcrushrubstats_searchedAOB)
+
+
+firstcrushrubstats_newmem:
+mov [firstcrushrubstats_temp1], eax
+mov [firstcrushrubstats_temp2], ebx
+mov [firstcrushrubstats_temp3], ecx
+mov [firstcrushrubstats_temp4], edx
+
+cmp dword ptr [firstcrushrubstats_update_enable], #0
+je firstcrushrubstats_update_exit
+mov [firstcrushrubstats_basepointer], esi
+firstcrushrubstats_update_exit:
+
+cmp dword ptr [firstcrushrubstats_set_enable], #0
+je firstcrushrubstats_set_exit
+firstcrushrubstats_set_exit:
+
+cmp dword ptr [firstcrushrubstats_timeset_enable], #0
+je firstcrushrubstats_timeset_exit
+mov [esi+1430], #999999999
+firstcrushrubstats_timeset_exit:
+
+mov eax, [firstcrushrubstats_temp1]
+mov ebx, [firstcrushrubstats_temp2]
+mov ecx, [firstcrushrubstats_temp3]
+mov edx, [firstcrushrubstats_temp4]
+
+
+firstcrushrubstats_originalcode:
+db F3 0F 10 96 D4 13 00 00
+//movss xmm2,[esi+000013D4]
+
+
+firstcrushrubstats_exit:
+jmp firstcrushrubstats_returnhere
+
+
+firstcrushrubstats_searchedAOB:
+firstcrushrubstats_savedAOB:
+jmp firstcrushrubstats_newmem
+nop
+nop
+nop
+firstcrushrubstats_returnhere:
+
+
+[DISABLE]
+firstcrushrubstats_savedAOB:
+db F3 0F 10 96 D4 13 00 00
+//movss xmm2,[esi+000013D4]
+
+unregistersymbol(firstcrushrubstats_savedAOB)
+
+dealloc(firstcrushrubstats_newmem)
+dealloc(firstcrushrubstats_temp1)
+dealloc(firstcrushrubstats_temp2)
+dealloc(firstcrushrubstats_temp3)
+dealloc(firstcrushrubstats_temp4)"""
+
+[[cheat]]
+id = "time-set-to-massive"
+name = "Time Set to Massive"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "firstcrushrubstats_timeset_enable"
+hops = []
+
+[[cheat]]
+id = "first-crush-rub-stats-update-base-address"
+name = "First Crush Rub Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "firstcrushrubstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "firstcrushrubstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "tension-gauge"
+name = "Tension Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "firstcrushrubstats_basepointer"
+hops = ["+0x13d4"]
+
+[[cheat]]
+id = "time-left"
+name = "Time Left"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "firstcrushrubstats_basepointer"
+hops = ["+0x1430"]

@@ -1,0 +1,258 @@
+[game]
+name = "[ijm] Discounty"
+exe = "discounty.exe"
+notes = "Converted from a Cheat Engine table by imjustmaxie. Source: https://fearlessrevolution.com/viewtopic.php?t=36775"
+verified = []
+author = "imjustmaxie"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "dnf-is-clock-paused"
+name = "[DNF] Is Clock Paused?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_clockmanager"
+hops = []
+
+[[cheat]]
+id = "cash-setter"
+name = "Cash Setter"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+ijmscripts+0:
+push r13
+push r14
+push r15
+
+mov rcx,ptr_GlobalDataManager
+mov rcx,[rcx]
+test rcx,rcx
+je @f
+mov rcx,[rcx+$GlobalDataManagerC.moneyVar]
+test rcx,rcx
+je @f
+
+xor r14,r14
+mov r15,tempval
+
+mov r14,[r15]
+mov edx,[rcx+$IntVariableC.value]
+cmp r14,edx
+je @f
+cmp edx,[rcx+$IntVariableC.maxClampedValue]
+cmovg edx,[rcx+$IntVariableC.maxClampedValue]
+cmp edx,[rcx+$IntVariableC.minClampedValue]
+cmovl edx,[rcx+$IntVariableC.minClampedValue]
+mov [rcx+$IntVariableC.value],edx
+mov [r15],edx
+
+mov r11,$IntVariable_set_Value
+call r11
+
+@@:
+pop r15
+pop r14
+pop r13
+ret
+
+[disable]
+//ijmscripts+0:
+//ret"""
+
+[[cheat]]
+id = "dnf-cash-max-999999"
+name = "[DNF] Cash (max 999999)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_globaldatamanager"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "unknown-wip-discounty-point-setter"
+name = "[Unknown, WIP] Discounty Point Setter"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+ijmscripts+200:
+push r13
+push r14
+push r15
+
+mov rcx,ptr_GlobalDataManager
+mov rcx,[rcx]
+test rcx,rcx
+je @f
+mov rcx,[rcx+$GlobalDataManagerC.discountyPointsVar]
+test rcx,rcx
+je @f
+
+xor r14,r14
+mov r15,tempval+8
+
+mov r14,[r15]
+mov edx,[rcx+$IntVariableC.value]
+cmp r14,edx
+je @f
+cmp edx,[rcx+$IntVariableC.maxClampedValue]
+cmovg edx,[rcx+$IntVariableC.maxClampedValue]
+cmp edx,[rcx+$IntVariableC.minClampedValue]
+cmovl edx,[rcx+$IntVariableC.minClampedValue]
+mov [rcx+$IntVariableC.value],edx
+mov [r15],edx
+
+mov r11,$IntVariable_set_Value
+call r11
+
+@@:
+pop r15
+pop r14
+pop r13
+ret
+
+[disable]
+//ijmscripts+0:
+//ret"""
+
+[[cheat]]
+id = "dnf-discounty-point"
+name = "[DNF] Discounty Point"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ptr_globaldatamanager"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "max-customer-patience"
+name = "Max Customer Patience"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+ijmscripts+100:
+sub rsp,8
+
+@@:
+test rcx,rcx
+je @f
+fld dword ptr [rcx+$CustomerC.maxPatience]
+fstp dword ptr [rcx+$CustomerC.currentPatience]
+
+@@:
+add rsp,8
+ret
+
+[disable]
+ijmscripts+100:
+ret"""
+
+[[cheat]]
+id = "max-selected-hotbar-item-stack-disable-after-use"
+name = "Max Selected Hotbar Item Stack (disable after use)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+ijmscripts+300:
+push rcx
+push rdx
+push r13
+push r14
+push r15
+
+@@:
+mov rcx,ptr_InventoryHolder
+mov rcx,[rcx]
+test rcx,rcx
+je ndd
+mov r11,"Storie.Core.InventoryHolder:GetSelectedItemStack"
+call r11
+test rax,rax
+je ndd
+
+mov r15,rax   // R15 = ItemStack
+
+mov r14,ptr_InventoryHolder
+mov r14,[r14]
+test r14,r14
+je ndd
+mov r14d,[r14+InventoryHolderC.stackLimit]
+
+mov r13,[r15+$ItemStackC.item]
+test r13,r13
+je ndd
+mov r13d,[r13+$ItemC.maxStack]
+
+mov edx,r14d
+cmp r13d,edx
+cmovl edx,r13d
+
+cmp edx,[r15+$ItemStackC.quantity]
+je ndd
+
+mov rcx,r15
+//inc edx
+mov r11,"Storie.Core.ItemStack:set_Quantity"
+call r11
+
+mov rcx,ptr_InventoryManagerUI
+mov rcx,[rcx]
+test rcx,rcx
+je ndd
+mov rdx,$PlayerInventoryHolderSlotPtr
+mov edx,[rdx]
+xor r8,r8
+mov r11,"Storie.UI.InventoryManagerUI:UpdateUISlot"
+call r11
+
+ndd:
+pop r15
+pop r14
+pop r13
+pop rdx
+pop rcx
+ret
+
+[disable]
+ijmscripts+300:
+ret"""

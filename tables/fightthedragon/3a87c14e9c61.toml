@@ -1,0 +1,1143 @@
+[game]
+name = "Fight The Dragon Steam ,build 8.4 (newest as of 7/27/15"
+exe = "fightthedragon.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1720"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "godmode"
+name = "godmode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//here, the game is setting stamina and mana to max each game loop if godmode is enabled
+define(address,CharController:Update+57c7)
+define(bytes,0F 84 6A 00 00 00)
+//each, the game is skipping damage calculations if godmode is enabled
+define(address2,CharController:DamageCharacter+fc)
+define(bytes2,0F 85 6b 11 00 00)
+define(address3,CharController:DamageCharacterBypassArmour+c4)
+define(bytes3,0f 85 9c 03 00 00)
+define(address4,CharController:DamageCharacterViaEffect+df)
+define(bytes4,0f 85 09 05 00 00)
+[ENABLE]
+assert(address,bytes)
+assert(address2,bytes2)
+assert(address3,bytes3)
+assert(address4,bytes4)
+
+address:
+db 90 90 90 90 90 90 //never jump / always godmode
+address2:
+db 90 e9 //always jump / always godmode
+address2:
+db 90 e9 //always jump / always godmode
+address2:
+db 90 e9 //always jump / always godmode
+
+[DISABLE]
+address:
+db bytes
+address2:
+db bytes2
+address3:
+db bytes3
+address4:
+db bytes4"""
+
+[[cheat]]
+id = "earn-16x-xp"
+name = "Earn 16x XP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Character:AwardXP+7)
+define(bytes,8B 75 08 83 EC 0C)
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+label(code)
+label(return)
+
+newmem:
+code:
+  mov esi,[ebp+0c] //xp
+  shl esi, 4 //increase it
+  mov [ebp+c],esi //store it
+  //orig code:
+  mov esi,[ebp+08]
+  sub esp,0C
+  jmp return
+
+address:
+  jmp code
+  nop
+return:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+address:
+  db bytes
+  // mov esi,[ebp+08]
+  // sub esp,0C
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Character:AwardXP+7
+
+12D86558: E3 63                 -  jecxz Character:AwardXP+55
+12D8655A: D8 12                 -  fcom dword ptr [edx]
+12D8655C: 01 64 D8 12           -  add [eax+ebx*8+12],esp
+12D86560: F3 63 D8              - repe  arpl ax,bx
+12D86563: 12 00                 -  adc al,byte ptr [eax]
+12D86565: 00 00                 -  add [eax],al
+12D86567: 00 55 8B              -  add [ebp-75],dl
+12D8656A: EC                    -  in al,dx
+12D8656B: 56                    -  push esi
+12D8656C: 83 EC 54              -  sub esp,54
+// ---------- INJECTING HERE ----------
+12D8656F: 8B 75 08              -  mov esi,[ebp+08]
+12D86572: 83 EC 0C              -  sub esp,0C
+// ---------- DONE INJECTING  ----------
+12D86575: 56                    -  push esi
+12D86576: E8 1D CD B8 03        -  call Character:get_level
+12D8657B: 83 C4 10              -  add esp,10
+12D8657E: 85 C0                 -  test eax,eax
+12D86580: 75 0E                 -  jne Character:AwardXP+28
+12D86582: 83 EC 08              -  sub esp,08
+12D86585: 6A 01                 -  push 01
+12D86587: 56                    -  push esi
+12D86588: E8 07 90 17 F3        -  call 05EFF594
+12D8658D: 83 C4 10              -  add esp,10
+}"""
+
+[[cheat]]
+id = "earn-bonus-gold"
+name = "earn bonus gold"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Coins:OnTriggerEnter+18e)
+define(bytes,8B 46 20 83 EC 08)
+[ENABLE]
+assert(address,bytes)
+alloc(bonusgold,$1000)
+registersymbol(bonusgold)
+label(code)
+label(return)
+
+bonusgold:
+dd #20000
+code:
+  mov eax,[esi+20]
+  add eax,[bonusgold]
+  sub esp,08
+  jmp return
+
+address:
+  jmp code
+  nop
+return:
+
+[DISABLE]
+address:
+  db bytes
+  // mov eax,[esi+20]
+  // sub esp,08
+
+dealloc(bonusgold)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Coins:OnTriggerEnter+18e
+
+146E10E1: 89 42 20              -  mov [edx+20],eax
+146E10E4: 8B 45 94              -  mov eax,[ebp-6C]
+146E10E7: 83 EC 04              -  sub esp,04
+146E10EA: 51                    -  push ecx
+146E10EB: 83 EC 04              -  sub esp,04
+146E10EE: D9 1C 24              -  fstp dword ptr [esp]
+146E10F1: 50                    -  push eax
+146E10F2: E8 59 43 8F F1        -  call Go:to
+146E10F7: 83 C4 10              -  add esp,10
+146E10FA: C6 46 24 01           -  mov byte ptr [esi+24],01
+// ---------- INJECTING HERE ----------
+Coins:OnTriggerEnter+18e: (eax has # gold)
+146E10FE: 8B 46 20              -  mov eax,[esi+20]
+146E1101: 83 EC 08              -  sub esp,08
+// ---------- DONE INJECTING  ----------
+146E1104: 50                    -  push eax
+146E1105: 53                    -  push ebx
+146E1106: 39 1B                 -  cmp [ebx],ebx
+146E1108: E8 9B 00 00 00        -  call CharController:AwardGold
+146E110D: 83 C4 10              -  add esp,10
+146E1110: 83 EC 0C              -  sub esp,0C
+146E1113: 68 EC 71 B9 14        -  push 14B971EC
+146E1118: E8 8B FA 82 F1        -  call System:Object:__icall_wrapper_mono_object_new_fast
+146E111D: 83 C4 10              -  add esp,10
+146E1120: 89 70 0C              -  mov [eax+0C],esi
+}"""
+
+[[cheat]]
+id = "bonus-gold-per-kill"
+name = "bonus gold per kill"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bonusgold"
+hops = []
+
+[[cheat]]
+id = "earn-stat-points-instead-of-xp-don-t-use-at-same-time-as-16x-xp-cheat"
+name = "earn stat points instead of xp (don't use at same time as 16x XP cheat)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Character:AwardXP+7)
+define(bytes,8B 75 08 83 EC 0C)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+label(code)
+label(return)
+
+newmem:
+code:
+mov esi,[ebp+08] //orig code
+sub esp,0C //orig code
+mov eax,#10 //# pts
+sub esp,8 //grow stack
+push eax
+push esi
+call "Character:set_pointsToSpend" //call Character:set_pointsToSpend([*this],#pts)
+add esp,10 //cleanup stack
+jmp return
+
+address:
+jmp code
+nop
+return:
+
+[DISABLE]
+address:
+db bytes
+// mov esi,[ebp+08]
+// sub esp,0C
+dealloc(newmem)"""
+
+[[cheat]]
+id = "1-stat-point-100"
+name = "1 stat point = 100"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Character:SpendExperiencePoint+3b)
+define(bytes,41 39 00 8B 40 08)
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000)
+label(code)
+label(return)
+
+newmem:
+code:
+//inc ecx
+add ecx,#100
+cmp [eax],eax
+mov eax,[eax+08]
+jmp return
+
+address:
+jmp code
+nop
+return:
+
+[DISABLE]
+address:
+db bytes
+// inc ecx
+// cmp [eax],eax
+// mov eax,[eax+08]
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Character:SpendExperiencePoint+3b
+
+13FCD1CA: 85 C0              -  test eax,eax
+13FCD1CC: 0F 8E 84 00 00 00  -  jng Character:SpendExperiencePoint+a6
+13FCD1D2: 8B 46 28           -  mov eax,[esi+28]
+13FCD1D5: 8B C8              -  mov ecx,eax
+13FCD1D7: 39 09              -  cmp [ecx],ecx
+13FCD1D9: 8B 49 08           -  mov ecx,[ecx+08]
+13FCD1DC: 39 79 0C           -  cmp [ecx+0C],edi
+13FCD1DF: 0F 86 84 00 00 00  -  jbe Character:SpendExperiencePoint+b9
+13FCD1E5: 8D 4C B9 10        -  lea ecx,[ecx+edi*4+10]
+13FCD1E9: 8B 09              -  mov ecx,[ecx]
+// ---------- INJECTING HERE ----------
+13FCD1EB: 41                 -  inc ecx
+13FCD1EC: 39 00              -  cmp [eax],eax
+13FCD1EE: 8B 40 08           -  mov eax,[eax+08]
+// ---------- DONE INJECTING  ----------
+13FCD1F1: 39 78 0C           -  cmp [eax+0C],edi
+13FCD1F4: 0F 86 63 00 00 00  -  jbe Character:SpendExperiencePoint+ad
+13FCD1FA: 8D 44 B8 10        -  lea eax,[eax+edi*4+10]
+13FCD1FE: 89 08              -  mov [eax],ecx
+13FCD200: 83 EC 0C           -  sub esp,0C
+13FCD203: 56                 -  push esi
+13FCD204: E8 EF 9A 23 19     -  call Character:get_pointsToSpend
+13FCD209: 83 C4 10           -  add esp,10
+13FCD20C: 48                 -  dec eax
+13FCD20D: 83 EC 08           -  sub esp,08
+}"""
+
+[[cheat]]
+id = "structures-view-character-inventory-to-populate"
+name = "structures (view character inventory to populate)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : FightTheDragon.exe
+  Version: 
+  Date   : 2015-06-26
+  Author : user
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscan(GOLDHOOK,8B 45 08 05 c4 00 00 00 8B 08 89 4D) // should be unique
+alloc(charmem,$1000)
+registersymbol(charmem)
+
+label(code)
+label(return)
+
+charmem:
+dd 0 //storage for our pointer
+
+code:
+  mov eax,[ebp+08]
+  mov [charmem],eax
+  add eax,000000c4
+  jmp return
+
+GOLDHOOK:
+  jmp code
+  nop
+  nop
+  nop
+return:
+registersymbol(GOLDHOOK)
+
+[DISABLE]
+
+GOLDHOOK:
+  db 8B 45 08 05 c4 00 00 00
+
+unregistersymbol(GOLDHOOK)
+dealloc(charmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 05DA9C3E
+
+05DA9C25: 00 00              -  add [eax],al
+05DA9C27: 00 68 28           -  add [eax+28],ch
+05DA9C2A: 8A 4A 11           -  mov cl,[edx+11]
+05DA9C2D: E9 F6 63 B3 FF     -  jmp 058E0028
+05DA9C32: 00 00              -  add [eax],al
+05DA9C34: 00 00              -  add [eax],al
+05DA9C36: 00 00              -  add [eax],al
+05DA9C38: 55                 -  push ebp
+05DA9C39: 8B EC              -  mov ebp,esp
+05DA9C3B: 83 EC 18           -  sub esp,18
+// ---------- INJECTING HERE ----------
+(Character:get_gold+6) 05DA9C3E: 8B 45 08           -  mov eax,[ebp+08]
+05DA9C41: 05 BC 00 00 00     -  add eax,000000BC
+// ---------- DONE INJECTING  ----------
+05DA9C46: 8B 08              -  mov ecx,[eax]
+05DA9C48: 89 4D F0           -  mov [ebp-10],ecx
+05DA9C4B: 8B 40 04           -  mov eax,[eax+04]
+05DA9C4E: 89 45 F4           -  mov [ebp-0C],eax
+05DA9C51: 83 EC 08           -  sub esp,08
+05DA9C54: 83 EC 08           -  sub esp,08
+05DA9C57: 8B 45 F0           -  mov eax,[ebp-10]
+05DA9C5A: 89 04 24           -  mov [esp],eax
+05DA9C5D: 8B 45 F4           -  mov eax,[ebp-0C]
+05DA9C60: 89 44 24 04        -  mov [esp+04],eax
+}"""
+
+[[cheat]]
+id = "char-address-read-only-dissect"
+name = "char address (read only/dissect)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = []
+
+[[cheat]]
+id = "health"
+name = "health"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x628",
+]
+
+[[cheat]]
+id = "currentstaminaamount"
+name = "currentStaminaAmount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x3d4",
+]
+
+[[cheat]]
+id = "mana"
+name = "mana %"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x438",
+]
+
+[[cheat]]
+id = "value"
+name = "value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x10",
+    "+0x20",
+]
+
+[[cheat]]
+id = "item-level"
+name = "item level"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x10",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "req-level"
+name = "req level"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x10",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "min-damage"
+name = "min damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "max-damage"
+name = "max damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "value-2"
+name = "value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x1c",
+    "+0x20",
+]
+
+[[cheat]]
+id = "item-level-2"
+name = "item level"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x1c",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "req-level-2"
+name = "req level"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x1c",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "min-damage-2"
+name = "min damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x1c",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "max-damage-2"
+name = "max damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x48",
+    "+0x8",
+    "+0x1c",
+    "+0x50",
+]
+
+[[cheat]]
+id = "value-3"
+name = "value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x44",
+    "+0x8",
+    "+0x8",
+    "+0x10",
+    "+0x20",
+]
+
+[[cheat]]
+id = "item-level-3"
+name = "item level"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x44",
+    "+0x8",
+    "+0x8",
+    "+0x10",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "req-level-3"
+name = "req level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x44",
+    "+0x8",
+    "+0x8",
+    "+0x10",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "min-damage-3"
+name = "min damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x44",
+    "+0x8",
+    "+0x8",
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "max-damage-3"
+name = "max damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x44",
+    "+0x8",
+    "+0x8",
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "class"
+name = "class"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "gender"
+name = "gender"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "islocal"
+name = "isLocal"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "minmovespeed"
+name = "minMoveSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x2e8",
+]
+
+[[cheat]]
+id = "maxmovespeed"
+name = "maxMoveSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x2ec",
+]
+
+[[cheat]]
+id = "sprintmultiplied"
+name = "sprintMultiplied"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x304",
+]
+
+[[cheat]]
+id = "jumpheight"
+name = "jumpHeight"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x308",
+]
+
+[[cheat]]
+id = "invulnerable"
+name = "invulnerable"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x2cc",
+]
+
+[[cheat]]
+id = "godmode-2"
+name = "godMode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x2cd",
+]
+
+[[cheat]]
+id = "starthealth"
+name = "startHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x118",
+]
+
+[[cheat]]
+id = "pointstospend"
+name = "pointsToSpend"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "gold"
+name = "gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "pointstospend-2"
+name = "pointsToSpend"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "level"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "xp"
+name = "xp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "manavials"
+name = "manaVials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "healthvials"
+name = "healthVials"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "lives"
+name = "lives"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "totaldrops"
+name = "totalDrops"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "itemssold"
+name = "itemsSold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x2c",
+    "+0xfc",
+]
+
+[[cheat]]
+id = "gold-2"
+name = "gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x2c",
+    "+0xcc",
+]
+
+[[cheat]]
+id = "levelup"
+name = "levelup"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x2c",
+    "+0xd0",
+]
+
+[[cheat]]
+id = "xpearned"
+name = "xpEarned"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x2c",
+    "+0xb4",
+]
+
+[[cheat]]
+id = "dragonscrolls"
+name = "dragonscrolls"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x2c",
+    "+0xa4",
+]
+
+[[cheat]]
+id = "weaponrange"
+name = "weaponRange"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charmem"
+hops = [
+    "+0x1c",
+    "+0x4e0",
+]

@@ -1,0 +1,168 @@
+[game]
+name = "Reigns: Her Majesty"
+exe = "reigns2.exe"
+notes = "Converted from a Cheat Engine table by IDontEvenKnow. Source: https://fearlessrevolution.com/viewtopic.php?t=5607"
+verified = []
+author = "IDontEvenKnow"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "50-resources-enable-after-first-card"
+name = "50% Resources (Enable after first card)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Game   : Reigns2.exe
+// Author : TCS
+// iSize  : 6
+[ENABLE]
+aobscan(BarProgressAOB,89 B7 0C 01 00 00 48)
+aobscan(NoReduceAOB,89 86 0C 01 00 00 48 8B CE)
+registersymbol(NoReduceAOB)
+registersymbol(BarProgressAOB)
+alloc(BarProgress,1024)
+label(return)
+
+NoReduceAOB: //Remove resource reduction.
+  db 90 90 90 90 90 90
+
+BarProgress: //Set resource to 50 on card swipe.
+  mov [rdi+0000010C],(int)50
+  jmp return
+
+BarProgressAOB:
+//mov [rdi+0000010C],esi
+  jmp BarProgress
+  nop
+return:
+
+[DISABLE]
+BarProgressAOB:
+  db 89 B7 0C 01 00 00
+
+unregistersymbol(BarProgressAOB)
+dealloc(BarProgress)
+
+NoReduceAOB:
+  db 89 86 0C 01 00 00
+
+unregistersymbol(NoReduceAOB)"""
+
+[[cheat]]
+id = "no-resource-decay-enable-after-decay-has-started"
+name = "No Resource Decay (Enable after decay has started)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Game   : Reigns2.exe
+// Author : TCS
+// iSize  : 6
+[ENABLE]
+aobscan(NoDecayVisualAOB,89 88 10 01 00 00 48 8B 4E)
+aobscan(NoTickReduceAOB,89 88 0C 01 00 00 48 8B 46)
+registersymbol(NoTickReduceAOB)
+registersymbol(NoDecayVisualAOB)
+
+NoDecayVisualAOB:
+  db 90 90 90 90 90 90 //Prevents the visual value from changing when decaying(plague).
+
+NoTickReduceAOB: //Remove continuous decay. ex: plague(visual effect still shows)
+  db 90 90 90 90 90 90
+
+[DISABLE]
+NoDecayVisualAOB:
+  db 89 88 10 01 00 00
+
+unregistersymbol(NoDecayVisualAOB)
+
+NoTickReduceAOB:
+  db 89 88 0C 01 00 00
+
+unregistersymbol(NoTickReduceAOB)"""
+
+[[cheat]]
+id = "current-ruler-calendar-year"
+name = "Current Ruler/Calendar Year"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Game   : Reigns2.exe
+// Author : TCS
+// iSize  : 5
+[ENABLE]
+aobscan(GetYearsAOB,F3 0F 10 40 14 F3 0F 5A C0 F3)
+registersymbol(GetYearsAOB)
+alloc(GetYears,1024)
+label(return)
+label(originalcode)
+
+label(ruler)
+
+label(rulerYear)
+registersymbol(rulerYear)
+label(Year)
+registersymbol(Year)
+
+GetYears:
+  cmp [rax+14],(float)50
+  jle ruler
+  mov [Year],rax //Why this doesn't work properly despite both values being passed is beyond me
+  jmp originalcode
+
+originalcode:
+  movss xmm0,[rax+14]
+  jmp return
+
+ruler:
+  mov [rulerYear],rax
+  jmp originalcode
+
+rulerYear:
+dd (float)0
+Year:
+dd (float)0
+
+GetYearsAOB:
+//movss xmm0,[rax+14]
+  jmp GetYears
+return:
+
+[DISABLE]
+GetYearsAOB:
+  db F3 0F 10 40 14
+
+unregistersymbol(GetYearsAOB)
+dealloc(GetYears)
+
+unregistersymbol(rulerYear)
+unregistersymbol(Year)"""
+
+[[cheat]]
+id = "years-helper-disable-other-year-script-to-use"
+name = "Years Helper (Disable other year script to use)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Game   : Reigns2.exe
+// Author : TCS
+// iSize  : 5
+[ENABLE]
+aobscan(Years,F3 0F 10 40 14 F3 0F 5A C0 F3)
+
+registersymbol(Years)
+
+[DISABLE]
+unregistersymbol(Years)"""

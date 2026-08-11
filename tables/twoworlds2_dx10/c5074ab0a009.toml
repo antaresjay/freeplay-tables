@@ -1,0 +1,308 @@
+[game]
+name = "Oyyzj - Two Worlds 2 HD"
+exe = "twoworlds2_dx10.exe"
+notes = "Converted from a Cheat Engine table by oyyzj. Source: https://fearlessrevolution.com/viewtopic.php?t=33106"
+verified = []
+author = "oyyzj"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "weight"
+name = "weight"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : TwoWorlds2_DX10.exe
+  Version: 2.0.8
+  Date   : 2024-12-23
+  Author : oyyzj
+
+  make weight 0
+}
+
+[ENABLE]
+
+aobscanmodule(Weight,TwoWorlds2_DX10.exe,89 86 5C 0D 00 00 E8 8B) // should be unique
+alloc(newmem,100)
+registersymbol(Weight)
+alloc(pWeight,4)
+registersymbol(pWeight)
+label(code)
+label(return)
+label(rWeight)
+registersymbol(rWeight)
+newmem:
+  mov [pWeight],esi
+code:
+  mov [esi+D5C],00
+  jmp return
+rWeight:
+  readmem(Weight,6)
+Weight:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+Weight:
+  readmem(rWeight,6)
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "ist"
+name = "IST"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pWeight"
+hops = ["+0xd5c"]
+
+[[cheat]]
+id = "dupe-stackable-items"
+name = "dupe stackable items"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : TwoWorlds2_DX10.exe
+  Version: 2.0.8
+  Date   : 2024-12-23
+  Author : oyyzj
+
+  duping stackable items:
+  1. use any chest / storage
+  2. store the stackable item of your desire from inventory into chest/storage
+}
+
+[ENABLE]
+
+aobscanmodule(Items,TwoWorlds2_DX10.exe,35 39 6A 00 00 2B 44 24 60) // should be unique
+
+Items:
+  or eax,00006A39
+
+registersymbol(Items)
+
+[DISABLE]
+
+Items:
+  db 35 39 6A 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "insta-mana-regen"
+name = "insta Mana Regen"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : TwoWorlds2_DX10.exe
+  Version: 2.0.8
+  Date   : 2024-12-23
+  Author : oyyzj
+
+  regen your max mana
+}
+
+[ENABLE]
+
+aobscanmodule(ManaRegen,TwoWorlds2_DX10.exe,7F F3 89 91 D0 01 00 00) // should be unique
+
+ManaRegen+02:
+  mov [ecx+000001D0],eax
+
+registersymbol(ManaRegen)
+
+[DISABLE]
+
+ManaRegen+02:
+  db 89 91 D0 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "insta-stamina-regen"
+name = "insta Stamina Regen"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : TwoWorlds2_DX10.exe
+  Version: 2.0.8
+  Date   : 2024-12-23
+  Author : oyyzj
+
+  regen your max stamina
+}
+
+[ENABLE]
+
+aobscanmodule(StaminaRegen,TwoWorlds2_DX10.exe,7F F3 89 91 D8 01 00 00) // should be unique
+
+StaminaRegen+02:
+  mov [ecx+000001D8],eax
+
+registersymbol(StaminaRegen)
+
+[DISABLE]
+
+StaminaRegen+02:
+  db 89 91 D8 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : TwoWorlds2_DX10.exe
+  Version: 2.0.8
+  Date   : 2024-12-23
+  Author : oyyzj
+  Credit : Recifense (I had to use his old script as preference)
+
+  set Money / set Attribute Points / set Skill points
+  ingame the value still decreases, reopen your inventory get refresh
+  your desired value back.
+}
+
+[ENABLE]
+
+aobscanmodule(MoneyApSp,TwoWorlds2_DX10.exe,8B 93 20 0A 00 00 8B 42) // should be unique
+alloc(newmem,$1000)
+registersymbol(MoneyApSp)
+label(code)
+label(return)
+label(rMoneyApSp)
+registersymbol(rMoneyApSp)
+label(vMoney)
+registersymbol(vMoney)
+label(vAP)
+registersymbol(vAP)
+label(vSP)
+registersymbol(vSP)
+label(_MonEV01)
+label(_MonEV02)
+
+newmem:
+ mov edx,[ebx+00000a20]            // Get pointer to encrypted values
+ mov eax,[edx+24]                  // Get encrypted Auras ... ok
+ xor eax,5a63cd29                  // ... and decrypt it
+ cmp eax,[vMoney]                  // Current value >= minimum 2
+ jge _MonEV01                      // Jump if true
+ mov eax,[vMoney]                  // Get minimum value ...
+ xor eax,5a63cd29                  // ... and encrypt it
+ mov [edx+24],eax                  // Update Aura encrypted value
+
+_MonEV01:
+ mov cx,6a39
+ mov ax,[edx+10]                   // Get encrypted Attribute Points ...
+ xor ax,cx                         // ... and decrypt it
+ cmp ax,[vAP]                      // Current value >= minimum 2
+ jge _MonEV02                      // Jump if current value >= 20
+ mov ax,[vAP]                      // Get minimum value ...
+ xor ax,cx                         // ... and encrypt it
+ mov [edx+10],ax                   // Update Attribute Points encrypted value
+
+_MonEV02:
+ mov ax,[edx+12]                   // Get encrypted Skill Points ...
+ xor ax,cx                         // ... and decrypt it
+ cmp ax,[vSP]                      // Current value >= minimum 2
+ jge code                          // Jump if current value >= 20
+ mov ax,[vSP]                      // Get minimum value ...
+ xor ax,cx                         // ... and encrypt it
+ mov [edx+12],ax                   // Update Attribute Points encrypted value
+
+code:
+  readmem(MoneyApSp,6)
+  jmp return
+
+rMoneyApSp:
+  readmem(MoneyApSp,6)
+vMoney:
+  dd ff
+vAP:
+  dd 04
+vSP:
+  dd 02
+
+MoneyApSp:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+MoneyApSp:
+  readmem(rMoneyApSp,6)
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "soll-money"
+name = "SOLL money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vMoney"
+hops = []
+
+[[cheat]]
+id = "soll-ap"
+name = "SOLL AP"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vAP"
+hops = []
+
+[[cheat]]
+id = "soll-sp"
+name = "SOLL SP"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vSP"
+hops = []

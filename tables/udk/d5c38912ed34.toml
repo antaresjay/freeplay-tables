@@ -1,0 +1,1307 @@
+[game]
+name = "Subsistence Alpha"
+exe = "udk.exe"
+notes = "Converted from a Cheat Engine table by devilseye7. Source: https://fearlessrevolution.com/viewtopic.php?t=18817"
+verified = []
+author = "devilseye7"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "setup-cheats-enable-me-first-and-disable-me-last"
+name = "Setup Cheats - enable me first and disable me last"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+notes here for cheat locations within my allocated cheat memory space
+//-----memSubsistence+100 = One Hit Kill player hit code
+//-----memSubsistence+200 = Weapon/Tool Durability code
+//-----memSubsistence+300 = Flashlight/Oxygen code
+//-----memSubsistence+400 = Chicken/Rabbit lvl 10 code
+//-----memSubsistence+500 = either: Generator or Resources code
+//-----memSubsistence+E00 = flag options for scripts
+                      E00 = Gun Ammo
+                      E10 = Durability
+                      E20 = power/mass
+                      E30 = fires/woodburner
+                      E40 = generator
+                      E50 = plantbed
+                      E60 = chkn/rab feed
+                      E70 = resources cheat
+                      E80 = level up chicken/rabbit
+                      E90 = one hit kill
+                      EA0 = Player takes no damage from enemy
+                      EB0 = infinite flashlight
+                      EC0 = oxygen bottle never empty
+}
+[ENABLE]
+alloc(memSubsistence,$1000,"UDK.exe") //allocate memory region within 2GB of module
+registersymbol(memSubsistence) //ensure memSubsistence can be used outside this script
+
+memSubsistence:
+  db F0 0D 10 BE EF //define byte pattern to check allocation
+
+memSubsistence+E00:
+dd 0
+memSubsistence+E10:
+dd 0
+memSubsistence+E20:
+dd 0
+memSubsistence+E30:
+dd 0
+memSubsistence+E40:
+dd 0
+memSubsistence+E50:
+dd 0
+memSubsistence+E60:
+dd 0
+memSubsistence+E70:
+dd 0
+memSubsistence+E80:
+dd 0
+memSubsistence+E90:
+dd 0
+memSubsistence+EA0:
+dd 0
+memSubsistence+EB0:
+dd 0
+memSubsistence+EC0:
+dd 0
+
+[DISABLE]
+dealloc(memSubsistence)
+unregistersymbol(memSubsistence)"""
+
+[[cheat]]
+id = "durability-power-mass-chicken-feed"
+name = "Durability/Power/Mass/chicken feed"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : UDK.exe
+  Version: 
+  Date   : 2021-07-22
+  Author : Funkster2017
+
+  This script sets tool/weapon durability to infinite use
+}
+
+//define(address,"UDK.exe"+1EECCB)
+//define(bytes,48 8B 5C 24 40)
+
+[ENABLE]
+assert(memSubsistence,F0 0D 10 BE EF)
+assert("UDK.exe"+1EECCB,48 8B 5C 24 40)
+define(ToolDurability,"UDK.exe"+1EECCB)
+//alloc(newmem,$1000,"UDK.exe"+1EECCB)
+
+label(durability)
+label(power)
+label(chick)
+label(code)
+label(return)
+
+memSubsistence+200:
+  cmp [rdi+34],0000000A
+  je durability
+  cmp [rdi+24],00000001
+  je power
+  cmp [rdi+04],#100
+  je chick
+  jmp code
+
+durability:
+  cmp [memSubsistence+E10],1
+  jne code
+  cmp [rdi-1B0],(float)100
+  jne code
+  mov [rdi],(float)100
+  jmp code
+
+power:
+  cmp [memSubsistence+E20],1
+  jne code
+  cmp [rdi+9C],00100000
+  jne code
+  mov [rdi],(float)10000
+  mov [rdi-04],#10000
+  cmp [rdi+24],00000001
+  mov [rdi+0C],#10000
+  mov [rdi+10],(float)10000
+  jmp code
+
+chick:
+  cmp [memSubsistence+E60],1
+  jne code
+  cmp [rdi+1C],#8
+  jne code
+  cmp [rdi+20],#8
+  jne code
+  mov [rdi],(float)100
+  mov [rdi-08],(float)100
+  jmp code
+
+code:
+  mov rbx,[rsp+40]
+  jmp return
+
+ToolDurability:
+  jmp memSubsistence+200
+return:
+
+[DISABLE]
+
+ToolDurability:
+  db 48 8B 5C 24 40
+  // mov rbx,[rsp+40]
+
+//dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UDK.exe+1EECCB
+
+UDK.exe+1EECA3: 48 8B D3           - mov rdx,rbx
+UDK.exe+1EECA6: 48 89 43 24        - mov [rbx+24],rax
+UDK.exe+1EECAA: FF 15 98 6D 37 03  - call qword ptr [UDK.CsvProvider+3648]
+UDK.exe+1EECB0: F3 0F 10 44 24 48  - movss xmm0,[rsp+48]
+UDK.exe+1EECB6: F3 0F 10 4C 24 50  - movss xmm1,[rsp+50]
+UDK.exe+1EECBC: 0F 2F C1           - comiss xmm0,xmm1
+UDK.exe+1EECBF: 72 06              - jb UDK.exe+1EECC7
+UDK.exe+1EECC1: F3 0F 11 07        - movss [rdi],xmm0
+UDK.exe+1EECC5: EB 04              - jmp UDK.exe+1EECCB
+UDK.exe+1EECC7: F3 0F 11 0F        - movss [rdi],xmm1
+// ---------- INJECTING HERE ----------
+UDK.exe+1EECCB: 48 8B 5C 24 40     - mov rbx,[rsp+40]
+// ---------- DONE INJECTING  ----------
+UDK.exe+1EECD0: 48 8B 74 24 58     - mov rsi,[rsp+58]
+UDK.exe+1EECD5: 0F 28 74 24 20     - movaps xmm6,[rsp+20]
+UDK.exe+1EECDA: 48 83 C4 30        - add rsp,30
+UDK.exe+1EECDE: 5F                 - pop rdi
+UDK.exe+1EECDF: C3                 - ret 
+UDK.exe+1EECE0: 40 53              - push rbx
+UDK.exe+1EECE2: 56                 - push rsi
+UDK.exe+1EECE3: 57                 - push rdi
+UDK.exe+1EECE4: 48 83 EC 30        - sub rsp,30
+UDK.exe+1EECE8: 48 8B 42 24        - mov rax,[rdx+24]
+}"""
+
+[[cheat]]
+id = "fires-generator-plantbed-gunammo-resources"
+name = "fires/generator/plantbed/gunammo/resources"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : UDK.exe
+  Version: 
+  Date   : 2021-07-20
+  Author : Funkster2017
+
+  This script sets inventory items to max stack
+}
+
+//define(infresources,"UDK.exe"+285F0E)
+//define(bytes,41 8B 00 41 89 02)
+
+[ENABLE]
+assert(memSubsistence,F0 0D 10 BE EF)
+assert("UDK.exe"+285F0E,41 8B 00 41 89 02)
+define(infResources,"UDK.exe"+285F0E)
+//assert(infresources,bytes)
+//alloc(itemMem,$1000,"UDK.exe"+285F0E)
+
+label(itemlist)
+label(code)
+label(cheat)
+label(four)
+label(five)
+label(six)
+label(seven)
+label(eight)
+label(nine)
+label(ten)
+label(eleven)
+label(twelve)
+label(thirteen)
+label(fourteen)
+label(fifteen)
+label(sixteen)
+label(seventeen)
+label(eighteen)
+label(nineteen)
+label(twentyone)
+label(twentythree)
+label(twentyfour)
+//label(water)
+label(return)
+label(genny)
+label(fuel)
+label(plants)
+label(ammo)
+label(code1)
+label(code2)
+label(resources)
+
+memSubsistence+500:
+  pushf
+  cmp [memSubsistence+E70],1
+  je resources
+  cmp [r8+08],00000063
+  je ammo
+  cmp [r8+18],00000009
+  je fuel
+  cmp [r8+18],0000000B
+  je fuel
+  cmp [r8+04],#100
+  je genny
+  cmp [r8+2C],0000000A
+  je plants
+  jmp code2
+
+genny:
+  cmp [memSubsistence+E40],0
+  je code2
+  cmp [r8+08],00000002
+  jne code2
+  mov [r8],(float)100
+  jmp code2
+
+fuel:
+  cmp [memSubsistence+E30],0
+  je code2
+  cmp [r8+1C],00000009
+  je code1
+  cmp [r8+1C],0000000B
+  je code1
+  jmp code2
+
+plants:
+  cmp [memSubsistence+E50],0
+  je code2
+  cmp [r8+18],00000010
+  jne code2
+  mov [r8],(float)100
+  mov [r8-04],(float)100
+  jmp code2
+
+ammo:
+  cmp [memSubsistence+E10],0
+  je code2
+  cmp [memSubsistence+E00],0
+  je code2
+  cmp [r8+14],00000002
+  jne code2
+  cmp [r8+18],00000002
+  jne code2
+  cmp [r8+04],00000000
+  je code2
+  popf
+  mov eax,[r8+rdx]
+  mov [r10],eax
+  jmp return
+
+code1:
+  cmp [r8+08],00000003
+  jne code2
+  mov [r8],(float)100
+  jmp code2
+
+code2:
+  popf
+  mov eax,[r8]
+  mov [r10],eax
+  jmp return
+
+
+resources:
+  push rbx
+  push rdx
+  xor rbx,rbx
+  xor rdx,rdx
+  mov ebx,[r8-28]
+  mov edx,[r8-24]
+  cmp ebx,edx
+  jne code
+  jmp itemlist
+
+itemlist:
+//  cmp ebx,edx
+//  jne code
+  cmp edx,#4
+  je four
+  cmp edx,#5
+  je five
+  cmp edx,#6
+  je six
+  cmp edx,#7
+  je seven
+  cmp edx,#8
+  je eight
+  cmp edx,#9
+  je nine
+  cmp edx,#10
+  je ten
+  cmp edx,#11
+  je eleven
+  cmp edx,#12
+  je twelve
+  cmp edx,#13
+  je thirteen
+  cmp edx,#14
+  je fourteen
+  cmp edx,#15
+  je fifteen
+  cmp edx,#16
+  je sixteen
+  cmp edx,#17
+  je seventeen
+  cmp edx,#18
+  je eighteen
+  cmp edx,#19
+  je nineteen
+  cmp edx,#21
+  je twentyone
+  cmp edx,#23
+  je twentythree
+  cmp edx,#24
+  jne code
+  jmp twentyfour
+
+four:
+  cmp [r8-3C],#79
+  je cheat
+  cmp [r8-3C],#68
+  je cheat
+  cmp [r8-3C],#7
+  jne code
+  jmp cheat
+
+five:
+  cmp [r8-3C],#132
+  je cheat
+  cmp [r8-3C],#126
+  je cheat
+  cmp [r8-3C],#213
+  je cheat
+  cmp [r8-3C],#66
+  jne code
+  jmp cheat
+
+six:
+  cmp [r8-3C],#136
+  je cheat
+  cmp [r8-3C],#83
+  je cheat
+  cmp [r8-3C],#55
+  je cheat
+  cmp [r8-3C],#131
+  je cheat
+  cmp [r8-3C],#6
+  je cheat
+  cmp [r8-3C],#98
+  je cheat
+  cmp [r8-3C],#100
+  je cheat
+  cmp [r8-3C],#243
+  jne code
+  jmp cheat
+
+seven:
+  cmp [r8-3C],#99
+  je cheat
+  cmp [r8-3C],#70
+  je cheat
+  cmp [r8-3C],#96
+  je cheat
+  cmp [r8-3C],#214
+  je cheat
+  cmp [r8-3C],#65
+  je cheat
+  cmp [r8-3C],#178
+  jne code
+  jmp cheat
+
+eight:
+  cmp [r8-3C],#184
+  je cheat
+  cmp [r8-3C],#81
+  je cheat
+  cmp [r8-3C],#200
+  je cheat
+  cmp [r8-3C],#212
+  je cheat
+  cmp [r8-3C],#0
+  je cheat
+  cmp [r8-3C],#9
+  je cheat
+  cmp [r8-3C],#12
+  je cheat
+  cmp [r8-3C],#64
+  je cheat
+  cmp [r8-3C],#112
+  je cheat
+  cmp [r8-3C],#85
+  je cheat
+  cmp [r8-3C],#167
+  je cheat
+  cmp [r8-3C],#10
+  je cheat
+  cmp [r8-3C],#145
+  je cheat
+  cmp [r8-3C],#204
+  je cheat
+  cmp [r8-3C],#206
+  je cheat
+  cmp [r8-3C],#174
+  jne code
+//  cmp [r8-3C],#127
+//  je water
+  jmp cheat
+
+nine:
+  cmp [r8-3C],#78
+  je cheat
+  cmp [r8-3C],#128
+  je cheat
+  cmp [r8-3C],#141
+  je cheat
+  cmp [r8-3C],#166
+  je cheat
+  cmp [r8-3C],#69
+  je cheat
+  cmp [r8-3C],#9
+  je cheat
+  cmp [r8-3C],#173
+  jne code
+  jmp cheat
+
+ten:
+  cmp [r8-3C],#75
+  je cheat
+  cmp [r8-3C],#73
+  je cheat
+  cmp [r8-3C],#71
+  je cheat
+  cmp [r8-3C],#84
+  je cheat
+  cmp [r8-3C],#111
+  je cheat
+  cmp [r8-3C],#97
+  je cheat
+  cmp [r8-3C],#77
+  jne code
+  jmp cheat
+
+eleven:
+  cmp [r8-3C],#11
+  je cheat
+  cmp [r8-3C],#189
+  je cheat
+  cmp [r8-3C],#88
+  je cheat
+  cmp [r8-3C],#102
+  je cheat
+  cmp [r8-3C],#177
+  je cheat
+  cmp [r8-3C],#118
+  je cheat
+  cmp [r8-3C],#133
+  je cheat
+  cmp [r8-3C],#159
+  je cheat
+  cmp [r8-3C],#94
+  je cheat
+  cmp [r8-3C],#102
+  je cheat
+  cmp [r8-3C],#211
+  je cheat
+  cmp [r8-3C],#117
+  je cheat
+  cmp [r8-3C],#179
+  je cheat
+  cmp [r8-3C],#198
+  je cheat
+  cmp [r8-3C],#240
+  jne code
+  jmp cheat
+
+twelve:
+  cmp [r8-3C],#86
+  je cheat
+  cmp [r8-3C],#93
+  je cheat
+  cmp [r8-3C],#92
+  je cheat
+  cmp [r8-3C],#2
+  je cheat
+  cmp [r8-3C],#176
+  je cheat
+  cmp [r8-3C],#175
+  je cheat
+  cmp [r8-3C],#5
+  je cheat
+  cmp [r8-3C],#105
+  je cheat
+  cmp [r8-3C],#188
+  jne code
+  jmp cheat
+
+thirteen:
+  cmp [r8-3C],#186
+  je cheat
+  cmp [r8-3C],#125
+  je cheat
+  cmp [r8-3C],#110
+  je cheat
+  cmp [r8-3C],#157
+  je cheat
+  cmp [r8-3C],#180
+  je cheat
+  cmp [r8-3C],#181
+  je cheat
+  cmp [r8-3C],#185
+  jne code
+  jmp cheat
+
+fourteen:
+  cmp [r8-3C],#109
+  je cheat
+  cmp [r8-3C],#113
+  je cheat
+  cmp [r8-3C],#218
+  je cheat
+  cmp [r8-3C],#76
+  je cheat
+  cmp [r8-3C],#139
+  je cheat
+  cmp [r8-3C],#144
+  jne code
+  jmp cheat
+
+fifteen:
+  cmp [r8-3C],#137
+  je cheat
+  cmp [r8-3C],#158
+  je cheat
+  cmp [r8-3C],#82
+  je cheat
+  cmp [r8-3C],#146
+  je cheat
+  cmp [r8-3C],#183
+  je cheat
+  cmp [r8-3C],#90
+  je cheat
+  cmp [r8-3C],#30
+  jne code
+  jmp cheat
+
+sixteen:
+  cmp [r8-3C],#187
+  je cheat
+  cmp [r8-3C],#115
+  je cheat
+  cmp [r8-3C],#63
+  je cheat
+  cmp [r8-3C],#3
+  je cheat
+  cmp [r8-3C],#130
+  je cheat
+  cmp [r8-3C],#199
+  je cheat
+  cmp [r8-3C],#54
+  jne code
+  jmp cheat
+
+seventeen:
+  cmp [r8-3C],#203
+  je cheat
+  cmp [r8-3C],#194
+  je cheat
+  cmp [r8-3C],#143
+  jne code
+  jmp cheat
+
+eighteen:
+  cmp [r8-3C],#4
+  je cheat
+  cmp [r8-3C],#129
+  je cheat
+  cmp [r8-3C],#134
+  jne code
+  jmp cheat
+
+nineteen:
+  cmp [r8-3C],#216
+  jne code
+  jmp cheat
+
+twentyone:
+  cmp [r8-3C],#67
+  jne code
+  jmp cheat
+
+twentythree:
+  cmp [r8-3C],#106
+  jne code
+  jmp cheat
+
+twentyfour:
+  cmp [r8-3C],#107
+  jne code
+  jmp cheat
+
+//water:
+//  mov [eax+9C],#611
+//  mov [eax+10C],#1
+//  jmp code
+
+cheat:
+  xor rbx,rbx
+  xor rdx,rdx
+  mov ebx,[r8+0C]
+  mov [r8],ebx
+  xor rbx,rbx
+  jmp code
+
+code:
+  pop rdx
+  pop rbx
+  popf
+  mov eax,[r8]
+  mov [r10],eax
+  jmp return
+
+infResources:
+  jmp memSubsistence+500
+  nop
+return:
+
+[DISABLE]
+
+infResources:
+  db 41 8B 00 41 89 02
+  // mov eax,[r8]
+  // mov [r10],eax
+
+//dealloc(itemMem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UDK.exe+285F0E
+
+UDK.exe+285EFB: CC              - int 3 
+UDK.exe+285EFC: CC              - int 3 
+UDK.exe+285EFD: CC              - int 3 
+UDK.exe+285EFE: CC              - int 3 
+UDK.exe+285EFF: CC              - int 3 
+UDK.exe+285F00: 4C 8B D2        - mov r10,rdx
+UDK.exe+285F03: 8B 51 68        - mov edx,[rcx+68]
+UDK.exe+285F06: 4D 8B C8        - mov r9,r8
+UDK.exe+285F09: 83 FA 01        - cmp edx,01
+UDK.exe+285F0C: 75 07           - jne UDK.exe+285F15
+// ---------- INJECTING HERE ----------
+UDK.exe+285F0E: 41 8B 00        - mov eax,[r8]
+// ---------- DONE INJECTING  ----------
+UDK.exe+285F11: 41 89 02        - mov [r10],eax
+UDK.exe+285F14: C3              - ret 
+UDK.exe+285F15: 8B 41 6C        - mov eax,[rcx+6C]
+UDK.exe+285F18: 49 8B CA        - mov rcx,r10
+UDK.exe+285F1B: 0F AF C2        - imul eax,edx
+UDK.exe+285F1E: 49 8B D1        - mov rdx,r9
+UDK.exe+285F21: 4C 63 C0        - movsxd  r8,eax
+UDK.exe+285F24: E9 13 16 D5 01  - jmp UDK.exe+1FD753C
+UDK.exe+285F29: CC              - int 3 
+UDK.exe+285F2A: CC              - int 3 
+}"""
+
+[[cheat]]
+id = "lvl-10-chicken-rabbit-levelup-approx-every-second-to-lvl-10"
+name = "Lvl 10 Chicken/Rabbit - levelup approx every second to lvl 10"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : UDK.exe
+  Version: 
+  Date   : 2021-08-01
+  Author : Admin
+
+  This script does blah blah blah
+}
+
+//define(address,"UDK.exe"+1EE16D)
+//define(bytes,F3 0F 11 07 F3 0F 11 06)
+
+[ENABLE]
+assert(memSubsistence,F0 0D 10 BE EF)
+assert("UDK.exe"+1EE16D,F3 0F 11 07 F3 0F 11 06)
+define(ChickenRabbit,"UDK.exe"+1EE16D)
+//assert(address,bytes)
+//alloc(newmem,$1000,"UDK.exe"+1EE16D)
+
+label(rabit)
+label(code)
+label(return)
+
+memSubsistence+400:
+  cmp [memSubsistence+E80],1
+  jne code
+  cmp [rdi-08],#15
+  jne rabit
+  cmp [rdi-0C],#15
+  jne rabit
+  cmp [rdi+08],#100
+  jne code
+  jmp code2
+
+rabit:
+  cmp [rdi-08],#14
+  jne code
+  cmp [rdi-0C],#14
+  jne code
+  cmp [rdi+08],#100
+  jne code
+  jmp code2
+
+code2:
+  mov [rdi],(float)100
+  mov [rsi],(float)100
+  jmp return
+
+code:
+  movss [rdi],xmm0
+  movss [rsi],xmm0
+  jmp return
+
+ChickenRabbit:
+  jmp memSubsistence+400
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+ChickenRabbit:
+  db F3 0F 11 07 F3 0F 11 06
+  // movss [rdi],xmm0
+  // movss [rsi],xmm0
+//dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UDK.exe+1EE16D
+
+UDK.exe+1EE142: 48 8B 4B 1C        - mov rcx,[rbx+1C]
+UDK.exe+1EE146: 48 FF C0           - inc rax
+UDK.exe+1EE149: 45 33 C0           - xor r8d,r8d
+UDK.exe+1EE14C: 48 8B D3           - mov rdx,rbx
+UDK.exe+1EE14F: 48 89 43 24        - mov [rbx+24],rax
+UDK.exe+1EE153: FF 15 EF 78 37 03  - call qword ptr [UDK.CsvProvider+3648]
+UDK.exe+1EE159: F3 0F 10 44 24 60  - movss xmm0,[rsp+60]
+UDK.exe+1EE15F: 48 8B 5C 24 50     - mov rbx,[rsp+50]
+UDK.exe+1EE164: 0F 28 74 24 20     - movaps xmm6,[rsp+20]
+UDK.exe+1EE169: F3 0F 58 07        - addss xmm0,[rdi]
+// ---------- INJECTING HERE ----------
+UDK.exe+1EE16D: F3 0F 11 07        - movss [rdi],xmm0
+// ---------- DONE INJECTING  ----------
+UDK.exe+1EE171: F3 0F 11 06        - movss [rsi],xmm0
+UDK.exe+1EE175: 48 83 C4 30        - add rsp,30
+UDK.exe+1EE179: 5F                 - pop rdi
+UDK.exe+1EE17A: 5E                 - pop rsi
+UDK.exe+1EE17B: 5D                 - pop rbp
+UDK.exe+1EE17C: C3                 - ret 
+UDK.exe+1EE17D: CC                 - int 3 
+UDK.exe+1EE17E: CC                 - int 3 
+UDK.exe+1EE17F: CC                 - int 3 
+UDK.exe+1EE180: 48 89 5C 24 08     - mov [rsp+08],rbx
+}"""
+
+[[cheat]]
+id = "one-hit-kill-plus-infinite-player-hit-points"
+name = "One Hit Kill plus Infinite player hit points"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : UDK.exe
+  Version: 
+  Date   : 2021-07-20
+  Author : Funkster2017
+
+  This script provides a one hit kill
+  and player takes no damage
+}
+
+//define(address,"UDK.exe"+1ECE19)
+//define(bytes,29 03 8B 03 48 8B 5C 24 40)
+
+[ENABLE]
+assert(memSubsistence,F0 0D 10 BE EF)
+assert("UDK.exe"+1ECE19,29 03 8B 03 48 8B 5C 24 40)
+define(OneHitKill,"UDK.exe"+1ECE19)
+//assert(address,bytes)
+//alloc(newmem,$1000,"UDK.exe"+1ECE19)
+
+label(bat)
+label(player)
+label(enemy)
+label(code)
+label(return)
+
+memSubsistence+100:
+cmp [rbx+4D0],(int)20
+je player
+//cmp [ebx+3DC],(int)18
+//je enemy
+cmp [rbx+4D0],(int)8
+je enemy
+cmp [rbx+4D0],(int)3
+je enemy
+cmp [rbx+4D0],(int)1
+je bat
+cmp [rbx+4D0],(int)6
+je enemy
+cmp [rbx+4D0],(int)5
+je enemy
+cmp [rbx+4D0],(int)4
+je enemy
+cmp [rbx+4D0],(int)2 //3bc
+je enemy
+jmp code
+
+bat:
+cmp [rbx+4D4],(int)1 //3d8
+je enemy
+jmp code
+
+player:
+cmp [rbx+444],(int)120
+je enemy
+cmp [memSubsistence+EA0],1
+jne code
+mov eax,00000000
+//mov [ebx+04],0000007D
+//mov [ebx],0000007D
+//mov [healthaddy],ebx
+jmp code
+
+enemy:
+cmp [memSubsistence+E90],1
+jne code
+mov eax,000001F4
+jmp code
+
+code:
+  sub [rbx],eax
+  mov eax,[rbx]
+  mov rbx,[rsp+40]
+  jmp return
+
+OneHitKill:
+  jmp memSubsistence+100
+  nop
+  nop
+  nop
+  nop
+return:
+
+[DISABLE]
+
+OneHitKill:
+  db 29 03 8B 03 48 8B 5C 24 40
+  // sub [rbx],eax
+  // mov eax,[rbx]
+  // mov rbx,[rsp+40]
+
+//dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UDK.exe+1ECE19
+
+UDK.exe+1ECDF5: 48 8B 47 24        - mov rax,[rdi+24]
+UDK.exe+1ECDF9: 80 38 41           - cmp byte ptr [rax],41
+UDK.exe+1ECDFC: 75 17              - jne UDK.exe+1ECE15
+UDK.exe+1ECDFE: 48 8B 4F 1C        - mov rcx,[rdi+1C]
+UDK.exe+1ECE02: 48 FF C0           - inc rax
+UDK.exe+1ECE05: 45 33 C0           - xor r8d,r8d
+UDK.exe+1ECE08: 48 8B D7           - mov rdx,rdi
+UDK.exe+1ECE0B: 48 89 47 24        - mov [rdi+24],rax
+UDK.exe+1ECE0F: FF 15 33 8C 37 03  - call qword ptr [UDK.CsvProvider+3648]
+UDK.exe+1ECE15: 8B 44 24 50        - mov eax,[rsp+50]
+// ---------- INJECTING HERE ----------
+UDK.exe+1ECE19: 29 03              - sub [rbx],eax
+// ---------- DONE INJECTING  ----------
+UDK.exe+1ECE1B: 8B 03              - mov eax,[rbx]
+UDK.exe+1ECE1D: 48 8B 5C 24 40     - mov rbx,[rsp+40]
+UDK.exe+1ECE22: 89 06              - mov [rsi],eax
+UDK.exe+1ECE24: 48 83 C4 20        - add rsp,20
+UDK.exe+1ECE28: 41 5C              - pop r12
+UDK.exe+1ECE2A: 5F                 - pop rdi
+UDK.exe+1ECE2B: 5E                 - pop rsi
+UDK.exe+1ECE2C: C3                 - ret 
+UDK.exe+1ECE2D: CC                 - int 3 
+UDK.exe+1ECE2E: CC                 - int 3 
+}"""
+
+[[cheat]]
+id = "inf-flashlight-oxygen-tank-oxygen-tank-bar-display-will-drop-to-0-but-tank-is-full"
+name = "inf flashlight/oxygen tank (oxygen tank bar display will drop to 0 but tank is full)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : UDK.exe
+  Version: 
+  Date   : 2021-07-29
+  Author : Admin
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+assert(memSubsistence,F0 0D 10 BE EF)
+assert("UDK.exe"+1EEDAA,F3 0F 11 03 0F 28 74 24 20)
+define(lightoxy,"UDK.exe"+1EEDAA)
+//aobscanmodule(lightoxy,UDK.exe,F3 0F 11 03 0F 28 74 24 20) // should be unique
+//alloc(newmem,$1000,lightoxy)
+//alloc(light,8)
+
+label(code)
+label(return)
+label(light)
+label(flash)
+label(oxygen)
+
+memSubsistence+300:
+  cmp [rbx+BC],(float)1
+  je flash
+  cmp [rbx+10],(float)1
+  je oxygen
+  jmp code
+
+flash:
+  cmp [memSubsistence+EB0],1
+  jne code
+  cmp [rbx+C8],(float)1
+  jne code
+  movss xmm0,[light]
+  jmp code
+
+oxygen:
+  cmp [memSubsistence+EC0],1
+  jne code
+  movss xmm0,[light]
+  jmp code
+
+code:
+  movss [rbx],xmm0
+  movaps xmm6,[rsp+20]
+  jmp return
+
+light:
+ dd (float)1
+
+lightoxy:
+  jmp memSubsistence+300
+  nop
+  nop
+  nop
+  nop
+return:
+//registersymbol(lightoxy)
+
+[DISABLE]
+
+lightoxy:
+  db F3 0F 11 03 0F 28 74 24 20
+
+//unregistersymbol(lightoxy)
+//dealloc(light)
+//dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: UDK.exe+1EEDAA
+
+UDK.exe+1EED81: 48 8B D7           - mov rdx,rdi
+UDK.exe+1EED84: 48 89 47 24        - mov [rdi+24],rax
+UDK.exe+1EED88: FF 15 BA 6C 37 03  - call qword ptr [UDK.CsvProvider+3648]
+UDK.exe+1EED8E: F3 0F 10 44 24 58  - movss xmm0,[rsp+58]
+UDK.exe+1EED94: F3 0F 10 4C 24 60  - movss xmm1,[rsp+60]
+UDK.exe+1EED9A: 0F 2F C1           - comiss xmm0,xmm1
+UDK.exe+1EED9D: 72 1C              - jb UDK.exe+1EEDBB
+UDK.exe+1EED9F: F3 0F 10 4C 24 68  - movss xmm1,[rsp+68]
+UDK.exe+1EEDA5: 0F 2F C1           - comiss xmm0,xmm1
+UDK.exe+1EEDA8: 73 11              - jae UDK.exe+1EEDBB
+// ---------- INJECTING HERE ----------
+UDK.exe+1EEDAA: F3 0F 11 03        - movss [rbx],xmm0
+// ---------- DONE INJECTING  ----------
+UDK.exe+1EEDAE: 0F 28 74 24 20     - movaps xmm6,[rsp+20]
+UDK.exe+1EEDB3: 48 83 C4 30        - add rsp,30
+UDK.exe+1EEDB7: 5F                 - pop rdi
+UDK.exe+1EEDB8: 5E                 - pop rsi
+UDK.exe+1EEDB9: 5B                 - pop rbx
+UDK.exe+1EEDBA: C3                 - ret 
+UDK.exe+1EEDBB: F3 0F 11 0B        - movss [rbx],xmm1
+UDK.exe+1EEDBF: 0F 28 74 24 20     - movaps xmm6,[rsp+20]
+UDK.exe+1EEDC4: 48 83 C4 30        - add rsp,30
+UDK.exe+1EEDC8: 5F                 - pop rdi
+}"""
+
+[[cheat]]
+id = "player-invincible-from-enemy"
+name = "Player invincible from enemy"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+EA0:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+EA0:
+dd 0"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E90:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E90:
+dd 0"""
+
+[[cheat]]
+id = "durability-for-item-in-use"
+name = "Durability for item in use"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E10:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E10:
+dd 0"""
+
+[[cheat]]
+id = "power-mass-10000"
+name = "Power/Mass = 10000"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E20:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E20:
+dd 0"""
+
+[[cheat]]
+id = "max-chicken-rabbit-feed-water"
+name = "Max Chicken/Rabbit Feed/Water"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E60:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E60:
+dd 0"""
+
+[[cheat]]
+id = "levelup-chicken-rabbit-to-level-10"
+name = "Levelup chicken/rabbit to level 10"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E80:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E80:
+dd 0"""
+
+[[cheat]]
+id = "infinite-flashlight"
+name = "Infinite Flashlight"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+EB0:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+EB0:
+dd 0"""
+
+[[cheat]]
+id = "infinite-oxygen-in-oxybottle-diving-equipment"
+name = "Infinite oxygen in oxybottle - (diving equipment)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+EC0:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+EC0:
+dd 0"""
+
+[[cheat]]
+id = "resources-not-for-wooden-crates-split-all-stacks-else-lose-items-hotkey-numpad"
+name = "Resources - NOT for wooden crates - split all stacks else lose items. Hotkey=numpad *"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E70:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E70:
+dd 0"""
+
+[[cheat]]
+id = "gun-ammo-used-only-when-durability-cheat-active"
+name = "Gun Ammo - (used only when Durability cheat active)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E00:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E00:
+dd 0"""
+
+[[cheat]]
+id = "infinite-fuel-for-fires-woodburner"
+name = "Infinite fuel for fires/woodburner"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E30:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E30:
+dd 0"""
+
+[[cheat]]
+id = "infinite-generator-fuel"
+name = "Infinite Generator fuel"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E40:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E40:
+dd 0"""
+
+[[cheat]]
+id = "plantbed-full-water-fertiliser"
+name = "PlantBed Full water/fertiliser"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+memSubsistence+E50:
+dd 1
+ 
+ 
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+memSubsistence+E50:
+dd 0"""

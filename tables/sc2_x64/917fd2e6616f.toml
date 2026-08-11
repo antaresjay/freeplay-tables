@@ -1,0 +1,656 @@
+[game]
+name = "Starcraft 2 Legacy of the Void"
+exe = "sc2_x64.exe"
+notes = "Converted from a Cheat Engine table by gameplayer. Source: https://fearlessrevolution.com/viewtopic.php?t=695"
+verified = []
+author = "gameplayer"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "god-mode-v3-13"
+name = "God Mode (v3.13)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Process: SC2_x64.exe
+  Version: 3.13
+  Date   : 2017-5-03
+  Author : gameplayer
+}
+define(healthaddr,SC2_x64.AssertAndCrash+521E4A)
+define(healthbytes,8B CF 2B C8 41 89 B6 98 01 00 00 89 8C 24 88 00 00 00)
+define(shieldaddr,SC2_x64.AssertAndCrash+51FD31)
+define(shieldbytes,41 89 86 9C 01 00 00 3B C3 74 24)
+define(teamcode,SC2_x64.exe+2831974)
+[ENABLE]
+assert(healthaddr,healthbytes)
+assert(shieldaddr,shieldbytes)
+alloc(Health_mem,$1000,healthaddr)
+
+label(code)
+label(next)
+label(skip)
+label(return)
+label(Shield_mem)
+label(Shield_Code)
+label(Shield_Return)
+
+Health_mem:
+dd 1
+dd 1
+dd 0
+dd 0
+db 90 90 90 90 90 90 90 90
+code:
+movzx ecx,byte ptr [r14+42]
+cmp ecx,1
+je next
+mov edx,1
+shl edx,cl
+mov ecx,[teamcode]
+test edx,ecx
+jne next
+cmp dword ptr [Health_mem+04],0
+je skip
+mov ecx,edi
+sub ecx,00002000
+cmp ecx,esi
+jng +02
+mov esi,ecx
+skip:
+  mov ecx,edi
+  sub ecx,eax
+  mov [r14+00000198],esi
+  jmp return
+next:
+cmp dword ptr [Health_mem],0
+je skip
+cmp ebx,esi
+jnl +04
+xor ebx,ebx
+xor esi,esi
+  mov ecx,edi
+  sub ecx,eax
+  mov [r14+00000198],esi
+  jmp return
+Shield_mem:
+  cmp [r14+42],1
+  je Shield_Code
+  mov [Health_mem+08],ecx
+  movzx ecx,byte ptr [r14+42]
+  mov edx,1
+  shl edx,cl
+  mov ecx,[teamcode]
+  test edx,ecx
+  jne Shield_Code
+  mov ecx,[Health_mem+08]
+  mov [r14+0000019C],r9d
+  xor ebx,ebx
+  jmp Shield_Return+2F
+Shield_Code:
+xor eax,eax
+mov [r14+00000198],eax
+mov [r14+0000019C],eax
+sub eax,r9d
+mov ebx,eax
+jmp Shield_Return+2F
+
+shieldaddr:
+  jmp Shield_mem
+  db 90 90
+Shield_Return:
+
+healthaddr:
+  jmp code
+  db 90 90 90 90 90 90
+return:
+registersymbol(Health_mem)
+
+[DISABLE]
+healthaddr:
+  db healthbytes
+shieldaddr:
+  db shieldbytes
+
+dealloc(Health_mem)
+unregistersymbol(Health_mem)"""
+
+[[cheat]]
+id = "full-health"
+name = "Full Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1
+choices = [
+    "1:Enabled",
+    "0:Disabled",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Health_mem"
+hops = []
+
+[[cheat]]
+id = "quick-kill"
+name = "Quick Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1
+choices = [
+    "1:Enabled",
+    "0:Disabled",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Health_mem"
+hops = []
+
+[[cheat]]
+id = "multiply-resources-v3-13"
+name = "Multiply Resources (v3.13)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(Res_addr,SC2_x64.AssertAndCrash+5A55EC)
+define(Res_bytes,89 77 60 48 8B 74 24 40 48 83 C4 20 5F C3)
+define(teamcode,SC2_x64.exe+2831974)
+
+[ENABLE]
+assert(Res_addr,Res_bytes)
+alloc(Res_newmem,$1000,Res_addr)
+label(Res_Skip)
+label(Res_Code)
+label(Res_return)
+label(next)
+
+Res_newmem:
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+Res_Code:
+mov [Res_newmem],rdi
+mov rdi,[rdi+18]
+cmp [rdi+42],1
+je next
+movzx ecx,byte ptr [rdi+42]
+mov edx,1
+shl edx,cl
+mov ecx,[teamcode]
+test edx,ecx
+je Res_Skip
+next:
+shl esi,3
+Res_Skip:
+mov rdi,[Res_newmem]
+  mov [rdi+60],esi
+  mov rsi,[rsp+40]
+  jmp Res_return
+
+Res_addr:
+  jmp Res_Code
+  db 90 90 90
+Res_return:
+
+[DISABLE]
+Res_addr:
+db Res_bytes
+
+dealloc(Res_newmem)"""
+
+[[cheat]]
+id = "fast-building-v3-13"
+name = "Fast Building (v3.13)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Process: SC2_x64.exe
+  Version: 3.13
+  Date   : 2017-5-03
+  Author : gameplayer
+}
+
+[ENABLE]
+aobscanmodule(Build_time,SC2_x64.exe,29 4F 64 83 7F 64 00 8B 47 10)
+alloc(Build_newmem,$1000,Build_time)
+
+label(Build_code)
+label(code)
+label(next)
+label(return)
+
+Build_newmem:
+dd 0
+dd 0
+dd 0
+dd 0
+db 90 90 90 90 90 90 90 90
+Build_code:
+mov [Build_newmem],ecx
+mov ecx,00002000
+cmp dword ptr [rdi+64],ecx
+jle code
+mov rax,[rdi+18]
+cmp byte ptr [rax+42],1
+je next
+mov edx,1
+movzx ecx,byte ptr [rax+42]
+and ecx,0F
+shl edx,cl
+mov ecx,[SC2_x64.exe+2831974]
+test edx,ecx
+je code
+mov ecx,00002000
+next:
+mov [rdi+64],ecx
+xor ecx,ecx
+mov [rax+00000198],ecx
+mov [rax+0000019C],ecx
+cmp dword ptr [rdi+64],ecx
+jmp return
+code:
+mov ecx,[Build_newmem]
+  sub [rdi+64],ecx
+  cmp dword ptr [rdi+64],00
+  jmp return
+
+Build_time:
+  jmp Build_code
+  db 90 90
+return:
+registersymbol(Build_time)
+
+[DISABLE]
+Build_time:
+  db 29 4F 64 83 7F 64 00
+
+unregistersymbol(Build_time)
+dealloc(Build_code)"""
+
+[[cheat]]
+id = "full-energy-v3-13"
+name = "Full Energy (v3.13)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Process: SC2_x64.exe
+  Version: 3.13
+  Date   : 2017-5-03
+  Author : gameplayer
+}
+
+define(Skill_Energy,SC2_x64.AssertAndCrash+51E98C)
+define(Drain_Energy,SC2_x64.AssertAndCrash+52315B)
+define(SEbytes,41 89 9E A0 01 00 00 3B DF 74 74 2B DF 74 70 85 F6 74 6C E8)
+define(DEbytes,45 89 A7 A0 01 00 00 44 3B E7 74 73 44 2B E7 74 6E 85 DB 74 6A E8)
+
+[ENABLE]
+assert(Skill_Energy,SEbytes)
+assert(Drain_Energy,DEbytes)
+alloc(newmem,$800,SC2_x64.exe)
+
+label(code)
+label(return)
+label(drain)
+label(drain_code)
+label(drain_return)
+
+newmem:
+cmp byte ptr [r14+42],1
+jne code
+mov ebx,edi
+code:
+  mov [r14+000001A0],ebx
+  jmp return
+drain:
+cmp byte ptr [r15+42],1
+jne drain_code
+mov r12d,ebx
+drain_code:
+  mov [r15+000001A0],r12d
+  jmp drain_return
+
+Skill_Energy:
+  jmp newmem
+  db 90 90
+return:
+Drain_Energy:
+  jmp drain
+  db 90 90
+drain_return:
+
+[DISABLE]
+Skill_Energy:
+db SEbytes
+Drain_Energy:
+db DEbytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "remove-skill-cooldown-v3-13"
+name = "Remove Skill Cooldown (v3.13)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(Skill_cooldown,SC2_x64.exe,8B 00 29 43 18 44 39 73 18 7F 25)
+alloc(Skill_newmem,$2000,Skill_cooldown)
+aobscanmodule(Skill_A1,SC2_x64.exe,E8 ? ? ? ? 48 8B 47 50 4C 39 30 75 3B 48 8B CF E8)
+aobscanmodule(Skill_A2,SC2_x64.exe,E8 ? ? ? ? 48 8B 9F ? ? 00 00 48 39 2B 75 32 48 85 DB 74 2D 48 8B CB E8)
+aobscanmodule(Skill_A3,SC2_x64.exe,E8 ? ? ? ? 8B 87 ? ? 00 00 45 33 ? C1 E8 0E 48 89 9C 24)
+
+label(code)
+label(open)
+label(next)
+label(exam)
+label(active)
+label(return)
+
+Skill_newmem:
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+db 90 90 90 90 90 90 90 90
+open:
+mov rdx,Skill_A1+05
+mov rcx,[rsp+48]
+cmp rdx,[rsp+58]
+jne exam
+mov rcx,[rcx+18]
+jmp next
+exam:
+mov rdx,Skill_A2+05
+cmp rdx,[rsp+58]
+je next
+mov rdx,Skill_A3+05
+cmp rdx,[rsp+58]
+jne code
+mov ecx,[ebx+18]
+cmp ecx,005A0000
+jg active
+mov rcx,[rsp+000000e8]
+cmp [rsp+000000f0],rcx
+jne code
+test rcx,07
+jne code
+next:
+test rcx,rcx
+jle code
+mov edx,1
+movzx ecx,byte ptr [rcx+42]
+cmp ecx,1
+je active
+and ecx,0F
+shl edx,cl
+mov ecx,[SC2_x64.exe+2831974]
+test edx,ecx
+je code
+active:
+xor eax,eax
+mov [rbx+18],eax
+jmp return
+code:
+mov rcx,[rsp+000000e8]
+mov [Skill_newmem],rcx
+mov rcx,[rsp+000000f0]
+mov [Skill_newmem+08],rcx
+mov rcx,[rsp+48]
+mov [Skill_newmem+10],rcx
+mov rcx,[rsp+58]
+mov [Skill_newmem+18],rcx
+mov rcx,[rsp+28]
+mov [Skill_newmem+20],rcx
+mov rcx,[rsp+30]
+mov [Skill_newmem+28],rcx
+mov rcx,[rsp+38]
+mov [Skill_newmem+30],rcx
+mov rcx,[rsp+40]
+mov [Skill_newmem+38],rcx
+  mov eax,[rax]
+  sub [rbx+18],eax
+  jmp return
+
+Skill_cooldown:
+  jmp open
+return:
+registersymbol(Skill_cooldown)
+registersymbol(Skill_newmem)
+
+[DISABLE]
+Skill_cooldown:
+  db 8B 00 29 43 18 44 39 73 18 7F 25
+
+unregistersymbol(Skill_cooldown)
+dealloc(Skill_newmem)
+unregistersymbol(Skill_newmem)"""
+
+[[cheat]]
+id = "freeze-resource-piles"
+name = "Freeze Resource Piles"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(Resource_Pile,SC2_x64.exe,89 B7 8C 00 00 00 41 3B F1 74)
+alloc(Resource_mem,$1000,Resource_Pile)
+
+label(code)
+label(return)
+
+Resource_mem:
+cmp [rdi+0000008C],0
+jne return
+code:
+  mov [rdi+0000008C],esi
+  jmp return
+
+Resource_Pile:
+  jmp Resource_mem
+  db 90
+return:
+registersymbol(Resource_Pile)
+
+[DISABLE]
+
+Resource_Pile:
+  db 89 B7 8C 00 00 00 41 3B
+
+unregistersymbol(Resource_Pile)
+dealloc(Resource_mem)"""
+
+[[cheat]]
+id = "teamcode"
+name = "Teamcode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 2
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "SC2_x64.exe"
+offset = "0x2831974"
+hops = []
+
+[[cheat]]
+id = "credits"
+name = "Credits"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+value = 3735000
+
+[cheat.locator]
+find = "static"
+module = "SC2_x64.exe"
+offset = "0x2a6b408"
+hops = [
+    "+0x28",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "no-description"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []
+
+[[cheat]]
+id = "no-description-2"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []
+
+[[cheat]]
+id = "no-description-3"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []
+
+[[cheat]]
+id = "no-description-4"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []
+
+[[cheat]]
+id = "no-description-5"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []
+
+[[cheat]]
+id = "no-description-6"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []
+
+[[cheat]]
+id = "no-description-7"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []
+
+[[cheat]]
+id = "no-description-8"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "Skill_newmem"
+hops = []

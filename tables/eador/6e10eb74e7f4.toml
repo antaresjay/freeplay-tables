@@ -1,0 +1,474 @@
+[game]
+name = "Eador: Genesis"
+exe = "eador.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1516"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "control-guards-in-combat"
+name = "<== Control Guards in Combat"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(mycode,1024)
+label(mycode2)
+aobscan(aob1,55 55 56 53 33 C9 E8)
+aobscan(aob2,55 55 56 50 8B CB E8)
+label(guards1)
+label(guards2)
+registersymbol(guards1)
+registersymbol(guards2)
+label(return)
+label(return2)
+
+//eador.exe+000B9C18:
+//push 1
+
+//eador.exe+0005BBD6:
+aob1:
+guards1:
+jmp mycode
+nop
+return:
+
+//Eador.exe+5BC73:
+aob2:
+guards2:
+jmp mycode2
+nop
+return2:
+
+mycode:  //for neutrals attacking you
+push    1
+push    ebp
+push    esi
+push    ebx
+xor     ecx, ecx
+
+jmp return
+
+mycode2: // for heroes attacking you
+push 1
+push ebp
+push esi
+push eax
+mov ecx,ebx
+
+jmp return2
+
+[disable]
+//eador.exe+000B9C18:
+//push 0
+
+//eador.exe+0005BBD6:
+guards1:
+db 55 55 56 53 33 C9 E8
+
+//Eador.exe+0005BC73:
+guards2:
+db 55 55 56 50 8B CB E8
+
+dealloc(mycode)
+unregistersymbol(guards1)
+unregistersymbol(guards2)"""
+
+[[cheat]]
+id = "reveal-map-player-1"
+name = "<== Reveal Map (Player 1)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,512)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+cmp [esp+10], 1  //only reveal map for player 1
+jne originalcode
+jmp exit
+
+originalcode:
+cmp byte ptr [Eador.exe+11D756],00
+
+exit:
+jmp returnhere
+
+"Eador.exe"+75013:
+jmp newmem
+nop
+nop
+returnhere:
+
+ 
+[DISABLE]
+"Eador.exe"+75013:
+db 80 3D 56 D7 51 00 00
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-construction-guards-rituals"
+name = "<== Infinite Construction, Guards, Rituals"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// demesne
+"Eador.exe"+2B4EF:
+nop
+nop
+// province buildings
+"Eador.exe"+78529:
+db EB 1C
+// guards
+"Eador.exe"+7814A:
+db EB 1B
+// rituals
+"Eador.exe"+77DC2:
+db EB 1C
+
+[DISABLE]
+"Eador.exe"+2B4EF:
+db 7E 5D
+"Eador.exe"+78529:
+db 7F 1C
+"Eador.exe"+7814A:
+db 7F 1B
+"Eador.exe"+77DC2:
+db 7F 1C"""
+
+[[cheat]]
+id = "no-ritual-cooldown"
+name = "<== No Ritual Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+"Eador.exe"+6CD77:
+xor ecx, ecx
+
+[DISABLE]
+"Eador.exe"+6CD77:
+db 29 C1"""
+
+[[cheat]]
+id = "make-all-buildings-guards-rituals-available"
+name = "<== Make All Buildings, Guards, Rituals Available"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// all guards
+"Eador.exe"+78218:
+nop
+nop
+// all buildings
+"Eador.exe"+785B3:
+nop
+nop
+// all rituals
+"Eador.exe"+77E13:
+nop
+nop
+
+[DISABLE]
+"Eador.exe"+78218:
+db 74 37
+
+"Eador.exe"+785B3:
+db 74 34
+
+"Eador.exe"+77E13:
+db 74 48"""
+
+[[cheat]]
+id = "other-players-income"
+name = "<== Other Players' Income"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(pointers)
+label(incomepointers)
+registersymbol(incomepointers)
+label(values)
+label(newmem2)
+label(returnhere2)
+
+newmem:
+pushfd
+pushad
+//esp+8 = player index
+//esp+2c = total gold income
+//esp+28 = total gold expenses
+//esp+24 = total gem income
+//esp+18 = total gem expenses
+//esi = sizeof(playerstruct)
+lea ebp, [esp+24]  //use ebp instead
+mov ecx, [ebp+8] //load index
+imul ecx, ecx, 6*4
+mov edi, values
+
+lea eax, [esi+Eador.exe+1584B8]
+mov [edi+ecx], eax     //gold ptr
+mov eax, [ebp+2c]
+mov [edi+ecx+4], eax
+mov eax, [ebp+28]
+mov [edi+ecx+8], eax
+
+lea eax, [esi+Eador.exe+1584BC]
+mov [edi+ecx+C], eax    //gem ptr
+mov eax, [ebp+24]
+mov [edi+ecx+10], eax
+mov eax, [ebp+18]
+mov [edi+ecx+14], eax
+popad
+popfd
+
+originalcode:
+mov edx,eax
+sub eax,ecx
+sub edx,ecx
+
+exit:
+jmp returnhere
+
+newmem2:
+pushfd
+pushad
+mov eax, [pointers]
+mov ebx, [pointers+4]
+imul eax, eax, 6*4
+imul ebx, ebx, 6*4
+add eax, values
+add ebx, values
+mov [pointers+8], eax
+mov [pointers+C], ebx
+popad
+popfd
+//original code
+push ebp
+mov ebp, [esp+08]
+jmp returnhere2
+
+pointers:
+incomepointers:
+dd 2
+dd 3
+dd 0
+dd 0
+values:
+
+"Eador.exe"+7FCBA:
+jmp newmem
+nop
+returnhere:
+
+"Eador.exe"+B4B80:
+jmp newmem2
+returnhere2:
+
+[disable]
+"Eador.exe"+7FCBA:
+db 8B D0 2B C1 2B D1
+"Eador.exe"+B4B80:
+db 55 8B 6C 24 08
+dealloc(newmem)
+unregistersymbol(incomepointers)"""
+
+[[cheat]]
+id = "gold-income"
+name = "Gold Income"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "gold-expenses"
+name = "Gold Expenses"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "gem-income"
+name = "Gem Income"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "gem-expenses"
+name = "Gem Expenses"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "gold-income-2"
+name = "Gold Income"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "gold-expenses-2"
+name = "Gold Expenses"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "gem-income-2"
+name = "Gem Income"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "gem-expenses-2"
+name = "Gem Expenses"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "incomepointers"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "energy"
+name = "Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Eador.exe"
+offset = "0x133aec"
+hops = []
+
+[[cheat]]
+id = "glory"
+name = "Glory"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Eador.exe"
+offset = "0x134b04"
+hops = []
+
+[[cheat]]
+id = "karma"
+name = "Karma"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Eador.exe"
+offset = "0x133b08"
+hops = []
+
+[[cheat]]
+id = "fog-of-war-for-all-players-0-1"
+name = "Fog of War for all Players (0/1)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "Eador.exe"
+offset = "0x11d756"
+hops = []

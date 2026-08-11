@@ -1,0 +1,3054 @@
+[game]
+name = "Left 4 Dead 2 The Last Stand Update"
+exe = "left4dead2.exe"
+notes = "Converted from a Cheat Engine table by drain321. Source: https://fearlessrevolution.com/viewtopic.php?t=6467"
+verified = []
+author = "drain321"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate"
+name = "Activate"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(player,2048)
+registersymbol(player)
+
+player:
+dd 0
+
+aobscanmodule(MaxAmmoBaseAddress,server.dll,* * * * E8 * * * * * * * * * * * * 6A 0A 6A 08)
+registersymbol(MaxAmmoBaseAddress)
+aobscanmodule(GetBaseAddress,server.dll,8B 41 34 * * * 74 23)
+registersymbol(GetBaseAddress)
+aobscanmodule(PlayerBaseAddress,server.dll,8B 0D * * * * 3B 41 14 7F 43)
+registersymbol(PlayerBaseAddress)
+aobscanmodule(Activate,server.dll,55 8B EC 8B 45 08 * 33 FF 85 C0)
+registersymbol(Activate)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+xor eax,eax
+mov [player],eax
+mov eax,PlayerBaseAddress
+mov eax,[eax+02]
+mov eax,[eax]
+test eax,eax
+je originalcode
+mov eax,[eax+58]
+test eax,eax
+je originalcode
+mov eax,[eax+1C]
+test eax,eax
+je originalcode
+mov [player],eax
+
+originalcode:
+pop eax
+push ebp
+mov ebp,esp
+mov eax,[ebp+08]
+
+exit:
+jmp returnhere
+
+Activate:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(player)
+unregistersymbol(player)
+
+unregistersymbol(MaxAmmoBaseAddress)
+unregistersymbol(GetBaseAddress)
+unregistersymbol(PlayerBaseAddress)
+unregistersymbol(Activate)
+dealloc(newmem)
+Activate:
+//push ebp
+//mov ebp,esp
+//mov eax,[ebp+08]
+db 55 8B EC 8B 45 08"""
+
+[[cheat]]
+id = "player-base"
+name = "Player Base"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "player"
+hops = []
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "team"
+name = "Team"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player"
+hops = ["+0x238"]
+
+[[cheat]]
+id = "id"
+name = "ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "player"
+hops = ["+0x3a0"]
+
+[[cheat]]
+id = "damage-taken-modifier"
+name = "Damage Taken Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(ignore_damage_by_friendly,2048)
+registersymbol(ignore_damage_by_friendly)
+alloc(damage_attacking_enemy,2048)
+registersymbol(damage_attacking_enemy)
+alloc(damage_attacking_enemy_modifier,2048)
+registersymbol(damage_attacking_enemy_modifier)
+alloc(ignore_friendly_fire,2048)
+registersymbol(ignore_friendly_fire)
+alloc(damage_taken_modifier,2048)
+registersymbol(damage_taken_modifier)
+
+ignore_damage_by_friendly:
+db 0
+
+damage_attacking_enemy:
+db 0
+
+damage_attacking_enemy_modifier:
+dd (Float)10000
+
+damage_attacking_enemy_modifier+4:
+dd (Float)1
+
+ignore_friendly_fire:
+db 0
+
+damage_taken_modifier:
+dd 0
+
+damage_taken_modifier+4:
+dd 0
+
+aobscanmodule(DamageTakenModifier,server.dll,55 8B EC 83 EC 6C * * * 8B 0D)
+registersymbol(DamageTakenModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(check_ignore_damage_by_friendly)
+label(check_damage_attacking_enemy)
+label(check_ignore_friendly_fire)
+label(ignore_damage)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+push ecx
+push edx
+lea ecx,[ecx]
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ecx
+je check_ignore_damage_by_friendly
+jmp check_ignore_friendly_fire
+
+check_ignore_damage_by_friendly:
+cmp byte ptr [ignore_damage_by_friendly],0
+je check_damage_attacking_enemy
+mov ecx,[esp+10]
+mov ecx,[ecx+34]
+sub esp,100
+mov [esp+34],ecx
+mov ecx,esp
+call GetBaseAddress
+add esp,100
+test eax,eax
+je exit
+mov ecx,[esp+04]
+mov ecx,[ecx+00000238]
+cmp [eax+00000238],ecx
+jne check_damage_attacking_enemy
+jmp exit
+
+check_damage_attacking_enemy:
+cmp byte ptr [damage_attacking_enemy],0
+je exit
+mov ecx,[esp+10]
+mov ecx,[ecx+34]
+sub esp,100
+mov [esp+34],ecx
+mov ecx,esp
+call GetBaseAddress
+add esp,100
+test eax,eax
+je exit
+cmp [esp+04],eax
+je exit
+mov [esp+04],eax
+mov eax,[player]
+mov edx,[eax+000003A0]
+mov ecx,[esp+10]
+mov [ecx+30],edx
+mov [ecx+34],edx
+fld dword ptr [ecx+3C]
+fadd dword ptr [damage_attacking_enemy_modifier]
+fmul dword ptr [damage_attacking_enemy_modifier+4]
+fstp dword ptr [ecx+3C]
+fld dword ptr [ecx+40]
+fadd dword ptr [damage_attacking_enemy_modifier]
+fmul dword ptr [damage_attacking_enemy_modifier+4]
+fstp dword ptr [ecx+40]
+jmp originalcode
+
+check_ignore_friendly_fire:
+cmp byte ptr [ignore_friendly_fire],0
+je originalcode
+mov ecx,[esp+10]
+mov ecx,[ecx+34]
+mov eax,[player]
+cmp [eax+000003A0],ecx
+jne originalcode
+mov ecx,[esp+04]
+mov ecx,[ecx+00000238]
+cmp [eax+00000238],ecx
+jne originalcode
+mov eax,[esp+10]
+mov [eax+3C],0
+mov [eax+40],0
+jmp ignore_damage
+
+originalcode:
+pop edx
+pop ecx
+pop eax
+push ebp
+mov ebp,esp
+sub esp,6C
+jmp returnhere
+
+exit:
+mov eax,[esp+10]
+fld dword ptr [eax+3C]
+fadd dword ptr [damage_taken_modifier]
+fmul dword ptr [damage_taken_modifier+4]
+fstp dword ptr [eax+3C]
+fld dword ptr [eax+40]
+fadd dword ptr [damage_taken_modifier]
+fmul dword ptr [damage_taken_modifier+4]
+fstp dword ptr [eax+40]
+cmp [eax+3C],0
+je ignore_damage
+pop edx
+pop ecx
+pop eax
+push ebp
+mov ebp,esp
+sub esp,6C
+jmp returnhere
+
+ignore_damage:
+pop edx
+pop ecx
+pop eax
+ret 0004
+
+DamageTakenModifier:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(ignore_damage_by_friendly)
+unregistersymbol(ignore_damage_by_friendly)
+dealloc(damage_attacking_enemy)
+unregistersymbol(damage_attacking_enemy)
+dealloc(damage_attacking_enemy_modifier)
+unregistersymbol(damage_attacking_enemy_modifier)
+dealloc(ignore_friendly_fire)
+unregistersymbol(ignore_friendly_fire)
+dealloc(damage_taken_modifier)
+unregistersymbol(damage_taken_modifier)
+
+unregistersymbol(DamageTakenModifier)
+dealloc(newmem)
+DamageTakenModifier:
+//push ebp
+//mov ebp,esp
+//sub esp,6C
+db 55 8B EC 83 EC 6C"""
+
+[[cheat]]
+id = "ignore-friendly-fire"
+name = "Ignore Friendly Fire"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+ignore_friendly_fire:
+db 1
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+ignore_friendly_fire:
+db 0"""
+
+[[cheat]]
+id = "ignore-hunter-pounce"
+name = "Ignore Hunter Pounce"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(IgnoreHunterPounce,server.dll,F3 0F 10 48 0C * * * 0F 86 9E 00 00 00)
+registersymbol(IgnoreHunterPounce)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ecx
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+movss xmm1,[eax+0C]
+jmp returnhere
+
+exit:
+pop eax
+pop edi
+pop esi
+pop ebx
+mov esp,ebp
+pop ebp
+ret
+
+IgnoreHunterPounce:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(IgnoreHunterPounce)
+dealloc(newmem)
+IgnoreHunterPounce:
+//movss xmm1,[eax+0C]
+db F3 0F 10 48 0C"""
+
+[[cheat]]
+id = "ignore-smoker-constriction"
+name = "Ignore Smoker Constriction"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(IgnoreSmokerConstriction,server.dll,53 8B DC 83 EC 08 * * * * * * * * * * * * * * * * * * * * * * 8B 86 38 04 00 00)
+registersymbol(IgnoreSmokerConstriction)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+mov eax,[eax+000003A0]
+cmp eax,-1
+je originalcode
+cmp eax,[ecx+0000046C]
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+push ebx
+mov ebx,esp
+sub esp,08
+jmp returnhere
+
+exit:
+pop eax
+ret
+
+IgnoreSmokerConstriction:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(IgnoreSmokerConstriction)
+dealloc(newmem)
+IgnoreSmokerConstriction:
+//push ebx
+//mov ebx,esp
+//sub esp,08
+db 53 8B DC 83 EC 08"""
+
+[[cheat]]
+id = "ignore-charger-pummel"
+name = "Ignore Charger Pummel"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(IgnoreChargerPummel,server.dll,55 8B EC 81 EC A0 00 00 00 * * * * * * * * * * 8B 45 10)
+registersymbol(IgnoreChargerPummel)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,[esp+08]
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+push ebp
+mov ebp,esp
+sub esp,000000A0
+jmp returnhere
+
+exit:
+pop eax
+ret 0014
+
+IgnoreChargerPummel:
+jmp newmem
+nop 4
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(IgnoreChargerPummel)
+dealloc(newmem)
+IgnoreChargerPummel:
+//push ebp
+//mov ebp,esp
+//sub esp,000000A0
+db 55 8B EC 81 EC A0 00 00 00"""
+
+[[cheat]]
+id = "ignore-jockey-ride"
+name = "Ignore Jockey Ride"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(IgnoreJockeyRide,server.dll,83 EC 48 83 78 30 00)
+registersymbol(IgnoreJockeyRide)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,[ebp+08]
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+sub esp,48
+cmp dword ptr [eax+30],00
+jmp returnhere
+
+exit:
+pop eax
+pop ebp
+ret 0004
+
+IgnoreJockeyRide:
+jmp newmem
+nop 2
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(IgnoreJockeyRide)
+dealloc(newmem)
+IgnoreJockeyRide:
+//sub esp,48
+//cmp dword ptr [eax+30],00
+db 83 EC 48 83 78 30 00"""
+
+[[cheat]]
+id = "ignore-boomer-vomit"
+name = "Ignore Boomer Vomit"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(IgnoreBoomerVomit,server.dll,55 8B EC 83 EC 10 * * * 8B F1)
+registersymbol(IgnoreBoomerVomit)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ecx
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+push ebp
+mov ebp,esp
+sub esp,10
+jmp returnhere
+
+exit:
+pop eax
+ret 0008
+
+IgnoreBoomerVomit:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(IgnoreBoomerVomit)
+dealloc(newmem)
+IgnoreBoomerVomit:
+//push ebp
+//mov ebp,esp
+//sub esp,10
+db 55 8B EC 83 EC 10"""
+
+[[cheat]]
+id = "ignore-tank-punch"
+name = "Ignore Tank Punch"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(IgnoreTankPunch,server.dll,8B 07 8B 90 68 01 00 00 * * * * * * 74 1B)
+registersymbol(IgnoreTankPunch)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,edi
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+mov eax,[edi]
+mov edx,[eax+00000168]
+jmp returnhere
+
+exit:
+pop eax
+pop edi
+pop esi
+mov esp,ebp
+pop ebp
+mov esp,ebx
+pop ebx
+ret 0008
+
+IgnoreTankPunch:
+jmp newmem
+nop 3
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(IgnoreTankPunch)
+dealloc(newmem)
+IgnoreTankPunch:
+//mov eax,[edi]
+//mov edx,[eax+00000168]
+db 8B 07 8B 90 68 01 00 00"""
+
+[[cheat]]
+id = "ignore-tank-throw"
+name = "Ignore Tank Throw"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(IgnoreTankThrow,server.dll,D9 9D 44 FF FF FF 8B 13)
+registersymbol(IgnoreTankThrow)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ebx
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+fstp dword ptr [ebp-000000BC]
+jmp returnhere
+
+exit:
+pop eax
+fstp st(0)
+mov [ebp-000000BC],0
+pop esi
+pop edi
+pop ebx
+mov esp,ebp
+pop ebp
+ret 0004
+
+IgnoreTankThrow:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(IgnoreTankThrow)
+dealloc(newmem)
+IgnoreTankThrow:
+//fstp dword ptr [ebp-000000BC]
+db D9 9D 44 FF FF FF"""
+
+[[cheat]]
+id = "ignore-stagger"
+name = "Ignore Stagger"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(StaggerOffset,server.dll,* * * * * * * * * * * * * * 8B 16 * * * * * * * * 6A 12)
+registersymbol(StaggerOffset)
+aobscanmodule(IgnoreStagger,server.dll,55 8B EC 51 56 * * * * * * * * D8 45 08)
+registersymbol(IgnoreStagger)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+mov eax,StaggerOffset
+mov eax,[eax+02]
+add eax,[player]
+cmp eax,ecx
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+push ebp
+mov ebp,esp
+push ecx
+push esi
+jmp returnhere
+
+exit:
+pop eax
+ret 0004
+
+IgnoreStagger:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(StaggerOffset)
+unregistersymbol(IgnoreStagger)
+dealloc(newmem)
+IgnoreStagger:
+//push ebp
+//mov ebp,esp
+//push ecx
+//push esi
+db 55 8B EC 51 56"""
+
+[[cheat]]
+id = "damage-attacking-enemy"
+name = "Damage Attacking Enemy"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+damage_attacking_enemy:
+db 1
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+damage_attacking_enemy:
+db 0"""
+
+[[cheat]]
+id = "ignore-any-damage-by-friendly"
+name = "Ignore Any Damage By Friendly"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+ignore_damage_by_friendly:
+db 1
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+ignore_damage_by_friendly:
+db 0"""
+
+[[cheat]]
+id = "additional-damage"
+name = "Additional Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "damage_attacking_enemy_modifier"
+hops = []
+
+[[cheat]]
+id = "damage-multiplier"
+name = "Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "damage_attacking_enemy_modifier"
+hops = []
+
+[[cheat]]
+id = "additional-damage-taken"
+name = "Additional Damage Taken"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "damage_taken_modifier"
+hops = []
+
+[[cheat]]
+id = "damage-taken-multiplier"
+name = "Damage Taken Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "damage_taken_modifier"
+hops = []
+
+[[cheat]]
+id = "time-scale-modifier"
+name = "Time Scale Modifier"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(time_scale_modifier,2048)
+registersymbol(time_scale_modifier)
+
+time_scale_modifier:
+dd 0
+
+time_scale_modifier+4:
+dd (Float)0.875
+
+aobscanmodule(TimeScaleModifier,engine.dll,F3 0F 59 C1 F3 0F 11 45 FC FF D0)
+registersymbol(TimeScaleModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+addss xmm1,[time_scale_modifier]
+mulss xmm1,[time_scale_modifier+4]
+
+originalcode:
+mulss xmm0,xmm1
+movss [ebp-04],xmm0
+
+exit:
+jmp returnhere
+
+TimeScaleModifier:
+jmp newmem
+nop 4
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(time_scale_modifier)
+unregistersymbol(time_scale_modifier)
+
+unregistersymbol(TimeScaleModifier)
+dealloc(newmem)
+TimeScaleModifier:
+//mulss xmm0,xmm1
+//movss [ebp-04],xmm0
+db F3 0F 59 C1 F3 0F 11 45 FC"""
+
+[[cheat]]
+id = "additional-time-scale"
+name = "Additional Time Scale"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "time_scale_modifier"
+hops = []
+
+[[cheat]]
+id = "time-scale-multiplier"
+name = "Time Scale Multiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "time_scale_modifier"
+hops = []
+
+[[cheat]]
+id = "toggle-time-scale-hotkey-v"
+name = "Toggle Time Scale (Hotkey = V)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+time_scale_modifier+4:
+dd (Float)0.09375
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+time_scale_modifier+4:
+dd (Float)0.875"""
+
+[[cheat]]
+id = "recoil-modifier"
+name = "Recoil Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(recoil_modifier,2048)
+registersymbol(recoil_modifier)
+
+recoil_modifier:
+dd 0
+
+recoil_modifier+4:
+dd 0
+
+aobscanmodule(RecoilModifier,server.dll,F3 0F 10 03 56)
+registersymbol(RecoilModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp ecx,eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+movss xmm0,[ebx]
+push esi
+jmp returnhere
+
+exit:
+fld dword ptr [ebx]
+fadd dword ptr [recoil_modifier]
+fmul dword ptr [recoil_modifier+4]
+fstp dword ptr [ebx]
+fld dword ptr [ebx+04]
+fadd dword ptr [recoil_modifier]
+fmul dword ptr [recoil_modifier+4]
+fstp dword ptr [ebx+04]
+fld dword ptr [ebx+08]
+fadd dword ptr [recoil_modifier]
+fmul dword ptr [recoil_modifier+4]
+fstp dword ptr [ebx+08]
+pop eax
+movss xmm0,[ebx]
+push esi
+jmp returnhere
+
+RecoilModifier:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(recoil_modifier)
+unregistersymbol(recoil_modifier)
+
+unregistersymbol(RecoilModifier)
+dealloc(newmem)
+RecoilModifier:
+//movss xmm0,[ebx]
+//push esi
+db F3 0F 10 03 56"""
+
+[[cheat]]
+id = "additional-recoil"
+name = "Additional Recoil"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "recoil_modifier"
+hops = []
+
+[[cheat]]
+id = "recoil-multiplier"
+name = "Recoil Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "recoil_modifier"
+hops = []
+
+[[cheat]]
+id = "accuracy-modifier"
+name = "Accuracy Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(accuracy_modifier,2048)
+registersymbol(accuracy_modifier)
+
+accuracy_modifier:
+dd 0
+
+accuracy_modifier+4:
+dd (Float)0.0625
+
+accuracy_modifier+8:
+dd 0
+
+accuracy_modifier+C:
+dd (Float)0.25
+
+aobscanmodule(AccuracyModifier,server.dll,F3 0F 10 45 F8 F3 0F 11 55 F0)
+registersymbol(AccuracyModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp [ebp-54],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+movss xmm0,[ebp-08]
+jmp returnhere
+
+exit:
+fld dword ptr [ebp-08]
+fadd dword ptr [accuracy_modifier+8]
+fmul dword ptr [accuracy_modifier+C]
+fstp dword ptr [ebp-08]
+fld dword ptr [ebp+18]
+fadd dword ptr [accuracy_modifier+8]
+fmul dword ptr [accuracy_modifier+C]
+fstp dword ptr [ebp+18]
+pop eax
+movss xmm0,[ebp-08]
+jmp returnhere
+
+AccuracyModifier:
+jmp newmem
+returnhere:
+
+aobscanmodule(AccuracyModifier2,server.dll,F3 0F 10 45 D8 F3 0F 58 45 F0 F3 0F 11 45 D8)
+registersymbol(AccuracyModifier2)
+alloc(newmem2,2048)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode2
+cmp ebx,eax
+je exit2
+jmp originalcode2
+
+originalcode2:
+pop eax
+movss xmm0,[ebp-28]
+jmp returnhere2
+
+exit2:
+pop eax
+fld dword ptr [ebp-0C]
+fadd dword ptr [accuracy_modifier]
+fmul dword ptr [accuracy_modifier+4]
+fstp dword ptr [ebp-0C]
+fld dword ptr [ebp-10]
+fadd dword ptr [accuracy_modifier]
+fmul dword ptr [accuracy_modifier+4]
+fstp dword ptr [ebp-10]
+movss xmm0,[ebp-28]
+jmp returnhere2
+
+AccuracyModifier2:
+jmp newmem2
+returnhere2:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(accuracy_modifier)
+unregistersymbol(accuracy_modifier)
+
+unregistersymbol(AccuracyModifier)
+dealloc(newmem)
+AccuracyModifier:
+//movss xmm0,[ebp-08]
+db F3 0F 10 45 F8
+
+unregistersymbol(AccuracyModifier2)
+dealloc(newmem2)
+AccuracyModifier2:
+//movss xmm0,[ebp-28]
+db F3 0F 10 45 D8"""
+
+[[cheat]]
+id = "additional-accuracy"
+name = "Additional Accuracy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "accuracy_modifier"
+hops = []
+
+[[cheat]]
+id = "accuracy-multiplier"
+name = "Accuracy Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "accuracy_modifier"
+hops = []
+
+[[cheat]]
+id = "additional-shotgun-accuracy"
+name = "Additional Shotgun Accuracy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "accuracy_modifier"
+hops = []
+
+[[cheat]]
+id = "shotgun-accuracy-multiplier"
+name = "Shotgun Accuracy Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "accuracy_modifier"
+hops = []
+
+[[cheat]]
+id = "fire-rate-modifier"
+name = "Fire Rate Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(fire_rate_modifier,2048)
+registersymbol(fire_rate_modifier)
+
+fire_rate_modifier:
+dd 0
+
+fire_rate_modifier+4:
+dd (Float)0.75
+
+aobscanmodule(FireRateModifier,server.dll,D8 42 0C D9 55 E4)
+registersymbol(FireRateModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ebx
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+fadd dword ptr [edx+0C]
+fst dword ptr [ebp-1C]
+jmp returnhere
+
+exit:
+pop eax
+fadd dword ptr [fire_rate_modifier]
+fmul dword ptr [fire_rate_modifier+4]
+fadd dword ptr [edx+0C]
+fst dword ptr [ebp-1C]
+jmp returnhere
+
+FireRateModifier:
+jmp newmem
+nop
+returnhere:
+
+aobscanmodule(FireRateModifier2,server.dll,F3 0F 58 45 E8 F3 0F 10 8E F0 13 00 00)
+registersymbol(FireRateModifier2)
+alloc(newmem2,2048)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode2
+cmp eax,ebx
+je exit2
+jmp originalcode2
+
+originalcode2:
+pop eax
+addss xmm0,[ebp-18]
+jmp returnhere2
+
+exit2:
+pop eax
+fld dword ptr [ebp-18]
+fadd dword ptr [fire_rate_modifier]
+fmul dword ptr [fire_rate_modifier+4]
+fstp dword ptr [ebp-18]
+addss xmm0,[ebp-18]
+jmp returnhere2
+
+FireRateModifier2:
+jmp newmem2
+returnhere2:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(fire_rate_modifier)
+unregistersymbol(fire_rate_modifier)
+
+unregistersymbol(FireRateModifier)
+dealloc(newmem)
+FireRateModifier:
+//fadd dword ptr [edx+0C]
+//fst dword ptr [ebp-1C]
+db D8 42 0C D9 55 E4
+
+unregistersymbol(FireRateModifier2)
+dealloc(newmem2)
+FireRateModifier2:
+//addss xmm0,[ebp-18]
+db F3 0F 58 45 E8"""
+
+[[cheat]]
+id = "additional-fire-rate"
+name = "Additional Fire Rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fire_rate_modifier"
+hops = []
+
+[[cheat]]
+id = "fire-rate-multiplier"
+name = "Fire Rate Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fire_rate_modifier"
+hops = []
+
+[[cheat]]
+id = "damage-modifier"
+name = "Damage Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(damage_modifier,2048)
+registersymbol(damage_modifier)
+
+damage_modifier:
+dd 0
+
+damage_modifier+4:
+dd (Float)5
+
+aobscanmodule(DamageModifier,server.dll,F3 0F 10 45 20 8B 55 24)
+registersymbol(DamageModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp [ebp+0C],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+movss xmm0,[ebp+20]
+jmp returnhere
+
+exit:
+pop eax
+movss xmm0,[ebp+20]
+addss xmm0,[damage_modifier]
+mulss xmm0,[damage_modifier+4]
+movss [ebp+20],xmm0
+jmp returnhere
+
+DamageModifier:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(damage_modifier)
+unregistersymbol(damage_modifier)
+
+unregistersymbol(DamageModifier)
+dealloc(newmem)
+DamageModifier:
+//movss xmm0,[ebp+20]
+db F3 0F 10 45 20"""
+
+[[cheat]]
+id = "additional-damage-2"
+name = "Additional Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "damage_modifier"
+hops = []
+
+[[cheat]]
+id = "damage-multiplier-2"
+name = "Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "damage_modifier"
+hops = []
+
+[[cheat]]
+id = "weapon-range-modifier"
+name = "Weapon Range Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(weapon_range_modifier,2048)
+registersymbol(weapon_range_modifier)
+
+weapon_range_modifier:
+dd (Float)10000
+
+weapon_range_modifier+4:
+dd (Float)1
+
+aobscanmodule(WeaponRangeModifier,server.dll,F3 0F 10 80 D0 09 00 00)
+registersymbol(WeaponRangeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp [esi],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+movss xmm0,[eax+000009D0]
+jmp returnhere
+
+exit:
+pop eax
+movss xmm0,[eax+000009D0]
+addss xmm0,[weapon_range_modifier]
+mulss xmm0,[weapon_range_modifier+4]
+jmp returnhere
+
+WeaponRangeModifier:
+jmp newmem
+nop 3
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(weapon_range_modifier)
+unregistersymbol(weapon_range_modifier)
+
+unregistersymbol(WeaponRangeModifier)
+dealloc(newmem)
+WeaponRangeModifier:
+//movss xmm0,[eax+000009D0]
+db F3 0F 10 80 D0 09 00 00"""
+
+[[cheat]]
+id = "additional-weapon-range"
+name = "Additional Weapon Range"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weapon_range_modifier"
+hops = []
+
+[[cheat]]
+id = "weapon-range-multiplier"
+name = "Weapon Range Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weapon_range_modifier"
+hops = []
+
+[[cheat]]
+id = "weapon-penetration-modifier"
+name = "Weapon Penetration Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(weapon_penetration_modifier,2048)
+registersymbol(weapon_penetration_modifier)
+
+weapon_penetration_modifier:
+dd (Float)100
+
+weapon_penetration_modifier+4:
+dd (Float)1
+
+weapon_penetration_modifier+8:
+dd (Float)10000
+
+weapon_penetration_modifier+C:
+dd (Float)1
+
+aobscanmodule(WeaponPenetrationModifier,server.dll,39 8D B4 FB FF FF)
+registersymbol(WeaponPenetrationModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp [esi],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+cmp [ebp-0000044C],ecx
+jmp returnhere
+
+exit:
+fild dword ptr [ebp-0000044C]
+fadd dword ptr [weapon_penetration_modifier]
+fmul dword ptr [weapon_penetration_modifier+4]
+fistp dword ptr [ebp-0000044C]
+pop eax
+cmp [ebp-0000044C],ecx
+jmp returnhere
+
+WeaponPenetrationModifier:
+jmp newmem
+nop
+returnhere:
+
+aobscanmodule(WeaponPenetrationModifier2,server.dll,F3 0F 10 80 4C 0C 00 00)
+registersymbol(WeaponPenetrationModifier2)
+alloc(newmem2,2048)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode2
+cmp [ebp-54],eax
+je exit2
+jmp originalcode2
+
+originalcode2:
+pop eax
+movss xmm0,[eax+00000C4C]
+jmp returnhere2
+
+exit2:
+pop eax
+movss xmm0,[eax+00000C4C]
+addss xmm0,[weapon_penetration_modifier+8]
+mulss xmm0,[weapon_penetration_modifier+C]
+jmp returnhere2
+
+WeaponPenetrationModifier2:
+jmp newmem2
+nop 3
+returnhere2:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(weapon_penetration_modifier)
+unregistersymbol(weapon_penetration_modifier)
+
+unregistersymbol(WeaponPenetrationModifier)
+dealloc(newmem)
+WeaponPenetrationModifier:
+//cmp [ebp-0000044C],ecx
+db 39 8D B4 FB FF FF
+
+unregistersymbol(WeaponPenetrationModifier2)
+dealloc(newmem2)
+WeaponPenetrationModifier2:
+//movss xmm0,[eax+00000C4C]
+db F3 0F 10 80 4C 0C 00 00"""
+
+[[cheat]]
+id = "additional-maximum-penetration-layer"
+name = "Additional Maximum Penetration Layer"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weapon_penetration_modifier"
+hops = []
+
+[[cheat]]
+id = "maximum-penetration-layer-multiplier"
+name = "Maximum Penetration Layer Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "weapon_penetration_modifier"
+hops = []
+
+[[cheat]]
+id = "additional-penetration-force"
+name = "Additional Penetration Force"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weapon_penetration_modifier"
+hops = []
+
+[[cheat]]
+id = "penetration-force-multiplier"
+name = "Penetration Force Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "weapon_penetration_modifier"
+hops = []
+
+[[cheat]]
+id = "equip-time-modifier"
+name = "Equip Time Modifier"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(equip_time_modifier,2048)
+registersymbol(equip_time_modifier)
+
+equip_time_modifier:
+dd 0
+
+equip_time_modifier+04:
+dd 0
+
+aobscanmodule(EquipTimeModifier,server.dll,D9 5D FC 0F 2E C8)
+registersymbol(EquipTimeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp edi,eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+fstp dword ptr [ebp-04]
+ucomiss xmm1,xmm0
+jmp returnhere
+
+exit:
+pop eax
+fadd dword ptr [equip_time_modifier]
+fmul dword ptr [equip_time_modifier+04]
+fstp dword ptr [ebp-04]
+ucomiss xmm1,xmm0
+jmp returnhere
+
+EquipTimeModifier:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(equip_time_modifier)
+unregistersymbol(equip_time_modifier)
+
+unregistersymbol(EquipTimeModifier)
+dealloc(newmem)
+EquipTimeModifier:
+db D9 5D FC 0F 2E C8
+//fstp dword ptr [ebp-04]
+//ucomiss xmm1,xmm0"""
+
+[[cheat]]
+id = "additional-equip-time"
+name = "Additional Equip Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "equip_time_modifier"
+hops = []
+
+[[cheat]]
+id = "equip-time-multiplier"
+name = "Equip Time Multiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "equip_time_modifier"
+hops = []
+
+[[cheat]]
+id = "action-time-modifier"
+name = "Action Time Modifier"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(action_time_modifier,2048)
+registersymbol(action_time_modifier)
+
+action_time_modifier:
+dd 0
+
+action_time_modifier+04:
+dd 0
+
+aobscanmodule(ActionTimeModifier,server.dll,D9 5D FC 8B CF E8 * * * * 84 C0)
+registersymbol(ActionTimeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp edi,eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+fstp dword ptr [ebp-04]
+mov ecx,edi
+jmp returnhere
+
+exit:
+pop eax
+fadd dword ptr [action_time_modifier]
+fmul dword ptr [action_time_modifier+04]
+fstp dword ptr [ebp-04]
+mov ecx,edi
+jmp returnhere
+
+ActionTimeModifier:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(action_time_modifier)
+unregistersymbol(action_time_modifier)
+
+unregistersymbol(ActionTimeModifier)
+dealloc(newmem)
+ActionTimeModifier:
+db D9 5D FC 8B CF
+//fstp dword ptr [ebp-04]
+//mov ecx,edi"""
+
+[[cheat]]
+id = "additional-action-time"
+name = "Additional Action Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "action_time_modifier"
+hops = []
+
+[[cheat]]
+id = "action-time-multiplier"
+name = "Action Time Multiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "action_time_modifier"
+hops = []
+
+[[cheat]]
+id = "revive-time-modifier"
+name = "Revive Time Modifier"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(revive_time_modifier,2048)
+registersymbol(revive_time_modifier)
+
+revive_time_modifier:
+dd 0
+
+revive_time_modifier+04:
+dd 0
+
+aobscanmodule(ReviveTimeModifier,server.dll,F3 0F 10 41 2C * * F3 0F 11 85 EC FE FF FF)
+registersymbol(ReviveTimeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,esi
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+movss xmm0,[ecx+2C]
+jmp returnhere
+
+exit:
+pop eax
+movss xmm0,[ecx+2C]
+addss xmm0,[revive_time_modifier]
+mulss xmm0,[revive_time_modifier]
+jmp returnhere
+
+ReviveTimeModifier:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(revive_time_modifier)
+unregistersymbol(revive_time_modifier)
+
+unregistersymbol(ReviveTimeModifier)
+dealloc(newmem)
+ReviveTimeModifier:
+db F3 0F 10 41 2C
+//movss xmm0,[ecx+2C]"""
+
+[[cheat]]
+id = "additional-revive-time"
+name = "Additional Revive Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "revive_time_modifier"
+hops = []
+
+[[cheat]]
+id = "revive-time-multiplier"
+name = "Revive Time Multiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "revive_time_modifier"
+hops = []
+
+[[cheat]]
+id = "shove-cooldown-time-modifier"
+name = "Shove Cooldown Time Modifier"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(shove_cooldown_time_modifier,2048)
+registersymbol(shove_cooldown_time_modifier)
+
+shove_cooldown_time_modifier:
+dd 0
+
+shove_cooldown_time_modifier+4:
+dd 0
+
+aobscanmodule(ShoveCooldownTimeModifier,server.dll,D9 42 2C 83 EC 14)
+registersymbol(ShoveCooldownTimeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ebx
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+fld dword ptr [edx+2C]
+sub esp,14
+jmp returnhere
+
+exit:
+pop eax
+fld dword ptr [edx+2C]
+fadd dword ptr [shove_cooldown_time_modifier]
+fmul dword ptr [shove_cooldown_time_modifier+4]
+sub esp,14
+jmp returnhere
+
+ShoveCooldownTimeModifier:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(shove_cooldown_time_modifier)
+unregistersymbol(shove_cooldown_time_modifier)
+
+unregistersymbol(ShoveCooldownTimeModifier)
+dealloc(newmem)
+ShoveCooldownTimeModifier:
+//fld dword ptr [edx+2C]
+//sub esp,14
+db D9 42 2C 83 EC 14"""
+
+[[cheat]]
+id = "additional-shove-cooldown-time"
+name = "Additional Shove Cooldown Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shove_cooldown_time_modifier"
+hops = []
+
+[[cheat]]
+id = "shove-cooldown-time-multiplier"
+name = "Shove Cooldown Time Multiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "shove_cooldown_time_modifier"
+hops = []
+
+[[cheat]]
+id = "special-infected-ability-cooldown-time-modifier"
+name = "Special Infected Ability Cooldown Time Modifier"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(special_infected_ability_cooldown_time_modifier,2048)
+registersymbol(special_infected_ability_cooldown_time_modifier)
+
+special_infected_ability_cooldown_time_modifier:
+dd 0
+
+special_infected_ability_cooldown_time_modifier+4:
+dd 0
+
+aobscanmodule(SpecialInfectedAbilityCooldownTimeModifier,server.dll,D8 45 08 8D B7 44 04 00 00)
+registersymbol(SpecialInfectedAbilityCooldownTimeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+mov eax,[eax+000003A0]
+cmp eax,-1
+je originalcode
+cmp [edi+00000438],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+fadd dword ptr [ebp+08]
+lea esi,[edi+00000444]
+jmp returnhere
+
+exit:
+pop eax
+fld dword ptr [ebp+08]
+fadd dword ptr [special_infected_ability_cooldown_time_modifier]
+fmul dword ptr [special_infected_ability_cooldown_time_modifier+04]
+fstp dword ptr [ebp+08]
+fadd dword ptr [ebp+08]
+lea esi,[edi+00000444]
+jmp returnhere
+
+SpecialInfectedAbilityCooldownTimeModifier:
+jmp newmem
+nop 4
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(special_infected_ability_cooldown_time_modifier)
+unregistersymbol(special_infected_ability_cooldown_time_modifier)
+
+unregistersymbol(SpecialInfectedAbilityCooldownTimeModifier)
+dealloc(newmem)
+SpecialInfectedAbilityCooldownTimeModifier:
+//fadd dword ptr [ebp+08]
+//lea esi,[edi+00000444]
+db D8 45 08 8D B7 44 04 00 00"""
+
+[[cheat]]
+id = "additional-special-infected-ability-cooldown-time"
+name = "Additional Special Infected Ability Cooldown Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "special_infected_ability_cooldown_time_modifier"
+hops = []
+
+[[cheat]]
+id = "special-infected-ability-cooldown-time-multiplier"
+name = "Special Infected Ability Cooldown Time Multiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "special_infected_ability_cooldown_time_modifier"
+hops = []
+
+[[cheat]]
+id = "weapon-upgrade-modifier"
+name = "Weapon Upgrade Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(weapon_upgrade_modifier,2048)
+registersymbol(weapon_upgrade_modifier)
+
+weapon_upgrade_modifier:
+db 0
+
+weapon_upgrade_modifier+1:
+db 0
+
+weapon_upgrade_modifier+2:
+db 0
+
+aobscanmodule(WeaponUpgradeModifier,server.dll,89 45 D0 8B 45 B0)
+registersymbol(WeaponUpgradeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(incendiary_upgrade)
+label(explosive_upgrade)
+label(firepower_upgrade)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp [ebp-54],eax
+je incendiary_upgrade
+jmp originalcode
+
+originalcode:
+pop eax
+mov [ebp-30],eax
+mov eax,[ebp-50]
+jmp returnhere
+
+exit:
+mov [ebp-30],eax
+pop eax
+mov eax,[ebp-50]
+jmp returnhere
+
+incendiary_upgrade:
+mov eax,[esp]
+cmp byte ptr [weapon_upgrade_modifier],0
+je explosive_upgrade
+or eax,00000008
+jmp explosive_upgrade
+
+explosive_upgrade:
+cmp byte ptr [weapon_upgrade_modifier+1],0
+je firepower_upgrade
+or eax,80800040
+jmp firepower_upgrade
+
+firepower_upgrade:
+cmp byte ptr [weapon_upgrade_modifier+2],0
+je exit
+or eax,81000040
+jmp exit
+
+WeaponUpgradeModifier:
+jmp newmem
+nop
+returnhere:
+
+aobscanmodule(WeaponUpgradeModifier2,server.dll,C7 45 9C 00 00 00 00 * * 84 C0)
+registersymbol(WeaponUpgradeModifier2)
+alloc(newmem2,2048)
+label(returnhere2)
+label(originalcode2)
+label(exit2)
+label(incendiary_upgrade2)
+label(explosive_upgrade2)
+
+newmem2: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode2
+mov eax,[eax+000003A0]
+cmp [edi+000013E8],eax
+je incendiary_upgrade2
+jmp originalcode2
+
+originalcode2:
+pop eax
+mov [ebp-64],00000000
+jmp returnhere2
+
+exit2:
+mov [ebp-64],eax
+pop eax
+jmp returnhere2
+
+incendiary_upgrade2:
+xor eax,eax
+cmp byte ptr [weapon_upgrade_modifier],0
+je explosive_upgrade2
+or eax,00000008
+jmp explosive_upgrade2
+
+explosive_upgrade2:
+cmp byte ptr [weapon_upgrade_modifier+1],0
+je exit2
+or eax,00000040
+jmp exit2
+
+WeaponUpgradeModifier2:
+jmp newmem2
+nop 2
+returnhere2:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(weapon_upgrade_modifier)
+unregistersymbol(weapon_upgrade_modifier)
+
+unregistersymbol(WeaponUpgradeModifier)
+dealloc(newmem)
+WeaponUpgradeModifier:
+//mov [ebp-30],eax
+//mov eax,[ebp-50]
+db 89 45 D0 8B 45 B0
+
+unregistersymbol(WeaponUpgradeModifier2)
+dealloc(newmem2)
+WeaponUpgradeModifier2:
+//mov [ebp-64],00000000
+db C7 45 9C 00 00 00 00"""
+
+[[cheat]]
+id = "add-incendiary-upgrade"
+name = "Add Incendiary Upgrade"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+weapon_upgrade_modifier:
+db 1
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+weapon_upgrade_modifier:
+db 0"""
+
+[[cheat]]
+id = "add-explosive-upgrade"
+name = "Add Explosive Upgrade"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+weapon_upgrade_modifier+1:
+db 1
+
+aobscanmodule(MultiplierFromProjectilesPerShot,server.dll,F3 0F 2A 89 D8 09 00 00)
+registersymbol(MultiplierFromProjectilesPerShot)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,[esi]
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+cvtsi2ss xmm1,[ecx+000009D8]
+jmp returnhere
+
+exit:
+sub esp,04
+mov eax,00000001
+mov [esp],eax
+cvtsi2ss xmm1,[esp]
+add esp,04
+pop eax
+jmp returnhere
+
+MultiplierFromProjectilesPerShot:
+jmp newmem
+nop 3
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+weapon_upgrade_modifier+1:
+db 0
+
+unregistersymbol(MultiplierFromProjectilesPerShot)
+dealloc(newmem)
+MultiplierFromProjectilesPerShot:
+db F3 0F 2A 89 D8 09 00 00
+//cvtsi2ss xmm1,[ecx+000009D8]"""
+
+[[cheat]]
+id = "add-firepower-upgrade"
+name = "Add Firepower Upgrade"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+weapon_upgrade_modifier+2:
+db 1
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+weapon_upgrade_modifier+2:
+db 0"""
+
+[[cheat]]
+id = "add-laser-sight-upgrade"
+name = "Add Laser Sight Upgrade"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(AddLaserSightUpgrade,server.dll,6A 02 8B CF FF D2 * * 74 14)
+registersymbol(AddLaserSightUpgrade)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+push ecx
+push edx
+mov eax,[player]
+test eax,eax
+je originalcode
+mov eax,[eax+000003A0]
+cmp [edi+000013E8],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop edx
+pop ecx
+pop eax
+push 02
+mov ecx,edi
+call edx
+jmp returnhere
+
+exit:
+sub esp,100
+mov ecx,edi
+mov eax,[edi]
+mov eax,[eax+000006A4]
+push 00000002
+call eax
+add esp,100
+pop edx
+pop ecx
+pop eax
+push 02
+mov ecx,edi
+call edx
+jmp returnhere
+
+AddLaserSightUpgrade:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(AddLaserSightUpgrade)
+dealloc(newmem)
+AddLaserSightUpgrade:
+db 6A 02 8B CF FF D2
+//push 02
+//mov ecx,edi
+//call edx"""
+
+[[cheat]]
+id = "reload-time-modifier"
+name = "Reload Time Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(reload_time_modifier,2048)
+registersymbol(reload_time_modifier)
+
+reload_time_modifier:
+dd 0
+
+reload_time_modifier+04:
+dd 0
+
+aobscanmodule(ReloadTimeModifier,server.dll,8B 16 D8 40 0C)
+registersymbol(ReloadTimeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+mov eax,[eax+000003A0]
+cmp [esi+000013E8],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+mov edx,[esi]
+fadd dword ptr [eax+0C]
+jmp returnhere
+
+exit:
+pop eax
+mov edx,[esi]
+fadd dword ptr [reload_time_modifier]
+fmul dword ptr [reload_time_modifier+04]
+fadd dword ptr [eax+0C]
+jmp returnhere
+
+ReloadTimeModifier:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(reload_time_modifier)
+unregistersymbol(reload_time_modifier)
+
+unregistersymbol(ReloadTimeModifier)
+dealloc(newmem)
+ReloadTimeModifier:
+db 8B 16 D8 40 0C
+//mov edx,[esi]
+//fadd dword ptr [eax+0C]"""
+
+[[cheat]]
+id = "additional-reload-time"
+name = "Additional Reload Time"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "reload_time_modifier"
+hops = []
+
+[[cheat]]
+id = "reload-time-multiplier"
+name = "Reload Time Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "reload_time_modifier"
+hops = []
+
+[[cheat]]
+id = "melee-attack-range-modifier"
+name = "Melee Attack Range Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(melee_attack_range_modifier,2048)
+registersymbol(melee_attack_range_modifier)
+
+melee_attack_range_modifier:
+dd 0
+
+melee_attack_range_modifier+4:
+dd (Float)1.5
+
+aobscanmodule(MeleeAttackRangeModifier,server.dll,F3 0F 10 40 2C * * 8B 82 34 02 00 00)
+registersymbol(MeleeAttackRangeModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+push ecx
+mov eax,[player]
+test eax,eax
+je originalcode
+mov ecx,[ebp-68]
+test ecx,ecx
+je originalcode
+mov ecx,[ecx+000013E8]
+cmp [eax+000003A0],ecx
+je exit
+jmp originalcode
+
+originalcode:
+pop ecx
+pop eax
+movss xmm0,[eax+2C]
+jmp returnhere
+
+exit:
+pop ecx
+pop eax
+movss xmm0,[eax+2C]
+addss xmm0,[melee_attack_range_modifier]
+mulss xmm0,[melee_attack_range_modifier+4]
+jmp returnhere
+
+MeleeAttackRangeModifier:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(melee_attack_range_modifier)
+unregistersymbol(melee_attack_range_modifier)
+
+unregistersymbol(MeleeAttackRangeModifier)
+dealloc(newmem)
+MeleeAttackRangeModifier:
+//movss xmm0,[eax+2C]
+db F3 0F 10 40 2C"""
+
+[[cheat]]
+id = "additional-melee-attack-range"
+name = "Additional Melee Attack Range"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "melee_attack_range_modifier"
+hops = []
+
+[[cheat]]
+id = "melee-attack-range-multiplier"
+name = "Melee Attack Range Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "melee_attack_range_modifier"
+hops = []
+
+[[cheat]]
+id = "melee-attack-rate-modifier"
+name = "Melee Attack Rate Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+alloc(melee_attack_rate_modifier,2048)
+registersymbol(melee_attack_rate_modifier)
+
+melee_attack_rate_modifier:
+dd 0
+
+melee_attack_rate_modifier+4:
+dd (Float)0.25
+
+aobscanmodule(MeleeAttackRateModifier,server.dll,D8 40 0C D9 55 0C D9 86 F0 13 00 00)
+registersymbol(MeleeAttackRateModifier)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+mov eax,[eax+000003A0]
+cmp [esi+000013E8],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+fadd dword ptr [eax+0C]
+fst dword ptr [ebp+0C]
+jmp returnhere
+
+exit:
+pop eax
+fadd dword ptr [melee_attack_rate_modifier]
+fmul dword ptr [melee_attack_rate_modifier+4]
+fadd dword ptr [eax+0C]
+fst dword ptr [ebp+0C]
+jmp returnhere
+
+MeleeAttackRateModifier:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+dealloc(melee_attack_rate_modifier)
+unregistersymbol(melee_attack_rate_modifier)
+
+unregistersymbol(MeleeAttackRateModifier)
+dealloc(newmem)
+MeleeAttackRateModifier:
+//fadd dword ptr [eax+0C]
+//fst dword ptr [ebp+0C]
+db D8 40 0C D9 55 0C"""
+
+[[cheat]]
+id = "additional-melee-attack-rate"
+name = "Additional Melee Attack Rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "melee_attack_rate_modifier"
+hops = []
+
+[[cheat]]
+id = "melee-attack-rate-multiplier"
+name = "Melee Attack Rate Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "melee_attack_rate_modifier"
+hops = []
+
+[[cheat]]
+id = "automatic-fire-mode"
+name = "Automatic Fire Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(AutomaticFireMode,server.dll,38 9E 2A 15 00 00)
+registersymbol(AutomaticFireMode)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+mov eax,[eax+000003A0]
+cmp [esi+000013E8],eax
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+cmp [esi+0000152A],bl
+jmp returnhere
+
+exit:
+pop eax
+xor bl,bl
+cmp [esi+0000152A],bl
+jmp returnhere
+
+AutomaticFireMode:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(AutomaticFireMode)
+dealloc(newmem)
+AutomaticFireMode:
+//cmp [esi+0000152A],bl
+db 38 9E 2A 15 00 00"""
+
+[[cheat]]
+id = "unlimited-ammo"
+name = "Unlimited Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(AddAmmo,server.dll,* * * * * * * * * * * 39 BC 81 74 18 00 00)
+registersymbol(AddAmmo)
+aobscanmodule(UnlimitedAmmo,server.dll,8B 84 B7 74 18 00 00 5F)
+registersymbol(UnlimitedAmmo)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+push ecx
+push edx
+sub esp,100
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,edi
+je exit
+jmp originalcode
+
+originalcode:
+add esp,100
+pop edx
+pop ecx
+pop eax
+mov eax,[edi+esi*4+00001874]
+jmp returnhere
+
+exit:
+cmp [edi+esi*4+00001874],FFFFFFFF
+je originalcode
+mov ecx,[MaxAmmoBaseAddress]
+mov edx,[ecx]
+mov edx,[edx]
+push edi
+push esi
+call edx
+cmp [edi+esi*4+00001874],eax
+je originalcode
+mov ecx,edi
+push esi
+push eax
+call AddAmmo
+add esp,100
+pop edx
+pop ecx
+pop eax
+mov eax,[edi+esi*4+00001874]
+jmp returnhere
+
+UnlimitedAmmo:
+jmp newmem
+nop 2
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(AddAmmo)
+unregistersymbol(UnlimitedAmmo)
+dealloc(newmem)
+UnlimitedAmmo:
+//mov eax,[edi+esi*4+00001874]
+ db 8B 84 B7 74 18 00 00"""
+
+[[cheat]]
+id = "unlimited-clip"
+name = "Unlimited Clip"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(UnlimitedClip,server.dll,8B 81 D4 19 00 00 83 F8 FF)
+registersymbol(UnlimitedClip)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(get_weapon_base_address)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+push ecx
+push edx
+sub esp,100
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ecx
+je exit
+jmp originalcode
+
+originalcode:
+add esp,100
+pop edx
+pop ecx
+pop eax
+mov eax,[ecx+000019D4]
+jmp returnhere
+
+exit:
+mov ecx,[esp+00000104]
+call get_weapon_base_address
+test eax,eax
+je originalcode
+mov [esp],eax
+mov ecx,[esp]
+mov edx,[ecx]
+mov edx,[edx+0000050C]
+call edx
+mov ecx,[esp]
+cmp [ecx+00001414],FFFFFFFF
+je originalcode
+cmp [ecx+00001414],0
+jg originalcode
+mov [ecx+00001414],eax
+add esp,100
+pop edx
+pop ecx
+pop eax
+mov eax,[ecx+000019D4]
+jmp returnhere
+
+get_weapon_base_address:
+mov eax,[ecx+000019D4]
+jmp returnhere
+
+UnlimitedClip:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(UnlimitedClip)
+dealloc(newmem)
+UnlimitedClip:
+db 8B 81 D4 19 00 00
+//mov eax,[ecx+000019D4]"""
+
+[[cheat]]
+id = "shovable-survivors"
+name = "Shovable Survivors"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat
+aobscanmodule(ShovableSurvivors,server.dll,83 F8 03 75 0F)
+registersymbol(ShovableSurvivors)
+alloc(newmem,2048)
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem: //this is allocated memory, you have read,write,execute access
+push eax
+mov eax,[player]
+test eax,eax
+je originalcode
+cmp eax,ebx
+je exit
+jmp originalcode
+
+originalcode:
+pop eax
+cmp eax,03
+jne ShovableSurvivors+14
+jmp returnhere
+
+exit:
+pop eax
+jmp returnhere
+
+ShovableSurvivors:
+jmp newmem
+returnhere:
+
+[DISABLE]
+//code from here till the end of the code will be used to disable the cheat
+unregistersymbol(ShovableSurvivors)
+dealloc(newmem)
+ShovableSurvivors:
+//cmp eax,03
+//jne server.dll+3EB38F
+db 83 F8 03 75 0F"""

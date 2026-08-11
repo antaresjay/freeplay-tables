@@ -1,0 +1,2180 @@
+[game]
+name = "Terrarium Land"
+exe = "shinkansen_terrarium_land.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1809"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "windowsgamemain-base-address-scan-initialization-activate-this-first"
+name = "WindowsGameMain Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(WindowsGameMain_basepointer)
+registersymbol(WindowsGameMain_update_enable)
+registersymbol(WindowsGameMain_set_enable)
+registersymbol(WindowsGameMain_healthset_enable)
+registersymbol(WindowsGameMain_energyset_enable)
+registersymbol(WindowsGameMain_mobilityset_enable)
+
+alloc(WindowsGameMain_basepointer, 8)
+alloc(WindowsGameMain_update_enable, 4)
+alloc(WindowsGameMain_set_enable, 4)
+alloc(WindowsGameMain_healthset_enable, 4)
+alloc(WindowsGameMain_energyset_enable, 4)
+alloc(WindowsGameMain_mobilityset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(WindowsGameMain_basepointer)
+unregistersymbol(WindowsGameMain_update_enable)
+unregistersymbol(WindowsGameMain_set_enable)
+unregistersymbol(WindowsGameMain_healthset_enable)
+unregistersymbol(WindowsGameMain_energyset_enable)
+unregistersymbol(WindowsGameMain_mobilityset_enable)
+
+dealloc(WindowsGameMain_basepointer)
+dealloc(WindowsGameMain_update_enable)
+dealloc(WindowsGameMain_set_enable)
+dealloc(WindowsGameMain_healthset_enable)
+dealloc(WindowsGameMain_energyset_enable)
+dealloc(WindowsGameMain_mobilityset_enable)"""
+
+[[cheat]]
+id = "windowsgamemain-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "WindowsGameMain Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(WindowsGameMain_savedAOB)
+label(WindowsGameMain_returnhere)
+label(WindowsGameMain_originalcode)
+label(WindowsGameMain_exit)
+
+label(WindowsGameMain_update_exit)
+label(WindowsGameMain_set_exit)
+label(WindowsGameMain_healthset_exit)
+label(WindowsGameMain_energyset_exit)
+label(WindowsGameMain_mobilityset_exit)
+
+registersymbol(WindowsGameMain_savedAOB)
+
+//0D04F16A - 48 8B F9              - mov rdi,rcx
+//0D04F16D - 48 8B F2              - mov rsi,rdx
+// MUI:WindowsGameMain:SetUpdateStatus+18
+//0D04F170 - 48 63 46 5C           - movsxd  rax,dword ptr [rsi+5C]
+//0D04F174 - F2 0F2A C0            - cvtsi2sd xmm0,eax
+//0D04F178 - 48 63 46 58           - movsxd  rax,dword ptr [rsi+58]
+//0D04F17C - F2 0F2A C8            - cvtsi2sd xmm1,eax
+//0D04F180 - F2 0F5E C1            - divsd xmm0,xmm1
+aobscan(WindowsGameMain_searchedAOB, 48 63 46 5C F2 0F 2A C0 48 63 46 58)
+
+alloc(WindowsGameMain_newmem, 2048, WindowsGameMain_searchedAOB)
+alloc(WindowsGameMain_temp1, 8, WindowsGameMain_searchedAOB)
+
+
+WindowsGameMain_newmem:
+mov [WindowsGameMain_temp1], rbx
+
+cmp dword ptr [WindowsGameMain_update_enable], #0
+je WindowsGameMain_update_exit
+mov [WindowsGameMain_basepointer], rsi
+WindowsGameMain_update_exit:
+
+cmp dword ptr [WindowsGameMain_set_enable], #0
+je WindowsGameMain_set_exit
+WindowsGameMain_set_exit:
+
+cmp dword ptr [WindowsGameMain_healthset_enable], #0
+je WindowsGameMain_healthset_exit
+mov ebx, [rsi+58]
+mov [rsi+5c], ebx
+WindowsGameMain_healthset_exit:
+
+cmp dword ptr [WindowsGameMain_energyset_enable], #0
+je WindowsGameMain_energyset_exit
+fild [rsi+d4]
+fstp [rsi+e8]
+WindowsGameMain_energyset_exit:
+
+cmp dword ptr [WindowsGameMain_mobilityset_enable], #0
+je WindowsGameMain_mobilityset_exit
+cmp qword ptr [rsi+80], #0
+je WindowsGameMain_mobilityset_exit
+cmp dword ptr [rsi+80], #0
+je WindowsGameMain_mobilityset_exit
+mov rbx, [rsi+80]
+cmp qword ptr [rbx+48], #0
+je WindowsGameMain_mobilityset_exit
+cmp dword ptr [rbx+48], #0
+je WindowsGameMain_mobilityset_exit
+mov rbx, [rbx+48]
+mov [rbx+d4], (float)12
+mov [rbx+ec], (float)10
+WindowsGameMain_mobilityset_exit:
+
+mov rbx, [WindowsGameMain_temp1]
+
+
+WindowsGameMain_originalcode:
+db 48 63 46 5C F2 0F 2A C0
+//movsxd  rax,dword ptr [rsi+5C]
+//cvtsi2sd xmm0,eax
+
+
+WindowsGameMain_exit:
+jmp WindowsGameMain_returnhere
+
+
+WindowsGameMain_searchedAOB:
+WindowsGameMain_savedAOB:
+jmp WindowsGameMain_newmem
+nop
+nop
+nop
+WindowsGameMain_returnhere:
+
+
+[DISABLE]
+WindowsGameMain_savedAOB:
+db 48 63 46 5C F2 0F 2A C0
+//movsxd  rax,dword ptr [rsi+5C]
+//cvtsi2sd xmm0,eax
+
+unregistersymbol(WindowsGameMain_savedAOB)
+
+dealloc(WindowsGameMain_newmem)
+dealloc(WindowsGameMain_temp1)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "energy-set-to-max"
+name = "Energy Set to Max?"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_energyset_enable"
+hops = []
+
+[[cheat]]
+id = "mobility-set-to-massive"
+name = "Mobility Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_mobilityset_enable"
+hops = []
+
+[[cheat]]
+id = "windowsgamemain-update-base-address"
+name = "WindowsGameMain Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "maxhealth"
+name = "maxHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "health"
+name = "health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "healthdown"
+name = "healthDown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "okdie"
+name = "okDie"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x0",
+]
+
+[[cheat]]
+id = "idtypemove"
+name = "idTypeMove"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xcc",
+]
+
+[[cheat]]
+id = "okmove"
+name = "okMove"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xd0",
+]
+
+[[cheat]]
+id = "walkingspeed"
+name = "walkingSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xd4",
+]
+
+[[cheat]]
+id = "walkingsnappyness"
+name = "walkingSnappyness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xd8",
+]
+
+[[cheat]]
+id = "turningsmoothing"
+name = "turningSmoothing"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xdc",
+]
+
+[[cheat]]
+id = "okrotationslow"
+name = "okRotationSlow"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xe0",
+]
+
+[[cheat]]
+id = "okrunning"
+name = "okRunning"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xe1",
+]
+
+[[cheat]]
+id = "kofspeedrunning"
+name = "kofSpeedRunning"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xe4",
+]
+
+[[cheat]]
+id = "kofspeedmovechange"
+name = "kofSpeedMoveChange"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xe8",
+]
+
+[[cheat]]
+id = "gravitation"
+name = "gravitation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xec",
+]
+
+[[cheat]]
+id = "jumpimpulse"
+name = "jumpImpulse"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xf0",
+]
+
+[[cheat]]
+id = "okjump"
+name = "okJump"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xf4",
+]
+
+[[cheat]]
+id = "waitjump"
+name = "waitJump"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xf8",
+]
+
+[[cheat]]
+id = "adddragwater"
+name = "addDragWater"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0xfc",
+]
+
+[[cheat]]
+id = "iswater"
+name = "isWater"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x100",
+]
+
+[[cheat]]
+id = "maxheightswim"
+name = "maxHeightSwim"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x104",
+]
+
+[[cheat]]
+id = "maxheightwater"
+name = "maxHeightWater"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x108",
+]
+
+[[cheat]]
+id = "distsearchground"
+name = "distSearchGround"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x10c",
+]
+
+[[cheat]]
+id = "rangesearchground"
+name = "rangeSearchGround"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x110",
+]
+
+[[cheat]]
+id = "okground"
+name = "okGround"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x114",
+]
+
+[[cheat]]
+id = "deltamove"
+name = "deltaMove"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x128",
+]
+
+[[cheat]]
+id = "kofspeeddeltamove"
+name = "kofSpeedDeltaMove"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x138",
+]
+
+[[cheat]]
+id = "deltarotation"
+name = "deltaRotation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "oknormarground"
+name = "okNormarGround"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x150",
+]
+
+[[cheat]]
+id = "speednormalground"
+name = "speedNormalGround"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x154",
+]
+
+[[cheat]]
+id = "heightfly"
+name = "heightFly"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x158",
+]
+
+[[cheat]]
+id = "kofheightflychange"
+name = "kofHeightFlyChange"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0x48",
+    "+0x15c",
+]
+
+[[cheat]]
+id = "id"
+name = "id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xc0",
+]
+
+[[cheat]]
+id = "idplayer"
+name = "idPlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xc4",
+]
+
+[[cheat]]
+id = "idcomand"
+name = "idComand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xc8",
+]
+
+[[cheat]]
+id = "radius"
+name = "radius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xd0",
+]
+
+[[cheat]]
+id = "okenabledunit"
+name = "okEnabledUnit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xd4",
+]
+
+[[cheat]]
+id = "okhideunit"
+name = "okHideUnit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xd5",
+]
+
+[[cheat]]
+id = "isuseplayer"
+name = "isUsePlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xd6",
+]
+
+[[cheat]]
+id = "height"
+name = "height"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xd8",
+]
+
+[[cheat]]
+id = "okwater"
+name = "okWater"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xdc",
+]
+
+[[cheat]]
+id = "okmsgmultykill"
+name = "okMsgMultyKill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xdd",
+]
+
+[[cheat]]
+id = "timemsgmultykill"
+name = "_timeMsgMultyKill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xe0",
+]
+
+[[cheat]]
+id = "countmsgmultykill"
+name = "_countMsgMultyKill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xe4",
+]
+
+[[cheat]]
+id = "counttragetenemyaik-backingfield"
+name = "countTragetEnemyAIk__BackingField"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = [
+    "+0x80",
+    "+0xe8",
+]
+
+[[cheat]]
+id = "kofhealth"
+name = "kofHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "maxenergy"
+name = "maxEnergy"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "energy"
+name = "energy"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xd8"]
+
+[[cheat]]
+id = "energyregeneration"
+name = "energyRegeneration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "healthregeneration"
+name = "_healthRegeneration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "okenergyregeneration"
+name = "_okEnergyRegeneration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "energy-2"
+name = "_energy"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "energyregendown"
+name = "_energyRegenDown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "isworkregenhealth"
+name = "_isWorkRegenHealth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "speedeffectdamage"
+name = "speedEffectDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "okeffectdamage"
+name = "_okEffectDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "kofeffectdamage"
+name = "_kofEffectDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "WindowsGameMain_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "managercirclegame-base-address-scan-initialization-activate-this-first"
+name = "ManagerCircleGame Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(ManagerCircleGame_basepointer)
+registersymbol(ManagerCircleGame_update_enable)
+registersymbol(ManagerCircleGame_set_enable)
+
+alloc(ManagerCircleGame_basepointer, 8)
+alloc(ManagerCircleGame_update_enable, 4)
+alloc(ManagerCircleGame_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(ManagerCircleGame_basepointer)
+unregistersymbol(ManagerCircleGame_update_enable)
+unregistersymbol(ManagerCircleGame_set_enable)
+
+dealloc(ManagerCircleGame_basepointer)
+dealloc(ManagerCircleGame_update_enable)
+dealloc(ManagerCircleGame_set_enable)"""
+
+[[cheat]]
+id = "managercirclegame-base-address-scan-to-activate-scan-to-update-scan"
+name = "ManagerCircleGame Base Address Scan (To Activate: Scan, To Update: Scan)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(ManagerCircleGame_savedAOB)
+label(ManagerCircleGame_returnhere)
+label(ManagerCircleGame_originalcode)
+label(ManagerCircleGame_exit)
+
+label(ManagerCircleGame_update_exit)
+label(ManagerCircleGame_set_exit)
+
+registersymbol(ManagerCircleGame_savedAOB)
+
+//0D00D5E5 - 48 83 EC 38           - sub rsp,38
+//0D00D5E9 - 48 8B F1              - mov rsi,rcx
+// MiniGameMD.CircleMD:ManagerCircleGame:Update+c
+//0D00D5EC - 48 8B 46 50           - mov rax,[rsi+50]
+//0D00D5F0 - 48 89 45 D0           - mov [rbp-30],rax
+//0D00D5F4 - 48 8B 46 40           - mov rax,[rsi+40]
+//0D00D5F8 - 48 8B C8              - mov rcx,rax
+//0D00D5FB - 48 83 EC 20           - sub rsp,20
+aobscan(ManagerCircleGame_searchedAOB, 48 8B 46 50 48 89 45 D0 48 8B 46 40)
+
+alloc(ManagerCircleGame_newmem, 2048, ManagerCircleGame_searchedAOB)
+
+
+ManagerCircleGame_newmem:
+cmp dword ptr [ManagerCircleGame_update_enable], #0
+je ManagerCircleGame_update_exit
+mov [ManagerCircleGame_basepointer], rsi
+ManagerCircleGame_update_exit:
+
+cmp dword ptr [ManagerCircleGame_set_enable], #0
+je ManagerCircleGame_set_exit
+mov [rsi+7c], (float)50
+ManagerCircleGame_set_exit:
+
+
+ManagerCircleGame_originalcode:
+db 48 8B 46 50 48 89 45 D0
+//mov rax,[rsi+50]
+//mov [rbp-30],rax
+
+
+ManagerCircleGame_exit:
+jmp ManagerCircleGame_returnhere
+
+
+ManagerCircleGame_searchedAOB:
+ManagerCircleGame_savedAOB:
+jmp ManagerCircleGame_newmem
+nop
+nop
+nop
+ManagerCircleGame_returnhere:
+
+
+[DISABLE]
+ManagerCircleGame_savedAOB:
+db 48 8B 46 50 48 89 45 D0
+//mov rax,[rsi+50]
+//mov [rbp-30],rax
+
+unregistersymbol(ManagerCircleGame_savedAOB)
+
+dealloc(ManagerCircleGame_newmem)"""
+
+[[cheat]]
+id = "scanning-set-to-easy"
+name = "Scanning Set to Easy?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_set_enable"
+hops = []
+
+[[cheat]]
+id = "managercirclegame-update-base-address"
+name = "ManagerCircleGame Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "timewaitgame"
+name = "timeWaitGame"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "level"
+name = "level"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "levelmax"
+name = "levelMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x68"]
+
+[[cheat]]
+id = "isautoinit"
+name = "isAutoInit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "range"
+name = "range"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "maxscore"
+name = "maxScore"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "score"
+name = "_score"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "scoredown"
+name = "scoreDown"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "idmode"
+name = "idMode"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "addscoredelta"
+name = "_addScoreDelta"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "koflevelk-backingfield"
+name = "kofLevelk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "isplayingk-backingfield"
+name = "isPlayingk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "iswink-backingfield"
+name = "isWink__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ManagerCircleGame_basepointer"
+hops = ["+0x8d"]
+
+[[cheat]]
+id = "ui-elementspell-base-address-scan-initialization-activate-this-first"
+name = "UI_ElementSpell Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(UI_ElementSpell_basepointer)
+registersymbol(UI_ElementSpell_update_enable)
+registersymbol(UI_ElementSpell_set_enable)
+registersymbol(UI_ElementSpell_useset_enable)
+registersymbol(UI_ElementSpell_cooldownset_enable)
+
+alloc(UI_ElementSpell_basepointer, 8)
+alloc(UI_ElementSpell_update_enable, 4)
+alloc(UI_ElementSpell_set_enable, 4)
+alloc(UI_ElementSpell_useset_enable, 4)
+alloc(UI_ElementSpell_cooldownset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(UI_ElementSpell_basepointer)
+unregistersymbol(UI_ElementSpell_update_enable)
+unregistersymbol(UI_ElementSpell_set_enable)
+unregistersymbol(UI_ElementSpell_useset_enable)
+unregistersymbol(UI_ElementSpell_cooldownset_enable)
+
+dealloc(UI_ElementSpell_basepointer)
+dealloc(UI_ElementSpell_update_enable)
+dealloc(UI_ElementSpell_set_enable)
+dealloc(UI_ElementSpell_useset_enable)
+dealloc(UI_ElementSpell_cooldownset_enable)"""
+
+[[cheat]]
+id = "ui-elementspell-base-address-scan-to-activate-acquire-ability-to-update-acquire-ability"
+name = "UI_ElementSpell Base Address Scan (To Activate: Acquire Ability, To Update: Acquire Ability)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(UI_ElementSpell_savedAOB)
+label(UI_ElementSpell_returnhere)
+label(UI_ElementSpell_originalcode)
+label(UI_ElementSpell_exit)
+
+label(UI_ElementSpell_update_exit)
+label(UI_ElementSpell_set_exit)
+label(UI_ElementSpell_useset_exit)
+label(UI_ElementSpell_cooldownset_exit)
+
+registersymbol(UI_ElementSpell_savedAOB)
+
+//0D04F16A - 48 8B F9              - mov rdi,rcx
+//0D04F16D - 48 8B F2              - mov rsi,rdx
+// MUI:UI_ElementSpell:SetUpdateStatus+18
+//0D04F170 - 48 63 46 5C           - movsxd  rax,dword ptr [rsi+5C]
+//0D04F174 - F2 0F2A C0            - cvtsi2sd xmm0,eax
+//0D04F178 - 48 63 46 58           - movsxd  rax,dword ptr [rsi+58]
+//0D04F17C - F2 0F2A C8            - cvtsi2sd xmm1,eax
+//0D04F180 - F2 0F5E C1            - divsd xmm0,xmm1
+aobscan(UI_ElementSpell_searchedAOB, 48 8B 86 88 00 00 00 48 8B 40 48 48 63 40 14)
+
+alloc(UI_ElementSpell_newmem, 2048, UI_ElementSpell_searchedAOB)
+alloc(UI_ElementSpell_temp1, 8, UI_ElementSpell_searchedAOB)
+
+
+UI_ElementSpell_newmem:
+mov [UI_ElementSpell_temp1], rbx
+
+cmp dword ptr [UI_ElementSpell_update_enable], #0
+je UI_ElementSpell_update_exit
+mov [UI_ElementSpell_basepointer], rsi
+UI_ElementSpell_update_exit:
+
+cmp dword ptr [UI_ElementSpell_set_enable], #0
+je UI_ElementSpell_set_exit
+UI_ElementSpell_set_exit:
+
+cmp qword ptr [rsi+88], #0
+je UI_ElementSpell_cooldownset_exit
+cmp dword ptr [rsi+88], #0
+je UI_ElementSpell_cooldownset_exit
+mov rbx, [rsi+88]
+cmp qword ptr [rbx+48], #0
+je UI_ElementSpell_cooldownset_exit
+cmp dword ptr [rbx+48], #0
+je UI_ElementSpell_cooldownset_exit
+mov rbx, [rbx+48]
+
+cmp dword ptr [UI_ElementSpell_useset_enable], #0
+je UI_ElementSpell_useset_exit
+mov [rbx+14], #999
+UI_ElementSpell_useset_exit:
+
+cmp dword ptr [UI_ElementSpell_cooldownset_enable], #0
+je UI_ElementSpell_cooldownset_exit
+mov [rbx+10], (float)0
+UI_ElementSpell_cooldownset_exit:
+
+mov rbx, [UI_ElementSpell_temp1]
+
+
+UI_ElementSpell_originalcode:
+db 48 8B 86 88 00 00 00
+//mov rax,[rsi+00000088]
+
+
+UI_ElementSpell_exit:
+jmp UI_ElementSpell_returnhere
+
+
+UI_ElementSpell_searchedAOB:
+UI_ElementSpell_savedAOB:
+jmp UI_ElementSpell_newmem
+nop
+nop
+UI_ElementSpell_returnhere:
+
+
+[DISABLE]
+UI_ElementSpell_savedAOB:
+db 48 8B 86 88 00 00 00
+//mov rax,[rsi+00000088]
+
+unregistersymbol(UI_ElementSpell_savedAOB)
+
+dealloc(UI_ElementSpell_newmem)
+dealloc(UI_ElementSpell_temp1)"""
+
+[[cheat]]
+id = "use-set-to-massive"
+name = "Use Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_useset_enable"
+hops = []
+
+[[cheat]]
+id = "cooldown-set-to-0"
+name = "Cooldown Set to 0?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_cooldownset_enable"
+hops = []
+
+[[cheat]]
+id = "ui-elementspell-update-base-address"
+name = "UI_ElementSpell Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-9"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x48",
+    "+0x0",
+]
+
+[[cheat]]
+id = "timereaload"
+name = "timeReaload"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x48",
+    "+0x10",
+]
+
+[[cheat]]
+id = "countuse"
+name = "countUse"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x48",
+    "+0x14",
+]
+
+[[cheat]]
+id = "level-2"
+name = "level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x48",
+    "+0x18",
+]
+
+[[cheat]]
+id = "id-2"
+name = "id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x80",
+]
+
+[[cheat]]
+id = "idmod"
+name = "idMod"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x84",
+]
+
+[[cheat]]
+id = "iddata"
+name = "idData"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x88",
+]
+
+[[cheat]]
+id = "okinputactive"
+name = "okInputActive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x90",
+]
+
+[[cheat]]
+id = "okuseui"
+name = "okUseUI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x91",
+]
+
+[[cheat]]
+id = "idslotui"
+name = "idSlotUI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x94",
+]
+
+[[cheat]]
+id = "isinitview"
+name = "isInitView"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x98",
+]
+
+[[cheat]]
+id = "timeenabled"
+name = "timeEnabled"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0x9c",
+]
+
+[[cheat]]
+id = "okenabled-k-backingfield"
+name = "<okEnabled>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0xa0",
+]
+
+[[cheat]]
+id = "okbreak-k-backingfield"
+name = "<okBreak>k__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = [
+    "+0x88",
+    "+0xa1",
+]
+
+[[cheat]]
+id = "idspell"
+name = "idSpell"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "UI_ElementSpell_basepointer"
+hops = ["+0x98"]

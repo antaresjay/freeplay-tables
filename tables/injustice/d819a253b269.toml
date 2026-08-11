@@ -1,0 +1,426 @@
+[game]
+name = "Injustice Gods Among Us Ultimate Edition"
+exe = "injustice.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3396"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "character-swap"
+name = "Character swap"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = '''
+[enable]
+aobscanmodule(CharacterReplacement_Aob,Injustice.exe,8B C8 8B 46 08 52)
+registersymbol(CharacterReplacement_Aob)
+
+
+alloc(NewMem,1024)
+label(CharacterReplacement)
+label(CharacterReplacement_HandlePlayer2)
+label(CharacterReplacement_Exit)
+label(CharacterReplacement_Return)
+
+label(ReplacementCharacter1)
+label(ReplacementCharacter2)
+registersymbol(ReplacementCharacter1)
+registersymbol(ReplacementCharacter2)
+
+
+CharacterReplacement_Aob-5:
+jmp CharacterReplacement
+CharacterReplacement_Return:
+
+NewMem:
+CharacterReplacement:
+  push 0               //original code
+  push 0               //original code
+  cmp edx,3
+  je short CharacterReplacement_HandlePlayer2
+    cmp byte [ReplacementCharacter1],' '
+    je short CharacterReplacement_Exit
+      mov ecx, ReplacementCharacter1
+      jmp short CharacterReplacement_Exit
+  CharacterReplacement_HandlePlayer2:
+    cmp byte [ReplacementCharacter2],' '
+    je short CharacterReplacement_Exit
+      mov ecx,ReplacementCharacter2
+      jmp short CharacterReplacement_Exit
+  CharacterReplacement_Exit:
+  push ecx             //original code
+jmp CharacterReplacement_Return
+
+ReplacementCharacter1:
+db 'char_solomongrundy',0
+db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 //leave that padding
+ReplacementCharacter2:
+db ' ',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+
+[disable]
+unregistersymbol(CharacterReplacement_Aob)
+unregistersymbol(ReplacementCharacter1)
+unregistersymbol(ReplacementCharacter2)
+dealloc(NewMem)
+
+CharacterReplacement_Aob-5:
+push 0
+push 0
+push ecx
+
+{
+01BC3A9F     CC             INT3
+01BC3AA0   . A1 ECD85202    MOV EAX,DWORD PTR DS:[252D8EC]
+01BC3AA5   . 8B0D F8D85202  MOV ECX,DWORD PTR DS:[252D8F8]
+01BC3AAB   . 50             PUSH EAX                                          ; /Arg3 => 00000002
+01BC3AAC   . 51             PUSH ECX                                          ; |Arg2 => 00000001
+01BC3AAD   . 8B0D CC8F1F04  MOV ECX,DWORD PTR DS:[41F8FCC]                    ; |
+01BC3AB3   . 6A 00          PUSH 0                                            ; |Arg1 = 00000000
+01BC3AB5   . E8 D629C3FF    CALL Injustic.017F6490                            ; \Injustic.00766490
+01BC3ABA   . 85C0           TEST EAX,EAX
+01BC3ABC   . 74 2B          JE SHORT Injustic.01BC3AE9
+01BC3ABE   . 8B15 CC8F1F04  MOV EDX,DWORD PTR DS:[41F8FCC]
+01BC3AC4   . 8B52 4C        MOV EDX,DWORD PTR DS:[EDX+4C]
+01BC3AC7   . 8B4A 08        MOV ECX,DWORD PTR DS:[EDX+8]
+01BC3ACA   . 8B52 04        MOV EDX,DWORD PTR DS:[EDX+4]
+01BC3ACD   . 56             PUSH ESI
+01BC3ACE   . 8B30           MOV ESI,DWORD PTR DS:[EAX]
+01BC3AD0   . 6A FF          PUSH -1
+01BC3AD2   . 6A 00          PUSH 0        <-hook point
+01BC3AD4   . 6A 00          PUSH 0
+01BC3AD6   . 51             PUSH ECX     //ecx=fighter package
+01BC3AD7   . 8BC8           MOV ECX,EAX  <-aob
+01BC3AD9   . 8B46 08        MOV EAX,DWORD PTR DS:[ESI+8]
+01BC3ADC   . 52             PUSH EDX      //edx=2 if we handle player 1, 3 if loading player 2
+01BC3ADD   . FFD0           CALL EAX    //load player 1 and 2
+01BC3ADF   . 8B0D CC8F1F04  MOV ECX,DWORD PTR DS:[41F8FCC]
+01BC3AE5   . 8941 28        MOV DWORD PTR DS:[ECX+28],EAX
+01BC3AE8   . 5E             POP ESI
+01BC3AE9   > C3             RETN
+01BC3AEA     CC             INT3
+}'''
+
+[[cheat]]
+id = "force-loading-specific-stage"
+name = "Force loading specific stage"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+aobscanmodule(StageReplacement_Aob,Injustice.exe,50 8B 45 08 50 8B CF FF D2 46 3B F3)
+registersymbol(StageReplacement_Aob)
+
+
+alloc(NewMem,300)
+label(StageReplacement)
+label(StageReplacement_Exit)
+label(StageReplacement_Return)
+
+label(ReplacementStage)
+registersymbol(ReplacementStage)
+
+
+StageReplacement_Aob-6:
+jmp StageReplacement
+nop
+StageReplacement_Return:
+
+NewMem:
+StageReplacement:
+  push -1              //original code
+  push 0               //original code
+  push 0               //original code
+
+  cmp byte [ReplacementStage],' '
+  je short StageReplacement_Exit
+    //check if we are loading a BGND_something
+    //has to be a case INsensitive check
+    push ebx             //save ebx
+    mov ebx, dword [eax]
+    and ebx,DFDFDFDF    //put in uppercase
+    cmp ebx,'BGND'
+    pop ebx             //restore ebx
+    jne StageReplacement_Exit //jump if we're not loading a bgnd_package->don't replace filename
+      mov eax, ReplacementStage
+  StageReplacement_Exit:
+jmp StageReplacement_Return
+
+ReplacementStage:
+db 'BGND_DesignTest',0
+
+
+
+[disable]
+unregistersymbol(StageReplacement_Aob)
+unregistersymbol(ReplacementStage)
+dealloc(NewMem)
+
+StageReplacement_Aob-6:
+push -1
+push 0
+push 0
+
+
+{
+01848671   33F6             XOR ESI,ESI
+01848673   85DB             TEST EBX,EBX
+01848675   74 23            JE SHORT Injustic.0184869A
+01848677   8B45 0C          MOV EAX,DWORD PTR SS:[EBP+C]
+0184867A   8B04B0           MOV EAX,DWORD PTR DS:[EAX+ESI*4]
+0184867D   85C0             TEST EAX,EAX
+0184867F   74 14            JE SHORT Injustic.01848695
+01848681   8B17             MOV EDX,DWORD PTR DS:[EDI]
+01848683   8B52 08          MOV EDX,DWORD PTR DS:[EDX+8]
+01848686   6A FF            PUSH -1       <-hook point
+01848688   6A 00            PUSH 0
+0184868A   6A 00            PUSH 0
+0184868C   50               PUSH EAX      <-aob start
+0184868D   8B45 08          MOV EAX,DWORD PTR SS:[EBP+8]
+01848690   50               PUSH EAX
+01848691   8BCF             MOV ECX,EDI
+01848693   FFD2             CALL EDX      <-package loader=Injustice.exe+A2F100
+01848695   46               INC ESI
+01848696   3BF3             CMP ESI,EBX
+01848698  ^72 DD            JB SHORT Injustic.01848677
+0184869A   5F               POP EDI
+0184869B   5E               POP ESI
+0184869C   5B               POP EBX
+0184869D   8BE5             MOV ESP,EBP
+0184869F   5D               POP EBP
+018486A0   C2 1400          RETN 14
+018486A3   84DB             TEST BL,BL
+018486A5  ^75 9A            JNZ SHORT Injustic.01848641
+}"""
+
+[[cheat]]
+id = "no-decreasing-combo-damage"
+name = "No decreasing combo damage"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[enable]
+aobscanmodule(DecreasingComboDamagePatch,Injustice.exe,F3 0F 10 89 E8 02 00 00 F3 0F 10 45 08)
+registersymbol(DecreasingComboDamagePatch)
+
+DecreasingComboDamagePatch-3:
+ret 4
+
+[disable]
+unregistersymbol(DecreasingComboDamagePatch)
+
+DecreasingComboDamagePatch-3:
+push ebp
+mov ebp,esp"""
+
+[[cheat]]
+id = "log-fnv1-hashes"
+name = "Log FNV1 hashes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(FNV1Hasher_aob,85 D2 74 14 8B 89 AC 00 00 00)
+registersymbol(FNV1Hasher_aob)
+
+alloc(code,2048)
+//places
+label(LogHash)
+label(LogHash_Return)
+//data
+label(FileName)
+label(LogFormat)
+label(LogLine)
+label(DummyVariable)
+
+
+
+FNV1Hasher_aob-5:
+jmp LogHash
+LogHash_Return:
+
+code:
+LogHash:
+  pushad                    //save all registers
+  push dword [esp+30]       //the hashed string
+  push esi                  //the hash
+  push LogFormat
+  push LogLine
+  call msvcrt.sprintf
+  mov ebx,eax //store the length of LogLine in ebx
+  add esp,10 //pop all sprintf's arguments
+  //open logfile
+  push 0
+  push 80 //FILE_ATTRIBUTE_NORMAL
+  push 4  //OPEN_ALWAYS
+  push 0
+  push 3 //FILE_SHARE_READ | FILE_SHARE_WRITE -> allow other programs to read and write
+  push C //GENERIC_READ | GENERIC_WRITE
+  push FileName
+  call CreateFileA
+  //move to its end
+  push eax //save the file handle
+  push 2 //FILE_END
+  push 0
+  push 0
+  push eax
+  call SetFilePointer
+  mov eax,dword [esp] //restore the file handle
+  //log the new line
+  push 0
+  push DummyVariable //lpNumberOfBytesWritten
+  push ebx
+  push LogLine
+  push eax
+  call WriteFile
+  //close the file
+  //pop eax //restore the file handle
+  //push eax
+  call CloseHandle
+  popad
+
+  //original code
+  MOV EDX,DWORD [ECX+24]
+  XOR EAX,EAX
+jmp LogHash_Return
+
+
+DummyVariable:
+dd 0
+FileName:
+db 'FNV1Log.txt',00
+LogFormat:
+db '%.8X = %s',0d,0a,00
+LogLine:
+
+[DISABLE]
+FNV1Hasher_aob-5:
+MOV EDX,DWORD [ECX+24]
+XOR EAX,EAX
+
+
+unregistersymbol(FNV1Hasher_aob)
+dealloc(code)"""
+
+[[cheat]]
+id = "current-gamespeed"
+name = "Current gamespeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GamespeedPointerBase"
+hops = [
+    "+0x48",
+    "+0x38",
+    "+0x0",
+    "+0x2dc",
+]
+
+[[cheat]]
+id = "grid-cell-count"
+name = "Grid cell count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Injustice.exe"
+offset = "0x307eeac"
+hops = [
+    "+0x4c",
+    "+0x4",
+]
+
+[[cheat]]
+id = "height"
+name = "height(?)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Injustice.exe"
+offset = "0x307eeac"
+hops = [
+    "+0x4c",
+    "+0xfffffff0",
+]
+
+[[cheat]]
+id = "width"
+name = "width"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "static"
+module = "Injustice.exe"
+offset = "0x307eeac"
+hops = [
+    "+0x4c",
+    "+0xc",
+]
+
+[[cheat]]
+id = "game-speed-true-pointer"
+name = "Game speed (true pointer)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "Injustice.exe"
+offset = "0x3069ab0"
+hops = [
+    "+0x48",
+    "+0x38",
+    "+0x0",
+    "+0x2dc",
+]
+
+[[cheat]]
+id = "number-of-frames-elapsed-true-pointer"
+name = "Number of frames elapsed (true pointer)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Injustice.exe"
+offset = "0x30caa1c"
+hops = ["+0x68"]

@@ -1,0 +1,689 @@
+[game]
+name = "Assassin's Creed 3 (with Flying Mode)"
+exe = "ac3sp.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3834"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "unlimited-health"
+name = "Unlimited Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Always have Max HP in AC3 v1.06
+// by HenryEx
+
+/* Reference code
+AC3SP.exe+11BAEDD - test edi,edi
+AC3SP.exe+11BAEDF - setle dl
+AC3SP.exe+11BAEE2 - dec edx
+AC3SP.exe+11BAEE3 - and edx,edi
+AC3SP.exe+11BAEE5 - cmp ecx,edx
+AC3SP.exe+11BAEE7 - jle AC3SP.exe+11BAEEB
+AC3SP.exe+11BAEE9 - mov ecx,edx
+AC3SP.exe+11BAEEB - mov [esi+5C],cx  <<-- jacking point -->>
+AC3SP.exe+11BAEEF - test edi,edi
+AC3SP.exe+11BAEF1 - jns AC3SP.exe+11BAEF7
+AC3SP.exe+11BAEF3 - or al,01
+AC3SP.exe+11BAEF5 - jmp AC3SP.exe+11BAF18
+AC3SP.exe+11BAEF7 - mov ecx,[esi+74]
+AC3SP.exe+11BAEFA - cmp edi,ecx
+*/
+
+[ENABLE]
+alloc(AC3HP,256)
+aobscan(AOBHealth,66 89 4E 5C 85 FF 79 ** 0C 01 EB ** 8B 4E 74)
+// ---------------------------
+// Declaration
+registersymbol(AC3HP)
+registersymbol(AOBHealth)
+label(_BackHP)
+
+// ---------------------------
+// Hacking Points
+AOBHealth:
+ jmp AC3HP
+ nop
+_BackHP:
+
+// ---------------------------
+// Code Section
+AC3HP:
+ mov [AC3HP+20],esi
+ mov cx,[esi+5E]
+ mov [esi+5C],cx
+ test edi,edi
+ jmp _BackHP
+
+[DISABLE]
+AOBHealth:
+ mov [esi+5C],cx
+ test edi,edi
+
+unregistersymbol(AC3HP)
+unregistersymbol(AOBHealth)
+dealloc(AC3HP)"""
+
+[[cheat]]
+id = "hp-pointer"
+name = "HP Pointer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3HP"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "unlimited-ally-health"
+name = "Unlimited Ally Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Always have Max HP for allies in AC3 v1.06
+// original by ???, cleaned by HenryEx
+
+[ENABLE]
+alloc(AC3Allies,256)
+aobscan(allyhealth,0F BF 41 5C C3 CC CC CC CC CC CC CC CC CC CC CC 0F BF 41 5E)
+// ---------------------------
+// Declaration
+label(_skip)
+registersymbol(allyhealth)
+
+// ---------------------------
+// Hacking Points
+allyhealth:
+ jmp AC3Allies
+
+// ---------------------------
+// Code Section
+AC3Allies:
+ cmp dword ptr [ecx+F4],#1
+ je _skip
+ mov eax,#255
+ mov [ecx+5C],eax
+
+_skip:
+ movsx eax,word ptr [ecx+5C]
+ ret
+ 
+[DISABLE]
+allyhealth:
+ movsx eax,word ptr [ecx+5C]
+ ret
+//Alt: db 0F BF 41 5C C3
+
+unregistersymbol(allyhealth)
+dealloc(AC3Allies)"""
+
+[[cheat]]
+id = "infinite-items"
+name = "Infinite items"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Don't decrease useable items in AC3 v1.06
+// by HenryEx
+
+/* Reference code section
+AC3SP.exe+A4866A - mov eax,[ecx+0C]
+AC3SP.exe+A4866D - mov edx,[ebp+08]
+AC3SP.exe+A48670 - cmp eax,edx
+AC3SP.exe+A48672 - jb AC3SP.exe+A4867F
+AC3SP.exe+A48674 - sub eax,edx  <<-- !! hack point !! -->>
+AC3SP.exe+A48676 - mov [ecx+0C],eax
+AC3SP.exe+A48679 - mov al,01
+AC3SP.exe+A4867B - pop ebp
+AC3SP.exe+A4867C - ret 0004
+AC3SP.exe+A4867F - xor al,al
+*/
+
+[ENABLE]
+aobscan(AOBItems,** ** 89 41 0C B0 01 5D C2 04 00 32 C0)
+registersymbol(AOBItems)
+
+AOBItems: //"AC3SP.exe"+A48674
+ nop
+ nop
+
+[DISABLE]
+AOBItems: // "AC3SP.exe"+A48674
+ sub eax,edx
+// db 2B C2
+
+unregistersymbol(AOBItems)"""
+
+[[cheat]]
+id = "no-reload"
+name = "No Reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+// No reloading for player in AC3 v1.06
+// original by ???, Mod by HenryEx
+
+[ENABLE]
+alloc(NoReload,256)
+aobscan(AOBAmmo,C2 04 00 * * 89 48 08 5E 5D C2 04 00)
+// ---------------------------
+// Declaration
+registersymbol(AOBAmmo)
+label(_returnhere)
+
+// ---------------------------
+// Hacking Points
+AOBAmmo+3: //"AC3SP.exe"+CAC0DB
+ jmp NoReload
+_returnhere:
+
+// ---------------------------
+// Code Section
+NoReload:
+ sub ecx,edx
+ mov [eax+08],ecx
+ pushfd
+ cmp [eax+18],#35
+ jne +6
+ mov ecx,[eax+0C]
+ mov [eax+08],ecx
+ popfd
+ jmp _returnhere
+
+[DISABLE]
+AOBAmmo+3: //"AC3SP.exe"+CAC0DB
+ sub ecx,edx
+ mov [eax+08],ecx
+
+unregistersymbol(AOBAmmo)
+dealloc(NoReload)"""
+
+[[cheat]]
+id = "assassin-s-signal"
+name = "Assassin's Signal"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Infinite Assassin Signal in AC3 v1.06
+// by HenryEx
+
+/* Reference code:
+AC3SP.exe+B6621E - push ecx
+AC3SP.exe+B6621F - lea ecx,[esi+38]
+AC3SP.exe+B66222 - fstp dword ptr [esp]
+AC3SP.exe+B66225 - call AC3SP.exe+12723A0
+AC3SP.exe+B6622A - mov [esi+0C],00000004  <<-- hacking point -->>
+AC3SP.exe+B66231 - pop edi
+AC3SP.exe+B66232 - pop esi
+AC3SP.exe+B66233 - pop ebp
+AC3SP.exe+B66234 - ret 0004
+AC3SP.exe+B66237 - int 3
+*/
+
+[ENABLE]
+aobscan(AOBSignal,E8 ** ** ** ** C7 46 0C 04 00 00 00 5F 5E 5D C2 04 00)
+registersymbol(AOBSignal)
+
+AOBSignal+8: //"AC3SP.exe"+B6622A
+ db 02
+// mov [esi+0C],00000002
+
+[DISABLE]
+AOBSignal+8: //"AC3SP.exe"+B6622A
+ db 04
+// mov [esi+0C],00000004
+
+unregistersymbol(AOBSignal)"""
+
+[[cheat]]
+id = "freeze-countdown-timer"
+name = "Freeze Countdown Timer"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Freeze the countdown timer at X seconds in AC3 v1.06
+// cleaned by HenryEx
+// Time is stored in (seconds) * 30,000
+
+/* Reference Code
+AC3SP.exe+3F136 - push esi
+AC3SP.exe+3F137 - mov esi,[ecx+14]
+AC3SP.exe+3F13A - push edi
+AC3SP.exe+3F13B - mov edi,[ecx+10]
+AC3SP.exe+3F13E - mov eax,edi
+AC3SP.exe+3F140 - or eax,esi
+AC3SP.exe+3F142 - jne AC3SP.exe+3F14C
+AC3SP.exe+3F144 - mov eax,[ecx+1C]
+AC3SP.exe+3F147 - mov edi,[eax]
+AC3SP.exe+3F149 - mov esi,[eax+04]
+AC3SP.exe+3F14C - mov eax,[ecx+0C]  <<-- jacking point -->>
+AC3SP.exe+3F14F - mov edx,[ecx+08]
+AC3SP.exe+3F152 - cmp eax,esi
+AC3SP.exe+3F154 - ja AC3SP.exe+3F16D
+*/
+
+[ENABLE]
+alloc(AC3Countdown,128)
+aobscan(CountdownAOB,8B 41 1C 8B 38 8B 70 04 ** ** 0C ** ** 08)
+// ---------------------------
+// Declaration
+registersymbol(AC3Countdown)
+registersymbol(CountdownAOB)
+label(_BackCD)
+
+// ---------------------------
+// Hacking Points
+CountdownAOB+08:
+ jmp AC3Countdown+8
+ nop
+_BackCD:
+
+// ---------------------------
+// Allocated Section
+AC3Countdown:
+ dd #25                       // Default number of seconds
+ dd 0
+// Code Section
+ mov eax,[AC3Countdown]
+ mov edx,#30000
+ mul edx
+
+ mov [AC3Countdown+4],eax
+
+ mov [ecx+08],edi
+ add [ecx+08],eax
+
+ mov eax,[ecx+0C]
+ mov edx,[ecx+08]
+ jmp _BackCD
+
+[DISABLE]
+CountdownAOB+08:
+ mov eax,[ecx+0C]
+ mov edx,[ecx+08]
+
+unregistersymbol(AC3Countdown)
+unregistersymbol(CountdownAOB)
+dealloc(AC3Countdown)"""
+
+[[cheat]]
+id = "seconds-to-freeze-at"
+name = "Seconds to freeze at"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Countdown"
+hops = []
+
+[[cheat]]
+id = "teleport"
+name = "Teleport"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Teleportation and Flying script for AC3 v1.06
+// adapted by HenryEx
+// When multiple flags are set, LOAD is executed first, so that you can Undo
+
+/* Reference code
+AC3SP.exe+BB55A6 - add eax,10
+AC3SP.exe+BB55A9 - cmp dword ptr [esi+70],06
+AC3SP.exe+BB55AD - movaps xmm0,[AC3SP.exe+1759C40]
+AC3SP.exe+BB55B4 - movaps xmm2,[eax+30]  <<-- jacking point -->>
+AC3SP.exe+BB55B8 - movaps xmm1,xmm0
+AC3SP.exe+BB55BB - andnps xmm1,xmm2
+AC3SP.exe+BB55BE - xorps xmm2,xmm2
+AC3SP.exe+BB55C1 - andps xmm0,xmm2
+AC3SP.exe+BB55C4 - orps xmm1,xmm0
+AC3SP.exe+BB55C7 - movaps [esi],xmm1
+*/
+
+[ENABLE]
+alloc(AC3Tele,512)
+aobscan(AOBTeleport,0F 28 50 30 0F 28 C8 0F 55 CA 0F 57 D2 0F 54 C2 0F 56 C8 0F 29 0E 74 06)
+// ---------------------------
+// Declaration
+registersymbol(AC3Tele)
+registersymbol(AOBTeleport)
+label(_SavePos)
+label(_LoadPos)
+label(_UndoPos)
+label(_Fly)
+label(_Fly2)
+label(_Fly3)
+label(_BackTele)
+label(_Exit)
+
+// ---------------------------
+// Hacking Points
+AOBTeleport:
+ jmp AC3Tele+4
+ nop
+ nop
+_BackTele:
+
+// ---------------------------
+// Code Section
+AC3Tele:
+ dd 0
+
+ pushfd
+ cmp dword ptr [AC3Tele],0
+ jz short _Exit
+ cmp byte ptr [AC3Tele+3],0
+ jne _Fly
+ cmp byte ptr [AC3Tele+1],0
+ jne short _LoadPos
+ cmp byte ptr [AC3Tele],0
+ jne short _SavePos
+ cmp byte ptr [AC3Tele+2],0
+ jne short _UndoPos
+
+_Exit:
+ popfd
+ movaps xmm2,[eax+30]
+ movaps xmm1,xmm0
+ jmp _BackTele
+
+_SavePos:
+ mov byte ptr [AC3Tele],0
+ cmp dword ptr [eax+30],00
+ jz _Exit
+ pushad
+ mov ecx,3
+ lea esi,[eax+30]
+ lea edi,[AC3Tele+130]
+ repe movsd
+ popad
+ jmp _Exit
+
+_LoadPos:
+ mov byte ptr [AC3Tele+1],0
+ cmp dword ptr [AC3Tele+130],00
+ jz _Exit
+ pushad
+ mov ecx,3
+ lea esi,[eax+30]
+ lea edi,[AC3Tele+140]
+ repe movsd
+ mov ecx,3
+ lea esi,[AC3Tele+130]
+ lea edi,[eax+30]
+ repe movsd
+ popad
+ jmp _Exit
+
+_UndoPos:
+ mov byte ptr [AC3Tele+2],0
+ cmp dword ptr [AC3Tele+140],00
+ jz _Exit
+ pushad
+ mov ecx,3
+ lea esi,[AC3Tele+140]
+ lea edi,[eax+30]
+ repe movsd
+ popad
+ jmp _Exit
+
+_Fly:
+ cmp byte ptr [AC3Tele+3],1
+ jne short _Fly2
+
+ pushad
+ mov ecx,3
+ lea esi,[eax+30]
+ lea edi,[AC3Tele+150]
+ repe movsd
+ inc byte ptr [AC3Tele+3]
+ popad
+ jmp _Exit
+
+_Fly2:
+ pushad
+ cmp byte ptr [AC3Tele+3],2
+ ja short _Fly3
+ mov ecx,3
+ lea esi,[AC3Tele+150]
+ lea edi,[eax+30]
+ repe movsd
+ popad
+ jmp _Exit
+
+_Fly3:
+ lea esi,[AC3Tele+150]
+ xor ecx,ecx
+ mov [esi],ecx
+ mov [esi+4],ecx
+ mov [esi+8],ecx
+ mov [esi+C],ecx
+ mov byte ptr [AC3Tele+3],0
+ popad
+ jmp _Exit
+
+
+[DISABLE]
+AOBTeleport:
+ movaps xmm2,[eax+30]
+ movaps xmm1,xmm0
+
+unregistersymbol(AC3Tele)
+unregistersymbol(AOBTeleport)
+dealloc(AC3Tele)"""
+
+[[cheat]]
+id = "save-location"
+name = "Save Location"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Tele"
+hops = []
+
+[[cheat]]
+id = "load-location"
+name = "Load Location"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Tele"
+hops = []
+
+[[cheat]]
+id = "undo-location"
+name = "Undo Location"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Tele"
+hops = []
+
+[[cheat]]
+id = "once-activate-twice-deactivate"
+name = "Once activate, twice deactivate"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Tele"
+hops = []
+
+[[cheat]]
+id = "fly-south"
+name = "Fly South"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Tele"
+hops = []
+
+[[cheat]]
+id = "fly-west"
+name = "Fly West"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Tele"
+hops = []
+
+[[cheat]]
+id = "fly-down"
+name = "Fly Down"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AC3Tele"
+hops = []
+
+[[cheat]]
+id = "stealth"
+name = "Stealth"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Always in stealth ("hidden") in AC3 v1.06
+// adapted by HenryEx. toggleable
+
+/* Reference Code
+AC3SP.exe+E9A601 - mov ecx,[esi+18]
+AC3SP.exe+E9A604 - mov edx,[ecx+40]
+AC3SP.exe+E9A607 - mov ecx,eax
+AC3SP.exe+E9A609 - and ecx,1F
+AC3SP.exe+E9A60C - mov edi,00000001
+AC3SP.exe+E9A611 - shl edi,cl
+AC3SP.exe+E9A613 - shr eax,05  <<-- hacking point -->>
+AC3SP.exe+E9A616 - test [edx+eax*4],edi
+AC3SP.exe+E9A619 - jne AC3SP.exe+E9A65B
+AC3SP.exe+E9A61B - mov eax,[AC3SP.exe+2213534]
+AC3SP.exe+E9A620 - cmp byte ptr [eax+00000188],00
+AC3SP.exe+E9A627 - je AC3SP.exe+E9A647
+*/
+
+[ENABLE]
+alloc(AC3Stealth,256)
+aobscan(AOBStealth,C1 E8 05 85 3C 82 * * A1 * * * * 80 B8 88 01 00 00 00)
+// ---------------------------
+// Declaration
+label(_Back)
+label(_Exit)
+registersymbol(AOBStealth)
+registersymbol(AC3Stealth)
+
+// ---------------------------
+// Hacking Points
+AOBStealth: //"AC3SP.exe"+E9A613
+ jmp AC3Stealth+8
+ nop
+_Back:
+
+// ---------------------------
+// Allocated Section
+AC3Stealth:
+ dd 0
+ dd 0
+
+// Code
+ shr eax,05
+ mov [AC3Stealth],edx
+ cmp eax,3
+ jne _Exit
+ cmp [AC3Stealth+4],0
+ jz _Exit
+ or [edx+eax*4],1
+
+_Exit:
+ test [edx+eax*4],edi
+ jmp _Back
+
+[DISABLE]
+AOBStealth: //"AC3SP.exe"+E9A613
+ shr eax,05
+ test [edx+eax*4],edi
+
+unregistersymbol(AC3Stealth)
+unregistersymbol(AOBStealth)
+dealloc(AC3Stealth)"""
+
+[[cheat]]
+id = "activate-stealth"
+name = "Activate Stealth"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+// Make sure the script is active
+assert(AC3Stealth+8,C1 E8 05 89 15)
+
+[ENABLE]
+AC3Stealth+4:
+ dd 1
+ 
+[DISABLE]
+AC3Stealth+4:
+ dd 0"""

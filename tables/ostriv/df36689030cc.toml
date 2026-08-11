@@ -1,0 +1,187 @@
+[game]
+name = "Ostriv (Alpha 5)"
+exe = "ostriv.exe"
+notes = "Converted from a Cheat Engine table by WhiteNoise4698. Source: https://fearlessrevolution.com/viewtopic.php?t=38536"
+verified = []
+author = "WhiteNoise4698"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+assert(ostriv.exe+2957D6,F2 0F 11 81 A8 9B 13 00)
+alloc(newmem_money,$1000,ostriv.exe+2957D6)
+alloc(moneyBase,8)
+
+registersymbol(moneyBase)
+label(return_money)
+
+newmem_money:
+  mov [moneyBase],rcx
+  movsd [rcx+00139BA8],xmm0
+  jmp return_money
+
+ostriv.exe+2957D6:
+  jmp newmem_money
+  nop 3
+
+return_money:
+
+[DISABLE]
+
+ostriv.exe+2957D6:
+  db F2 0F 11 81 A8 9B 13 00
+
+unregistersymbol(moneyBase)
+dealloc(newmem_money)
+dealloc(moneyBase)"""
+
+[[cheat]]
+id = "money-2"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "moneyBase"
+hops = ["+0x139ba8"]
+
+[[cheat]]
+id = "select-a-storage-building-to-view-its-contents"
+name = "Select a storage building to view its contents"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+// Captures the currently opened warehouse or granary building.
+// Captures the real raw storage array from the shared storage grouping loop.
+
+aobscanmodule(warehouseOpenHook,ostriv.exe,4C 8B E2 48 8B F9 33 F6 44 8B FE 89 B5 ?? ?? ?? ??)
+alloc(newmem_raw,$1000,warehouseOpenHook)
+aobscanmodule(granaryOpenHook,ostriv.exe,4C 8B E2 48 8B C1 33 D2 44 8B EA 89 95 ?? ?? ?? ??)
+alloc(newmem_granary,$1000,granaryOpenHook)
+aobscanmodule(rawListAccessHook,ostriv.exe,F3 0F 10 44 3B 04 F3 41 0F 58 44 06 04 F3 41 0F 11 44 06 04 49 8B 1F)
+alloc(newmem_access,$1000,rawListAccessHook)
+alloc(rawStorageBuilding,8)
+alloc(rawStorageKind,4)
+alloc(rawStorageManager,8)
+alloc(rawStorageBase,8)
+alloc(rawStorageCount,4)
+alloc(rawStorageHitSeq,4)
+
+registersymbol(warehouseOpenHook)
+registersymbol(granaryOpenHook)
+registersymbol(rawListAccessHook)
+registersymbol(rawStorageBuilding)
+registersymbol(rawStorageKind)
+registersymbol(rawStorageManager)
+registersymbol(rawStorageBase)
+registersymbol(rawStorageCount)
+registersymbol(rawStorageHitSeq)
+
+newmem_raw:
+  push rax
+
+  mov dword ptr [rawStorageKind],1
+  mov [rawStorageBuilding],rcx
+
+raw_capture_done:
+  pop rax
+  mov r12,rdx
+  mov rdi,rcx
+  xor esi,esi
+  mov r15d,esi
+  jmp warehouseOpenHook+0B
+
+warehouseOpenHook:
+  jmp newmem_raw
+  nop 6
+
+newmem_granary:
+  push rax
+
+  mov dword ptr [rawStorageKind],2
+  mov [rawStorageBuilding],rcx
+
+  pop rax
+  mov r12,rdx
+  mov rax,rcx
+  xor edx,edx
+  mov r13d,edx
+  jmp granaryOpenHook+0B
+
+granaryOpenHook:
+  jmp newmem_granary
+  nop 6
+
+newmem_access:
+  push rax
+
+  mov rax,[rbp+48]
+  test rax,rax
+  je short access_capture_done
+  mov [rawStorageManager],rax
+  mov [rawStorageBase],rbx
+  mov eax,[rax+198]
+  mov [rawStorageCount],eax
+  inc dword ptr [rawStorageHitSeq]
+
+access_capture_done:
+  pop rax
+  movss xmm0,[rbx+rdi+04]
+  jmp rawListAccessHook+06
+
+rawListAccessHook:
+  jmp newmem_access
+  nop 1
+
+[DISABLE]
+
+warehouseOpenHook:
+  db 4C 8B E2 48 8B F9 33 F6 44 8B FE
+
+granaryOpenHook:
+  db 4C 8B E2 48 8B C1 33 D2 44 8B EA
+
+rawListAccessHook:
+  db F3 0F 10 44 3B 04
+
+unregistersymbol(warehouseOpenHook)
+unregistersymbol(granaryOpenHook)
+unregistersymbol(rawListAccessHook)
+unregistersymbol(rawStorageBuilding)
+unregistersymbol(rawStorageKind)
+unregistersymbol(rawStorageManager)
+unregistersymbol(rawStorageBase)
+unregistersymbol(rawStorageCount)
+unregistersymbol(rawStorageHitSeq)
+
+dealloc(newmem_raw)
+dealloc(newmem_granary)
+dealloc(newmem_access)
+dealloc(rawStorageBuilding)
+dealloc(rawStorageKind)
+dealloc(rawStorageManager)
+dealloc(rawStorageBase)
+dealloc(rawStorageCount)
+dealloc(rawStorageHitSeq)"""

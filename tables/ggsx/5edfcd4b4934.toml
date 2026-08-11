@@ -1,0 +1,697 @@
+[game]
+name = "GUILTY GEAR 2 -OVERTURE"
+exe = "ggsx.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1775"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_player1_basepointer)
+registersymbol(playerstats_player2_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_set_enable)
+registersymbol(playerstats_player1_lifeset_enable)
+registersymbol(playerstats_player1_tensionset_enable)
+registersymbol(playerstats_player1_statsset_enable)
+registersymbol(playerstats_player2_lifeset_enable)
+registersymbol(playerstats_player2_tensionset_enable)
+registersymbol(playerstats_player2_statsset_enable)
+
+alloc(playerstats_player1_basepointer, 4)
+alloc(playerstats_player2_basepointer, 4)
+alloc(playerstats_update_enable, 4)
+alloc(playerstats_set_enable, 4)
+alloc(playerstats_player1_lifeset_enable, 4)
+alloc(playerstats_player1_tensionset_enable, 4)
+alloc(playerstats_player1_statsset_enable, 4)
+alloc(playerstats_player2_lifeset_enable, 4)
+alloc(playerstats_player2_tensionset_enable, 4)
+alloc(playerstats_player2_statsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(playerstats_player1_basepointer)
+unregistersymbol(playerstats_player2_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_set_enable)
+unregistersymbol(playerstats_player1_lifeset_enable)
+unregistersymbol(playerstats_player1_tensionset_enable)
+unregistersymbol(playerstats_player1_statsset_enable)
+unregistersymbol(playerstats_player2_lifeset_enable)
+unregistersymbol(playerstats_player2_tensionset_enable)
+unregistersymbol(playerstats_player2_statsset_enable)
+
+dealloc(playerstats_player1_basepointer)
+dealloc(playerstats_player2_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_set_enable)
+dealloc(playerstats_player1_lifeset_enable)
+dealloc(playerstats_player1_tensionset_enable)
+dealloc(playerstats_player1_statsset_enable)
+dealloc(playerstats_player2_lifeset_enable)
+dealloc(playerstats_player2_tensionset_enable)
+dealloc(playerstats_player2_statsset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_player1_entry)
+label(playerstats_player1_update_exit)
+label(playerstats_player1_lifeset_exit)
+label(playerstats_player1_tensionset_exit)
+label(playerstats_player1_statsset_exit)
+label(playerstats_player2_entry)
+label(playerstats_player2_update_exit)
+label(playerstats_player2_lifeset_exit)
+label(playerstats_player2_tensionset_exit)
+label(playerstats_player2_statsset_exit)
+
+registersymbol(playerstats_savedAOB)
+
+//ggsx.exe+205581 - F3 0F10 0D 140B8700   - movss xmm1,[ggsx.exe+470B14]
+//ggsx.exe+205589 - 8B 44 24 10           - mov eax,[esp+10]
+//ggsx.exe+20558D - F3 0F10 42 74         - movss xmm0,[edx+74]
+//ggsx.exe+205592 - F3 0F5E 42 78         - divss xmm0,[edx+78]
+//ggsx.exe+205597 - 0F2F C8               - comiss xmm1,xmm0
+//ggsx.exe+20559A - 72 07                 - jb ggsx.exe+2055A3
+//ggsx.exe+20559C - 83 C8 01              - or eax,01
+aobscan(playerstats_searchedAOB, F3 0F 10 42 74 F3 0F 5E 42 78)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+cmp byte ptr [edx+71], #1
+jne playerstats_player2_entry
+
+playerstats_player1_entry:
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_player1_update_exit
+mov [playerstats_player1_basepointer], edx
+playerstats_player1_update_exit:
+
+cmp dword ptr [playerstats_player1_lifeset_enable], #0
+je playerstats_player1_lifeset_exit
+fld [edx+78]
+fstp [edx+74]
+playerstats_player1_lifeset_exit:
+
+cmp dword ptr [playerstats_player1_tensionset_enable], #0
+je playerstats_player1_tensionset_exit
+mov [edx+7c], (float)100
+playerstats_player1_tensionset_exit:
+
+cmp dword ptr [playerstats_player1_statsset_enable], #0
+je playerstats_player1_statsset_exit
+mov [edx+ec], (float)5
+mov [edx+f4], (float)99
+mov [edx+f8], (float)99
+mov [edx+fc], (float)0
+mov [edx+104], (float)0
+playerstats_player1_statsset_exit:
+
+jmp playerstats_player2_statsset_exit
+
+
+playerstats_player2_entry:
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_player2_update_exit
+mov [playerstats_player2_basepointer], edx
+playerstats_player2_update_exit:
+
+cmp dword ptr [playerstats_player2_lifeset_enable], #0
+je playerstats_player2_lifeset_exit
+mov [playerstats_temp1], (float)5
+fld [playerstats_temp1]
+fld [edx+74]
+fcomi ST(0), ST(1)
+fstp ST(0)
+fstp ST(0)
+jb playerstats_player2_lifeset_exit
+mov [edx+74], (float)1
+playerstats_player2_lifeset_exit:
+
+cmp dword ptr [playerstats_player2_tensionset_enable], #0
+je playerstats_player2_tensionset_exit
+mov [edx+7c], (float)0
+playerstats_player2_tensionset_exit:
+
+cmp dword ptr [playerstats_player2_statsset_enable], #0
+je playerstats_player2_statsset_exit
+mov [edx+ec], (float)0
+mov [edx+f4], (float)0
+mov [edx+f8], (float)0
+mov [edx+fc], (float)99
+mov [edx+104], (float)99
+playerstats_player2_statsset_exit:
+
+
+playerstats_originalcode:
+db F3 0F 10 42 74
+//movss xmm0,[edx+74]
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+db F3 0F 10 42 74
+//movss xmm0,[edx+74]
+
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)"""
+
+[[cheat]]
+id = "player-1-life-gauge-set-to-max"
+name = "Player 1 Life Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_lifeset_enable"
+hops = []
+
+[[cheat]]
+id = "player-1-tension-gauge-set-to-max"
+name = "Player 1 Tension Gauge Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_tensionset_enable"
+hops = []
+
+[[cheat]]
+id = "player-1-stats-set-to-max"
+name = "Player 1 Stats Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_statsset_enable"
+hops = []
+
+[[cheat]]
+id = "player-2-life-gauge-set-to-1"
+name = "Player 2 Life Gauge Set to 1?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_lifeset_enable"
+hops = []
+
+[[cheat]]
+id = "player-2-tension-gauge-set-to-0"
+name = "Player 2 Tension Gauge Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_tensionset_enable"
+hops = []
+
+[[cheat]]
+id = "player-2-stats-set-to-min"
+name = "Player 2 Stats Set to Min?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_statsset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "player"
+name = "Player"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "life-gauge"
+name = "Life Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "max-life-gauge"
+name = "Max Life Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "tension-gauge"
+name = "Tension Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "cheat"
+name = "?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "movement-speed"
+name = "Movement Speed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "cheat-2"
+name = "?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "attack-power"
+name = "Attack Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "stun-damage"
+name = "Stun Damage?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "defense"
+name = "Defense"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "cheat-3"
+name = "?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "knockback-resistance"
+name = "Knockback Resistance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player1_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "player-2"
+name = "Player"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "life-gauge-2"
+name = "Life Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "max-life-gauge-2"
+name = "Max Life Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "tension-gauge-2"
+name = "Tension Gauge"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "cheat-4"
+name = "?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "movement-speed-2"
+name = "Movement Speed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "cheat-5"
+name = "?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "attack-power-2"
+name = "Attack Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "stun-damage-2"
+name = "Stun Damage?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "defense-2"
+name = "Defense"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "cheat-6"
+name = "?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "knockback-resistance-2"
+name = "Knockback Resistance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_player2_basepointer"
+hops = ["+0x104"]

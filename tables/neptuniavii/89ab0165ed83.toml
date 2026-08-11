@@ -1,0 +1,5956 @@
+[game]
+name = "Megadimension Neptunia VII"
+exe = "neptuniavii.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1207"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "party-stats-base-address-scan-initialization-activate-this-first"
+name = "Party Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(partystats_basepointer)
+registersymbol(partystats_update_enable)
+registersymbol(partystats_creditset_enable)
+registersymbol(partystats_exdriveset_enable)
+registersymbol(partystats_scoutset_enable)
+registersymbol(partystats_scoutlevelset_enable)
+
+alloc(partystats_basepointer, 4)
+alloc(partystats_update_enable, 4)
+alloc(partystats_creditset_enable, 4)
+alloc(partystats_exdriveset_enable, 4)
+alloc(partystats_scoutset_enable, 4)
+alloc(partystats_scoutlevelset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(partystats_basepointer)
+unregistersymbol(partystats_update_enable)
+unregistersymbol(partystats_creditset_enable)
+unregistersymbol(partystats_exdriveset_enable)
+unregistersymbol(partystats_scoutset_enable)
+unregistersymbol(partystats_scoutlevelset_enable)
+
+dealloc(partystats_basepointer)
+dealloc(partystats_update_enable)
+dealloc(partystats_creditset_enable)
+dealloc(partystats_exdriveset_enable)
+dealloc(partystats_scoutset_enable)
+dealloc(partystats_scoutlevelset_enable)"""
+
+[[cheat]]
+id = "party-stats-base-address-scan-to-update-play"
+name = "Party Stats Base Address Scan (To Update: Play)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(partystats_savedAOB)
+label(partystats_returnhere)
+label(partystats_originalcode)
+label(partystats_exit)
+
+label(partystats_update_exit)
+label(partystatscredit_set_exit)
+label(partystatsexdrive_set_exit)
+label(partystats_scoutset_return)
+label(partystats_scoutset_skip)
+label(partystats_scoutset_exit)
+label(partystats_scoutlevelset_return)
+label(partystats_scoutlevelset_skip)
+label(partystats_scoutlevelset_exit)
+
+registersymbol(partystats_savedAOB)
+
+aobscanmodule(partystats_searchedAOB,NeptuniaVII.exe,0F B7 B7 A0 0F 01 00) // should be unique
+
+alloc(partystats_newmem, 2048)
+
+partystats_newmem:
+
+  cmp dword ptr [partystats_update_enable], #0
+  je partystats_update_exit
+  mov [partystats_basepointer], edi
+partystats_update_exit:
+
+  cmp dword ptr [partystats_creditset_enable], #0
+  je partystatscredit_set_exit
+  mov [edi+10FA8], #99999999
+partystatscredit_set_exit:
+
+  cmp dword ptr [partystats_exdriveset_enable], #0
+  je partystatsexdrive_set_exit
+  mov word ptr [edi+10FA0], #500
+  mov word ptr [edi+10FA2], #4
+partystatsexdrive_set_exit:
+
+  push eax
+  push ebx
+  mov ebx,[edi+5E954] //Number of Scouts
+  imul ebx,ebx,0x10
+  lea ebx,[ebx+edi+5E958] //End Address
+  cmp dword ptr [partystats_scoutset_enable], #0
+  je partystats_scoutset_exit
+  lea eax,[edi+5E958] //Start Address
+partystats_scoutset_return:
+  cmp dword ptr [eax+C],#0
+  je partystats_scoutset_skip
+  mov dword ptr [eax+C],#0
+partystats_scoutset_skip:
+  add eax,0x10
+  cmp eax,ebx
+  jb partystats_scoutset_return
+partystats_scoutset_exit:
+
+  cmp dword ptr [partystats_scoutlevelset_enable], #0
+  je partystats_scoutlevelset_exit
+  lea eax,[edi+5E958] //Start Address
+partystats_scoutlevelset_return:
+  cmp byte ptr [eax+1],#5
+  jae partystats_scoutlevelset_skip
+  mov byte ptr [eax+1],#5 //Level
+  mov byte ptr [eax+4],#10 //EnergyMate Consumed
+partystats_scoutlevelset_skip:
+  add eax,0x10
+  cmp eax,ebx
+  jb partystats_scoutlevelset_return
+partystats_scoutlevelset_exit:
+
+  pop ebx
+  pop eax
+
+partystats_originalcode:
+  movzx esi,word ptr [edi+00010FA0]
+
+partystats_exit:
+  jmp partystats_returnhere
+
+partystats_searchedAOB:
+partystats_savedAOB:
+  jmp partystats_newmem
+  nop
+  nop
+partystats_returnhere:
+
+[DISABLE]
+
+partystats_savedAOB:
+  db 0F B7 B7 A0 0F 01 00
+
+unregistersymbol(partystats_savedAOB)
+
+dealloc(partystats_newmem)"""
+
+[[cheat]]
+id = "credits-set-to-99999999"
+name = "Credits Set to 99999999?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_creditset_enable"
+hops = []
+
+[[cheat]]
+id = "exe-drive-gauge-set-to-level-4"
+name = "EXE Drive Gauge Set to Level 4?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_exdriveset_enable"
+hops = []
+
+[[cheat]]
+id = "scout-remaining-time-set-to-instant-complete"
+name = "Scout Remaining Time Set to Instant Complete?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_scoutset_enable"
+hops = []
+
+[[cheat]]
+id = "scout-set-to-max-level"
+name = "Scout Set to Max Level?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_scoutlevelset_enable"
+hops = []
+
+[[cheat]]
+id = "party-stats-update-base-address"
+name = "Party Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "total-play-count-hour"
+name = "Total Play Count Hour"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x268"]
+
+[[cheat]]
+id = "total-play-count-minute"
+name = "Total Play Count Minute"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x26c"]
+
+[[cheat]]
+id = "total-play-count-second"
+name = "Total Play Count Second"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "total-play-count-sub-second"
+name = "Total Play Count Sub Second"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x274"]
+
+[[cheat]]
+id = "play-count"
+name = "Play Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x280"]
+
+[[cheat]]
+id = "saves"
+name = "Saves"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "total-acquired-credits"
+name = "Total Acquired Credits"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x330"]
+
+[[cheat]]
+id = "total-credits-spent"
+name = "Total Credits Spent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x338"]
+
+[[cheat]]
+id = "battles-fought"
+name = "Battles Fought"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x284"]
+
+[[cheat]]
+id = "enemies-defeated"
+name = "Enemies Defeated"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x28c"]
+
+[[cheat]]
+id = "battles-escaped"
+name = "Battles Escaped"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2c8"]
+
+[[cheat]]
+id = "times-ko-d"
+name = "Times KO'd"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x290"]
+
+[[cheat]]
+id = "colosseum-wins"
+name = "Colosseum Wins"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2cc"]
+
+[[cheat]]
+id = "colosseum-losses"
+name = "Colosseum Losses"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2d0"]
+
+[[cheat]]
+id = "max-damage"
+name = "Max Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x29c"]
+
+[[cheat]]
+id = "max-hit"
+name = "Max Hit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2a0"]
+
+[[cheat]]
+id = "total-recovered-hp"
+name = "Total Recovered HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2b8"]
+
+[[cheat]]
+id = "character-switches"
+name = "Character Switches"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x294"]
+
+[[cheat]]
+id = "times-transformed"
+name = "Times Transformed"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2f0"]
+
+[[cheat]]
+id = "total-damage-dealt"
+name = "Total Damage Dealt"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2a8"]
+
+[[cheat]]
+id = "total-damage-taken"
+name = "Total Damage Taken"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2b0"]
+
+[[cheat]]
+id = "num-of-jumps"
+name = "Num. of Jumps"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2d8"]
+
+[[cheat]]
+id = "num-of-times-item-development"
+name = "Num. of Times Item Development"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x2dc"]
+
+[[cheat]]
+id = "quests-cleared"
+name = "Quests Cleared"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x340"]
+
+[[cheat]]
+id = "leader"
+name = "Leader"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Neptune",
+    "2:Noire",
+    "3:Blanc",
+    "4:Vert",
+    "5:Nepgear",
+    "6:Uni",
+    "7:Rom",
+    "8:Ram",
+    "9:IF",
+    "10:K-Sha",
+    "14:Nepgya",
+    "15:Umio",
+    "16:Nitroplus",
+    "17:God Eater",
+    "18:Million Arthur",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10f98"]
+
+[[cheat]]
+id = "credits"
+name = "Credits"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fa8"]
+
+[[cheat]]
+id = "exe-drive-gauge-level-1"
+name = "EXE Drive Gauge Level (+1)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fa0"]
+
+[[cheat]]
+id = "exe-drive-gauge"
+name = "EXE Drive Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fa2"]
+
+[[cheat]]
+id = "planeptune"
+name = "Planeptune"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fac"]
+
+[[cheat]]
+id = "leanbox"
+name = "Leanbox"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fae"]
+
+[[cheat]]
+id = "lastation"
+name = "Lastation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fb0"]
+
+[[cheat]]
+id = "lowee"
+name = "Lowee"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fb2"]
+
+[[cheat]]
+id = "other"
+name = "Other"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x10fb4"]
+
+[[cheat]]
+id = "number-of-plans-developed"
+name = "Number of Plans Developed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x9f868"]
+
+[[cheat]]
+id = "number-of-scouts"
+name = "Number of Scouts"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e954"]
+
+[[cheat]]
+id = "slot-1-status"
+name = "Slot 1 Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 8
+choices = ["8:Standby"]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e958"]
+
+[[cheat]]
+id = "slot-1-level"
+name = "Slot 1 Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e959"]
+
+[[cheat]]
+id = "slot-1-id"
+name = "Slot 1 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e95a"]
+
+[[cheat]]
+id = "slot-1-number-of-energymate-consumed"
+name = "Slot 1 Number of EnergyMate Consumed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e95c"]
+
+[[cheat]]
+id = "slot-1-new"
+name = "Slot 1 New"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:New",
+    "2:Deployed Before",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e960"]
+
+[[cheat]]
+id = "slot-1-dungeon-deployed"
+name = "Slot 1 Dungeon Deployed"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e962"]
+
+[[cheat]]
+id = "slot-1-remaining-time"
+name = "Slot 1 Remaining Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0x5e964"]
+
+[[cheat]]
+id = "number-of-entries"
+name = "Number of Entries"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0xa0278"]
+
+[[cheat]]
+id = "slot-1-id-2"
+name = "Slot 1 ID"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0xa027c"]
+
+[[cheat]]
+id = "slot-1-enabled-0xd"
+name = "Slot 1 Enabled = 0xD"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0xa027e"]
+
+[[cheat]]
+id = "slot-1-attacks-number-defeated"
+name = "Slot 1 Attacks/Number Defeated"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0xa0280"]
+
+[[cheat]]
+id = "number-of-entries-2"
+name = "Number of Entries"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "partystats_basepointer"
+hops = ["+0xa25fc"]
+
+[[cheat]]
+id = "items-stats-base-address-scan-initialization-activate-this-first"
+name = "Items Stats Base Address Scan Initialization (Activate This First)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(itemsstats_basepointer)
+registersymbol(itemsstats_offset_basepointer)
+registersymbol(itemsstats_update_enable)
+registersymbol(itemsstats_add_enable)
+registersymbol(itemsstats_set_enable)
+registersymbol(itemsstats_offset_value)
+
+alloc(itemsstats_basepointer, 4)
+alloc(itemsstats_offset_basepointer, 4)
+alloc(itemsstats_update_enable, 4)
+alloc(itemsstats_add_enable, 4)
+alloc(itemsstats_set_enable, 4)
+alloc(itemsstats_offset_value, 4)
+
+itemsstats_offset_value:
+dd #0
+
+[DISABLE]
+unregistersymbol(itemsstats_basepointer)
+unregistersymbol(itemsstats_offset_basepointer)
+unregistersymbol(itemsstats_update_enable)
+unregistersymbol(itemsstats_add_enable)
+unregistersymbol(itemsstats_set_enable)
+unregistersymbol(itemsstats_offset_value)
+
+dealloc(itemsstats_basepointer)
+dealloc(itemsstats_offset_basepointer)
+dealloc(itemsstats_update_enable)
+dealloc(itemsstats_add_enable)
+dealloc(itemsstats_set_enable)
+dealloc(itemsstats_offset_value)"""
+
+[[cheat]]
+id = "items-stats-base-address-scan-to-update-select-items"
+name = "Items Stats Base Address Scan (To Update: Select Items)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(itemsstats_savedAOB)
+label(itemsstats_returnhere)
+label(itemsstats_originalcode)
+
+label(itemsstats_savedAOB2)
+label(itemsstats_returnhere2)
+label(itemsstats_originalcode2)
+
+label(itemsstats_update_exit)
+label(itemsstats_add_exit)
+label(itemsstats_set_exit)
+
+registersymbol(itemsstats_savedAOB)
+registersymbol(itemsstats_savedAOB2)
+
+aobscanmodule(itemsstats_searchedAOB,NeptuniaVII.exe,33 C0 5E 5D C3 8B 40 04 5E) // should be unique
+
+alloc(itemsstats_newmem,2048)
+
+itemsstats_newmem:
+  mov [itemsstats_basepointer],eax
+  cmp dword ptr [itemsstats_update_enable],#0
+  je itemsstats_update_exit
+  push ebx
+  mov ebx,[itemsstats_offset_value]
+  lea ebx,[eax+ebx*8]
+  mov [itemsstats_offset_basepointer],ebx
+  pop ebx
+itemsstats_update_exit:
+
+  cmp dword ptr [itemsstats_add_enable],#0
+  je itemsstats_add_exit
+  push esi
+  push edi
+  //Adjust Number of Items
+  mov edi,[eax-4]
+  add [eax-4],1
+  //Add Item ID and Quantity
+  lea edi,[eax+edi*8]
+  mov esi,[itemsstats_add_enable]
+  mov [itemsstats_add_enable],#0
+  mov word ptr [edi],si
+  mov word ptr [edi+4],#99
+  pop edi
+  pop esi
+itemsstats_add_exit:
+
+itemsstats_originalcode:
+  lea ecx,[eax+ecx*8]
+  cmp eax,ecx
+  jmp itemsstats_returnhere
+
+itemsstats_newmem2:
+  cmp dword ptr [itemsstats_set_enable],#0
+  je itemsstats_set_exit
+  cmp dword ptr [eax],#0
+  je itemsstats_set_exit
+  mov word ptr [eax+4],#99
+itemsstats_set_exit:
+
+itemsstats_originalcode2:
+  mov eax,[eax+04]
+  pop esi
+  pop ebp
+  jmp itemsstats_returnhere2
+
+itemsstats_searchedAOB-13:
+itemsstats_savedAOB:
+  jmp itemsstats_newmem
+itemsstats_returnhere:
+
+itemsstats_searchedAOB+5:
+itemsstats_savedAOB2:
+jmp itemsstats_newmem2
+itemsstats_returnhere2:
+
+[DISABLE]
+
+itemsstats_savedAOB:
+  db 8D 0C C8 3B C1
+
+itemsstats_savedAOB2:
+  db 8B 40 04 5E 5D
+
+unregistersymbol(itemsstats_savedAOB)
+unregistersymbol(itemsstats_savedAOB2)
+
+dealloc(itemsstats_newmem)"""
+
+[[cheat]]
+id = "quantity-set-to-99"
+name = "Quantity Set to 99?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemsstats_set_enable"
+hops = []
+
+[[cheat]]
+id = "add-item"
+name = "Add Item?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemsstats_add_enable"
+hops = []
+
+[[cheat]]
+id = "slot-offset"
+name = "Slot Offset"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Slot 1 to 500",
+    "500:Slot 501 to 1000",
+    "1000:Slot 1001 to 1500",
+    "1500:Slot 1501 to 2000",
+    "2000:Slot 2001 to 2500",
+    "2500:Slot 2501 to 3000",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemsstats_offset_value"
+hops = []
+
+[[cheat]]
+id = "items-stats-update-base-address"
+name = "Items Stats Update Base Address?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemsstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemsstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "number-of-items"
+name = "Number of Items"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemsstats_basepointer"
+hops = ["+0xfffffffc"]
+
+[[cheat]]
+id = "lily-ranks-stats-base-address-scan-initialization-activate-this-first"
+name = "Lily Ranks Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(lilyranksstats_basepointer)
+registersymbol(lilyranksstats_update_enable)
+registersymbol(lilyranksstats_set_enable)
+
+alloc(lilyranksstats_basepointer, 4)
+alloc(lilyranksstats_update_enable, 4)
+alloc(lilyranksstats_set_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(lilyranksstats_basepointer)
+unregistersymbol(lilyranksstats_update_enable)
+unregistersymbol(lilyranksstats_set_enable)
+
+dealloc(lilyranksstats_basepointer)
+dealloc(lilyranksstats_update_enable)
+dealloc(lilyranksstats_set_enable)"""
+
+[[cheat]]
+id = "lily-ranks-stats-base-address-scan-to-update-select-lily-ranks-character"
+name = "Lily Ranks Stats Base Address Scan (To Update: Select Lily Ranks Character)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(lilyranksstats_savedAOB)
+label(lilyranksstats_returnhere)
+label(lilyranksstats_originalcode)
+label(lilyranksstats_exit)
+
+label(lilyranksstats_update_exit)
+label(lilyranksstats_set_exit)
+
+registersymbol(lilyranksstats_savedAOB)
+
+aobscanmodule(lilyranksstats_searchedAOB,NeptuniaVII.exe,0F B7 84 41 88 FF 00 00 8B) // should be unique
+
+alloc(lilyranksstats_newmem, 2048)
+
+lilyranksstats_newmem:
+  push ebx
+  lea ebx, [ecx+eax*2+0000FF88]
+
+  cmp dword ptr [lilyranksstats_update_enable], #0
+  je lilyranksstats_update_exit
+  mov [lilyranksstats_basepointer], ebx
+lilyranksstats_update_exit:
+
+  cmp dword ptr [lilyranksstats_set_enable], #0
+  je lilyranksstats_set_exit
+  mov word ptr [ebx], #1000
+lilyranksstats_set_exit:
+
+pop ebx
+
+lilyranksstats_originalcode:
+  movzx eax, word ptr [ecx+eax*2+0000FF88]
+
+lilyranksstats_exit:
+  jmp lilyranksstats_returnhere
+
+
+lilyranksstats_searchedAOB:
+lilyranksstats_savedAOB:
+  jmp lilyranksstats_newmem
+  nop
+  nop
+  nop
+lilyranksstats_returnhere:
+
+
+[DISABLE]
+lilyranksstats_savedAOB:
+  db 0F B7 84 41 88 FF 00 00
+
+unregistersymbol(lilyranksstats_savedAOB)
+
+dealloc(lilyranksstats_newmem)"""
+
+[[cheat]]
+id = "lily-ranks-set-to-10"
+name = "Lily Ranks Set to 10?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "lilyranksstats_set_enable"
+hops = []
+
+[[cheat]]
+id = "lily-ranks-stats-update-base-address"
+name = "Lily Ranks Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "lilyranksstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "lilyranksstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "lily-rank"
+name = "Lily Rank"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "lilyranksstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "character-stats-base-address-scan-initialization-activate-this-first"
+name = "Character Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(charstats_basepointer)
+registersymbol(charstats_basepointer2)
+registersymbol(charstats_update_enable)
+registersymbol(charstats_set_enable)
+registersymbol(charstats_spset_enable)
+registersymbol(charstats_hpset_enable)
+registersymbol(charstats_hddset_enable)
+
+alloc(charstats_basepointer, 4)
+alloc(charstats_basepointer2, 4)
+alloc(charstats_update_enable, 4)
+alloc(charstats_set_enable, 4)
+alloc(charstats_spset_enable, 4)
+alloc(charstats_hpset_enable, 4)
+alloc(charstats_hddset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(charstats_basepointer)
+unregistersymbol(charstats_basepointer2)
+unregistersymbol(charstats_update_enable)
+unregistersymbol(charstats_set_enable)
+unregistersymbol(charstats_spset_enable)
+unregistersymbol(charstats_hpset_enable)
+unregistersymbol(charstats_hddset_enable)
+
+dealloc(charstats_basepointer)
+dealloc(charstats_basepointer2)
+dealloc(charstats_update_enable)
+dealloc(charstats_set_enable)
+dealloc(charstats_spset_enable)
+dealloc(charstats_hpset_enable)
+dealloc(charstats_hddset_enable)"""
+
+[[cheat]]
+id = "character-stats-base-address-scan-to-update-select-character-status-open-menu"
+name = "Character Stats Base Address Scan (To Update: Select Character Status/Open Menu)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(charstats_savedAOB)
+label(charstats_returnhere)
+label(charstats_originalcode)
+label(charstats_exit)
+
+label(charstats_update_exit)
+label(charstats_set_exit)
+label(charstats_spset_exit)
+label(charstats_hpset_exit)
+label(charstats_hddset_next)
+label(charstats_hddset_end)
+label(charstats_hddset_exit)
+label(cpu_check)
+label(cpu_check_main)
+label(cpu_check_side)
+
+registersymbol(charstats_savedAOB)
+
+aobscanmodule(charstats_searchedAOB,NeptuniaVII.exe,8B 02 8B 52 04 5F 5E 5B) // should be unique
+
+alloc(charstats_newmem, 2048)
+
+charstats_newmem:
+  cmp dword ptr [charstats_update_enable], #0
+  je charstats_update_exit
+  mov [charstats_basepointer], esi
+  mov [charstats_basepointer2], edx
+charstats_update_exit:
+
+  cmp dword ptr [charstats_set_enable], #0
+  je charstats_set_exit
+  mov dword ptr [esi+20],#99999 //HP
+  mov dword ptr [esi+28],#9999 //SP
+  mov dword ptr [esi+2C],#9999 //STR
+  mov dword ptr [esi+30],#9999 //VIT
+  mov dword ptr [esi+34],#9999 //INT
+  mov dword ptr [esi+38],#9999 //MEN
+  mov dword ptr [esi+3C],#9999 //AGI
+  mov dword ptr [esi+40],#9999 //TEC
+  mov dword ptr [esi+44],#9999 //LUC
+  mov dword ptr [esi+48],#100 //MOV
+charstats_set_exit:
+
+  push eax
+
+  cmp dword ptr [charstats_spset_enable], #0
+  je charstats_spset_exit
+  mov eax, [esi+28]
+  mov dword ptr [edx+10], eax
+charstats_spset_exit:
+
+  cmp dword ptr [charstats_hpset_enable], #0
+  je charstats_hpset_exit
+  mov eax, [esi+20]
+  mov dword ptr [edx], eax
+charstats_hpset_exit:
+
+  pop eax
+
+  cmp dword ptr [charstats_hddset_enable], #0
+  je charstats_hddset_exit
+  push edx
+  call cpu_check
+  cmp edx,#0
+  je charstats_hddset_end
+  cmp edx,#1
+  je charstats_hddset_next
+  or [esi+1],0x09
+  jmp charstats_hddset_end
+charstats_hddset_next:
+  or [esi+1],0x19
+charstats_hddset_end:
+  pop edx
+charstats_hddset_exit:
+
+charstats_originalcode:
+  mov eax,[edx]
+  mov edx,[edx+04]
+
+charstats_exit:
+  jmp charstats_returnhere
+
+cpu_check:
+  cmp word ptr [esi+4],0x1 //Neptune
+  je cpu_check_main
+  cmp word ptr [esi+4],0x2 //Noire
+  je cpu_check_main
+  cmp word ptr [esi+4],0x3 //Blanc
+  je cpu_check_main
+  cmp word ptr [esi+4],0x4 //Vert
+  je cpu_check_main
+  cmp word ptr [esi+4],0x5 //Nepgear
+  je cpu_check_side
+  cmp word ptr [esi+4],0x6 //Uni
+  je cpu_check_side
+  cmp word ptr [esi+4],0x7 //Rom
+  je cpu_check_side
+  cmp word ptr [esi+4],0x8 //Ram
+  je cpu_check_side
+  cmp word ptr [esi+4],0xD //S-Sha
+  je cpu_check_side
+  cmp word ptr [esi+4],0xE //B-Sha
+  je cpu_check_side
+  cmp word ptr [esi+4],0xF //C-Sha
+  je cpu_check_side
+  cmp word ptr [esi+4],0x10 //K-Sha
+  je cpu_check_side
+  mov edx,#0
+  ret
+cpu_check_main:
+  mov edx,#1
+  ret
+cpu_check_side:
+  mov edx,#2
+  ret
+
+charstats_searchedAOB:
+charstats_savedAOB:
+  jmp charstats_newmem
+charstats_returnhere:
+
+[DISABLE]
+charstats_savedAOB:
+  db 8B 02 8B 52 04
+
+unregistersymbol(charstats_savedAOB)
+
+dealloc(charstats_newmem)"""
+
+[[cheat]]
+id = "attributes-set-to-massive"
+name = "Attributes Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_set_enable"
+hops = []
+
+[[cheat]]
+id = "sp-set-to-max"
+name = "SP Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_spset_enable"
+hops = []
+
+[[cheat]]
+id = "hp-set-to-max"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "hdd-next-form-set-to-unlocked"
+name = "HDD/Next Form Set to Unlocked?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_hddset_enable"
+hops = []
+
+[[cheat]]
+id = "character-stats-update-base-address"
+name = "Character Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "character-id"
+name = "Character ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "max-hp"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "max-sp"
+name = "Max SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "str"
+name = "STR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "vit"
+name = "VIT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "int"
+name = "INT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "men"
+name = "MEN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "agi"
+name = "AGI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "tec"
+name = "TEC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "luc"
+name = "LUC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "mov"
+name = "MOV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "weapon"
+name = "Weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "armor"
+name = "Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x56"]
+
+[[cheat]]
+id = "cheat"
+name = "???"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "outfit"
+name = "Outfit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x5a"]
+
+[[cheat]]
+id = "attachment"
+name = "Attachment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "hp"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "exp"
+name = "EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "sp"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "slot-1-enabled"
+name = "Slot 1 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "slot-1-id-3"
+name = "Slot 1 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x8a"]
+
+[[cheat]]
+id = "slot-2-enabled"
+name = "Slot 2 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "slot-2-id"
+name = "Slot 2 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x96"]
+
+[[cheat]]
+id = "slot-3-enabled"
+name = "Slot 3 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "slot-3-id"
+name = "Slot 3 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xa2"]
+
+[[cheat]]
+id = "slot-4-enabled"
+name = "Slot 4 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "slot-4-id"
+name = "Slot 4 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xae"]
+
+[[cheat]]
+id = "slot-1-enabled-2"
+name = "Slot 1 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "slot-1-id-4"
+name = "Slot 1 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x92"]
+
+[[cheat]]
+id = "slot-2-enabled-2"
+name = "Slot 2 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "slot-2-id-2"
+name = "Slot 2 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x9e"]
+
+[[cheat]]
+id = "slot-3-enabled-2"
+name = "Slot 3 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "slot-3-id-2"
+name = "Slot 3 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xaa"]
+
+[[cheat]]
+id = "slot-4-enabled-2"
+name = "Slot 4 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "slot-4-id-2"
+name = "Slot 4 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xb6"]
+
+[[cheat]]
+id = "slot-1-enabled-3"
+name = "Slot 1 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "slot-1-id-5"
+name = "Slot 1 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x8e"]
+
+[[cheat]]
+id = "slot-2-enabled-3"
+name = "Slot 2 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "slot-2-id-3"
+name = "Slot 2 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0x9a"]
+
+[[cheat]]
+id = "slot-3-enabled-3"
+name = "Slot 3 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "slot-3-id-3"
+name = "Slot 3 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xa6"]
+
+[[cheat]]
+id = "slot-4-enabled-3"
+name = "Slot 4 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "slot-4-id-3"
+name = "Slot 4 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "charstats_basepointer2"
+hops = ["+0xb2"]
+
+[[cheat]]
+id = "battle-stats-base-address-scan-initialization-activate-this-first"
+name = "Battle Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(battlestats_basepointer)
+registersymbol(battlestats_basepointer2)
+registersymbol(battlestats_update_enable)
+registersymbol(battlestats_set_enable)
+registersymbol(battlestats_spset_enable)
+registersymbol(battlestats_hpset_enable)
+registersymbol(battlestats_hddset_enable)
+registersymbol(battlestats_enemyset_enable)
+registersymbol(endurance_enable)
+registersymbol(hddform_noreset_enable)
+registersymbol(driveextend_set_enable)
+alloc(battlestats_basepointer, 4)
+alloc(battlestats_basepointer2, 4)
+alloc(battlestats_update_enable, 4)
+alloc(battlestats_set_enable, 4)
+alloc(battlestats_spset_enable, 4)
+alloc(battlestats_hpset_enable, 4)
+alloc(battlestats_hddset_enable, 4)
+alloc(battlestats_enemyset_enable, 4)
+alloc(endurance_enable, 4)
+alloc(hddform_noreset_enable,4)
+alloc(driveextend_set_enable,4)
+[DISABLE]
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestats_basepointer2)
+unregistersymbol(battlestats_update_enable)
+unregistersymbol(battlestats_set_enable)
+unregistersymbol(battlestats_spset_enable)
+unregistersymbol(battlestats_hpset_enable)
+unregistersymbol(battlestats_hddset_enable)
+unregistersymbol(battlestats_enemyset_enable)
+unregistersymbol(endurance_enable)
+unregistersymbol(hddform_noreset_enable)
+unregistersymbol(driveextend_set_enable)
+dealloc(battlestats_basepointer)
+dealloc(battlestats_basepointer2)
+dealloc(battlestats_update_enable)
+dealloc(battlestats_set_enable)
+dealloc(battlestats_spset_enable)
+dealloc(battlestats_hpset_enable)
+dealloc(battlestats_hddset_enable)
+dealloc(battlestats_enemyset_enable)
+dealloc(endurance_enable)
+dealloc(hddform_noreset_enable)
+dealloc(driveextend_set_enable)"""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-to-update-battle-all"
+name = "Battle Stats Base Address Scan (To Update: Battle All)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(battlestats_partybase_code)
+label(battlestats_partybase_return)
+label(battlestats_originalcode)
+label(battlestats_return)
+label(battlestats_start_code)
+label(battlestats_start_return)
+label(endurance_originalcode)
+label(endurance_return)
+label(hddform_originalcode)
+label(hddform_return)
+label(driveextend_code)
+label(driveextend_return)
+label(battlestats_hddset_hddform)
+label(battlestats_hddset_nextform)
+label(battlestats_hddset_exit)
+label(battlestatsenemy_entry)
+label(cpu_check)
+label(cpu_check_main)
+label(cpu_check_side)
+registersymbol(battlestats_partybase_savedAOB)
+registersymbol(battlestats_savedAOB)
+registersymbol(battlestats_start_savedAOB)
+registersymbol(endurance_savedAOB)
+registersymbol(hddform_savedAOB)
+registersymbol(driveextend_savedAOB)
+aobscanmodule(battlestats_partybase_savedAOB,NeptuniaVII.exe,F7 87 64 02 00 00 00 01 00 00) // should be unique
+aobscanmodule(battlestats_savedAOB,NeptuniaVII.exe,8B 71 20 33 DB) // should be unique
+aobscanmodule(battlestats_start_savedAOB,NeptuniaVII.exe,8B 18 0F B7 70 04 C1 EB 02 83 E3 01 EB 04 33 DB 33 F6 50 E8 8C BE) // should be unique
+aobscanmodule(endurance_savedAOB,NeptuniaVII.exe,89 57 18 89 77 1C) // should be unique
+aobscanmodule(hddform_savedAOB,NeptuniaVII.exe,81 26 FF FF 3F FF EB) // should be unique
+aobscanmodule(driveextend_savedAOB,NeptuniaVII.exe,0F B7 41 14 85 C0) // should be unique
+alloc(battlestats_partybase_newmem,1024)
+alloc(battlestats_newmem,1024)
+alloc(battlestats_start_newmem,1024)
+alloc(endurance_newmem,1024)
+alloc(hddform_newmem,1024)
+alloc(driveextend_newmem,1024)
+alloc(battlestats_temp,4)
+alloc(battlestats_partybase_address,4)
+//Gets base party address
+battlestats_partybase_newmem:
+mov [battlestats_partybase_address],edi
+battlestats_partybase_code:
+test [edi+00000264],0100
+jmp battlestats_partybase_return
+battlestats_newmem:
+push ebx
+push edx
+//Check is Player Character
+test ax,6
+jz battlestatsenemy_entry
+//Calculate second base address for player characters
+mov ebx,[battlestats_partybase_address]//Party Base Address
+movzx edx,word ptr [ecx+4]
+imul edx,edx,2C0
+add ebx,edx
+add ebx,34C8
+cmp dword ptr [battlestats_update_enable], #0
+je @f
+mov [battlestats_basepointer],ecx
+mov [battlestats_basepointer2],ebx
+@@:
+cmp dword ptr [battlestats_set_enable], #0
+je @f
+mov dword ptr [ecx+20],#99999 //MAX HP
+mov dword ptr [ecx+28],#9999 //MAX SP
+mov dword ptr [ecx+2C],#9999 //STR
+mov dword ptr [ecx+30],#9999 //VIT
+mov dword ptr [ecx+34],#9999 //INT
+mov dword ptr [ecx+38],#9999 //MEN
+mov dword ptr [ecx+3C],#9999 //AGI
+mov dword ptr [ecx+40],#9999 //TEC
+mov dword ptr [ecx+44],#9999 //LUC
+mov dword ptr [ecx+48],#100 //MOV
+@@:
+cmp dword ptr [battlestats_spset_enable], #0
+je @f
+mov edx,[ecx+28]
+mov dword ptr [ebx+10],edx
+@@:
+cmp dword ptr [battlestats_hpset_enable], #0
+je @f
+mov edx,[ecx+20]
+mov dword ptr [ebx],edx
+@@:
+jmp battlestats_originalcode
+battlestatsenemy_entry:
+//Calculate second base address for enemies
+lea ebx,[esi+38]
+//Check for valid first level pointer
+mov [battlestats_temp],ebx
+pushad
+push 4
+push [battlestats_temp]
+call isbadreadptr
+test eax,eax
+popad
+jnz battlestats_originalcode
+mov ebx,[ebx]
+//Check for valid second level pointer
+mov [battlestats_temp],ebx
+pushad
+push 4
+push [battlestats_temp]
+call isbadreadptr
+test eax,eax
+popad
+jnz battlestats_originalcode
+cmp dword ptr [battlestats_update_enable], #0
+je @f
+mov [battlestats_basepointer],ecx
+mov [battlestats_basepointer2],ebx
+@@:
+cmp dword ptr [battlestats_enemyset_enable], #0
+je battlestats_originalcode
+cmp dword ptr [ebx],#5
+jbe battlestats_originalcode
+mov dword ptr [ebx+10],#1 //CUR SP
+mov dword ptr [ebx],#1 //CUR HP
+//mov dword ptr [ecx+20],#1 //MAX HP
+//mov dword ptr [ecx+28],#1 //MAX SP
+mov dword ptr [ecx+2C],#1 //STR
+mov dword ptr [ecx+30],#1 //VIT
+mov dword ptr [ecx+34],#1 //INT
+mov dword ptr [ecx+38],#1 //MEN
+mov dword ptr [ecx+3C],#1 //AGI
+mov dword ptr [ecx+40],#1 //TEC
+mov dword ptr [ecx+44],#1 //LUC
+mov dword ptr [ecx+48],#1 //MOV
+battlestats_originalcode:
+pop edx
+pop ebx
+mov esi,[ecx+20]
+xor ebx,ebx
+jmp battlestats_return
+battlestats_start_newmem:
+mov [battlestats_temp],esi
+pushad
+push 4
+push [battlestats_temp]
+call isbadreadptr
+test eax,eax
+popad
+jz battlestats_start_code
+cmp dword ptr [battlestats_hddset_enable], #0
+je battlestats_start_code
+pushad
+//Check for CPU Character
+call cpu_check
+cmp edx,#0
+je battlestats_hddset_exit
+cmp dword ptr [battlestats_hddset_enable], #2
+je battlestats_hddset_nextform
+battlestats_hddset_hddform:
+mov bl, byte ptr [eax+2]
+or bl,0x40 //HDD Form
+mov cl,1
+shl cl,7
+not cl
+and bl,cl //Clear Next Form
+mov byte ptr [eax+2],bl
+jmp battlestats_hddset_exit
+battlestats_hddset_nextform:
+cmp edx,#2
+je battlestats_hddset_hddform //HDD Form for CPU Candidate and Gold Sisters
+or byte ptr [eax+2],0xC0 //Next Form
+battlestats_hddset_exit:
+popad
+battlestats_start_code:
+mov ebx,[eax]
+movzx esi,word ptr [eax+04]
+jmp battlestats_start_return
+//Subroutine for battlestats_hddset
+cpu_check:
+cmp word ptr [eax+4],0x1 //Neptune
+je cpu_check_main
+cmp word ptr [eax+4],0x2 //Noire
+je cpu_check_main
+cmp word ptr [eax+4],0x3 //Blanc
+je cpu_check_main
+cmp word ptr [eax+4],0x4 //Vert
+je cpu_check_main
+cmp word ptr [eax+4],0x5 //Nepgear
+je cpu_check_side
+cmp word ptr [eax+4],0x6 //Uni
+je cpu_check_side
+cmp word ptr [eax+4],0x7 //Rom
+je cpu_check_side
+cmp word ptr [eax+4],0x8 //Ram
+je cpu_check_side
+cmp word ptr [eax+4],0xD //S-Sha
+je cpu_check_side
+cmp word ptr [eax+4],0xE //B-Sha
+je cpu_check_side
+cmp word ptr [eax+4],0xF //C-Sha
+je cpu_check_side
+cmp word ptr [eax+4],0x10 //K-Sha
+je cpu_check_side
+mov edx,#0
+ret
+cpu_check_main:
+mov edx,#1
+ret
+cpu_check_side:
+mov edx,#2
+ret
+endurance_newmem:
+cmp dword ptr [endurance_enable], #0
+je endurance_originalcode
+cmp edx,#5
+jbe endurance_originalcode
+mov edx,#1
+endurance_originalcode:
+mov [edi+18],edx
+mov [edi+1C],esi
+jmp endurance_return
+hddform_newmem:
+cmp [hddform_noreset_enable],#1
+je hddform_originalcode
+and [esi],FF3FFFFF
+hddform_originalcode:
+jmp hddform_return
+driveextend_newmem:
+cmp [driveextend_set_enable],#0
+je driveextend_code
+mov word ptr [ecx+14],#3
+driveextend_code:
+movzx eax,word ptr [ecx+14]
+test eax,eax
+jmp driveextend_return
+battlestats_partybase_savedAOB:
+jmp battlestats_partybase_newmem
+nop
+nop
+nop
+nop
+nop
+battlestats_partybase_return:
+battlestats_savedAOB:
+jmp battlestats_newmem
+battlestats_return:
+battlestats_start_savedAOB:
+jmp battlestats_start_newmem
+nop
+battlestats_start_return:
+endurance_savedAOB:
+jmp endurance_newmem
+nop
+endurance_return:
+hddform_savedAOB:
+jmp hddform_newmem
+nop
+hddform_return:
+driveextend_savedAOB:
+jmp driveextend_newmem
+nop
+driveextend_return:
+[DISABLE]
+battlestats_partybase_savedAOB:
+db F7 87 64 02 00 00 00 01 00 00
+battlestats_savedAOB:
+db 8B 71 20 33 DB
+battlestats_start_savedAOB:
+db 8B 18 0F B7 70 04
+endurance_savedAOB:
+db 89 57 18 89 77 1C
+hddform_savedAOB:
+db 81 26 FF FF 3F FF
+driveextend_savedAOB:
+db 0F B7 41 14 85 C0
+unregistersymbol(battlestats_partybase_savedAOB)
+unregistersymbol(battlestats_savedAOB)
+unregistersymbol(battlestats_start_savedAOB)
+unregistersymbol(endurance_savedAOB)
+unregistersymbol(hddform_savedAOB)
+unregistersymbol(driveextend_savedAOB)
+dealloc(battlestats_partybase_newmem)
+dealloc(battlestats_newmem)
+dealloc(battlestats_start_newmem)
+dealloc(endurance_newmem)
+dealloc(hddform_newmem)
+dealloc(driveextend_newmem)
+dealloc(battlestats_temp)
+dealloc(battlestats_partybase_address)"""
+
+[[cheat]]
+id = "battle-stats-remove-movement-limit-to-update-play"
+name = "Battle Stats Remove Movement Limit (To Update: Play)"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(movementstats_searchedAOB,NeptuniaVII.exe,00 00 00 3B F0 0F 4F F0 5F 8B C6) // should be unique
+
+label(movementstats_savedAOB)
+label(movementstats_savedAOB2)
+label(movementstats_savedAOB3)
+registersymbol(movementstats_savedAOB)
+registersymbol(movementstats_savedAOB2)
+registersymbol(movementstats_savedAOB3)
+
+
+movementstats_searchedAOB-10:
+movementstats_savedAOB:
+  db EB 07
+
+movementstats_searchedAOB-04:
+movementstats_savedAOB2:
+  db 74 0C
+
+movementstats_searchedAOB+05:
+movementstats_savedAOB3:
+  mov eax,#1000
+  pop edi
+
+[DISABLE]
+movementstats_savedAOB:
+  db 79 07
+
+movementstats_savedAOB2:
+  db 74 0A
+
+movementstats_savedAOB3:
+  db 0F 4F F0 5F 8B C6
+
+unregistersymbol(movementstats_savedAOB)
+unregistersymbol(movementstats_savedAOB2)
+unregistersymbol(movementstats_savedAOB3)"""
+
+[[cheat]]
+id = "attributes-set-to-massive-2"
+name = "Attributes Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_set_enable"
+hops = []
+
+[[cheat]]
+id = "hdd-next-form-always-on"
+name = "HDD/Next Form Always On?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Disabled",
+    "1:HDD Form",
+    "2:Next Form",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_hddset_enable"
+hops = []
+
+[[cheat]]
+id = "hdd-next-form-set-to-no-reset"
+name = "HDD/Next Form Set to No Reset?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "hddform_noreset_enable"
+hops = []
+
+[[cheat]]
+id = "exe-drive-skill-set-to-boss-mode-always"
+name = "EXE Drive Skill Set to Boss Mode Always?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "driveextend_set_enable"
+hops = []
+
+[[cheat]]
+id = "sp-set-to-max-2"
+name = "SP Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_spset_enable"
+hops = []
+
+[[cheat]]
+id = "hp-set-to-max-2"
+name = "HP Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_hpset_enable"
+hops = []
+
+[[cheat]]
+id = "enemy-set-to-min"
+name = "Enemy Set to Min?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemyset_enable"
+hops = []
+
+[[cheat]]
+id = "enemy-part-endurance-set-to-min"
+name = "Enemy Part Endurance Set to Min?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "endurance_enable"
+hops = []
+
+[[cheat]]
+id = "battle-stats-update-base-address"
+name = "Battle Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_update_enable"
+hops = []
+
+[[cheat]]
+id = "max-hp-2"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "max-sp-2"
+name = "Max SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "str-2"
+name = "STR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "vit-2"
+name = "VIT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "int-2"
+name = "INT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "men-2"
+name = "MEN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "agi-2"
+name = "AGI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "tec-2"
+name = "TEC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "luc-2"
+name = "LUC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "mov-2"
+name = "MOV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "weapon-2"
+name = "Weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "armor-2"
+name = "Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x56"]
+
+[[cheat]]
+id = "cheat-2"
+name = "???"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "outfit-2"
+name = "Outfit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x5a"]
+
+[[cheat]]
+id = "attachment-2"
+name = "Attachment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "hp-2"
+name = "HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "exp-2"
+name = "EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "sp-2"
+name = "SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "slot-1-enabled-4"
+name = "Slot 1 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "slot-1-id-6"
+name = "Slot 1 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x8a"]
+
+[[cheat]]
+id = "slot-2-enabled-4"
+name = "Slot 2 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "slot-2-id-4"
+name = "Slot 2 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x96"]
+
+[[cheat]]
+id = "slot-3-enabled-4"
+name = "Slot 3 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "slot-3-id-4"
+name = "Slot 3 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xa2"]
+
+[[cheat]]
+id = "slot-4-enabled-4"
+name = "Slot 4 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "slot-4-id-4"
+name = "Slot 4 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xae"]
+
+[[cheat]]
+id = "slot-1-enabled-5"
+name = "Slot 1 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "slot-1-id-7"
+name = "Slot 1 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x92"]
+
+[[cheat]]
+id = "slot-2-enabled-5"
+name = "Slot 2 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "slot-2-id-5"
+name = "Slot 2 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x9e"]
+
+[[cheat]]
+id = "slot-3-enabled-5"
+name = "Slot 3 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "slot-3-id-5"
+name = "Slot 3 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xaa"]
+
+[[cheat]]
+id = "slot-4-enabled-5"
+name = "Slot 4 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "slot-4-id-5"
+name = "Slot 4 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xb6"]
+
+[[cheat]]
+id = "slot-1-enabled-6"
+name = "Slot 1 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "slot-1-id-8"
+name = "Slot 1 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x8e"]
+
+[[cheat]]
+id = "slot-2-enabled-6"
+name = "Slot 2 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "slot-2-id-6"
+name = "Slot 2 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0x9a"]
+
+[[cheat]]
+id = "slot-3-enabled-6"
+name = "Slot 3 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "slot-3-id-6"
+name = "Slot 3 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xa6"]
+
+[[cheat]]
+id = "slot-4-enabled-6"
+name = "Slot 4 Enabled"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "slot-4-id-6"
+name = "Slot 4 ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer2"
+hops = ["+0xb2"]
+
+[[cheat]]
+id = "death-stats-base-address-scan-initialization-activate-this-first"
+name = "Death Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(deathstats_basepointer)
+registersymbol(deathstats_update_enable)
+registersymbol(deathstats_set_enable)
+registersymbol(deathstats_idset_value)
+registersymbol(deathstats_expset_enable)
+registersymbol(deathstats_expset_value)
+registersymbol(deathstats_creditsset_enable)
+registersymbol(deathstats_creditsset_value)
+
+alloc(deathstats_basepointer, 4)
+alloc(deathstats_update_enable, 4)
+alloc(deathstats_set_enable, 4)
+alloc(deathstats_idset_value, 4)
+alloc(deathstats_expset_enable, 4)
+alloc(deathstats_expset_value, 4)
+alloc(deathstats_creditsset_enable, 4)
+alloc(deathstats_creditsset_value, 4)
+
+deathstats_expset_value:
+dd #1
+
+deathstats_creditsset_value:
+dd #1
+
+
+[DISABLE]
+unregistersymbol(deathstats_basepointer)
+unregistersymbol(deathstats_update_enable)
+unregistersymbol(deathstats_set_enable)
+unregistersymbol(deathstats_idset_value)
+unregistersymbol(deathstats_expset_enable)
+unregistersymbol(deathstats_expset_value)
+unregistersymbol(deathstats_creditsset_enable)
+unregistersymbol(deathstats_creditsset_value)
+
+dealloc(deathstats_basepointer)
+dealloc(deathstats_update_enable)
+dealloc(deathstats_set_enable)
+dealloc(deathstats_idset_value)
+dealloc(deathstats_expset_enable)
+dealloc(deathstats_expset_value)
+dealloc(deathstats_creditsset_enable)
+dealloc(deathstats_creditsset_value)"""
+
+[[cheat]]
+id = "death-stats-base-address-scan-to-update-kill-enemy"
+name = "Death Stats Base Address Scan (To Update: Kill Enemy)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(deathstats_savedAOB)
+label(deathstats_returnhere)
+label(deathstats_originalcode)
+label(deathstats_exit)
+
+label(deathstats_update_exit)
+label(deathstats_set_exit)
+label(deathstats_idset_exit)
+label(deathstats_expset_exit)
+label(deathstats_creditsset_exit)
+
+registersymbol(deathstats_savedAOB)
+
+aobscanmodule(deathstats_searchedAOB,NeptuniaVII.exe,8B 82 B0 00 00 00) // should be unique
+
+alloc(deathstats_newmem, 2048)
+
+deathstats_newmem:
+//Check for battle to not trigger in library
+  cmp ax,#2
+  jne deathstats_originalcode
+
+  push ebx
+
+  cmp dword ptr [deathstats_update_enable], #0
+  je deathstats_update_exit
+  mov [deathstats_basepointer], edx
+deathstats_update_exit:
+
+  cmp dword ptr [deathstats_set_enable], #0
+  je deathstats_set_exit
+  mov dword ptr [edx+c2], 0xFFFFFFFF
+  mov dword ptr [edx+ca], 0xFFFF
+deathstats_set_exit:
+
+  cmp dword ptr [deathstats_idset_value], #0
+  je deathstats_idset_exit
+  mov ebx, [deathstats_idset_value]
+  mov word ptr [edx+c6], bx
+  mov word ptr [edx+c8], bx
+deathstats_idset_exit:
+
+  cmp dword ptr [deathstats_expset_enable], #0
+  je deathstats_expset_exit
+  mov ebx, [edx+b0]
+  imul ebx, [deathstats_expset_value]
+  mov [edx+b0], ebx
+deathstats_expset_exit:
+
+  cmp dword ptr [deathstats_creditsset_enable], #0
+  je deathstats_creditsset_exit
+  mov ebx, [edx+b8]
+  imul ebx, [deathstats_creditsset_value]
+  mov [edx+b8], ebx
+deathstats_creditsset_exit:
+
+  pop ebx
+
+deathstats_originalcode:
+  mov eax,[edx+000000B0]
+
+deathstats_exit:
+  jmp deathstats_returnhere
+
+
+deathstats_searchedAOB:
+deathstats_savedAOB:
+jmp deathstats_newmem
+nop
+deathstats_returnhere:
+
+
+[DISABLE]
+deathstats_savedAOB:
+  db 8B 82 B0 00 00 00
+
+unregistersymbol(deathstats_savedAOB)
+
+dealloc(deathstats_newmem)"""
+
+[[cheat]]
+id = "repeatable-steal-to-update-play"
+name = "Repeatable Steal (To Update: Play)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(infinitesteal_savedAOB,NeptuniaVII.exe,75 42 80 BC 19 CA 00 00 00 00) // should be unique
+registersymbol(infinitesteal_savedAOB)
+
+infinitesteal_savedAOB:
+  nop
+  nop
+
+[DISABLE]
+infinitesteal_savedAOB:
+  db 75 42
+
+unregistersymbol(infinitesteal_savedAOB)"""
+
+[[cheat]]
+id = "item-drop-rate-set-to-100"
+name = "Item Drop Rate Set to 100%?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_set_enable"
+hops = []
+
+[[cheat]]
+id = "item-drop-change-to-this"
+name = "Item Drop Change to This?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_idset_value"
+hops = []
+
+[[cheat]]
+id = "exp-multiplied-by-exp-multplier-value"
+name = "Exp Multiplied By Exp Multplier Value?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_expset_enable"
+hops = []
+
+[[cheat]]
+id = "exp-multplier-value"
+name = "Exp Multplier Value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_expset_value"
+hops = []
+
+[[cheat]]
+id = "credits-multiplied-by-credits-multplier-value"
+name = "Credits Multiplied By Credits Multplier Value?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_creditsset_enable"
+hops = []
+
+[[cheat]]
+id = "credits-multplier-value"
+name = "Credits Multplier Value"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_creditsset_value"
+hops = []
+
+[[cheat]]
+id = "death-stats-update-base-address"
+name = "Death Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "max-hp-3"
+name = "Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "max-sp-3"
+name = "Max SP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "str-3"
+name = "STR"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "vit-3"
+name = "VIT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "int-3"
+name = "INT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "men-3"
+name = "MEN"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "agi-3"
+name = "AGI"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x3c"]
+
+[[cheat]]
+id = "tec-3"
+name = "TEC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "luc-3"
+name = "LUC"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "mov-3"
+name = "MOV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x48"]
+
+[[cheat]]
+id = "weapon-3"
+name = "Weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "armor-3"
+name = "Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x56"]
+
+[[cheat]]
+id = "cheat-3"
+name = "???"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "outfit-3"
+name = "Outfit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x5a"]
+
+[[cheat]]
+id = "attachment-3"
+name = "Attachment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "exp-drop"
+name = "Exp Drop"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "credits-drop"
+name = "Credits Drop"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "probability-multiplier"
+name = "Probability Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xc2"]
+
+[[cheat]]
+id = "item-drop-1-probability"
+name = "Item Drop 1 Probability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xc4"]
+
+[[cheat]]
+id = "item-drop-1-probability-2"
+name = "Item Drop 1 Probability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xc5"]
+
+[[cheat]]
+id = "item-drop-1-id"
+name = "Item Drop 1 ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xc6"]
+
+[[cheat]]
+id = "item-drop-2-id"
+name = "Item Drop 2 ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "item-steal-1-probability"
+name = "Item Steal 1 Probability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xca"]
+
+[[cheat]]
+id = "item-steal-2-probability"
+name = "Item Steal 2 Probability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xcb"]
+
+[[cheat]]
+id = "item-steal-1-id"
+name = "Item Steal 1 ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "item-steal-1-id-2"
+name = "Item Steal 1 ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "deathstats_basepointer"
+hops = ["+0xce"]
+
+[[cheat]]
+id = "dungeon-camera-stats-base-address-scan-initialization-activate-this-first"
+name = "Dungeon Camera Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(dungeoncamerastats_basepointer)
+registersymbol(dungeoncamerastatsupdate_enable)
+registersymbol(dungeoncamerastatsset_enable)
+
+alloc(dungeoncamerastats_basepointer,4)
+alloc(dungeoncamerastatsupdate_enable,4)
+alloc(dungeoncamerastatsset_enable,4)
+
+
+[DISABLE]
+unregistersymbol(dungeoncamerastats_basepointer)
+unregistersymbol(dungeoncamerastatsupdate_enable)
+unregistersymbol(dungeoncamerastatsset_enable)
+
+dealloc(dungeoncamerastats_basepointer)
+dealloc(dungeoncamerastatsupdate_enable)
+dealloc(dungeoncamerastatsset_enable)"""
+
+[[cheat]]
+id = "dungeon-camera-remove-zoom-limits-to-update-zoom-dungeon"
+name = "Dungeon Camera Remove Zoom Limits (To Update: Zoom Dungeon)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(dungeoncameraremovezoomlimitsstats_savedAOB)
+
+registersymbol(dungeoncameraremovezoomlimitsstats_savedAOB)
+
+aobscanmodule(dungeoncameraremovezoomlimitsstats_searchedAOB,NeptuniaVII.exe,76 0A C7 86 A8 01 00 00 00 00 80 3F) // should be unique
+
+dungeoncameraremovezoomlimitsstats_searchedAOB:
+dungeoncameraremovezoomlimitsstats_savedAOB:
+db EB 0A
+
+
+[DISABLE]
+dungeoncameraremovezoomlimitsstats_savedAOB:
+db 76 0A
+
+unregistersymbol(dungeoncameraremovezoomlimitsstats_savedAOB)"""
+
+[[cheat]]
+id = "dungeon-camera-stats-base-address-scan-to-update-dungeon"
+name = "Dungeon Camera Stats Base Address Scan (To Update: Dungeon)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(dungeoncamerastats_savedAOB)
+label(dungeoncamerastats_returnhere)
+label(dungeoncamerastats_originalcode)
+label(dungeoncamerastats_exit)
+
+label(dungeoncamerastatsupdate_exit)
+label(dungeoncamerastatsset_exit)
+
+registersymbol(dungeoncamerastats_savedAOB)
+
+aobscanmodule(dungeoncamerastats_searchedAOB,NeptuniaVII.exe,F3 0F 10 86 A8 01 00 00 0F) // should be unique
+
+alloc(dungeoncamerastats_newmem,2048)
+
+dungeoncamerastats_newmem:
+  cmp dword ptr [dungeoncamerastatsupdate_enable], #0
+  je dungeoncamerastatsupdate_exit
+  mov [dungeoncamerastats_basepointer], esi
+dungeoncamerastatsupdate_exit:
+
+  cmp dword ptr [dungeoncamerastatsset_enable], #0
+  je dungeoncamerastatsset_exit
+  mov [esi+1b8], (float)100
+dungeoncamerastatsset_exit:
+
+dungeoncamerastats_originalcode:
+  movss xmm0,[esi+000001A8]
+
+dungeoncamerastats_exit:
+  jmp dungeoncamerastats_returnhere
+
+dungeoncamerastats_searchedAOB:
+dungeoncamerastats_savedAOB:
+  jmp dungeoncamerastats_newmem
+  nop
+  nop
+  nop
+dungeoncamerastats_returnhere:
+
+
+[DISABLE]
+dungeoncamerastats_savedAOB:
+  db F3 0F 10 86 A8 01 00 00
+
+unregistersymbol(dungeoncamerastats_savedAOB)
+
+dealloc(dungeoncamerastats_newmem)"""
+
+[[cheat]]
+id = "tilt-limits-set-to-massive"
+name = "Tilt Limits Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastatsset_enable"
+hops = []
+
+[[cheat]]
+id = "dungeon-camera-stats-update-base-address"
+name = "Dungeon Camera Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastatsupdate_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "tilt"
+name = "Tilt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "rotate"
+name = "Rotate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x19c"]
+
+[[cheat]]
+id = "cheat-4"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "cheat-5"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "zoom"
+name = "Zoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "cheat-6"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "cheat-7"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "max-tilt"
+name = "Max Tilt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "min-tilt"
+name = "Min Tilt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "cheat-8"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "cheat-9"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "zoom-parameter"
+name = "Zoom Parameter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "max-zoom"
+name = "Max Zoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "zoom-multiplier"
+name = "Zoom Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1cc"]
+
+[[cheat]]
+id = "zoom-parameter-2"
+name = "Zoom Parameter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "zoom-parameter-3"
+name = "Zoom Parameter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "zoom-parameter-4"
+name = "Zoom Parameter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1d8"]
+
+[[cheat]]
+id = "cheat-10"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1dc"]
+
+[[cheat]]
+id = "cheat-11"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1e0"]
+
+[[cheat]]
+id = "cheat-12"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1e4"]
+
+[[cheat]]
+id = "cheat-13"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1e8"]
+
+[[cheat]]
+id = "cheat-14"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1ec"]
+
+[[cheat]]
+id = "cheat-15"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1f0"]
+
+[[cheat]]
+id = "zoom-non-editable"
+name = "Zoom (Non-Editable)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1f4"]
+
+[[cheat]]
+id = "zoom-non-editable-2"
+name = "Zoom (Non-Editable)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "cheat-16"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeoncamerastats_basepointer"
+hops = ["+0x1fc"]
+
+[[cheat]]
+id = "equipment-camera-stats-base-address-scan-initialization-activate-this-first"
+name = "Equipment Camera Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(equipmentcamerastats_basepointer)
+registersymbol(equipmentcamerastatsupdate_enable)
+
+alloc(equipmentcamerastats_basepointer,4)
+alloc(equipmentcamerastatsupdate_enable,4)
+
+
+[DISABLE]
+unregistersymbol(equipmentcamerastats_basepointer)
+unregistersymbol(equipmentcamerastatsupdate_enable)
+
+dealloc(equipmentcamerastats_basepointer)
+dealloc(equipmentcamerastatsupdate_enable)"""
+
+[[cheat]]
+id = "equipment-camera-remove-zoom-limits-to-update-zoom-equipment"
+name = "Equipment Camera Remove Zoom Limits (To Update: Zoom Equipment)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(equipmentcameraremovezoomlimitsstats_savedAOB)
+label(equipmentcameraremovezoomlimitsstats_savedAOB2)
+
+registersymbol(equipmentcameraremovezoomlimitsstats_savedAOB)
+registersymbol(equipmentcameraremovezoomlimitsstats_savedAOB2)
+
+aobscanmodule(equipmentcameraremovezoomlimitsstats_searchedAOB,NeptuniaVII.exe,C7 46 14 00 00 00 00 5E 8B E5 5D C2) // should be unique
+aobscanmodule(equipmentcameraremovezoomlimitsstats_searchedAOB2,NeptuniaVII.exe,C7 46 14 00 00 80 3F 5E) // should be unique
+
+equipmentcameraremovezoomlimitsstats_searchedAOB:
+equipmentcameraremovezoomlimitsstats_savedAOB:
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+
+equipmentcameraremovezoomlimitsstats_searchedAOB2:
+equipmentcameraremovezoomlimitsstats_savedAOB2:
+nop
+nop
+nop
+nop
+nop
+nop
+nop
+
+
+[DISABLE]
+equipmentcameraremovezoomlimitsstats_savedAOB:
+  db C7 46 14 00 00 00 00
+
+equipmentcameraremovezoomlimitsstats_savedAOB2:
+  db C7 46 14 00 00 80 3F
+
+unregistersymbol(equipmentcameraremovezoomlimitsstats_savedAOB)
+unregistersymbol(equipmentcameraremovezoomlimitsstats_savedAOB2)"""
+
+[[cheat]]
+id = "equipment-camera-remove-tilt-limits-to-update-zoom-equipment"
+name = "Equipment Camera Remove Tilt Limits (To Update: Zoom Equipment)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(equipmentcameraremovetiltlimitsstats_savedAOB)
+
+registersymbol(equipmentcameraremovetiltlimitsstats_savedAOB)
+
+aobscanmodule(equipmentcameraremovetiltlimitsstats_searchedAOB,NeptuniaVII.exe,0F 28 C1 F3 0F 59 05 * * * * 8B CF 6A 00 6A 00 F3 0F 11 46) // should be unique
+
+equipmentcameraremovetiltlimitsstats_searchedAOB:
+equipmentcameraremovetiltlimitsstats_savedAOB:
+nop
+nop
+nop
+
+[DISABLE]
+equipmentcameraremovetiltlimitsstats_savedAOB:
+  db 0F 28 C1
+
+unregistersymbol(equipmentcameraremovetiltlimitsstats_savedAOB)"""
+
+[[cheat]]
+id = "equipment-camera-stats-base-address-scan-to-update-view-equipment"
+name = "Equipment Camera Stats Base Address Scan (To Update: View Equipment)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(equipmentcamerastats_savedAOB)
+label(equipmentcamerastats_returnhere)
+label(equipmentcamerastats_originalcode)
+label(equipmentcamerastats_exit)
+
+label(equipmentcamerastatsupdate_exit)
+
+registersymbol(equipmentcamerastats_savedAOB)
+
+aobscanmodule(equipmentcamerastats_searchedAOB,NeptuniaVII.exe,F3 0F 10 46 0C 8D 85 C0) // should be unique
+
+alloc(equipmentcamerastats_newmem,2048)
+
+equipmentcamerastats_newmem:
+  cmp dword ptr [equipmentcamerastatsupdate_enable], #0
+  je equipmentcamerastatsupdate_exit
+  mov [equipmentcamerastats_basepointer], esi
+equipmentcamerastatsupdate_exit:
+
+equipmentcamerastats_originalcode:
+  movss xmm0,[esi+0C]
+
+equipmentcamerastats_exit:
+  jmp equipmentcamerastats_returnhere
+
+equipmentcamerastats_searchedAOB:
+equipmentcamerastats_savedAOB:
+  jmp equipmentcamerastats_newmem
+equipmentcamerastats_returnhere:
+
+[DISABLE]
+equipmentcamerastats_savedAOB:
+  db F3 0F 10 46 0C
+
+unregistersymbol(equipmentcamerastats_savedAOB)
+
+dealloc(equipmentcamerastats_newmem)"""
+
+[[cheat]]
+id = "equipment-camera-stats-update-base-address"
+name = "Equipment Camera Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "equipmentcamerastatsupdate_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-6"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "equipmentcamerastats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "tilt-2"
+name = "Tilt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "equipmentcamerastats_basepointer"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "rotate-2"
+name = "Rotate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "equipmentcamerastats_basepointer"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "zoom-2"
+name = "Zoom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "equipmentcamerastats_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "disc-stats-base-address-scan-initialization-activate-this-first"
+name = "Disc Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(discstats_basepointer)
+registersymbol(discstatsupdate_enable)
+registersymbol(discstatsset_enable)
+
+alloc(discstats_basepointer,4)
+alloc(discstatsupdate_enable,4)
+alloc(discstatsset_enable,4)
+
+[DISABLE]
+unregistersymbol(discstats_basepointer)
+unregistersymbol(discstatsupdate_enable)
+unregistersymbol(discstatsset_enable)
+
+dealloc(discstats_basepointer)
+dealloc(discstatsupdate_enable)
+dealloc(discstatsset_enable)"""
+
+[[cheat]]
+id = "disc-stats-base-address-scan-to-update-select-disc-development"
+name = "Disc Stats Base Address Scan (To Update: Select Disc Development)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(discstats_savedAOB,NeptuniaVII.exe,0F B7 84 48 C4 00 00 00 85) // should be unique
+registersymbol(discstats_savedAOB)
+alloc(discstats_newmem,1024)
+
+label(discstats_originalcode)
+label(discstats_return)
+
+label(discstatsupdate_exit)
+label(discstatsset_exit)
+
+discstats_newmem:
+  cmp dword ptr [discstatsupdate_enable],#0
+  je discstatsupdate_exit
+  mov [discstats_basepointer],eax
+discstatsupdate_exit:
+
+  cmp dword ptr [discstatsset_enable],#0
+  je discstatsset_exit
+  mov word ptr [eax+ecx*2+000000C4],#5
+discstatsset_exit:
+
+discstats_originalcode:
+  movzx eax,word ptr [eax+ecx*2+000000C4]
+  jmp discstats_return
+
+discstats_savedAOB:
+  jmp discstats_newmem
+  nop
+  nop
+  nop
+discstats_return:
+
+[DISABLE]
+
+discstats_savedAOB:
+  db 0F B7 84 48 C4 00 00 00
+
+unregistersymbol(discstats_savedAOB)
+dealloc(discstats_newmem)"""
+
+[[cheat]]
+id = "disc-slots-set-to-maximum-level"
+name = "Disc Slots Set to Maximum Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "discstatsset_enable"
+hops = []
+
+[[cheat]]
+id = "disc-stats-update-base-address"
+name = "Disc Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "discstatsupdate_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-7"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "discstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "quest-stats-base-address-scan-initialization-activate-this-first"
+name = "Quest Stats Base Address Scan Initialization (Activate This First)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(queststats_basepointer)
+registersymbol(queststatsupdate_enable)
+registersymbol(queststatscomplete_enable)
+registersymbol(queststatsset_enable)
+
+alloc(queststats_basepointer,4)
+alloc(queststatsupdate_enable,4)
+alloc(queststatscomplete_enable,4)
+alloc(queststatsset_enable,4)
+
+[DISABLE]
+unregistersymbol(queststats_basepointer)
+unregistersymbol(queststatsupdate_enable)
+unregistersymbol(queststatscomplete_enable)
+unregistersymbol(queststatsset_enable)
+
+dealloc(queststats_basepointer)
+dealloc(queststatsupdate_enable)
+dealloc(queststatscomplete_enable)
+dealloc(queststatsset_enable)"""
+
+[[cheat]]
+id = "quest-stats-base-address-scan-to-update-select-guild-menu"
+name = "Quest Stats Base Address Scan (To Update: Select Guild Menu)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(queststats_savedAOB,NeptuniaVII.exe,8A 40 0C 24 01 5B) // should be unique
+registersymbol(queststats_savedAOB)
+alloc(queststats_newmem,1024)
+
+label(queststats_originalcode)
+label(queststats_return)
+
+label(queststatsupdate_exit)
+label(queststatscomplete_exit)
+label(queststatsset_exit)
+
+queststats_newmem:
+  cmp dword ptr [queststatsupdate_enable],#0
+  je queststatsupdate_exit
+  mov [queststats_basepointer],eax
+queststatsupdate_exit:
+
+  cmp dword ptr [queststatscomplete_enable],#0
+  je queststatscomplete_exit
+  mov word ptr [eax+0C],010A
+queststatscomplete_exit:
+
+  cmp dword ptr [queststatsset_enable],#0
+  je queststatsset_exit
+  mov word ptr [eax+10],#255
+  mov word ptr [eax+12],#255
+queststatsset_exit:
+
+queststats_originalcode:
+  mov al,[eax+0C]
+  and al,01
+  jmp queststats_return
+
+queststats_savedAOB:
+  jmp queststats_newmem
+queststats_return:
+
+[DISABLE]
+
+queststats_savedAOB:
+  db 8A 40 0C 24 01
+
+unregistersymbol(queststats_savedAOB)
+dealloc(queststats_newmem)"""
+
+[[cheat]]
+id = "quest-set-to-clear"
+name = "Quest Set to Clear?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "queststatscomplete_enable"
+hops = []
+
+[[cheat]]
+id = "quest-hunt-count-set-to-max"
+name = "Quest Hunt Count Set to Max?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "queststatsset_enable"
+hops = []
+
+[[cheat]]
+id = "quest-stats-update-base-address"
+name = "Quest Stats Update Base Address?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "queststatsupdate_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-8"
+name = "Base Address"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "queststats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "completed-before"
+name = "Completed Before"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "queststats_basepointer"
+hops = ["+0xd"]
+
+[[cheat]]
+id = "enemy-difficulty-mod-base-address-scan-initialization-activate-this-first"
+name = "Enemy Difficulty Mod Base Address Scan Initialization (Activate This First)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(enemydiffhp_enable)
+registersymbol(enemydiffsp_enable)
+registersymbol(enemydiffstr_enable)
+registersymbol(enemydiffvit_enable)
+registersymbol(enemydiffint_enable)
+registersymbol(enemydiffmen_enable)
+registersymbol(enemydiffagi_enable)
+registersymbol(enemydifftec_enable)
+registersymbol(enemydiffluc_enable)
+registersymbol(enemydiffmov_enable)
+registersymbol(enemydiffhp_multiplier)
+registersymbol(enemydiffsp_multiplier)
+registersymbol(enemydiffstr_multiplier)
+registersymbol(enemydiffvit_multiplier)
+registersymbol(enemydiffint_multiplier)
+registersymbol(enemydiffmen_multiplier)
+registersymbol(enemydiffagi_multiplier)
+registersymbol(enemydifftec_multiplier)
+registersymbol(enemydiffluc_multiplier)
+registersymbol(enemydiffmov_multiplier)
+alloc(enemydiffhp_enable,4)
+alloc(enemydiffsp_enable,4)
+alloc(enemydiffstr_enable,4)
+alloc(enemydiffvit_enable,4)
+alloc(enemydiffint_enable,4)
+alloc(enemydiffmen_enable,4)
+alloc(enemydiffagi_enable,4)
+alloc(enemydifftec_enable,4)
+alloc(enemydiffluc_enable,4)
+alloc(enemydiffmov_enable,4)
+alloc(enemydiffhp_multiplier,4)
+alloc(enemydiffsp_multiplier,4)
+alloc(enemydiffstr_multiplier,4)
+alloc(enemydiffvit_multiplier,4)
+alloc(enemydiffint_multiplier,4)
+alloc(enemydiffmen_multiplier,4)
+alloc(enemydiffagi_multiplier,4)
+alloc(enemydifftec_multiplier,4)
+alloc(enemydiffluc_multiplier,4)
+alloc(enemydiffmov_multiplier,4)
+enemydiffhp_multiplier:
+dd #1
+enemydiffsp_multiplier:
+dd #1
+enemydiffstr_multiplier:
+dd #1
+enemydiffvit_multiplier:
+dd #1
+enemydiffint_multiplier:
+dd #1
+enemydiffmen_multiplier:
+dd #1
+enemydiffagi_multiplier:
+dd #1
+enemydifftec_multiplier:
+dd #1
+enemydiffluc_multiplier:
+dd #1
+enemydiffmov_multiplier:
+dd #1
+[DISABLE]
+unregistersymbol(enemydiffhp_enable)
+unregistersymbol(enemydiffsp_enable)
+unregistersymbol(enemydiffstr_enable)
+unregistersymbol(enemydiffvit_enable)
+unregistersymbol(enemydiffint_enable)
+unregistersymbol(enemydiffmen_enable)
+unregistersymbol(enemydiffagi_enable)
+unregistersymbol(enemydifftec_enable)
+unregistersymbol(enemydiffluc_enable)
+unregistersymbol(enemydiffmov_enable)
+unregistersymbol(enemydiffhp_multiplier)
+unregistersymbol(enemydiffsp_multiplier)
+unregistersymbol(enemydiffstr_multiplier)
+unregistersymbol(enemydiffvit_multiplier)
+unregistersymbol(enemydiffint_multiplier)
+unregistersymbol(enemydiffmen_multiplier)
+unregistersymbol(enemydiffagi_multiplier)
+unregistersymbol(enemydifftec_multiplier)
+unregistersymbol(enemydiffluc_multiplier)
+unregistersymbol(enemydiffmov_multiplier)
+dealloc(enemydiffhp_enable)
+dealloc(enemydiffsp_enable)
+dealloc(enemydiffstr_enable)
+dealloc(enemydiffvit_enable)
+dealloc(enemydiffint_enable)
+dealloc(enemydiffmen_enable)
+dealloc(enemydiffagi_enable)
+dealloc(enemydifftec_enable)
+dealloc(enemydiffluc_enable)
+dealloc(enemydiffmov_enable)
+dealloc(enemydiffhp_multiplier)
+dealloc(enemydiffsp_multiplier)
+dealloc(enemydiffstr_multiplier)
+dealloc(enemydiffvit_multiplier)
+dealloc(enemydiffint_multiplier)
+dealloc(enemydiffmen_multiplier)
+dealloc(enemydiffagi_multiplier)
+dealloc(enemydifftec_multiplier)
+dealloc(enemydiffluc_multiplier)
+dealloc(enemydiffmov_multiplier)"""
+
+[[cheat]]
+id = "enemy-difficulty-mod-base-address-scan-to-update-battle-all"
+name = "Enemy Difficulty Mod Base Address Scan (To Update: Battle All)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(enemydiff_savedAOB,NeptuniaVII.exe,F3 A5 8B 75 90 56) // should be unique
+registersymbol(enemydiff_savedAOB)
+alloc(enemydiff_newmem,2048)
+label(enemydiff_originalcode)
+label(enemydiff_returnhere)
+enemydiff_newmem:
+repe movsd
+push edx
+cmp dword ptr [enemydiffhp_enable], #0
+je @f
+mov edx,dword ptr [eax+20] //MAX HP
+imul edx,[enemydiffhp_multiplier]
+mov dword ptr [eax+20],edx
+@@:
+cmp dword ptr [enemydiffsp_enable], #0
+je @f
+mov edx,dword ptr [eax+28] //MAX SP
+imul edx,[enemydiffsp_multiplier]
+mov dword ptr [eax+28],edx
+@@:
+cmp dword ptr [enemydiffstr_enable], #0
+je @f
+mov edx,dword ptr [eax+2C] //STR
+imul edx,[enemydiffstr_multiplier]
+mov dword ptr [eax+2C],edx
+@@:
+cmp dword ptr [enemydiffvit_enable], #0
+je @f
+mov edx,dword ptr [eax+30] //VIT
+imul edx,[enemydiffvit_multiplier]
+mov dword ptr [eax+30],edx
+@@:
+cmp dword ptr [enemydiffint_enable], #0
+je @f
+mov edx,dword ptr [eax+34] //INT
+imul edx,[enemydiffint_multiplier]
+mov dword ptr [eax+34],edx
+@@:
+cmp dword ptr [enemydiffmen_enable], #0
+je @f
+mov edx,dword ptr [eax+38] //MEN
+imul edx,[enemydiffmen_multiplier]
+mov dword ptr [eax+38],edx
+@@:
+cmp dword ptr [enemydiffagi_enable], #0
+je @f
+mov edx,dword ptr [eax+3C] //AGI
+imul edx,[enemydiffagi_multiplier]
+mov dword ptr [eax+3C],edx
+@@:
+cmp dword ptr [enemydifftec_enable], #0
+je @f
+mov edx,dword ptr [eax+40] //TEC
+imul edx,[enemydifftec_multiplier]
+mov dword ptr [eax+40],edx
+@@:
+cmp dword ptr [enemydiffluc_enable], #0
+je @f
+mov edx,dword ptr [eax+44] //LUC
+imul edx,[enemydiffluc_multiplier]
+mov dword ptr [eax+44],edx
+@@:
+cmp dword ptr [enemydiffmov_enable], #0
+je @f
+mov edx,dword ptr [eax+48] //MOV
+imul edx,[enemydiffmov_multiplier]
+mov dword ptr [eax+48],edx
+@@:
+pop edx
+enemydiff_originalcode:
+mov esi,[ebp-70]
+jmp enemydiff_returnhere
+enemydiff_savedAOB:
+jmp enemydiff_newmem
+enemydiff_returnhere:
+[DISABLE]
+enemydiff_savedAOB:
+db F3 A5 8B 75 90
+unregistersymbol(enemydiff_savedAOB)
+dealloc(enemydiff_newmem)"""
+
+[[cheat]]
+id = "enemy-hp-multiplier-value"
+name = "Enemy HP Multiplier Value"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffhp_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-sp-multiplier-value"
+name = "Enemy SP Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffsp_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-str-multiplier-value"
+name = "Enemy STR Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffstr_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-vit-multiplier-value"
+name = "Enemy VIT Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffvit_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-int-multiplier-value"
+name = "Enemy INT Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffint_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-men-multiplier-value"
+name = "Enemy MEN Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffmen_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-agi-multiplier-value"
+name = "Enemy AGI Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffagi_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-tec-multiplier-value"
+name = "Enemy TEC Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydifftec_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-luc-multiplier-value"
+name = "Enemy LUC Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffluc_multiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-mov-multiplier-value"
+name = "Enemy MOV Multiplier Value"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "enemydiffmov_multiplier"
+hops = []
+
+[[cheat]]
+id = "dungeon-stats-base-address-scan-initialization-activate-this-first"
+name = "Dungeon Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(dungeonhiddentreasure_basepointer1,4)
+alloc(dungeonhiddentreasure_basepointer2,4)
+alloc(dungeonhiddenenemy_basepointer,4)
+alloc(dungeonstats_update_enable,4)
+alloc(dungeonhiddentreasure_sethint_index,4)
+alloc(dungeonhiddentreasure_setcondition_enable,4)
+alloc(dungeonhiddentreasure_infiniteset_enable,4)
+alloc(dungeonhiddentreasure_takenset_enable,4)
+alloc(dungeonhiddenenemy_set_enable,4)
+registersymbol(dungeonhiddentreasure_basepointer1)
+registersymbol(dungeonhiddentreasure_basepointer2)
+registersymbol(dungeonhiddenenemy_basepointer)
+registersymbol(dungeonstats_update_enable)
+registersymbol(dungeonhiddentreasure_sethint_index)
+registersymbol(dungeonhiddentreasure_setcondition_enable)
+registersymbol(dungeonhiddentreasure_infiniteset_enable)
+registersymbol(dungeonhiddentreasure_takenset_enable)
+registersymbol(dungeonhiddenenemy_set_enable)
+[DISABLE]
+dealloc(dungeonhiddentreasure_basepointer1)
+dealloc(dungeonhiddentreasure_basepointer2)
+dealloc(dungeonhiddenenemy_basepointer)
+dealloc(dungeonstats_update_enable)
+dealloc(dungeonhiddentreasure_sethint_index)
+dealloc(dungeonhiddentreasure_setcondition_enable)
+dealloc(dungeonhiddentreasure_infiniteset_enable)
+unregistersymbol(dungeonhiddentreasure_takenset_enable)
+dealloc(dungeonhiddenenemy_set_enable)
+unregistersymbol(dungeonhiddentreasure_basepointer1)
+unregistersymbol(dungeonhiddentreasure_basepointer2)
+unregistersymbol(dungeonhiddenenemy_basepointer)
+unregistersymbol(dungeonstats_update_enable)
+unregistersymbol(dungeonhiddentreasure_sethint_index)
+unregistersymbol(dungeonhiddentreasure_setcondition_enable)
+unregistersymbol(dungeonhiddentreasure_infiniteset_enable)
+unregistersymbol(dungeonhiddentreasure_takenset_enable)
+unregistersymbol(dungeonhiddenenemy_set_enable)"""
+
+[[cheat]]
+id = "dungeon-stats-base-address-scan-to-update-highlight-dungeon"
+name = "Dungeon Stats Base Address Scan (To Update: Highlight Dungeon)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(dungeonhiddentreasure_savedAOB,NeptuniaVII.exe,8A 48 06 3A 48 07 76 1A) // should be unique
+aobscanmodule(dungeonhiddentreasuretaken_savedAOB,NeptuniaVII.exe,0F B7 40 1C 85 C3) // should be unique
+aobscanmodule(dungeonhiddentreasuretaken_savedAOB2,NeptuniaVII.exe,0F B7 50 1C B8 01 00 00 00) // should be unique
+aobscanmodule(dungeonhiddenenemy_savedAOB,NeptuniaVII.exe,84 50 15 B8 00 00 00 00) // should be unique
+registersymbol(dungeonhiddentreasure_savedAOB)
+registersymbol(dungeonhiddentreasuretaken_savedAOB)
+registersymbol(dungeonhiddentreasuretaken_savedAOB2)
+registersymbol(dungeonhiddenenemy_savedAOB)
+alloc(dungeonhiddentreasure_newmem,1024)
+alloc(dungeonhiddentreasuretaken_newmem,1024)
+alloc(dungeonhiddentreasuretaken_newmem2,1024)
+alloc(dungeonhiddenenemy_newmem,1024)
+label(dungeonhiddentreasure_update_exit1)
+label(dungeonhiddentreasure_update_exit2)
+label(dungeonhiddenenemy_update_exit)
+label(dungeonhiddentreasure_sethint_exit)
+label(dungeonhiddentreasure_originalcode)
+label(dungeonhiddentreasure_returnhere)
+label(dungeonhiddentreasuretaken_code)
+label(dungeonhiddentreasuretaken_return)
+label(dungeonhiddentreasuretaken_code2)
+label(dungeonhiddentreasuretaken_return2)
+label(dungeonhiddenenemy_originalcode)
+label(dungeonhiddenenemy_returnhere)
+dungeonhiddentreasure_newmem:
+cmp [dungeonstats_update_enable],#0
+je dungeonhiddentreasure_update_exit1
+mov [dungeonhiddentreasure_basepointer1],eax
+dungeonhiddentreasure_update_exit1:
+cmp [dungeonhiddentreasure_sethint_index],#0
+je dungeonhiddentreasure_sethint_exit
+push ebx
+mov ebx,[dungeonhiddentreasure_sethint_index]
+mov byte ptr [eax+06],bl //Hint Index
+pop ebx
+dungeonhiddentreasure_sethint_exit:
+cmp [dungeonhiddentreasure_setcondition_enable],#0
+je dungeonhiddentreasure_originalcode
+mov [eax+07],FF //Condition Unlocked
+dungeonhiddentreasure_originalcode:
+mov cl,[eax+06]
+cmp cl,[eax+07]
+jmp dungeonhiddentreasure_returnhere
+dungeonhiddentreasuretaken_newmem:
+dungeonhiddentreasuretaken_code:
+movzx eax,word ptr [eax+1C]
+cmp [dungeonhiddentreasure_infiniteset_enable],#0
+je @f
+mov eax,#0
+@@:
+test ebx,eax
+jmp dungeonhiddentreasuretaken_return
+dungeonhiddentreasuretaken_newmem2:
+cmp [dungeonstats_update_enable],#0
+je dungeonhiddentreasure_update_exit2
+mov [dungeonhiddentreasure_basepointer2],eax
+dungeonhiddentreasure_update_exit2:
+cmp [dungeonhiddentreasure_takenset_enable],#0
+je @f
+mov word ptr [eax+1C],FFFF
+@@:
+dungeonhiddentreasuretaken_code2:
+movzx edx,word ptr [eax+1C]
+mov eax,00000001
+jmp dungeonhiddentreasuretaken_return2
+dungeonhiddenenemy_newmem:
+cmp [dungeonstats_update_enable],#0
+je dungeonhiddenenemy_update_exit
+mov [dungeonhiddenenemy_basepointer],eax
+dungeonhiddenenemy_update_exit:
+cmp [dungeonhiddenenemy_set_enable],#0
+je dungeonhiddenenemy_originalcode
+mov byte ptr [eax+15],FF
+dungeonhiddenenemy_originalcode:
+test [eax+15],dl
+mov eax,00000000
+jmp dungeonhiddenenemy_returnhere
+dungeonhiddentreasure_savedAOB:
+jmp dungeonhiddentreasure_newmem
+nop
+dungeonhiddentreasure_returnhere:
+dungeonhiddentreasuretaken_savedAOB:
+jmp dungeonhiddentreasuretaken_newmem
+nop
+dungeonhiddentreasuretaken_return:
+dungeonhiddentreasuretaken_savedAOB2:
+  jmp dungeonhiddentreasuretaken_newmem2
+  nop
+  nop
+  nop
+  nop
+dungeonhiddentreasuretaken_return2:
+dungeonhiddenenemy_savedAOB:
+jmp dungeonhiddenenemy_newmem
+nop
+nop
+nop
+dungeonhiddenenemy_returnhere:
+[DISABLE]
+dungeonhiddentreasure_savedAOB:
+db 8A 48 06 3A 48 07
+dungeonhiddentreasuretaken_savedAOB:
+db 0F B7 40 1C 85 C3
+dungeonhiddentreasuretaken_savedAOB2:
+  db 0F B7 50 1C B8 01 00 00 00
+dungeonhiddenenemy_savedAOB:
+db 84 50 15 B8 00 00 00 00
+unregistersymbol(dungeonhiddentreasure_savedAOB)
+unregistersymbol(dungeonhiddentreasuretaken_savedAOB)
+unregistersymbol(dungeonhiddentreasuretaken_savedAOB2)
+unregistersymbol(dungeonhiddenenemy_savedAOB)
+dealloc(dungeonhiddentreasure_newmem)
+dealloc(dungeonhiddentreasuretaken_newmem)
+dealloc(dungeonhiddentreasuretaken_newmem2)
+dealloc(dungeonhiddenenemy_newmem)"""
+
+[[cheat]]
+id = "hidden-treasure-hint-index-change-to-this"
+name = "Hidden Treasure Hint Index Change to This?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddentreasure_sethint_index"
+hops = []
+
+[[cheat]]
+id = "hidden-treasure-condition-set-to-completed"
+name = "Hidden Treasure Condition Set to Completed?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddentreasure_setcondition_enable"
+hops = []
+
+[[cheat]]
+id = "hidden-treasure-set-to-respawn"
+name = "Hidden Treasure Set to Respawn?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddentreasure_infiniteset_enable"
+hops = []
+
+[[cheat]]
+id = "hidden-treasure-set-to-taken"
+name = "Hidden Treasure Set to Taken?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddentreasure_takenset_enable"
+hops = []
+
+[[cheat]]
+id = "hidden-enemy-set-to-unlocked"
+name = "Hidden Enemy Set to Unlocked?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddenenemy_set_enable"
+hops = []
+
+[[cheat]]
+id = "dungeon-stats-update-base-address"
+name = "Dungeon Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "hint-index"
+name = "Hint Index"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddentreasure_basepointer1"
+hops = ["+0x6"]
+
+[[cheat]]
+id = "condition-unlocked"
+name = "Condition Unlocked"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddentreasure_basepointer1"
+hops = ["+0x7"]
+
+[[cheat]]
+id = "treasure-taken"
+name = "Treasure Taken"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddentreasure_basepointer2"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "enemy-unlocked"
+name = "Enemy Unlocked"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "dungeonhiddenenemy_basepointer"
+hops = ["+0x15"]
+
+[[cheat]]
+id = "neplunker-dungeon-stats-base-address-scan-initialization-activate-this-first"
+name = "Neplunker Dungeon Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(neplunkerstats_baseaddress)
+registersymbol(neplunkerstats_update_enable)
+registersymbol(neplunkerstats_sethealth_enable)
+registersymbol(neplunkerstats_setenergy_enable)
+registersymbol(neplunkerstats_setmedicine_enable)
+registersymbol(neplunkerdeath_set_enable)
+registersymbol(neplunkerjump_set_enable)
+registersymbol(neplunkerjump_set_value)
+
+alloc(neplunkerstats_baseaddress,4)
+alloc(neplunkerstats_update_enable,4)
+alloc(neplunkerstats_sethealth_enable,4)
+alloc(neplunkerstats_setenergy_enable,4)
+alloc(neplunkerstats_setmedicine_enable,4)
+alloc(neplunkerdeath_set_enable,4)
+alloc(neplunkerjump_set_enable,4)
+alloc(neplunkerjump_set_value,4)
+
+neplunkerjump_set_value:
+dd 4020A3D7
+
+[DISABLE]
+unregistersymbol(neplunkerstats_baseaddress)
+unregistersymbol(neplunkerstats_update_enable)
+unregistersymbol(neplunkerstats_sethealth_enable)
+unregistersymbol(neplunkerstats_setenergy_enable)
+unregistersymbol(neplunkerstats_setmedicine_enable)
+unregistersymbol(neplunkerdeath_set_enable)
+unregistersymbol(neplunkerjump_set_enable)
+unregistersymbol(neplunkerjump_set_value)
+
+dealloc(neplunkerstats_baseaddress)
+dealloc(neplunkerstats_update_enable)
+dealloc(neplunkerstats_sethealth_enable)
+dealloc(neplunkerstats_setenergy_enable)
+dealloc(neplunkerstats_setmedicine_enable)
+dealloc(neplunkerdeath_set_enable)
+dealloc(neplunkerjump_set_enable)
+dealloc(neplunkerjump_set_value)"""
+
+[[cheat]]
+id = "neplunker-dungeon-stats-base-address-scan-to-update-neplunker-dungeon"
+name = "Neplunker Dungeon Stats Base Address Scan (To Update: Neplunker Dungeon)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(neplunkerstats_savedAOB,NeptuniaVII.exe,85 C0 75 01 C3 8B 40 08) // should be unique
+aobscanmodule(neplunkerdeath_savedAOB,NeptuniaVII.exe,E8 FB EB 01 00) // should be unique
+aobscanmodule(neplunkerjump_savedAOB,NeptuniaVII.exe,C7 45 FC D7 A3 20 40) // should be unique
+registersymbol(neplunkerstats_savedAOB)
+registersymbol(neplunkerdeath_savedAOB)
+registersymbol(neplunkerjump_savedAOB)
+alloc(neplunkerstats_newmem,1024)
+alloc(neplunkerdeath_newmem,1024)
+alloc(neplunkerjump_newmem,1024)
+label(neplunkerstats_code)
+label(neplunkerstats_return)
+label(neplunkerdeath_code)
+label(neplunkerdeath_return)
+label(neplunkerjump_code)
+label(neplunkerjump_return)
+neplunkerstats_newmem:
+cmp [neplunkerstats_update_enable],#0
+je @f
+mov [neplunkerstats_baseaddress],eax
+@@:
+cmp [neplunkerstats_sethealth_enable],#0
+je @f
+mov [eax+08],#99
+@@:
+cmp [neplunkerstats_setenergy_enable],#0
+je @f
+mov [eax+0C],(float)300
+@@:
+cmp [neplunkerstats_setmedicine_enable],#0
+je @f
+mov [eax+10],(float)30
+@@:
+neplunkerstats_code:
+test eax,eax
+jne NeptuniaVII.exe+2ABA4A
+ret
+jmp neplunkerstats_return
+neplunkerdeath_newmem:
+cmp [neplunkerdeath_set_enable],#0
+je neplunkerdeath_code
+ret
+neplunkerdeath_code:
+call NeptuniaVII.exe+2A29C0
+jmp neplunkerdeath_return
+neplunkerjump_newmem:
+push eax
+mov eax,4020A3D7
+cmp [neplunkerjump_set_enable],#0
+je neplunkerjump_code
+mov eax,[neplunkerjump_set_value]
+neplunkerjump_code:
+mov [ebp-04],eax
+jmp neplunkerjump_return
+neplunkerstats_savedAOB:
+jmp neplunkerstats_newmem
+neplunkerstats_return:
+neplunkerdeath_savedAOB:
+  jmp neplunkerdeath_newmem
+neplunkerdeath_return:
+neplunkerjump_savedAOB:
+jmp neplunkerjump_newmem
+nop
+nop
+neplunkerjump_return:
+[DISABLE]
+neplunkerstats_savedAOB:
+db 85 C0 75 01 C3
+neplunkerdeath_savedAOB:
+db E8 FB EB 01 00
+neplunkerjump_savedAOB:
+db C7 45 FC D7 A3 20 40
+unregistersymbol(neplunkerstats_savedAOB)
+unregistersymbol(neplunkerdeath_savedAOB)
+unregistersymbol(neplunkerjump_savedAOB)
+dealloc(neplunkerstats_newmem)
+dealloc(neplunkerdeath_newmem)
+dealloc(neplunkerjump_newmem)"""
+
+[[cheat]]
+id = "lives-set-to-max"
+name = "Lives Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_sethealth_enable"
+hops = []
+
+[[cheat]]
+id = "energy-set-to-max"
+name = "Energy Set to Max?"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_setenergy_enable"
+hops = []
+
+[[cheat]]
+id = "medicine-set-to-max"
+name = "Medicine Set to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_setmedicine_enable"
+hops = []
+
+[[cheat]]
+id = "death-set-to-disabled"
+name = "Death Set to Disabled?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerdeath_set_enable"
+hops = []
+
+[[cheat]]
+id = "jumping-star-height-set-to-value"
+name = "Jumping Star Height Set to Value?"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerjump_set_enable"
+hops = []
+
+[[cheat]]
+id = "jumping-star-height-value"
+name = "Jumping Star Height Value"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerjump_set_value"
+hops = []
+
+[[cheat]]
+id = "neplunker-dungeon-stats-update-base-address"
+name = "Neplunker Dungeon Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-9"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_baseaddress"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "lives-left"
+name = "Lives Left"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_baseaddress"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "energy"
+name = "Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_baseaddress"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "medicine"
+name = "Medicine"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "neplunkerstats_baseaddress"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "set-combo-slots-for-weapon-to-max-to-update-enter-combo-menu"
+name = "Set Combo Slots For Weapon to Max (To Update: Enter Combo Menu)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(weaponcomboslot_savedAOB,NeptuniaVII.exe,0F B6 42 1B 33 C9) // should be unique
+registersymbol(weaponcomboslot_savedAOB)
+alloc(weaponcomboslot_newmem,1024)
+
+label(weaponcomboslot_return)
+
+weaponcomboslot_newmem:
+  mov byte ptr [edx+1B],#4
+  mov byte ptr [edx+1C],#4
+  mov byte ptr [edx+1D],#4
+  movzx eax,byte ptr [edx+1B]
+  xor ecx,ecx
+  jmp weaponcomboslot_return
+
+weaponcomboslot_savedAOB:
+  jmp weaponcomboslot_newmem
+  nop
+weaponcomboslot_return:
+
+[DISABLE]
+
+weaponcomboslot_savedAOB:
+  db 0F B6 42 1B 33 C9
+
+unregistersymbol(weaponcomboslot_searchedAOB)
+dealloc(weaponcomboslot_newmem)"""
+
+[[cheat]]
+id = "set-combo-skills-to-multiple-slots-to-update-play"
+name = "Set Combo Skills to Multiple Slots (To Update: Play)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(combostats_savedAOB,NeptuniaVII.exe,75 04 3B F2 75 0D) // should be unique
+aobscanmodule(combostats_savedAOB2,NeptuniaVII.exe,75 08 3B CA 74 04) // should be unique
+
+registersymbol(combostats_savedAOB)
+registersymbol(combostats_savedAOB2)
+
+combostats_savedAOB:
+  db EB 04
+//jmp NeptuniaVII.exe+AE8FC
+
+combostats_savedAOB2:
+  db EB 08
+//jmp NeptuniaVII.exe+AE832
+
+[DISABLE]
+
+combostats_savedAOB:
+  db 75 04 3B F2 75 0D
+//jne NeptuniaVII.exe+AE8FC
+
+combostats_savedAOB2:
+  db 75 08 3B CA 74 04
+//jne NeptuniaVII.exe+AE832
+
+unregistersymbol(combostats_savedAOB)
+unregistersymbol(combostats_savedAOB2)"""

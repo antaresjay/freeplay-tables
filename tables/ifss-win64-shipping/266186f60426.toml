@@ -1,0 +1,712 @@
+[game]
+name = "IfSunSets"
+exe = "ifss-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by gmax17. Source: https://fearlessrevolution.com/viewtopic.php?t=33493"
+verified = []
+author = "gmax17"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-this"
+name = "Activate This"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ppcharacter,IFSS-Win64-Shipping.exe,4C 8B B9 D8 02 00 00 33 F6 4C 89 60 08 48 8B DA) // should be unique
+alloc(newmem,$1000)
+alloc(playerstats,8)
+registersymbol(playerstats)
+alloc(player_pointer,8)
+
+label(Max_HP)
+label(Max_Stamina)
+label(Max_Oxygen)
+label(Max_Hunger)
+label(Max_Thirsty)
+label(hotresistance)
+label(Pollution_Level)
+
+registersymbol(player_pointer)
+registersymbol(Max_HP)
+registersymbol(Max_Stamina)
+registersymbol(Max_Oxygen)
+registersymbol(Max_Hunger)
+registersymbol(Max_Thirsty)
+registersymbol(hotresistance)
+registersymbol(Pollution_Level)
+
+newmem:
+
+  mov r15,[rcx+8D0] // BP_IFSS_PlayerControll/IFSSPlayerManagerComponent
+  test r15,r15
+  je skip_check
+  mov [playerstats],r15
+
+  mov r15,[rcx+2E8] // BP_IFSS_PlayerControll/Character
+  test r15,r15
+  je skip_check
+  mov [player_pointer],r15
+
+
+  mov r15,[player_pointer]
+
+skip_hp:
+  cmp word ptr [Max_HP], 0
+  je skip_stamina
+  fld qword ptr [r15+000011F8]      // MaxHP
+  fstp qword ptr [r15+000011F0]     // NowHP
+
+skip_stamina:
+  cmp word ptr [Max_Stamina], 0
+  je skip_oxygen
+  fld qword ptr [r15+00001208]      // MaxStamina
+  fstp qword ptr [r15+00001200]     // NowStamina
+
+skip_oxygen:
+  cmp word ptr [Max_Oxygen], 0
+  je skip_hunger
+  fld qword ptr [r15+00001210]      // MaxOxygen
+  fstp qword ptr [r15+00001218]     // NowOxygen
+
+skip_hunger:
+  cmp word ptr [Max_Hunger], 0
+  je skip_thirsty
+  fld qword ptr [r15+00001228]      // MaxHunger
+  fstp qword ptr [r15+00001220]     // NowHunger
+
+skip_thirsty:
+  cmp word ptr [Max_Thirsty], 0
+  je skip_hot
+  fld qword ptr [r15+00001238]      // MaxThirsty
+  fstp qword ptr [r15+00001230]     // NowThirsty
+
+skip_hot:
+  cmp word ptr [hotresistance], 0
+  je skip_PollutionLevel
+  movsd xmm0,[my_hot]      // HotResistance
+  movsd [r15+2338], xmm0
+
+skip_PollutionLevel:
+  cmp word ptr [Pollution_Level], 0
+  je skip_check
+  movsd xmm0,[my_Pollution_Level]
+  movsd [r15+22D8],xmm0
+
+skip_check:
+  mov r15,[rcx+000002D8] //  BP_IFSS_PlayerControll/Pawn
+  xor esi,esi
+  mov [rax+08],r12
+  mov rbx,rdx
+  jmp return
+
+Max_HP:
+  dw 0
+
+Max_Stamina:
+  dw 0
+
+Max_Oxygen:
+  dw 0
+
+Max_Hunger:
+  dw 0
+
+Max_Thirsty:
+  dw 0
+
+my_hot:
+ dq (double)45.0
+
+hotresistance:
+  dw 0
+
+my_Pollution_Level:
+  dq (double)0.0
+
+Pollution_Level:
+  dw 0
+
+ppcharacter:
+  jmp far newmem
+  nop
+  nop
+
+return:
+
+registersymbol(ppcharacter)
+
+
+aobscanmodule(movment_animal_pointer,IFSS-Win64-Shipping.exe,48 8B 03 48 8D 4C 24 40 48 89 4C 24 38 44 0F 28 E0) // should be unique
+alloc(newmem2,$1000)
+alloc(movementspeedmulti,4)
+alloc(animalspeedmulti,4)
+alloc(instantkillmulti,4)
+
+label(restore)
+label(return2)
+label(instantkill)
+
+
+newmem2:
+  sub rsp,20
+  movsd [rsp],xmm1
+  push rsi
+
+  mov rax,player_pointer
+  mov rax,[rax]
+  test rax,rax
+  je restore
+
+  cmp [rax+00000328],rbx //Character Movment
+  jne check_animals
+
+// --- Player movement speed ---
+
+
+  mulss xmm0,[movementspeedmulti]
+  jmp restore
+
+// Animals Pointer
+  check_animals:
+  mov rsi,[rbx+20]
+  test rsi,rsi
+  je restore
+
+// --- Animal speed ---
+  cmp byte ptr [rsi+00000718],01 //BP_IFSS_Character_Elk_C Is Alive
+  jne restore
+  mulss xmm0,[animalspeedmulti]
+
+// --- Instantkill ---
+  cmp dword ptr [instantkill],03
+  jne restore
+  movsd xmm1,[rsi+00000738] // NOW HP  //MAX HP
+  mulsd xmm1,[instantkillmulti]
+  minsd xmm1,[rsi+00000740]
+  movsd [rsi+00000740],xmm1 // MAX HP  // NOW HP
+  jmp restore
+
+
+restore:
+  pop rsi
+  movsd xmm1,[rsp]
+  add rsp,20
+  mov rax,[rbx]
+  lea rcx,[rsp+40]
+  mov [rsp+38],rcx
+  movaps xmm12,xmm0
+  jmp return2
+
+// ===== DATA =====
+instantkill:
+  dd 00
+
+movementspeedmulti:
+  dd (float)1.0
+
+animalspeedmulti:
+  dd (float)1.0
+
+instantkillmulti:
+  dq (double)0.05
+
+// ===== INJECTION =====
+
+movment_animal_pointer:
+  jmp far newmem2
+  nop
+  nop
+  nop
+  return2:
+
+registersymbol(movment_animal_pointer)
+registersymbol(movementspeedmulti)
+registersymbol(animalspeedmulti)
+registersymbol(instantkillmulti)
+registersymbol(instantkill)
+
+
+[DISABLE]
+
+ppcharacter:
+  db 4C 8B B9 D8 02 00 00 33 F6 4C 89 60 08 48 8B DA
+
+movment_animal_pointer:
+db 48 8B 03 48 8D 4C 24 40 48 89 4C 24 38 44 0F 28 E0
+
+unregistersymbol(player_pointer)
+unregistersymbol(Max_HP)
+unregistersymbol(Max_Stamina)
+unregistersymbol(Max_Oxygen)
+unregistersymbol(Max_Hunger)
+unregistersymbol(Max_Thirsty)
+unregistersymbol(ppcharacter)
+unregistersymbol(playerstats)
+unregistersymbol(movment_animal_pointer)
+unregistersymbol(movementspeedmulti)
+unregistersymbol(animalspeedmulti)
+unregistersymbol(instantkillmulti)
+unregistersymbol(instantkill)
+unregistersymbol(hotresistance)
+unregistersymbol(Pollution_Level)
+
+dealloc(newmem)
+dealloc(player_pointer)
+dealloc(Max_HP)
+dealloc(Max_Stamina)
+dealloc(Max_Oxygen)
+dealloc(Max_Hunger)
+dealloc(Max_Thirsty)
+dealloc(ppcharacter)
+dealloc(playerstats)
+dealloc(newmem2)
+dealloc(movementspeedmulti)
+dealloc(animalspeedmulti)
+dealloc(instantkillmulti)
+dealloc(instantkillmulti)
+dealloc(Pollution_Level)
+
+{
+// ORIGINAL CODE - INJECTION POINT: IFSS-Win64-Shipping.exe+32E034B
+
+IFSS-Win64-Shipping.exe+32E0324: 4E 89 3C F0              - mov [rax+r14*8],r15
+IFSS-Win64-Shipping.exe+32E0328: 48 83 C7 08              - add rdi,08
+IFSS-Win64-Shipping.exe+32E032C: 49 3B FC                 - cmp rdi,r12
+IFSS-Win64-Shipping.exe+32E032F: 75 B3                    - jne IFSS-Win64-Shipping.exe+32E02E4
+IFSS-Win64-Shipping.exe+32E0331: 41 8B 85 18 06 00 00     - mov eax,[r13+00000618]
+IFSS-Win64-Shipping.exe+32E0338: 4C 8B A4 24 C0 00 00 00  - mov r12,[rsp+000000C0]
+IFSS-Win64-Shipping.exe+32E0340: C1 E8 03                 - shr eax,03
+IFSS-Win64-Shipping.exe+32E0343: A8 01                    - test al,01
+IFSS-Win64-Shipping.exe+32E0345: 74 27                    - je IFSS-Win64-Shipping.exe+32E036E
+IFSS-Win64-Shipping.exe+32E0347: 48 63 7B 08              - movsxd  rdi,dword ptr [rbx+08]
+// ---------- INJECTING HERE ----------
+IFSS-Win64-Shipping.exe+32E034B: 4D 8B B5 60 01 00 00     - mov r14,[r13+00000160]
+// ---------- DONE INJECTING  ----------
+IFSS-Win64-Shipping.exe+32E0352: 8D 47 01                 - lea eax,[rdi+01]
+IFSS-Win64-Shipping.exe+32E0355: 89 43 08                 - mov [rbx+08],eax
+IFSS-Win64-Shipping.exe+32E0358: 3B 43 0C                 - cmp eax,[rbx+0C]
+IFSS-Win64-Shipping.exe+32E035B: 76 0A                    - jna IFSS-Win64-Shipping.exe+32E0367
+IFSS-Win64-Shipping.exe+32E035D: 8B D7                    - mov edx,edi
+IFSS-Win64-Shipping.exe+32E035F: 48 8B CB                 - mov rcx,rbx
+IFSS-Win64-Shipping.exe+32E0362: E8 39 66 86 FD           - call IFSS-Win64-Shipping.exe+B469A0
+IFSS-Win64-Shipping.exe+32E0367: 48 8B 03                 - mov rax,[rbx]
+IFSS-Win64-Shipping.exe+32E036A: 4C 89 34 F8              - mov [rax+rdi*8],r14
+IFSS-Win64-Shipping.exe+32E036E: 41 83 BD 08 06 00 00 00  - cmp dword ptr [r13+00000608],00
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: IFSS-Win64-Shipping.exe+2CE4CB5
+
+IFSS-Win64-Shipping.exe+2CE4C75: 44 0F 29 8C 24 F0 00 00 00  - movaps [rsp+000000F0],xmm9
+IFSS-Win64-Shipping.exe+2CE4C7E: 44 0F 29 94 24 E0 00 00 00  - movaps [rsp+000000E0],xmm10
+IFSS-Win64-Shipping.exe+2CE4C87: 44 0F 29 A4 24 C0 00 00 00  - movaps [rsp+000000C0],xmm12
+IFSS-Win64-Shipping.exe+2CE4C90: 44 0F 29 B4 24 A0 00 00 00  - movaps [rsp+000000A0],xmm14
+IFSS-Win64-Shipping.exe+2CE4C99: FF 90 78 07 00 00           - call qword ptr [rax+00000778]
+IFSS-Win64-Shipping.exe+2CE4C9F: 48 8B 03                    - mov rax,[rbx]
+IFSS-Win64-Shipping.exe+2CE4CA2: 48 8B CB                    - mov rcx,rbx
+IFSS-Win64-Shipping.exe+2CE4CA5: 0F 28 F8                    - movaps xmm7,xmm0
+IFSS-Win64-Shipping.exe+2CE4CA8: FF 90 A0 04 00 00           - call qword ptr [rax+000004A0]
+IFSS-Win64-Shipping.exe+2CE4CAE: 0F 10 0D 53 21 A5 04        - movups xmm1,[IFSS-Win64-Shipping.exe+7736E08]
+// ---------- INJECTING HERE ----------
+IFSS-Win64-Shipping.exe+2CE4CB5: 48 8B 03                    - mov rax,[rbx]
+// ---------- DONE INJECTING  ----------
+IFSS-Win64-Shipping.exe+2CE4CB8: 48 8D 4C 24 40              - lea rcx,[rsp+40]
+IFSS-Win64-Shipping.exe+2CE4CBD: 48 89 4C 24 38              - mov [rsp+38],rcx
+IFSS-Win64-Shipping.exe+2CE4CC2: 44 0F 28 E0                 - movaps xmm12,xmm0
+IFSS-Win64-Shipping.exe+2CE4CC6: F3 0F 10 85 90 00 00 00     - movss xmm0,[rbp+00000090]
+IFSS-Win64-Shipping.exe+2CE4CCE: 48 8D 4C 24 60              - lea rcx,[rsp+60]
+IFSS-Win64-Shipping.exe+2CE4CD3: 48 89 4C 24 30              - mov [rsp+30],rcx
+IFSS-Win64-Shipping.exe+2CE4CD8: 41 0F 28 DC                 - movaps xmm3,xmm12
+IFSS-Win64-Shipping.exe+2CE4CDC: 0F 11 4C 24 60              - movups [rsp+60],xmm1
+IFSS-Win64-Shipping.exe+2CE4CE1: 48 8B CB                    - mov rcx,rbx
+IFSS-Win64-Shipping.exe+2CE4CE4: 40 B7 01                    - mov dil,01
+}"""
+
+[[cheat]]
+id = "current-experience"
+name = "Current Experience"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "next-level-required-experience"
+name = "Next Level Required Experience"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats"
+hops = ["+0x140"]
+
+[[cheat]]
+id = "attribute-points"
+name = "Attribute Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats"
+hops = [
+    "+0x150",
+    "+0x44",
+]
+
+[[cheat]]
+id = "skill-points"
+name = "Skill Points"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats"
+hops = [
+    "+0x150",
+    "+0x50",
+]
+
+[[cheat]]
+id = "player-movement-speed-multi"
+name = "Player Movement Speed (Multi)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "movementspeedmulti"
+hops = []
+
+[[cheat]]
+id = "animal-movement-speed-multi"
+name = "Animal Movement Speed (Multi)"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "animalspeedmulti"
+hops = []
+
+[[cheat]]
+id = "attribute-wood-damage"
+name = "Attribute Wood Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11b8",
+    "+0xa8",
+    "+0xf8",
+    "+0xa4",
+]
+
+[[cheat]]
+id = "attribute-mining-damage"
+name = "Attribute Mining Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11b8",
+    "+0xa8",
+    "+0xf8",
+    "+0xb0",
+]
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11e8",
+    "+0xc0",
+    "+0x4",
+]
+
+[[cheat]]
+id = "inventar-item-slot-1-id-to-change-the-items"
+name = "Inventar Item Slot 1 ID (to change the items)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11e8",
+    "+0xb0",
+    "+0x8",
+]
+
+[[cheat]]
+id = "inventar-item-slot-1-amount"
+name = "Inventar Item Slot 1 Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11e8",
+    "+0xb0",
+    "+0x10",
+]
+
+[[cheat]]
+id = "inventar-item-slot-1-reinforce-upgrade-level"
+name = "Inventar Item Slot 1 Reinforce (Upgrade Level)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11e8",
+    "+0xb0",
+    "+0x250",
+]
+
+[[cheat]]
+id = "inventar-item-slot-1-durability"
+name = "Inventar Item Slot 1 Durability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11e8",
+    "+0xb0",
+    "+0x18",
+]
+
+[[cheat]]
+id = "inventar-item-slot-1-maxdurability"
+name = "Inventar Item Slot 1 MaxDurability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11e8",
+    "+0xb0",
+    "+0x68",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-1-amount"
+name = "Hotbar Item Slot 1 Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x10",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-1-durability"
+name = "Hotbar Item Slot 1 Durability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x18",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-1-maxdurability"
+name = "Hotbar Item Slot 1 MaxDurability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x68",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-2-amount"
+name = "Hotbar Item Slot 2 Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x2d8",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-2-charges"
+name = "Hotbar Item Slot 2 Charges"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x2dc",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-2-maxcharges"
+name = "Hotbar Item Slot 2 MaxCharges"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x32c",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-2-durability"
+name = "Hotbar Item Slot 2 Durability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x2e0",
+]
+
+[[cheat]]
+id = "hotbar-item-slot-2-maxdurability"
+name = "Hotbar Item Slot 2 MaxDurability"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "player_pointer"
+hops = [
+    "+0x11d8",
+    "+0xb0",
+    "+0x330",
+]

@@ -1,0 +1,1809 @@
+[game]
+name = "Idle Champions of the Forgotten Realms"
+exe = "idledragons.exe"
+notes = "Converted from a Cheat Engine table by Hentai-san. Source: https://fearlessrevolution.com/viewtopic.php?t=12018"
+verified = []
+author = "Hentai-san"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : IdleDragons.exe
+  Version: 
+  Date   : 2020-03-31
+  Author : Dungbeest
+
+  This script restores health to last max health when health is changed
+}
+
+define(HealthJIT,CrusadersGame.GameScreen:Hero:SetHealth)
+
+[ENABLE]
+
+aobscanregion(HealthFreeze,CrusadersGame.GameScreen:Hero:SetHealth, CrusadersGame.GameScreen:Hero:SetHealth+300, DD 9F 98 01 00 00)
+alloc(newmem,$64)
+
+label(health_entry)
+label(health_code)
+label(health_return)
+
+registersymbol(HealthFreeze)
+
+newmem:
+
+health_code:
+  fstp qword ptr [edi+00000198]
+  fld qword ptr [edi+000001b0]
+  fstp qword ptr [edi+00000198]
+  jmp health_return
+
+HealthJIT:
+HealthFreeze:
+health_entry:
+  jmp health_code
+  nop
+health_return:
+
+[DISABLE]
+
+HealthFreeze:
+  db DD 9F 98 01 00 00
+  //fstp qword ptr [edi+00000188]
+
+dealloc(newmem)
+unregistersymbol(HealthFreeze)"""
+
+[[cheat]]
+id = "disable-escorts"
+name = "Disable Escorts"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : IdleDragons.exe
+  Version: 
+  Date   : 2020-03-30
+  Author : Dungbeest
+
+  This script disables escorts on any Area Change.
+  Formation Code is super dumb. It cross-accesses 3
+  different singletons to get the new formation
+  on area change. This makes it incredibly brittle.
+}
+
+define(FormationJIT, CrusadersGame.GameScreen:Formation:SetNewArea)
+[ENABLE]
+
+aobscanregion(DisableEscortsFromFormation, CrusadersGame.GameScreen:Formation:SetNewArea, CrusadersGame.GameScreen:Formation:SetNewArea+140,C6 80 E8 00 00 00 00)
+alloc(newmem,$256)
+
+label(formation_code_1)
+label(formation_entry_1)
+label(formation_return_1)
+
+registersymbol(DisableEscortsFromFormation)
+
+
+newmem:
+
+formation_code_1:
+  //EAX has Formation
+  //ECX still hasn't been set, use it to not disturb stack
+  mov ecx, [eax+18]
+  //ECX now has GameController
+  mov ecx, [ecx+18]
+  //ECX now has ActiveCampaignData
+  mov ecx, [ecx+10]
+  //ECX now has GameRules
+  mov ecx, [ecx+6C]
+  //ECX stores ChangeByArea
+  mov [disable_escorts], ecx
+  //ECX+8 stores its 'items'
+  mov ecx, [ecx+8]
+  //ECX stores ChangeByArea's items
+  //Set all outer list sizes to 0
+  mov [ecx+C], 0
+  mov [ecx+10], 0
+  mov [ecx+14], 0
+  //ECX stores the inner list (lists of escorts essentially)
+  mov ecx, [ecx+8]
+  //ECX now stores the items with escorts
+  //Set that list empty
+  mov [ecx+C], 0
+  //Targets formation+E8 for allWiped boolean
+  mov byte ptr [eax+000000E8],00
+  jmp formation_return_1
+
+FormationJIT:
+DisableEscortsFromFormation:
+formation_entry_1:
+  jmp formation_code_1
+  nop 2
+formation_return_1:
+
+[DISABLE]
+
+DisableEscortsFromFormation:
+  db C6 80 E8 00 00 00 00
+  // mov byte ptr [eax+000000E8],00
+
+dealloc(newmem)
+unregistersymbol(DisableEscortsFromFormation)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1C254E39
+
+1C254E02: 89 04 24                 -  mov [esp],eax
+1C254E05: 8B C0                    -  mov eax,eax
+1C254E07: E8 24 E4 7C EA           -  call 06A23230
+1C254E0C: C7 45 B0 00 00 00 00     -  mov [ebp-50],00000000
+1C254E13: C7 45 B4 00 00 00 00     -  mov [ebp-4C],00000000
+1C254E1A: C7 45 B8 00 00 00 00     -  mov [ebp-48],00000000
+1C254E21: C7 45 BC 00 00 00 00     -  mov [ebp-44],00000000
+1C254E28: C7 45 C0 00 00 00 00     -  mov [ebp-40],00000000
+1C254E2F: C7 45 C4 00 00 00 00     -  mov [ebp-3C],00000000
+1C254E36: 8B 45 08                 -  mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+1C254E39: C6 80 E4 00 00 00 00     -  mov byte ptr [eax+000000E4],00
+// ---------- DONE INJECTING  ----------
+1C254E40: 8B 40 18                 -  mov eax,[eax+18]
+1C254E43: 8B C8                    -  mov ecx,eax
+1C254E45: 39 09                    -  cmp [ecx],ecx
+1C254E47: 8B 40 1C                 -  mov eax,[eax+1C]
+1C254E4A: 8B C8                    -  mov ecx,eax
+1C254E4C: 39 09                    -  cmp [ecx],ecx
+1C254E4E: 8B 40 10                 -  mov eax,[eax+10]
+1C254E51: 85 C0                    -  test eax,eax
+1C254E53: 0F 84 AB 09 00 00        -  je 1C255804
+1C254E59: 8B 45 08                 -  mov eax,[ebp+08]
+}"""
+
+[[cheat]]
+id = "debug-changebyarea"
+name = "DEBUG - ChangeByArea"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "disable_escorts"
+hops = []
+
+[[cheat]]
+id = "get-current-campaign-data"
+name = "Get Current Campaign Data"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : IdleDragons.exe
+  Version: 
+  Date   : 2020-03-30
+  Author : Dungbeest
+
+  This script grabs ActiveCampaignData and GameRules
+}
+
+define(GameRulesJIT,CrusadersGame.GameScreen:ActiveCampaignData:Update)
+[ENABLE]
+
+aobscanregion(GameRulesFromUpdate, CrusadersGame.GameScreen:ActiveCampaignData:Update, CrusadersGame.GameScreen:ActiveCampaignData:Update+200, D9 87 38 01 00 00) // should be unique
+alloc(newmem,$64)
+
+label(game_rules_code)
+label(game_rules_entry)
+label(game_rules_return)
+registersymbol(GameRulesFromUpdate)
+
+newmem:
+
+game_rules_code:
+  mov ecx,[edi+10]
+  mov [active_campaign_base], edi
+  //store game rules pointer
+  mov [game_rules_base], ecx
+  //Targets elapsed time pointer at campaign+138
+  fld dword ptr [edi+00000138]
+  jmp game_rules_return
+
+GameRulesJIT:
+GameRulesFromUpdate:
+game_rules_entry:
+  jmp game_rules_code
+  nop
+game_rules_return:
+
+
+[DISABLE]
+
+GameRulesFromUpdate:
+  db D9 87 38 01 00 00
+  // fld dword ptr [edi+00000138]
+
+dealloc(newmem)
+unregistersymbol(GameRulesFromUpdate)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1F12C4F0
+
+1F12C4CF: 8B 40 10                 -  mov eax,[eax+10]
+1F12C4D2: 89 04 24                 -  mov [esp],eax
+1F12C4D5: 39 00                    -  cmp [eax],eax
+1F12C4D7: E8 5C 02 00 00           -  call 1F12C738
+1F12C4DC: 0F B6 87 91 01 00 00     -  movzx eax,byte ptr [edi+00000191]
+1F12C4E3: 85 C0                    -  test eax,eax
+1F12C4E5: 74 09                    -  je 1F12C4F0
+1F12C4E7: 89 3C 24                 -  mov [esp],edi
+1F12C4EA: 90                       -  nop
+1F12C4EB: E8 C8 0F F5 FF           -  call 1F07D4B8
+// ---------- INJECTING HERE ----------
+1F12C4F0: 8D 87 50 01 00 00        -  lea eax,[edi+00000150]
+// ---------- DONE INJECTING  ----------
+1F12C4F6: 8B 08                    -  mov ecx,[eax]
+1F12C4F8: 89 4D 88                 -  mov [ebp-78],ecx
+1F12C4FB: 8B 48 04                 -  mov ecx,[eax+04]
+1F12C4FE: 89 4D 8C                 -  mov [ebp-74],ecx
+1F12C501: 8B 48 08                 -  mov ecx,[eax+08]
+1F12C504: 89 4D 90                 -  mov [ebp-70],ecx
+1F12C507: 8B 40 0C                 -  mov eax,[eax+0C]
+1F12C50A: 89 45 94                 -  mov [ebp-6C],eax
+1F12C50D: 8D 45 98                 -  lea eax,[ebp-68]
+1F12C510: C7 44 24 04 00 00 00 00  -  mov [esp+04],00000000
+}"""
+
+[[cheat]]
+id = "escorts-pointer"
+name = "Escorts Pointer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "difficulty-growth-multiplier"
+name = "Difficulty Growth Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = [
+    "+0x38",
+    "+0x10",
+]
+
+[[cheat]]
+id = "treasure-monster-odds"
+name = "Treasure Monster Odds"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 0.01
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "quest-requirement-multiplier"
+name = "Quest Requirement Multiplier"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "quest-kill-goal-base"
+name = "Quest Kill Goal Base"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+value = 25
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "enemy-multiplier"
+name = "Enemy Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "random-monster-chance"
+name = "Random Monster Chance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "monster-move-speed-multiplier"
+name = "Monster Move Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "monster-gold-multiplier"
+name = "Monster Gold Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x170"]
+
+[[cheat]]
+id = "monster-health-adjustment"
+name = "Monster Health Adjustment"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "hero-cost-multiplier"
+name = "Hero Cost Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "hero-cost-exponential-multiplier"
+name = "Hero Cost Exponential Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "can-t-abandon"
+name = "Can't Abandon?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "allow-ultimates"
+name = "Allow Ultimates?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x191"]
+
+[[cheat]]
+id = "monster-limit"
+name = "Monster Limit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 100
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "hero-dps-multiplier"
+name = "Hero DPS Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "no-idol-bonuses"
+name = "No Idol Bonuses?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "no-talent-bonuses"
+name = "No Talent Bonuses?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x1b1"]
+
+[[cheat]]
+id = "monster-damage-modifier"
+name = "Monster Damage Modifier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "allow-offline-gold"
+name = "Allow Offline Gold?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "add-regular-monster-properties-to-boss"
+name = "Add Regular Monster Properties To Boss?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "game_rules_base"
+hops = ["+0x1c1"]
+
+[[cheat]]
+id = "current-level-quest-remaining"
+name = "Current Level Quest Remaining"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 4
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = [
+    "+0x14",
+    "+0x30",
+]
+
+[[cheat]]
+id = "current-level-quest-amount"
+name = "Current Level Quest Amount"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 25
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = [
+    "+0x14",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "current-level"
+name = "Current Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = [
+    "+0x14",
+    "+0x28",
+]
+
+[[cheat]]
+id = "game-time-elapsed"
+name = "Game Time Elapsed"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 1006.733032
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "time-since-highest-hit"
+name = "Time Since Highest Hit"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 13.851259149611
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "highesthitcooldown"
+name = "HighestHitCooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 3.75
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "ultimatefalloffexponent"
+name = "UltimateFalloffExponent"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 5
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "ultimatefalloffcooldownmultiplier"
+name = "UltimateFalloffCooldownMultiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 2
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "ultimatefalloffexponent-2"
+name = "UltimateFalloffExponent 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 10
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x1f0"]
+
+[[cheat]]
+id = "ultimatefalloffdelay"
+name = "UltimateFalloffDelay"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 15
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "ultimatefalloffperiod"
+name = "UltimateFalloffPeriod"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+value = 15
+
+[cheat.locator]
+find = "symbol"
+symbol = "active_campaign_base"
+hops = ["+0x200"]
+
+[[cheat]]
+id = "get-currencies-handler-don-t-alter-it-s-checked-server-side"
+name = "Get Currencies Handler (Don't Alter -> It's Checked Server-Side)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : IdleDragons.exe
+  Version: 
+  Date   : 2020-03-30
+  Author : Dungbeest
+
+  This script gets the User's Currencies (favors)
+}
+
+define(CurrencyUpdateJIT, UserResetCurrencyHandler:Update)
+
+[ENABLE]
+
+aobscanregion(CurrencyUpdate, UserResetCurrencyHandler:Update, UserResetCurrencyHandler:Update+150, 8B 47 0C 8D 4D D4)
+alloc(newmem,$64)
+
+label(currency_code)
+label(currency_entry)
+label(currency_return)
+registersymbol(CurrencyUpdate)
+
+newmem:
+
+currency_code:
+  mov eax,[edi+0C]
+  mov [currency_handler], edi
+  lea ecx,[ebp-2C]
+  jmp currency_return
+
+
+CurrencyUpdateJIT:
+
+
+CurrencyUpdate:
+currency_entry:
+  jmp currency_code
+  nop
+currency_return:
+
+[DISABLE]
+
+CurrencyUpdate:
+  db 8B 47 0C 8D 4D D4
+  // mov eax,[edi+0C]
+  // lea ecx,[ebp-2C]
+
+dealloc(newmem)
+unregistersymbol(CurrencyUpdate)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1EC36738
+
+1EC36716: 8B C8                 -  mov ecx,eax
+1EC36718: 39 09                 -  cmp [ecx],ecx
+1EC3671A: 8B 48 20              -  mov ecx,[eax+20]
+1EC3671D: 8B C1                 -  mov eax,ecx
+1EC3671F: 8B F1                 -  mov esi,ecx
+1EC36721: 85 C0                 -  test eax,eax
+1EC36723: 0F 84 FD 01 00 00     -  je 1EC36926
+1EC36729: 0F B6 05 02 8E C0 03  -  movzx eax,byte ptr [03C08E02]
+1EC36730: 85 C0                 -  test eax,eax
+1EC36732: 0F 85 EE 01 00 00     -  jne 1EC36926
+// ---------- INJECTING HERE ----------
+1EC36738: 8B 47 0C              -  mov eax,[edi+0C]
+1EC3673B: 8D 4D D4              -  lea ecx,[ebp-2C]
+// ---------- DONE INJECTING  ----------
+1EC3673E: 89 4C 24 04           -  mov [esp+04],ecx
+1EC36742: 89 04 24              -  mov [esp],eax
+1EC36745: 39 00                 -  cmp [eax],eax
+1EC36747: E8 8C 5A B1 E3        -  call 0274C1D8
+1EC3674C: 83 EC 04              -  sub esp,04
+1EC3674F: E9 85 01 00 00        -  jmp 1EC368D9
+1EC36754: 8D 64 24 00           -  lea esp,[esp+00]
+1EC36758: 8B 5D E0              -  mov ebx,[ebp-20]
+1EC3675B: 8B C3                 -  mov eax,ebx
+1EC3675D: 8B C8                 -  mov ecx,eax
+}"""
+
+[[cheat]]
+id = "currencies-base"
+name = "Currencies Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = []
+
+[[cheat]]
+id = "currencyid"
+name = "CurrencyId"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x8",
+]
+
+[[cheat]]
+id = "ispermanent"
+name = "IsPermanent?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x34",
+]
+
+[[cheat]]
+id = "currentamount"
+name = "CurrentAmount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x38",
+]
+
+[[cheat]]
+id = "amountspent"
+name = "AmountSpent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x40",
+]
+
+[[cheat]]
+id = "amountearned"
+name = "AmountEarned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x48",
+]
+
+[[cheat]]
+id = "powermultiplier"
+name = "PowerMultiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "secondsuntilcanconvert"
+name = "secondsUntilCanConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x58",
+]
+
+[[cheat]]
+id = "secondsuntilforceconvert"
+name = "secondsUntilForceConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x60",
+]
+
+[[cheat]]
+id = "starttime"
+name = "startTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x68",
+]
+
+[[cheat]]
+id = "forceconvert"
+name = "ForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x70",
+]
+
+[[cheat]]
+id = "hardforceconvert"
+name = "HardForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x10",
+    "+0x71",
+]
+
+[[cheat]]
+id = "currencyid-2"
+name = "CurrencyId"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x8",
+]
+
+[[cheat]]
+id = "ispermanent-2"
+name = "IsPermanent?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x34",
+]
+
+[[cheat]]
+id = "currentamount-2"
+name = "CurrentAmount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x38",
+]
+
+[[cheat]]
+id = "amountspent-2"
+name = "AmountSpent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x40",
+]
+
+[[cheat]]
+id = "amountearned-2"
+name = "AmountEarned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x48",
+]
+
+[[cheat]]
+id = "powermultiplier-2"
+name = "PowerMultiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x50",
+]
+
+[[cheat]]
+id = "secondsuntilcanconvert-2"
+name = "secondsUntilCanConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x58",
+]
+
+[[cheat]]
+id = "secondsuntilforceconvert-2"
+name = "secondsUntilForceConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x60",
+]
+
+[[cheat]]
+id = "starttime-2"
+name = "startTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x68",
+]
+
+[[cheat]]
+id = "forceconvert-2"
+name = "ForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x70",
+]
+
+[[cheat]]
+id = "hardforceconvert-2"
+name = "HardForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x14",
+    "+0x71",
+]
+
+[[cheat]]
+id = "currencyid-3"
+name = "CurrencyId"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x8",
+]
+
+[[cheat]]
+id = "ispermanent-3"
+name = "IsPermanent?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x34",
+]
+
+[[cheat]]
+id = "currentamount-3"
+name = "CurrentAmount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x38",
+]
+
+[[cheat]]
+id = "amountspent-3"
+name = "AmountSpent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x40",
+]
+
+[[cheat]]
+id = "amountearned-3"
+name = "AmountEarned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x48",
+]
+
+[[cheat]]
+id = "powermultiplier-3"
+name = "PowerMultiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x50",
+]
+
+[[cheat]]
+id = "secondsuntilcanconvert-3"
+name = "secondsUntilCanConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x58",
+]
+
+[[cheat]]
+id = "secondsuntilforceconvert-3"
+name = "secondsUntilForceConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x60",
+]
+
+[[cheat]]
+id = "starttime-3"
+name = "startTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x68",
+]
+
+[[cheat]]
+id = "forceconvert-3"
+name = "ForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x70",
+]
+
+[[cheat]]
+id = "hardforceconvert-3"
+name = "HardForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x18",
+    "+0x71",
+]
+
+[[cheat]]
+id = "currencyid-4"
+name = "CurrencyId"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x8",
+]
+
+[[cheat]]
+id = "ispermanent-4"
+name = "IsPermanent?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x34",
+]
+
+[[cheat]]
+id = "currentamount-4"
+name = "CurrentAmount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x38",
+]
+
+[[cheat]]
+id = "amountspent-4"
+name = "AmountSpent"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x40",
+]
+
+[[cheat]]
+id = "amountearned-4"
+name = "AmountEarned"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x48",
+]
+
+[[cheat]]
+id = "powermultiplier-4"
+name = "PowerMultiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x50",
+]
+
+[[cheat]]
+id = "secondsuntilcanconvert-4"
+name = "secondsUntilCanConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x58",
+]
+
+[[cheat]]
+id = "secondsuntilforceconvert-4"
+name = "secondsUntilForceConvert"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x60",
+]
+
+[[cheat]]
+id = "starttime-4"
+name = "startTime"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x68",
+]
+
+[[cheat]]
+id = "forceconvert-4"
+name = "ForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x70",
+]
+
+[[cheat]]
+id = "hardforceconvert-4"
+name = "HardForceConvert?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0x8",
+    "+0x1c",
+    "+0x71",
+]
+
+[[cheat]]
+id = "currencies-list-size"
+name = "Currencies List Size"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "currency_handler"
+hops = [
+    "+0xc",
+    "+0xc",
+]
+
+[[cheat]]
+id = "get-area-data"
+name = "Get Area Data"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : IdleDragons.exe
+  Version: 
+  Date   : 2020-04-06
+  Author : Dungbeest
+
+  This script gets the current area pointer.
+}
+
+define(AreaJIT,CrusadersGame.GameScreen:Area:Update)
+[ENABLE]
+
+aobscanregion(FindAreaBase, CrusadersGame.GameScreen:Area:Update+100, CrusadersGame.GameScreen:Area:Update+400, C6 87 80 01 00 00 00)
+alloc(newmem,$64)
+
+label(find_area_code)
+label(find_area_entry)
+label(find_area_return)
+
+registersymbol(FindAreaBase)
+
+newmem:
+
+find_area_code:
+  mov [area_base], edi
+  mov byte ptr [edi+00000180],00
+  jmp find_area_return
+
+AreaJIT:
+FindAreaBase:
+find_area_entry:
+  jmp find_area_code
+  nop 2
+find_area_return:
+
+[DISABLE]
+
+FindAreaBase:
+  db C6 87 80 01 00 00 00
+  //mov byte ptr [edi+00000180],00
+
+dealloc(newmem)
+unregistersymbol(FindAreaBase)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1D5C5D18
+
+1D5C5CF5: D9 45 0C              -  fld dword ptr [ebp+0C]
+1D5C5CF8: D9 5C 24 04           -  fstp dword ptr [esp+04]
+1D5C5CFC: 89 3C 24              -  mov [esp],edi
+1D5C5CFF: E8 DC 02 00 00        -  call 1D5C5FE0
+1D5C5D04: 8B 47 64              -  mov eax,[edi+64]
+1D5C5D07: D9 45 0C              -  fld dword ptr [ebp+0C]
+1D5C5D0A: D9 5C 24 04           -  fstp dword ptr [esp+04]
+1D5C5D0E: 89 04 24              -  mov [esp],eax
+1D5C5D11: 39 00                 -  cmp [eax],eax
+1D5C5D13: E8 C8 0E 00 00        -  call 1D5C6BE0
+// ---------- INJECTING HERE ----------
+1D5C5D18: C6 87 80 01 00 00 00  -  mov byte ptr [edi+00000180],00
+// ---------- DONE INJECTING  ----------
+1D5C5D1F: 8B 87 7C 01 00 00     -  mov eax,[edi+0000017C]
+1D5C5D25: 40                    -  inc eax
+1D5C5D26: 89 87 7C 01 00 00     -  mov [edi+0000017C],eax
+1D5C5D2C: C7 45 D4 00 00 00 00  -  mov [ebp-2C],00000000
+1D5C5D33: E9 44 00 00 00        -  jmp 1D5C5D7C
+1D5C5D38: 8B 47 1C              -  mov eax,[edi+1C]
+1D5C5D3B: 89 45 C0              -  mov [ebp-40],eax
+1D5C5D3E: 8B 4D D4              -  mov ecx,[ebp-2C]
+1D5C5D41: 89 4D A8              -  mov [ebp-58],ecx
+1D5C5D44: 39 00                 -  cmp [eax],eax
+}"""
+
+[[cheat]]
+id = "boss-chest-state"
+name = "Boss Chest State"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "area_base"
+hops = ["+0xe8"]

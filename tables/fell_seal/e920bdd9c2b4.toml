@@ -1,0 +1,485 @@
+[game]
+name = "Fell Seal: Arbiter's Mark"
+exe = "fell_seal.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=9316"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script-god-mode-one-hit-kill-etc"
+name = "Damage Modifier Script (God Mode, One Hit Kill, etc)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(DamageModAOB,"GameAssembly.dll",8B 54 24 18 8B F0 8B 0E E8 ?? ?? ?? ?? 8B 4C 24 1C) // should be unique
+//aobscanmodule(DamageModAOB,"GameAssembly.dll",8B 94 24 B0 00 00 00 8B 08 E8 ?? ?? ?? ?? 89 03 33 D2) // should be unique
+aobscanmodule(DamageModAOB,"GameAssembly.dll",8B 94 24 A0 00 00 00 8B 08 E8 ?? ?? ?? ?? 89 03 33 D2) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,2048,DamageModAOB)
+
+label(originalcode)
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+\t\t  
+newmem:
+  mov [RDXSave],rdx
+  mov rdx,[rsp+00000078]
+  mov rdx,[rdx+10]
+  mov edx,[rdx+20]
+  mov [CurrentHP],edx
+  xor rdx,rdx
+  mov rdx,[rsp+00000078]
+  cmp [rdx+98],0
+  mov rdx,[RDXSave]
+originalcode:
+  mov edx,[rsp+000000A0]
+  je HeroHit
+EnemyHit:
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  push edx
+  fild dword ptr [esp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [esp]
+  pop edx
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne CleanUp
+  mov edx,#999
+  jmp CleanUp
+HeroHit:
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push edx
+  fild dword ptr [esp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [esp]
+  pop edx
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor edx,edx
+  jmp CleanUp
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne CleanUp
+  cmp edx,[CurrentHP]
+  jl @F
+  xor edx,edx
+@@:
+  jmp CleanUp  
+CleanUp:
+  jmp return
+
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)2.0
+fHeroDamageMult:
+dq (float)0.5
+HeroCannotDie:
+dq 1
+RDXSave:
+dq 0
+CurrentHP:
+dq 0
+
+DamageModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  db 8B 94 24 A0 00 00 00
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(HeroCannotDie)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-damage-to-hero-party"
+name = "Hero Damage Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half damage to hero party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-if-on-and-god-mode-off-then-you-take-damage-until-the-hit-will-kill-you"
+name = "Hero Cannot Die (If On and God Mode Off, Then You Take Damage Until The Hit Will Kill You)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier-to-damage-you-deal-to-enemies"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier to damage you deal to enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(BattleMPModAOB,"GameAssembly.dll",8B 40 0C 8B 7E 14 85 C0) // should be unique
+// This AOB has 4 options but it's the first one we want
+aobscanmodule(BattleMPModAOB,"GameAssembly.dll",44 8B F2 48 8B D9 45 33 E4 44 38 25 ?? ?? ?? ?? 75 4B) // should be unique
+registersymbol(BattleMPModAOB)
+alloc(newmem,2048,BattleMPModAOB)
+
+label(originalcode)
+label(return)
+
+newmem:
+  mov [R14Save],r14
+  mov r14,[rcx+10]
+  mov r14,[r14+B0]
+  cmp [r14+98],0
+  mov r14,[R14Save]
+  jne originalcode
+  xor edx,edx
+
+originalcode:
+  mov r14d,edx
+  mov rbx,rcx
+  jmp return
+
+R14Save:
+dq 0
+  
+BattleMPModAOB:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+BattleMPModAOB:
+  db 44 8B F2 48 8B D9
+
+unregistersymbol(BattleMPModAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-gp-gp-multiplier"
+name = "Infinite GP/GP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GPModAOB,"GameAssembly.dll",01 BB B0 00 00 00 8B BB B0 00 00 00) // should be unique
+registersymbol(GPModAOB)
+alloc(newmem,2048,GPModAOB)
+
+label(originalcode)
+label(return)
+label(InfiniteGP)
+registersymbol(InfiniteGP)
+label(fGPMult)
+registersymbol(fGPMult)
+
+newmem:
+  cmp edi,0
+  jl SubtractGP
+MultiplyGP:
+  push edi
+  fild dword ptr [esp]
+  fmul dword ptr [fGPMult]
+  fistp dword ptr [esp]
+  pop edi
+  jmp originalcode
+SubtractGP:
+  cmp [InfiniteGP],1
+  jne return
+  xor edi,edi
+  jmp originalcode
+originalcode:
+  add [rbx+000000B0],edi
+  jmp return
+
+InfiniteGP:
+dq 1
+fGPMult:
+dq (float)5.0
+  
+GPModAOB:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+GPModAOB:
+  db 01 BB B0 00 00 00
+
+unregistersymbol(GPModAOB)
+unregistersymbol(InfiniteGP)
+unregistersymbol(fGPMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-gp"
+name = "Infinite GP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteGP"
+hops = []
+
+[[cheat]]
+id = "gp-multiplier"
+name = "GP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fGPMult"
+hops = []
+
+[[cheat]]
+id = "infinite-item-usage-in-battle"
+name = "Infinite Item Usage In Battle"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(ItemUsageModAOB,"GameAssembly.dll",FF 48 1C 8B 47 50 85 C0) // should be unique
+//aobscanmodule(ItemUsageModAOB,"GameAssembly.dll",FF 48 1C 8B 47 08 85 C0) // should be unique
+aobscanmodule(ItemUsageModAOB,"GameAssembly.dll",FF 4A 34 48 8B 8B B8 00 00 00)
+registersymbol(ItemUsageModAOB)
+  
+ItemUsageModAOB:
+  db 90 90 90
+  
+[DISABLE]
+
+ItemUsageModAOB:
+  db FF 4A 34
+
+unregistersymbol(ItemUsageModAOB)"""
+
+[[cheat]]
+id = "selected-character-options-move-over-character"
+name = "Selected Character Options (Move Over Character)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(CharModAOB,"GameAssembly.dll",48 8B 48 10 48 85 C9 0F 84 DA 02 00 00 83 79 18 01) // should be unique
+registersymbol(CharModAOB)
+alloc(newmem,2048,CharModAOB)
+
+label(return)
+label(SelectedCharPtr)
+registersymbol(SelectedCharPtr)
+
+newmem:
+  mov [SelectedCharPtr],rax
+originalcode:
+  mov rcx,[rax+10]
+  test rcx,rcx
+  jmp return
+  
+SelectedCharPtr:
+dq 0
+
+CharModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+
+[DISABLE]
+
+CharModAOB:
+  db 48 8B 48 10 48 85 C9
+
+unregistersymbol(CharModAOB)
+unregistersymbol(SelectedCharPtr)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "pointers"
+name = "Pointers"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GPAOB,"GameAssembly.dll",48 8B 97 B8 02 00 00 48 85 D2 0F 84 61 01 00 00) // should be unique
+registersymbol(GPAOB)
+alloc(newmem,2048,GPAOB)
+
+label(return)
+label(GPPtr)
+registersymbol(GPPtr)
+
+newmem:
+originalcode:
+  mov rdx,[rdi+000002B8]
+  mov [GPPtr],rdx
+  jmp return
+  
+GPPtr:
+dq 0
+
+GPAOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+
+[DISABLE]
+
+GPAOB:
+  db 48 8B 97 B8 02 00 00
+
+unregistersymbol(GPAOB)
+unregistersymbol(GPPtr)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "gp-view-troops-to-update"
+name = "GP (View Troops To Update)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GPPtr"
+hops = ["+0xb0"]

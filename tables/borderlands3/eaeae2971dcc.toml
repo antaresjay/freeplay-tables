@@ -1,0 +1,2461 @@
+[game]
+name = "Borderlands 3 - Loot, Skills, Stats, Teleport, Item Leveling, & More"
+exe = "borderlands3.exe"
+notes = "Converted from a Cheat Engine table by Rydian. Source: https://fearlessrevolution.com/viewtopic.php?t=10295"
+verified = []
+author = "Rydian"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "find-coordinates-teleport"
+name = "Find Coordinates / Teleport"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+//X and Y are both floats.
+//X gets higher as you move up in the map (fixed minimap rotation)?
+//Y is left and right in the map.
+//Y is centered in the map itself so find X instead first, then +4 for Y.
+
+//Sanctuary's fast travel station (from other maps or title screen)...
+//Y:14850
+//X:9288.970703
+//Z:-709.8500366
+//In memory that's in a row, so...
+//00 08 68 46 E2 23 11 46 67 76 31 C4
+
+//It was in 4xxxxxxx for me, likely different but it's not in 00xxxxxx.
+//I attached to the first/lowest opcode reading while in the escape menu.
+
+[ENABLE]
+
+aobscanmodule(readxy,Borderlands3.exe,F9 48 85 C0 74 26 0F 10 88 20 02 00 00) // should be unique
+alloc(newmem,$1000,readxy)
+
+label(code)
+label(return)
+
+globalalloc(_coordbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_coordbase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_coordbase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  movups xmm1,[rax+00000220]
+  jmp return
+
+readxy+06:
+  jmp newmem
+  nop 2
+return:
+registersymbol(readxy)
+
+[DISABLE]
+
+readxy+06:
+  db 0F 10 88 20 02 00 00
+
+unregistersymbol(readxy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF63006F8A1
+
+7FF63006F87F: CC                       - int 3
+7FF63006F880: 48 89 5C 24 08           - mov [rsp+08],rbx
+7FF63006F885: 48 89 74 24 10           - mov [rsp+10],rsi
+7FF63006F88A: 57                       - push rdi
+7FF63006F88B: 48 83 EC 40              - sub rsp,40
+7FF63006F88F: 48 8B 81 F0 F3 FF FF     - mov rax,[rcx-00000C10]
+7FF63006F896: 48 8B DA                 - mov rbx,rdx
+7FF63006F899: 48 8B F9                 - mov rdi,rcx
+7FF63006F89C: 48 85 C0                 - test rax,rax
+7FF63006F89F: 74 26                    - je 7FF63006F8C7
+// ---------- INJECTING HERE ----------
+7FF63006F8A1: 0F 10 88 20 02 00 00     - movups xmm1,[rax+00000220]
+// ---------- DONE INJECTING  ----------
+7FF63006F8A8: 0F 28 C1                 - movaps xmm0,xmm1
+7FF63006F8AB: F3 0F 11 4C 24 20        - movss [rsp+20],xmm1
+7FF63006F8B1: 0F C6 C1 55              - shufps xmm0,xmm1,55
+7FF63006F8B5: 0F C6 C9 AA              - shufps xmm1,xmm1,-56
+7FF63006F8B9: F3 0F 11 4C 24 28        - movss [rsp+28],xmm1
+7FF63006F8BF: F3 0F 11 44 24 24        - movss [rsp+24],xmm0
+7FF63006F8C5: EB 18                    - jmp 7FF63006F8DF
+7FF63006F8C7: F2 0F 10 05 11 DE D6 05  - movsd xmm0,[7FF635DDD6E0]
+7FF63006F8CF: 8B 05 13 DE D6 05        - mov eax,[7FF635DDD6E8]
+7FF63006F8D5: F2 0F 11 44 24 20        - movsd [rsp+20],xmm0
+}"""
+
+[[cheat]]
+id = "bullet-position-blink"
+name = "Bullet Position / Blink"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find where the last bullet landed.
+//Like with player coordinates, higher on the minimap is a higher Y value.
+//May need a few tries because you'll find similar values.
+//Don't fall for the player's aim angles or other positions.
+//Compare to the player's coordinates!
+//Does the static/green one work?  I forget.
+
+[ENABLE]
+
+aobscanmodule(bullethit,Borderlands3.exe,41 0F 11 34 90) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+2AE56A3)
+
+label(code)
+label(return)
+
+globalalloc(_bulletbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_skillbase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_bulletbase //Make it hold our allocated address.
+  mov [rbx],r8 //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  movups [r8+rdx*4],xmm6
+  jmp return
+
+bullethit:
+  jmp newmem
+return:
+registersymbol(bullethit)
+
+[DISABLE]
+
+bullethit:
+  db 41 0F 11 34 90
+
+unregistersymbol(bullethit)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+2AE56A3
+
+"Borderlands3.exe"+2AE5679: 48 8B CB                    -  mov rcx,rbx
+"Borderlands3.exe"+2AE567C: E8 8F 0E 00 00              -  call Borderlands3.exe+2AE6510
+"Borderlands3.exe"+2AE5681: 48 8B 8B 00 0A 00 00        -  mov rcx,[rbx+00000A00]
+"Borderlands3.exe"+2AE5688: 48 8D 14 BF                 -  lea rdx,[rdi+rdi*4]
+"Borderlands3.exe"+2AE568C: 48 8B BC 24 D0 00 00 00     -  mov rdi,[rsp+000000D0]
+"Borderlands3.exe"+2AE5694: 45 33 C0                    -  xor r8d,r8d
+"Borderlands3.exe"+2AE5697: 48 85 C9                    -  test rcx,rcx
+"Borderlands3.exe"+2AE569A: 4C 0F 44 C3                 -  cmove r8,rbx
+"Borderlands3.exe"+2AE569E: 4C 0B C1                    -  or r8,rcx
+"Borderlands3.exe"+2AE56A1: 32 C0                       -  xor al,al
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+2AE56A3: 41 0F 11 34 90              -  movups [r8+rdx*4],xmm6
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+2AE56A8: 41 C7 44 90 10 00 00 00 00  -  mov [r8+rdx*4+10],00000000
+"Borderlands3.exe"+2AE56B1: 44 0F 28 74 24 30           -  movaps xmm14,[rsp+30]
+"Borderlands3.exe"+2AE56B7: 4C 8D 9C 24 C0 00 00 00     -  lea r11,[rsp+000000C0]
+"Borderlands3.exe"+2AE56BF: 41 0F 28 73 F0              -  movaps xmm6,[r11-10]
+"Borderlands3.exe"+2AE56C4: 41 0F 28 7B E0              -  movaps xmm7,[r11-20]
+"Borderlands3.exe"+2AE56C9: 45 0F 28 43 D0              -  movaps xmm8,[r11-30]
+"Borderlands3.exe"+2AE56CE: 45 0F 28 4B C0              -  movaps xmm9,[r11-40]
+"Borderlands3.exe"+2AE56D3: 45 0F 28 53 B0              -  movaps xmm10,[r11-50]
+"Borderlands3.exe"+2AE56D8: 45 0F 28 5B A0              -  movaps xmm11,[r11-60]
+"Borderlands3.exe"+2AE56DD: 45 0F 28 63 90              -  movaps xmm12,[r11-70]
+}"""
+
+[[cheat]]
+id = "find-mission-timer"
+name = "Find Mission Timer"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Mission timer is seconds in float.
+//Find what reads it and copy the info out for use.
+//There's going to be two similar results.
+//Edit them to see which actually fails the mission.
+
+[ENABLE]
+
+aobscanmodule(readmissiontimer,Borderlands3.exe,F3 0F 10 47 08 F3 41 0F 5C C0) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+2FB2748)
+
+label(code)
+label(return)
+
+globalalloc(_missionbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_missionbase],rsi //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rax //Free a register.
+  mov rax,_missionbase //Make it hold our allocated address.
+  mov [rax],rdi //Copy our target value there.
+  pop rax //Fix stuff.
+  //Back to normal stuff.
+  movss xmm0,[rdi+08]
+  jmp return
+
+readmissiontimer:
+  jmp newmem
+return:
+registersymbol(readmissiontimer)
+
+[DISABLE]
+
+readmissiontimer:
+  db F3 0F 10 47 08
+
+unregistersymbol(readmissiontimer)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+2FB2748
+
+"Borderlands3.exe"+2FB2719: 49 63 85 50 05 00 00     -  movsxd  rax,dword ptr [r13+00000550]
+"Borderlands3.exe"+2FB2720: 48 8D 0C 40              -  lea rcx,[rax+rax*2]
+"Borderlands3.exe"+2FB2724: 48 8D 34 CF              -  lea rsi,[rdi+rcx*8]
+"Borderlands3.exe"+2FB2728: 48 3B FE                 -  cmp rdi,rsi
+"Borderlands3.exe"+2FB272B: 0F 84 26 01 00 00        -  je Borderlands3.exe+2FB2857
+"Borderlands3.exe"+2FB2731: 0F 57 F6                 -  xorps xmm6,xmm6
+"Borderlands3.exe"+2FB2734: 80 7F 10 00              -  cmp byte ptr [rdi+10],00
+"Borderlands3.exe"+2FB2738: 0F 84 FF 00 00 00        -  je Borderlands3.exe+2FB283D
+"Borderlands3.exe"+2FB273E: 80 7F 12 00              -  cmp byte ptr [rdi+12],00
+"Borderlands3.exe"+2FB2742: 0F 85 F5 00 00 00        -  jne Borderlands3.exe+2FB283D
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+2FB2748: F3 0F 10 47 08           -  movss xmm0,[rdi+08]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+2FB274D: F3 41 0F 5C C0           -  subss xmm0,xmm8
+"Borderlands3.exe"+2FB2752: 0F 2F C6                 -  comiss xmm0,xmm6
+"Borderlands3.exe"+2FB2755: F3 0F 11 47 08           -  movss [rdi+08],xmm0
+"Borderlands3.exe"+2FB275A: 0F 87 DD 00 00 00        -  ja Borderlands3.exe+2FB283D
+"Borderlands3.exe"+2FB2760: 41 80 BD 28 01 00 00 03  -  cmp byte ptr [r13+00000128],03
+"Borderlands3.exe"+2FB2768: 0F B6 47 11              -  movzx eax,byte ptr [rdi+11]
+"Borderlands3.exe"+2FB276C: 0F 85 88 00 00 00        -  jne Borderlands3.exe+2FB27FA
+"Borderlands3.exe"+2FB2772: 84 C0                    -  test al,al
+"Borderlands3.exe"+2FB2774: 0F 85 D2 00 00 00        -  jne Borderlands3.exe+2FB284C
+"Borderlands3.exe"+2FB277A: 89 5F 08                 -  mov [rdi+08],ebx
+}"""
+
+[[cheat]]
+id = "find-day-time"
+name = "Find Day Time"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+//See above script.
+
+[ENABLE]
+
+aobscanmodule(writetimeofday,Borderlands3.exe,F3 0F 11 49 20 48) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+8FF7C6)
+
+label(code)
+label(return)
+
+globalalloc(_timebase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_statbase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_timebase //Make it hold our allocated address.
+  mov [rbx],rcx //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  movss [rcx+20],xmm1
+  jmp return
+
+writetimeofday:
+  jmp newmem
+return:
+registersymbol(writetimeofday)
+
+[DISABLE]
+
+writetimeofday:
+  db F3 0F 11 49 20
+
+unregistersymbol(writetimeofday)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+8FF7C6
+
+"Borderlands3.exe"+8FF7B8: CC                       -  int 3 
+"Borderlands3.exe"+8FF7B9: CC                       -  int 3 
+"Borderlands3.exe"+8FF7BA: CC                       -  int 3 
+"Borderlands3.exe"+8FF7BB: CC                       -  int 3 
+"Borderlands3.exe"+8FF7BC: CC                       -  int 3 
+"Borderlands3.exe"+8FF7BD: CC                       -  int 3 
+"Borderlands3.exe"+8FF7BE: CC                       -  int 3 
+"Borderlands3.exe"+8FF7BF: CC                       -  int 3 
+"Borderlands3.exe"+8FF7C0: 40 57                    -  push rdi
+"Borderlands3.exe"+8FF7C2: 48 83 EC 30              -  sub rsp,30
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+8FF7C6: F3 0F 11 49 20           -  movss [rcx+20],xmm1
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+8FF7CB: 48 8B F9                 -  mov rdi,rcx
+"Borderlands3.exe"+8FF7CE: 45 84 C0                 -  test r8l,r8l
+"Borderlands3.exe"+8FF7D1: 74 6D                    -  je Borderlands3.exe+8FF840
+"Borderlands3.exe"+8FF7D3: 48 83 C1 18              -  add rcx,18
+"Borderlands3.exe"+8FF7D7: 48 89 5C 24 40           -  mov [rsp+40],rbx
+"Borderlands3.exe"+8FF7DC: E8 1F 17 DB 00           -  call Borderlands3.exe+16B0F00
+"Borderlands3.exe"+8FF7E1: 84 C0                    -  test al,al
+"Borderlands3.exe"+8FF7E3: 74 4B                    -  je Borderlands3.exe+8FF830
+"Borderlands3.exe"+8FF7E5: 48 8D 4F 18              -  lea rcx,[rdi+18]
+"Borderlands3.exe"+8FF7E9: 0F 29 74 24 20           -  movaps [rsp+20],xmm6
+}"""
+
+[[cheat]]
+id = "find-player-stats"
+name = "Find Player Stats"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Health and shields are both floats as the game displays them.
+
+[ENABLE]
+
+aobscanmodule(readhealth,Borderlands3.exe,F3 0F 10 40 20 EB 08) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+219C1233)
+
+label(code)
+label(return)
+
+globalalloc(_statbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_statbase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_statbase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  movss xmm0,[rax+20]
+  jmp return
+
+readhealth:
+  jmp newmem
+return:
+registersymbol(readhealth)
+
+[DISABLE]
+
+readhealth:
+  db F3 0F 10 40 20
+
+unregistersymbol(readhealth)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+219C1233
+
+"Borderlands3.exe"+219C1204: 39 05 BE BE 99 E4        -  cmp [Borderlands3.exe+635D0C8],eax
+"Borderlands3.exe"+219C120A: 0F 8F 8B 00 00 00        -  jg Borderlands3.exe+219C129B
+"Borderlands3.exe"+219C1210: 39 AB 80 06 00 00        -  cmp [rbx+00000680],ebp
+"Borderlands3.exe"+219C1216: 7E 0B                    -  jle Borderlands3.exe+219C1223
+"Borderlands3.exe"+219C1218: 48 8B BB 78 06 00 00     -  mov rdi,[rbx+00000678]
+"Borderlands3.exe"+219C121F: 48 83 C7 60              -  add rdi,60
+"Borderlands3.exe"+219C1223: 48 89 F9                 -  mov rcx,rdi
+"Borderlands3.exe"+219C1226: E8 C5 65 07 E1           -  call Borderlands3.exe+2A377F0
+"Borderlands3.exe"+219C122B: 48 89 C1                 -  mov rcx,rax
+"Borderlands3.exe"+219C122E: E8 8D 23 A3 DE           -  call Borderlands3.exe+3F35C0
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+219C1233: F3 0F 10 40 20           -  movss xmm0,[rax+20]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+219C1238: EB 08                    -  jmp Borderlands3.exe+219C1242
+"Borderlands3.exe"+219C123A: F3 0F 10 05 42 D1 3F E2  -  movss xmm0,[Borderlands3.exe+3DBE384]
+"Borderlands3.exe"+219C1242: 48 8B 5C 24 30           -  mov rbx,[rsp+30]
+"Borderlands3.exe"+219C1247: 48 8B 6C 24 38           -  mov rbp,[rsp+38]
+"Borderlands3.exe"+219C124C: 48 8B 74 24 40           -  mov rsi,[rsp+40]
+"Borderlands3.exe"+219C1251: 48 8B 7C 24 48           -  mov rdi,[rsp+48]
+"Borderlands3.exe"+219C1256: 48 83 C4 20              -  add rsp,20
+"Borderlands3.exe"+219C125A: 41 5E                    -  pop r14
+"Borderlands3.exe"+219C125C: C3                       -  ret
+"Borderlands3.exe"+219C125D: 48 8D 0D 64 BE 99 E4     -  lea rcx,[Borderlands3.exe+635D0C8]
+}"""
+
+[[cheat]]
+id = "find-buff-stats"
+name = "Find Buff Stats"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find the player's current move speed bonus.
+//That's a float, 1.0 as Amara normally, higher with Mindfulness stacks from self-damage.
+//That valye is +1130 from the base.
+//Find the base address and then something that reads just that.
+
+[ENABLE]
+
+aobscanmodule(findbuffs,Borderlands3.exe,48 8B 01 FF 90 58 05 00 00 84 C0 74 14) // should be unique
+alloc(newmem,$1000,findbuffs)
+
+label(code)
+label(return)
+
+globalalloc(_buffbase,8) //8 bytes for a 64-bit address.
+
+newmem:
+
+code:
+  //Workaround for 64-bit addressing limitations.
+  push rbx //Free a register.
+  mov rbx,_buffbase //Put our address into it.
+  mov [rbx],rcx //Put our desired base value into our address's place.
+  pop rbx //Restore that register.
+
+  //Back to normal code.
+  mov rax,[rcx]
+  call qword ptr [rax+00000558]
+  jmp return
+
+findbuffs:
+  jmp newmem
+  nop 4
+return:
+registersymbol(findbuffs)
+
+[DISABLE]
+
+findbuffs:
+  db 48 8B 01 FF 90 58 05 00 00
+
+unregistersymbol(findbuffs)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF6706B9ED3
+
+7FF6706B9EB2: 80 7B 38 00           - cmp byte ptr [rbx+38],00
+7FF6706B9EB6: 75 74                 - jne 7FF6706B9F2C
+7FF6706B9EB8: 48 8B CF              - mov rcx,rdi
+7FF6706B9EBB: E8 B0 C5 1F 00        - call 7FF6708B6470
+7FF6706B9EC0: 0F 57 F6              - xorps xmm6,xmm6
+7FF6706B9EC3: 84 C0                 - test al,al
+7FF6706B9EC5: 75 19                 - jne 7FF6706B9EE0
+7FF6706B9EC7: 48 8B 8F C8 04 00 00  - mov rcx,[rdi+000004C8]
+7FF6706B9ECE: 48 85 C9              - test rcx,rcx
+7FF6706B9ED1: 74 21                 - je 7FF6706B9EF4
+// ---------- INJECTING HERE ----------
+7FF6706B9ED3: 48 8B 01              - mov rax,[rcx]
+// ---------- DONE INJECTING  ----------
+7FF6706B9ED6: FF 90 58 05 00 00     - call qword ptr [rax+00000558]
+7FF6706B9EDC: 84 C0                 - test al,al
+7FF6706B9EDE: 74 14                 - je 7FF6706B9EF4
+7FF6706B9EE0: 80 7B 38 00           - cmp byte ptr [rbx+38],00
+7FF6706B9EE4: 0F 85 98 00 00 00     - jne 7FF6706B9F82
+7FF6706B9EEA: 0F 2F 73 34           - comiss xmm6,[rbx+34]
+7FF6706B9EEE: 0F 83 8E 00 00 00     - jae 7FF6706B9F82
+7FF6706B9EF4: C6 43 38 00           - mov byte ptr [rbx+38],00
+7FF6706B9EF8: C7 43 30 00 00 00 00  - mov [rbx+30],00000000
+7FF6706B9EFF: F3 0F 10 4E 44        - movss xmm1,[rsi+44]
+}"""
+
+[[cheat]]
+id = "find-more-buff-stats"
+name = "Find More Buff Stats"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find the damage taken after Amara's Helping Hands skill comes into play.
+//So when it's up you're taking like 0.79 or 0.60 damage or something.
+//And when it's not up you're taking 1.0 damage.
+
+[ENABLE]
+
+aobscanmodule(readhelpinghands,Borderlands3.exe,F3 0F 10 80 E4 06 00 00 EB) // should be unique
+alloc(newmem,$1000,readhelpinghands)
+
+label(code)
+label(return)
+
+globalalloc(_buffbase2,8) //8 bytes for a 64-bit address.
+
+newmem:
+
+code:
+  //Workaround for 64-bit.
+  push rbx
+  mov rbx,_buffbase2
+  mov [rbx],rax
+  pop rbx
+  //Original code.
+  movss xmm0,[rax+000006E4]
+  jmp return
+
+readhelpinghands:
+  jmp newmem
+  nop 3
+return:
+registersymbol(readhelpinghands)
+
+[DISABLE]
+
+readhelpinghands:
+  db F3 0F 10 80 E4 06 00 00
+
+unregistersymbol(readhelpinghands)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF672971FE8
+
+7FF672971FBA: F3 0F 11 83 F0 01 00 00  - movss [rbx+000001F0],xmm0
+7FF672971FC2: 48 8B 83 A0 02 00 00     - mov rax,[rbx+000002A0]
+7FF672971FC9: 48 85 C0                 - test rax,rax
+7FF672971FCC: 74 0A                    - je 7FF672971FD8
+7FF672971FCE: F3 0F 10 88 84 02 00 00  - movss xmm1,[rax+00000284]
+7FF672971FD6: EB 04                    - jmp 7FF672971FDC
+7FF672971FD8: 41 0F 28 C8              - movaps xmm1,xmm8
+7FF672971FDC: 48 8B 83 B0 02 00 00     - mov rax,[rbx+000002B0]
+7FF672971FE3: 48 85 C0                 - test rax,rax
+7FF672971FE6: 74 0A                    - je 7FF672971FF2
+// ---------- INJECTING HERE ----------
+7FF672971FE8: F3 0F 10 80 E4 06 00 00  - movss xmm0,[rax+000006E4]
+// ---------- DONE INJECTING  ----------
+7FF672971FF0: EB 04                    - jmp 7FF672971FF6
+7FF672971FF2: 41 0F 28 C0              - movaps xmm0,xmm8
+7FF672971FF6: F3 0F 59 F1              - mulss xmm6,xmm1
+7FF672971FFA: 48 89 B4 24 98 00 00 00  - mov [rsp+00000098],rsi
+7FF672972002: F3 0F 59 F0              - mulss xmm6,xmm0
+7FF672972006: F3 0F 11 B3 D8 01 00 00  - movss [rbx+000001D8],xmm6
+7FF67297200E: 48 8B 7B 58              - mov rdi,[rbx+58]
+7FF672972012: 48 85 FF                 - test rdi,rdi
+7FF672972015: 0F 84 DC 00 00 00        - je 7FF6729720F7
+7FF67297201B: 48 8B B7 F8 00 00 00     - mov rsi,[rdi+000000F8]
+}"""
+
+[[cheat]]
+id = "find-skill-points"
+name = "Find Skill Points"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Remember that you can respec at New-U stations (looks change).
+//It's the last button there.
+
+[ENABLE]
+
+aobscanmodule(readskillpoints,Borderlands3.exe,8B 90 60 01 00 00 48 83) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+EF383E9)
+
+label(code)
+label(return)
+
+globalalloc(_skillpointsbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_skillpointsbase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  mov edx,[rax+00000160]
+  jmp return
+
+readskillpoints:
+  jmp newmem
+  nop
+return:
+registersymbol(readskillpoints)
+
+[DISABLE]
+
+readskillpoints:
+  db 8B 90 60 01 00 00
+
+unregistersymbol(readskillpoints)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+EF383E9
+
+"Borderlands3.exe"+EF383C2: 48 8D 04 D1              -  lea rax,[rcx+rdx*8]
+"Borderlands3.exe"+EF383C6: EB 02                    -  jmp Borderlands3.exe+EF383CA
+"Borderlands3.exe"+EF383C8: 31 C0                    -  xor eax,eax
+"Borderlands3.exe"+EF383CA: F7 40 08 00 00 00 30     -  test [rax+08],30000000
+"Borderlands3.exe"+EF383D1: 75 26                    -  jne Borderlands3.exe+EF383F9
+"Borderlands3.exe"+EF383D3: 48 8B 0B                 -  mov rcx,[rbx]
+"Borderlands3.exe"+EF383D6: 48 8B 81 30 07 00 00     -  mov rax,[rcx+00000730]
+"Borderlands3.exe"+EF383DD: 48 85 C0                 -  test rax,rax
+"Borderlands3.exe"+EF383E0: 74 17                    -  je Borderlands3.exe+EF383F9
+"Borderlands3.exe"+EF383E2: 44 8B 81 6C 07 00 00     -  mov r8d,[rcx+0000076C]
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+EF383E9: 8B 90 60 01 00 00        -  mov edx,[rax+00000160]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+EF383EF: 48 83 C4 20              -  add rsp,20
+"Borderlands3.exe"+EF383F3: 5B                       -  pop rbx
+"Borderlands3.exe"+EF383F4: E9 57 0F E6 F1           -  jmp Borderlands3.exe+D99350
+"Borderlands3.exe"+EF383F9: 48 83 C4 20              -  add rsp,20
+"Borderlands3.exe"+EF383FD: 5B                       -  pop rbx
+"Borderlands3.exe"+EF383FE: C3                       -  ret
+"Borderlands3.exe"+EF383FF: CC                       -  int 3
+"Borderlands3.exe"+EF38400: F5                       -  cmc
+"Borderlands3.exe"+EF38401: D9                       -
+"Borderlands3.exe"+EF38402: D6                       -  db D6
+}"""
+
+[[cheat]]
+id = "custom-skill-rank"
+name = "Custom Skill Rank"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find the address for a skill.
+//It's int, 4 byte.
+//Find the code that writes to it.
+//Overload that variable.
+
+[ENABLE]
+
+aobscanmodule(addskillpoint,Borderlands3.exe,89 4A 28 48 85 FF) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+92A4F2A)
+
+label(code)
+label(return)
+
+globalalloc(_customskillpoints,4) //This isn't going to hold an address so 4 bytes works.
+_customskillpoints:
+db 63 00 00 00 //99 in hex, for a default value.
+
+newmem:
+
+code:
+  //Workaround for 64-bit reach.
+  push rax //Free a register.
+  mov rax,[_customskillpoints] //Copy the value at our address into RAX.
+  mov [rdx+28],rax //Now copy our value into the game code.
+  pop rax //Free the register we used.
+
+  //Original code.
+  //mov [rdx+28],ecx
+  test rdi,rdi
+  jmp return
+
+addskillpoint:
+  jmp newmem
+  nop
+return:
+registersymbol(addskillpoint)
+
+[DISABLE]
+
+addskillpoint:
+  db 89 4A 28 48 85 FF
+
+unregistersymbol(addskillpoint)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+92A4F2A
+
+"Borderlands3.exe"+92A4F0E: C3                    -  ret
+"Borderlands3.exe"+92A4F0F: 68 48 89 5C 24        -  push 245C8948
+"Borderlands3.exe"+92A4F14: 08 57 48              -  or [rdi+48],dl
+"Borderlands3.exe"+92A4F17: 83 EC 20              -  sub esp,20
+"Borderlands3.exe"+92A4F1A: 8B 42 28              -  mov eax,[rdx+28]
+"Borderlands3.exe"+92A4F1D: 48 89 D3              -  mov rbx,rdx
+"Borderlands3.exe"+92A4F20: 8D 48 01              -  lea ecx,[rax+01]
+"Borderlands3.exe"+92A4F23: 39 C8                 -  cmp eax,ecx
+"Borderlands3.exe"+92A4F25: 74 2E                 -  je Borderlands3.exe+92A4F55
+"Borderlands3.exe"+92A4F27: 48 8B 3A              -  mov rdi,[rdx]
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+92A4F2A: 89 4A 28              -  mov [rdx+28],ecx
+"Borderlands3.exe"+92A4F2D: 48 85 FF              -  test rdi,rdi
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+92A4F30: 0F 84 81 00 00 00     -  je Borderlands3.exe+92A4FB7
+"Borderlands3.exe"+92A4F36: 48 89 F9              -  mov rcx,rdi
+"Borderlands3.exe"+92A4F39: E8 92 A4 67 F7        -  call Borderlands3.exe+91F3D0
+"Borderlands3.exe"+92A4F3E: 48 8B 43 08           -  mov rax,[rbx+08]
+"Borderlands3.exe"+92A4F42: 48 8D 4F 38           -  lea rcx,[rdi+38]
+"Borderlands3.exe"+92A4F46: 48 8D 54 24 38        -  lea rdx,[rsp+38]
+"Borderlands3.exe"+92A4F4B: 48 89 44 24 38        -  mov [rsp+38],rax
+"Borderlands3.exe"+92A4F50: E8 FB A3 1A F7        -  call Borderlands3.exe+44F350
+"Borderlands3.exe"+92A4F55: 48 8B 13              -  mov rdx,[rbx]
+"Borderlands3.exe"+92A4F58: 48 85 D2              -  test rdx,rdx
+}"""
+
+[[cheat]]
+id = "skill-ranks"
+name = "Skill Ranks"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_customskillpoints"
+hops = []
+
+[[cheat]]
+id = "find-currency"
+name = "Find Currency"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Currency is an int.
+//Eridium is "next" to it, but is treated a bit oddly.
+//Instead of each having their own code offset, a register is used.
+//This mean the base may or may not work depending on what exact code is used.
+//As such I recommend users open a normal vending machine to edit this.
+
+[ENABLE]
+
+aobscanmodule(editmoney,Borderlands3.exe,44 01 64 06 18) // should be unique
+alloc(newmem,$1000,editmoney)
+
+label(code)
+label(return)
+
+globalalloc(_currencybase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_currencybase],rcx //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_currencybase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  add [rsi+rax+18],r12d
+  jmp return
+
+editmoney:
+  jmp newmem
+return:
+registersymbol(editmoney)
+
+[DISABLE]
+
+editmoney:
+  db 44 01 64 06 18
+
+unregistersymbol(editmoney)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF6323E612C
+
+7FF6323E610D: 41 5E                 - pop r14
+7FF6323E610F: 41 5D                 - pop r13
+7FF6323E6111: 41 5C                 - pop r12
+7FF6323E6113: 5D                    - pop rbp
+7FF6323E6114: C3                    - ret
+7FF6323E6115: 48 8B 03              - mov rax,[rbx]
+7FF6323E6118: 48 8B CB              - mov rcx,rbx
+7FF6323E611B: FF 90 60 02 00 00     - call qword ptr [rax+00000260]
+7FF6323E6121: 48 8B 83 28 02 00 00  - mov rax,[rbx+00000228]
+7FF6323E6128: 48 C1 E6 06           - shl rsi,06
+// ---------- INJECTING HERE ----------
+7FF6323E612C: 44 01 64 06 18        - add [rsi+rax+18],r12d
+// ---------- DONE INJECTING  ----------
+7FF6323E6131: 79 05                 - jns 7FF6323E6138
+7FF6323E6133: 44 89 6C 06 18        - mov [rsi+rax+18],r13d
+7FF6323E6138: 48 8B 8B 28 02 00 00  - mov rcx,[rbx+00000228]
+7FF6323E613F: 4C 8D B3 78 01 00 00  - lea r14,[rbx+00000178]
+7FF6323E6146: 48 03 CE              - add rcx,rsi
+7FF6323E6149: 83 39 FF              - cmp dword ptr [rcx],-01
+7FF6323E614C: 75 19                 - jne 7FF6323E6167
+7FF6323E614E: 41 FF 46 50           - inc [r14+50]
+7FF6323E6152: 41 8B 46 50           - mov eax,[r14+50]
+7FF6323E6156: 89 01                 - mov [rcx],eax
+}"""
+
+[[cheat]]
+id = "find-golden-keys"
+name = "Find Golden Keys"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Injecting one opcode above the target to avoid the push that might change.
+
+//Need some keys to start with?
+//Go to the social menu in the escape menu, that's where all the junk is.
+//Find the SHiFT code section and put these in, see if they work.
+//3: ZFKJ3-TT3BB-JTBJT-T3JJT-JWX9H
+//1: ZFKJ3-TT6FF-KTFKT-T3JJT-JWX36
+//1: 9XCBT-WBXFR-5TRWJ-JJJ33-TX53Z
+//1: HXKBT-XJ6FR-WBRKJ-J3TTB-RSBHR
+//1: Z65B3-JCXX6-5JXW3-3B33J-9SWT6
+//1: ZRWBJ-ST6XR-CBFKT-JT3J3-FRXJ5
+//Then use the mail option in social to actually take the keys out.
+
+[ENABLE]
+
+aobscanmodule(readkeys,Borderlands3.exe,74 F8 8B 40 08) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+92299AC)
+
+label(code)
+label(return)
+
+globalalloc(_keybase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  je 1492299A6
+
+  //mov [_keybase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_keybase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+
+  mov eax,[rax+08]
+  jmp return
+
+readkeys:
+  jmp newmem
+return:
+registersymbol(readkeys)
+
+[DISABLE]
+
+readkeys:
+  db 74 F8 8B 40 08
+
+unregistersymbol(readkeys)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+92299AC
+
+"Borderlands3.exe"+9229993: 4C 39 C0                             -  cmp rax,r8
+"Borderlands3.exe"+9229996: 74 0E                                -  je Borderlands3.exe+92299A6
+"Borderlands3.exe"+9229998: 48 39 10                             -  cmp [rax],rdx
+"Borderlands3.exe"+922999B: 74 0C                                -  je Borderlands3.exe+92299A9
+"Borderlands3.exe"+922999D: 48 83 C0 10                          -  add rax,10
+"Borderlands3.exe"+92299A1: 4C 39 C0                             -  cmp rax,r8
+"Borderlands3.exe"+92299A4: 75 F2                                -  jne Borderlands3.exe+9229998
+"Borderlands3.exe"+92299A6: 31 C0                                -  xor eax,eax
+"Borderlands3.exe"+92299A8: C3                                   -  ret
+"Borderlands3.exe"+92299A9: 48 85 C0                             -  test rax,rax
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+92299AC: 74 F8                                -  je Borderlands3.exe+92299A6
+"Borderlands3.exe"+92299AE: 8B 40 08                             -  mov eax,[rax+08]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+92299B1: C3                                   -  ret
+"Borderlands3.exe"+92299B2: 68 6A 39 06 B2                       -  push FFFFFFFFB206396A
+"Borderlands3.exe"+92299B7: 48 F7 1C 24                          -  neg [rsp]
+"Borderlands3.exe"+92299BB: 48 03 1C 24                          -  add rbx,[rsp]
+"Borderlands3.exe"+92299BF: 48 8D 64 24 08                       -  lea rsp,[rsp+08]
+"Borderlands3.exe"+92299C4: 4C 8B B3 6A 39 06 B2                 -  mov r14,[rbx-4DF9C696]
+"Borderlands3.exe"+92299CB: 48 8D 64 24 08                       -  lea rsp,[rsp+08]
+"Borderlands3.exe"+92299D0: 48 8D 1C 24                          -  lea rbx,[rsp]
+"Borderlands3.exe"+92299D4: 48 81 EB AF 44 13 12                 -  sub rbx,121344AF
+"Borderlands3.exe"+92299DB: 4C 8B AB AF 44 13 12                 -  mov r13,[rbx+121344AF]
+}"""
+
+[[cheat]]
+id = "find-inventory-slots"
+name = "Find Inventory Slots"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find your inventory max size, 4 byte int.
+//Find what reads it when you open a vending machine.
+
+[ENABLE]
+
+aobscanmodule(vendinventory,Borderlands3.exe,8B 81 A8 02 00 00 85 C0 7E 0B) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+2E8E459)
+
+label(code)
+label(return)
+
+globalalloc(_invbase2,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_weaponbase],rcx //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_invbase2 //Make it hold our allocated address.
+  mov [rbx],rcx //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal code.
+  mov eax,[rcx+000002A8]
+  jmp return
+
+vendinventory:
+  jmp newmem
+  nop
+return:
+registersymbol(vendinventory)
+
+[DISABLE]
+
+vendinventory:
+  db 8B 81 A8 02 00 00
+
+unregistersymbol(vendinventory)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+2E8E459
+
+"Borderlands3.exe"+2E8E43A: 48 8B 74 24 50        -  mov rsi,[rsp+50]
+"Borderlands3.exe"+2E8E43F: 48 8B 7C 24 58        -  mov rdi,[rsp+58]
+"Borderlands3.exe"+2E8E444: 48 83 C4 30           -  add rsp,30
+"Borderlands3.exe"+2E8E448: 41 5E                 -  pop r14
+"Borderlands3.exe"+2E8E44A: C3                    -  ret
+"Borderlands3.exe"+2E8E44B: B0 01                 -  mov al,01
+"Borderlands3.exe"+2E8E44D: EB E1                 -  jmp Borderlands3.exe+2E8E430
+"Borderlands3.exe"+2E8E44F: CC                    -  int 3
+"Borderlands3.exe"+2E8E450: 80 3D 29 B7 AD 03 00  -  cmp byte ptr [Borderlands3.exe+6969B80],00
+"Borderlands3.exe"+2E8E457: 75 15                 -  jne Borderlands3.exe+2E8E46E
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+2E8E459: 8B 81 A8 02 00 00     -  mov eax,[rcx+000002A8]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+2E8E45F: 85 C0                 -  test eax,eax
+"Borderlands3.exe"+2E8E461: 7E 0B                 -  jle Borderlands3.exe+2E8E46E
+"Borderlands3.exe"+2E8E463: 39 81 40 02 00 00     -  cmp [rcx+00000240],eax
+"Borderlands3.exe"+2E8E469: 7C 03                 -  jl Borderlands3.exe+2E8E46E
+"Borderlands3.exe"+2E8E46B: B0 01                 -  mov al,01
+"Borderlands3.exe"+2E8E46D: C3                    -  ret
+"Borderlands3.exe"+2E8E46E: 32 C0                 -  xor al,al
+"Borderlands3.exe"+2E8E470: C3                    -  ret
+"Borderlands3.exe"+2E8E471: CC                    -  int 3
+"Borderlands3.exe"+2E8E472: CC                    -  int 3
+}"""
+
+[[cheat]]
+id = "find-shop-info"
+name = "Find Shop Info"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//The number of seconds left on the timers, in float.
+//Set up a hotkey to set it to 0 if you're going to farm vending machines.
+
+[ENABLE]
+
+aobscanmodule(readshoptimer,Borderlands3.exe,F3 0F 10 81 E0 06 00 00 F3) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+CA7160)
+
+label(code)
+label(return)
+
+globalalloc(_shopbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //Workaround needed for 64-bit limitations.
+  push rax //Free a register.
+  mov rax,_shopbase //Make it hold our allocated address.
+  mov [rax],rcx //Copy our target value there.
+  pop rax //Fix stuff.
+  //Back to normal stuff.
+  movss xmm0,[rcx+000006E0]
+  jmp return
+
+readshoptimer:
+  jmp newmem
+  nop 3
+return:
+registersymbol(readshoptimer)
+
+[DISABLE]
+
+readshoptimer:
+  db F3 0F 10 81 E0 06 00 00
+
+unregistersymbol(readshoptimer)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+CA7160
+
+"Borderlands3.exe"+CA7136: 4C 89 25 EB E0 B6 05     -  mov [Borderlands3.exe+6815228],r12
+"Borderlands3.exe"+CA713D: 44 89 25 EC E0 B6 05     -  mov [Borderlands3.exe+6815230],r12d
+"Borderlands3.exe"+CA7144: E8 6F F7 20 03           -  call Borderlands3.exe+3EB68B8
+"Borderlands3.exe"+CA7149: E9 84 FA FF FF           -  jmp Borderlands3.exe+CA6BD2
+"Borderlands3.exe"+CA714E: CC                       -  int 3
+"Borderlands3.exe"+CA714F: CC                       -  int 3
+"Borderlands3.exe"+CA7150: 40 53                    -  push rbx
+"Borderlands3.exe"+CA7152: 48 83 EC 40              -  sub rsp,40
+"Borderlands3.exe"+CA7156: 80 B9 28 01 00 00 03     -  cmp byte ptr [rcx+00000128],03
+"Borderlands3.exe"+CA715D: 48 8B D9                 -  mov rbx,rcx
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+CA7160: F3 0F 10 81 E0 06 00 00  -  movss xmm0,[rcx+000006E0]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+CA7168: F3 0F 5C C1              -  subss xmm0,xmm1
+"Borderlands3.exe"+CA716C: 0F 29 74 24 30           -  movaps [rsp+30],xmm6
+"Borderlands3.exe"+CA7171: 0F 57 F6                 -  xorps xmm6,xmm6
+"Borderlands3.exe"+CA7174: F3 0F 5F C6              -  maxss xmm0,xmm6
+"Borderlands3.exe"+CA7178: F3 0F 11 81 E0 06 00 00  -  movss [rcx+000006E0],xmm0
+"Borderlands3.exe"+CA7180: 0F 85 9D 01 00 00        -  jne Borderlands3.exe+CA7323
+"Borderlands3.exe"+CA7186: 48 8B 01                 -  mov rax,[rcx]
+"Borderlands3.exe"+CA7189: FF 90 48 01 00 00        -  call qword ptr [rax+00000148]
+"Borderlands3.exe"+CA718F: 48 85 C0                 -  test rax,rax
+"Borderlands3.exe"+CA7192: 0F 84 8B 01 00 00        -  je Borderlands3.exe+CA7323
+}"""
+
+[[cheat]]
+id = "find-held-weapon-stats"
+name = "Find Held Weapon Stats"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find the current accuracy of your current weapon, it's a float.
+//It's not the number in the item card!
+//Try respeccing skills to get it to change if you have a skill for accuracy.
+//Then finds what reads it and hook that.
+
+[ENABLE]
+
+aobscanmodule(readaccuracy,Borderlands3.exe,F3 0F 10 81 F4 02 00 00 C3) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+22954D90)
+
+label(code)
+label(return)
+
+globalalloc(_weaponbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_weaponbase],rcx //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rax //Free a register.
+  mov rax,_weaponbase //Make it hold our allocated address.
+  mov [rax],rcx //Copy our target value there.
+  pop rax //Fix stuff.
+  //Back to normal code.
+  movss xmm0,[rcx+000002F4]
+  jmp return
+
+readaccuracy:
+  jmp newmem
+  nop 3
+return:
+registersymbol(readaccuracy)
+
+[DISABLE]
+
+readaccuracy:
+  db F3 0F 10 81 F4 02 00 00
+
+unregistersymbol(readaccuracy)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+22954D90
+
+"Borderlands3.exe"+22954D61: 81 C1 3A 5E 9B 3B           -  add ecx,3B9B5E3A
+"Borderlands3.exe"+22954D67: 4D 8B 91 C6 A1 64 C4        -  mov r10,[r9-3B9B5E3A]
+"Borderlands3.exe"+22954D6E: F9                          -  stc 
+"Borderlands3.exe"+22954D6F: 48 83 D4 07                 -  adc rsp,07
+"Borderlands3.exe"+22954D73: 48 8B 1C 24                 -  mov rbx,[rsp]
+"Borderlands3.exe"+22954D77: 48 89 34 24                 -  mov [rsp],rsi
+"Borderlands3.exe"+22954D7B: 48 8D 35 9B C1 82 EB        -  lea rsi,[Borderlands3.exe+E180F1D]
+"Borderlands3.exe"+22954D82: 48 87 34 24                 -  xchg [rsp],rsi
+"Borderlands3.exe"+22954D86: C3                          -  ret 
+"Borderlands3.exe"+22954D87: 66 0F 1F 84 00 00 00 00 00  -  nop [rax+rax+00000000]
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+22954D90: F3 0F 10 81 F4 02 00 00     -  movss xmm0,[rcx+000002F4]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+22954D98: C3                          -  ret 
+"Borderlands3.exe"+22954D99: 4C 8B 0C 24                 -  mov r9,[rsp]
+"Borderlands3.exe"+22954D9D: 48 8D 64 24 08              -  lea rsp,[rsp+08]
+"Borderlands3.exe"+22954DA2: 48 8B 04 24                 -  mov rax,[rsp]
+"Borderlands3.exe"+22954DA6: 4C 89 1C 24                 -  mov [rsp],r11
+"Borderlands3.exe"+22954DAA: 4C 8D 1D 6F 00 D4 E4        -  lea r11,[Borderlands3.exe+7694E20]
+"Borderlands3.exe"+22954DB1: 4C 87 1C 24                 -  xchg [rsp],r11
+"Borderlands3.exe"+22954DB5: C3                          -  ret 
+"Borderlands3.exe"+22954DB6: 16                          -  push ss
+"Borderlands3.exe"+22954DB7: 55                          -  push rbp
+}"""
+
+[[cheat]]
+id = "find-reload-timer"
+name = "Find Reload Timer"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find reload time for one of your weapons, it's a float.
+//Toggle badass bonuses and respec skills as needed to get it to change.
+//Also it's weapon data, not held data, so keep using the same weapon.
+
+[ENABLE]
+
+aobscanmodule(readreload,Borderlands3.exe,F3 0F 10 81 C4 01 00 00 85) // should be unique
+alloc(newmem,$1000,readreload)
+
+label(code)
+label(return)
+
+globalalloc(_reloadbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_reloadbase],rcx //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rax //Free a register.
+  mov rax,_reloadbase //Make it hold our allocated address.
+  mov [rax],rcx //Copy our target value there.
+  pop rax //Fix stuff.
+  //Back to normal code.
+  movss xmm0,[rcx+000001C4]
+  jmp return
+
+readreload:
+  jmp newmem
+  nop 3
+return:
+registersymbol(readreload)
+
+[DISABLE]
+
+readreload:
+  db F3 0F 10 81 C4 01 00 00
+
+unregistersymbol(readreload)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF67F8A328A
+
+7FF67F8A3277: 33 C0                    - xor eax,eax
+7FF67F8A3279: C3                       - ret
+7FF67F8A327A: CC                       - int 3
+7FF67F8A327B: CC                       - int 3
+7FF67F8A327C: CC                       - int 3
+7FF67F8A327D: CC                       - int 3
+7FF67F8A327E: CC                       - int 3
+7FF67F8A327F: CC                       - int 3
+7FF67F8A3280: 48 83 EC 38              - sub rsp,38
+7FF67F8A3284: 8B 91 EC 01 00 00        - mov edx,[rcx+000001EC]
+// ---------- INJECTING HERE ----------
+7FF67F8A328A: F3 0F 10 81 C4 01 00 00  - movss xmm0,[rcx+000001C4]
+// ---------- DONE INJECTING  ----------
+7FF67F8A3292: 85 D2                    - test edx,edx
+7FF67F8A3294: 7E 26                    - jle 7FF67F8A32BC
+7FF67F8A3296: 0F B6 81 02 02 00 00     - movzx eax,byte ptr [rcx+00000202]
+7FF67F8A329D: 3B C2                    - cmp eax,edx
+7FF67F8A329F: 7D 1B                    - jnl 7FF67F8A32BC
+7FF67F8A32A1: 0F 29 74 24 20           - movaps [rsp+20],xmm6
+7FF67F8A32A6: F3 0F 10 B1 E0 01 00 00  - movss xmm6,[rcx+000001E0]
+7FF67F8A32AE: E8 5D AD FF FF           - call 7FF67F89E010
+7FF67F8A32B3: F3 0F 59 C6              - mulss xmm0,xmm6
+7FF67F8A32B7: 0F 28 74 24 20           - movaps xmm6,[rsp+20]
+}"""
+
+[[cheat]]
+id = "find-raw-item-data"
+name = "Find Raw Item Data"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+/*
+01 F0 00 00 | 00 00 07 43 | 8E 02 00 00
+01 F0 00 00 00 00 ?? ?? 8E 02 00 00
+First 4-byte value is the item's value (money cost).
+Then four bytes I do not recognize, some other data.
+Then the item score, again 4-byte value.
+
+You could otherwise just search for the money value and find what accesses it.
+Start from the highest address (last in the results list) and work up.
+You'll find some code that accesses that when you mouse over eventually.
+
+Most things in the structure dom't seem to map to anything I can see in-game.
+Can't find the accuracy, can't find the handling, none of that... so this is
+likely the inventory/structure data (which is used to calculate the stats).
+*/
+
+[ENABLE]
+
+aobscanmodule(readitemvalue,Borderlands3.exe,44 8B 80 FC 01 00 00) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+14F97C9B)
+
+label(code)
+label(return)
+
+globalalloc(_statscardbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_weaponbase],rcx //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_statscardbase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal code.
+  mov r8d,[rax+000001FC]
+  jmp return
+
+readitemvalue:
+  jmp newmem
+  nop 2
+return:
+registersymbol(readitemvalue)
+
+[DISABLE]
+
+readitemvalue:
+  db 44 8B 80 FC 01 00 00
+
+unregistersymbol(readitemvalue)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+14F97C9B
+
+"Borderlands3.exe"+14F97C75: 48 8B 9B C0 02 00 00  -  mov rbx,[rbx+000002C0]
+"Borderlands3.exe"+14F97C7C: EB 03                 -  jmp Borderlands3.exe+14F97C81
+"Borderlands3.exe"+14F97C7E: 4C 89 E3              -  mov rbx,r12
+"Borderlands3.exe"+14F97C81: 8B 4C 24 34           -  mov ecx,[rsp+34]
+"Borderlands3.exe"+14F97C85: E8 D6 AA 66 EC        -  call Borderlands3.exe+1602760
+"Borderlands3.exe"+14F97C8A: 48 85 C0              -  test rax,rax
+"Borderlands3.exe"+14F97C8D: 74 1B                 -  je Borderlands3.exe+14F97CAA
+"Borderlands3.exe"+14F97C8F: 8B 4C 24 34           -  mov ecx,[rsp+34]
+"Borderlands3.exe"+14F97C93: E8 C8 AA 66 EC        -  call Borderlands3.exe+1602760
+"Borderlands3.exe"+14F97C98: 48 89 DA              -  mov rdx,rbx
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+14F97C9B: 44 8B 80 FC 01 00 00  -  mov r8d,[rax+000001FC]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+14F97CA2: 4C 89 F1              -  mov rcx,r14
+"Borderlands3.exe"+14F97CA5: E8 A6 31 F9 EB        -  call Borderlands3.exe+F2AE50
+"Borderlands3.exe"+14F97CAA: 49 8B 8E 00 05 00 00  -  mov rcx,[r14+00000500]
+"Borderlands3.exe"+14F97CB1: 48 8D 95 20 04 00 00  -  lea rdx,[rbp+00000420]
+"Borderlands3.exe"+14F97CB8: E8 E3 0C FF EC        -  call Borderlands3.exe+1F889A0
+"Borderlands3.exe"+14F97CBD: 49 8B 8E C8 04 00 00  -  mov rcx,[r14+000004C8]
+"Borderlands3.exe"+14F97CC4: 48 8D 95 50 04 00 00  -  lea rdx,[rbp+00000450]
+"Borderlands3.exe"+14F97CCB: E8 D0 0C FF EC        -  call Borderlands3.exe+1F889A0
+"Borderlands3.exe"+14F97CD0: 49 8B 8E E8 04 00 00  -  mov rcx,[r14+000004E8]
+"Borderlands3.exe"+14F97CD7: 48 8D 95 80 04 00 00  -  lea rdx,[rbp+00000480]
+}"""
+
+[[cheat]]
+id = "no-reload"
+name = "No Reload"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find the ammo in your current weapon's magazine.
+//Goes down as you shoot, and back up when you reload.
+//4-byte value.
+
+[ENABLE]
+
+aobscanmodule(takemagammo,Borderlands3.exe,8B 83 C0 01 00 00 2B C6 79) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+30D3B0C)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  //mov eax,[rbx+000001C0]
+  mov eax,(int)999 //Overwrite it with 999.
+  jmp return
+
+takemagammo:
+  jmp newmem
+  nop
+return:
+registersymbol(takemagammo)
+
+[DISABLE]
+
+takemagammo:
+  db 8B 83 C0 01 00 00
+
+unregistersymbol(takemagammo)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+30D3B0C
+
+"Borderlands3.exe"+30D3AEA: 85 D2                 -  test edx,edx
+"Borderlands3.exe"+30D3AEC: 78 49                 -  js Borderlands3.exe+30D3B37
+"Borderlands3.exe"+30D3AEE: 48 89 7C 24 40        -  mov [rsp+40],rdi
+"Borderlands3.exe"+30D3AF3: FF 90 48 04 00 00     -  call qword ptr [rax+00000448]
+"Borderlands3.exe"+30D3AF9: 8B F8                 -  mov edi,eax
+"Borderlands3.exe"+30D3AFB: 48 8B CB              -  mov rcx,rbx
+"Borderlands3.exe"+30D3AFE: 48 8B 03              -  mov rax,[rbx]
+"Borderlands3.exe"+30D3B01: FF 90 18 04 00 00     -  call qword ptr [rax+00000418]
+"Borderlands3.exe"+30D3B07: 3B C7                 -  cmp eax,edi
+"Borderlands3.exe"+30D3B09: 0F 4E F8              -  cmovle edi,eax
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+30D3B0C: 8B 83 C0 01 00 00     -  mov eax,[rbx+000001C0]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+30D3B12: 2B C6                 -  sub eax,esi
+"Borderlands3.exe"+30D3B14: 79 0F                 -  jns Borderlands3.exe+30D3B25
+"Borderlands3.exe"+30D3B16: 8B FD                 -  mov edi,ebp
+"Borderlands3.exe"+30D3B18: 89 AB C0 01 00 00     -  mov [rbx+000001C0],ebp
+"Borderlands3.exe"+30D3B1E: 48 8B 7C 24 40        -  mov rdi,[rsp+40]
+"Borderlands3.exe"+30D3B23: EB 57                 -  jmp Borderlands3.exe+30D3B7C
+"Borderlands3.exe"+30D3B25: 3B C7                 -  cmp eax,edi
+"Borderlands3.exe"+30D3B27: 0F 4C F8              -  cmovl edi,eax
+"Borderlands3.exe"+30D3B2A: 89 BB C0 01 00 00     -  mov [rbx+000001C0],edi
+"Borderlands3.exe"+30D3B30: 48 8B 7C 24 40        -  mov rdi,[rsp+40]
+}"""
+
+[[cheat]]
+id = "infinite-reserve-ammo"
+name = "Infinite Reserve Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find the float representing total ammo.
+//It'll be whatever's in your current mag plus reserve.
+//So add the numbers in the bottom-right.
+
+[ENABLE]
+
+aobscanmodule(takemaxammo,Borderlands3.exe,F3 0F 11 91 A0 00 00 00) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+2DB4C5A)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  movss [rcx+000000A0],xmm2 //Original code.
+  cmp RBX,0 //Check which stat is being written.
+  je skip //If it's not the first ammo edit, skip the overwrite.
+  mov [rcx+000000A0],(Float)999 //Overwrite
+skip:
+  jmp return
+
+takemaxammo:
+  jmp newmem
+  nop 3
+return:
+registersymbol(takemaxammo)
+
+[DISABLE]
+
+takemaxammo:
+  db F3 0F 11 91 A0 00 00 00
+
+unregistersymbol(takemaxammo)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+2DB4C5A
+
+"Borderlands3.exe"+2DB4C3A: 80 7A 48 00              -  cmp byte ptr [rdx+48],00
+"Borderlands3.exe"+2DB4C3E: 74 0E                    -  je Borderlands3.exe+2DB4C4E
+"Borderlands3.exe"+2DB4C40: 0F 28 C3                 -  movaps xmm0,xmm3
+"Borderlands3.exe"+2DB4C43: F3 0F 2C C0              -  cvttss2si eax,xmm0
+"Borderlands3.exe"+2DB4C47: 66 0F 6E D8              -  movd xmm3,eax
+"Borderlands3.exe"+2DB4C4B: 0F 5B DB                 -  cvtdq2ps xmm3,xmm3
+"Borderlands3.exe"+2DB4C4E: 0F 2F E2                 -  comiss xmm4,xmm2
+"Borderlands3.exe"+2DB4C51: 72 07                    -  jb Borderlands3.exe+2DB4C5A
+"Borderlands3.exe"+2DB4C53: 0F 28 D3                 -  movaps xmm2,xmm3
+"Borderlands3.exe"+2DB4C56: F3 0F 5D D4              -  minss xmm2,xmm4
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+2DB4C5A: F3 0F 11 91 A0 00 00 00  -  movss [rcx+000000A0],xmm2
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+2DB4C62: 45 84 C0                 -  test r8l,r8l
+"Borderlands3.exe"+2DB4C65: 0F 85 C5 E0 FF FF        -  jne Borderlands3.exe+2DB2D30
+"Borderlands3.exe"+2DB4C6B: 0F 2E A9 E0 00 00 00     -  ucomiss xmm5,[rcx+000000E0]
+"Borderlands3.exe"+2DB4C72: 75 08                    -  jne Borderlands3.exe+2DB4C7C
+"Borderlands3.exe"+2DB4C74: F3 0F 11 91 E0 00 00 00  -  movss [rcx+000000E0],xmm2
+"Borderlands3.exe"+2DB4C7C: C3                       -  ret 
+"Borderlands3.exe"+2DB4C7D: CC                       -  int 3 
+"Borderlands3.exe"+2DB4C7E: CC                       -  int 3 
+"Borderlands3.exe"+2DB4C7F: CC                       -  int 3 
+"Borderlands3.exe"+2DB4C80: 40 53                    -  push rbx
+}"""
+
+[[cheat]]
+id = "find-mayhem-level"
+name = "Find Mayhem Level"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Mayhem level is a 4-byte value.  0 when off, 1/2/3 when on.
+
+[ENABLE]
+
+aobscanmodule(mayhemlevel,Borderlands3.exe,8B 80 74 06 00 00) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+8E7B424)
+
+label(code)
+label(return)
+
+globalalloc(_mayhembase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_skillbase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_mayhembase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  mov eax,[rax+00000674]
+  jmp return
+
+mayhemlevel:
+  jmp newmem
+  nop
+return:
+registersymbol(mayhemlevel)
+
+[DISABLE]
+
+mayhemlevel:
+  db 8B 80 74 06 00 00
+
+unregistersymbol(mayhemlevel)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+8E7B424
+
+"Borderlands3.exe"+8E7B404: 48 85 C9                                -  test rcx,rcx
+"Borderlands3.exe"+8E7B407: 74 26                                   -  je Borderlands3.exe+8E7B42F
+"Borderlands3.exe"+8E7B409: 48 8B 01                                -  mov rax,[rcx]
+"Borderlands3.exe"+8E7B40C: FF 90 48 01 00 00                       -  call qword ptr [rax+00000148]
+"Borderlands3.exe"+8E7B412: 48 85 C0                                -  test rax,rax
+"Borderlands3.exe"+8E7B415: 74 18                                   -  je Borderlands3.exe+8E7B42F
+"Borderlands3.exe"+8E7B417: 48 89 C1                                -  mov rcx,rax
+"Borderlands3.exe"+8E7B41A: E8 E1 BA B0 F7                          -  call Borderlands3.exe+986F00
+"Borderlands3.exe"+8E7B41F: 48 85 C0                                -  test rax,rax
+"Borderlands3.exe"+8E7B422: 74 0B                                   -  je Borderlands3.exe+8E7B42F
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+8E7B424: 8B 80 74 06 00 00                       -  mov eax,[rax+00000674]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+8E7B42A: 48 83 C4 28                             -  add rsp,28
+"Borderlands3.exe"+8E7B42E: C3                                      -  ret 
+"Borderlands3.exe"+8E7B42F: 31 C0                                   -  xor eax,eax
+"Borderlands3.exe"+8E7B431: 48 83 C4 28                             -  add rsp,28
+"Borderlands3.exe"+8E7B435: C3                                      -  ret 
+"Borderlands3.exe"+8E7B436: CC                                      -  int 3 
+"Borderlands3.exe"+8E7B437: 4D 29 F6                                -  sub r14,r14
+"Borderlands3.exe"+8E7B43A: 4C 03 34 24                             -  add r14,[rsp]
+"Borderlands3.exe"+8E7B43E: 48 83 EC F8                             -  sub rsp,-08
+"Borderlands3.exe"+8E7B442: 4C 8B 14 24                             -  mov r10,[rsp]
+}"""
+
+[[cheat]]
+id = "value-list-double-click-script"
+name = "Value List, double-click script ->"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+/*
+Which value is which modifier depends on the pool used.
+For some mayhem levels the game will use medium pool 1 or 2, etc.
+
+Mayhem 7 in particular is weird and values for it don't match.
+It uses two hard pools but they seem to offset each other or
+use some additional data somewhere or something, so don't use 7.
+
+- Easy
+0: Lootsplosion
+1: Big Kick Energy
+2: More Than Okay Boomer
+3: Speed Demon
+4: Galaxy Brain
+5: Slayer
+
+- Medium (Pool 1)
+0: Floor is Lava
+1: Freeze Tag
+2: Mob Mentality
+3: Pain Tolerance
+4: Acid Reign
+5: Chilling Them Softly
+6: Charred Mode
+7: Totally Radical
+8: High Voltage
+9: Healy Avenger
+
+- Medium (Pool 2)
+0: Floor is Lava
+1: Mob Mentality
+2: Acid Reign
+3: Charred Mode
+4: High Voltage
+
+- Hard (Pool 1)
+0: Chain Gang
+1: Laser Fare
+2: Drone Ranger
+3: Pool Party
+4: Boundary Issues
+5: Ticked Off
+
+- Very Hard
+0: Post Mortem
+1: Rogue Lite
+2: Not the Face
+3: Holy Crit
+4: Buddy System
+5: Dazed and Infused
+
+*/
+[ENABLE]
+[DISABLE]"""
+
+[[cheat]]
+id = "find-guardian-rank"
+name = "Find Guardian Rank"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Tokens value is 4 byte and simple to find.
+//Just gotta' actually have like 3 to start with.
+
+[ENABLE]
+
+aobscanmodule(readtokens,Borderlands3.exe,4C 63 A0 7C 01 00 00) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+9602A13)
+
+label(code)
+label(return)
+
+globalalloc(_tokenbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_skillbase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_tokenbase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  movsxd  r12,dword ptr [rax+0000017C]
+  jmp return
+
+readtokens:
+  jmp newmem
+  nop 2
+return:
+registersymbol(readtokens)
+
+[DISABLE]
+
+readtokens:
+  db 4C 63 A0 7C 01 00 00
+
+unregistersymbol(readtokens)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+9602A13
+
+"Borderlands3.exe"+96029ED: 83 F8 01              -  cmp eax,01
+"Borderlands3.exe"+96029F0: 75 0E                 -  jne Borderlands3.exe+9602A00
+"Borderlands3.exe"+96029F2: 48 8B 03              -  mov rax,[rbx]
+"Borderlands3.exe"+96029F5: BA 01 00 00 00        -  mov edx,00000001
+"Borderlands3.exe"+96029FA: 48 89 D9              -  mov rcx,rbx
+"Borderlands3.exe"+96029FD: FF 50 08              -  call qword ptr [rax+08]
+"Borderlands3.exe"+9602A00: 4C 89 F9              -  mov rcx,r15
+"Borderlands3.exe"+9602A03: E8 68 9D F0 F7        -  call Borderlands3.exe+150C770
+"Borderlands3.exe"+9602A08: 48 8D 97 70 0C 00 00  -  lea rdx,[rdi+00000C70]
+"Borderlands3.exe"+9602A0F: 48 8D 4D 38           -  lea rcx,[rbp+38]
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+9602A13: 4C 63 A0 7C 01 00 00  -  movsxd  r12,dword ptr [rax+0000017C]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+9602A1A: E8 31 08 D7 F7        -  call Borderlands3.exe+1373250
+"Borderlands3.exe"+9602A1F: 49 89 C6              -  mov r14,rax
+"Borderlands3.exe"+9602A22: 44 89 6D 78           -  mov [rbp+78],r13d
+"Borderlands3.exe"+9602A26: 48 8D 45 78           -  lea rax,[rbp+78]
+"Borderlands3.exe"+9602A2A: 44 88 AD A0 00 00 00  -  mov [rbp+000000A0],r13l
+"Borderlands3.exe"+9602A31: 48 89 44 24 40        -  mov [rsp+40],rax
+"Borderlands3.exe"+9602A36: 48 8D 85 A8 00 00 00  -  lea rax,[rbp+000000A8]
+"Borderlands3.exe"+9602A3D: 48 89 44 24 48        -  mov [rsp+48],rax
+"Borderlands3.exe"+9602A42: 49 8B 0E              -  mov rcx,[r14]
+"Borderlands3.exe"+9602A45: 0F 28 44 24 40        -  movaps xmm0,[rsp+40]
+}"""
+
+[[cheat]]
+id = "find-guardian-stats"
+name = "Find Guardian Stats"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find the number of tokens you've put into a stat (4-byte).
+//Find what reads it.
+//Assume it always reads the stats in the same order...
+//Work your way backwards, sort of?  Doesn't help that the game
+//keeps the trees in a different order than the menu.
+
+[ENABLE]
+
+aobscanmodule(readguardianstats,Borderlands3.exe,66 0F 6E 40 08 48) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+9DB4828)
+
+label(code)
+label(return)
+
+globalalloc(_gstatsbase,8) //Allocate some memory for the address, 64-bit.
+
+newmem:
+
+code:
+  //mov [_skillbase],rax //Copy the base address into our memory.
+  //Workaround needed for 64-bit limitations.
+  push rbx //Free a register.
+  mov rbx,_gstatsbase //Make it hold our allocated address.
+  mov [rbx],rax //Copy our target value there.
+  pop rbx //Fix stuff.
+  //Back to normal stuff.
+  movd xmm0,[rax+08]
+  jmp return
+
+readguardianstats:
+  jmp newmem
+return:
+registersymbol(readguardianstats)
+
+[DISABLE]
+
+readguardianstats:
+  db 66 0F 6E 40 08
+
+unregistersymbol(readguardianstats)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+9DB4828
+
+"Borderlands3.exe"+9DB4805: 48 8B 5C 24 30           -  mov rbx,[rsp+30]
+"Borderlands3.exe"+9DB480A: 48 8B 74 24 38           -  mov rsi,[rsp+38]
+"Borderlands3.exe"+9DB480F: 48 83 C4 20              -  add rsp,20
+"Borderlands3.exe"+9DB4813: 5F                       -  pop rdi
+"Borderlands3.exe"+9DB4814: C3                       -  ret 
+"Borderlands3.exe"+9DB4815: 48 85 C0                 -  test rax,rax
+"Borderlands3.exe"+9DB4818: 74 DC                    -  je Borderlands3.exe+9DB47F6
+"Borderlands3.exe"+9DB481A: 48 8B 5C 24 30           -  mov rbx,[rsp+30]
+"Borderlands3.exe"+9DB481F: 48 8B 74 24 38           -  mov rsi,[rsp+38]
+"Borderlands3.exe"+9DB4824: C6 47 08 FF              -  mov byte ptr [rdi+08],-01
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+9DB4828: 66 0F 6E 40 08           -  movd xmm0,[rax+08]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+9DB482D: 48 89 F8                 -  mov rax,rdi
+"Borderlands3.exe"+9DB4830: 0F 5B C0                 -  cvtdq2ps xmm0,xmm0
+"Borderlands3.exe"+9DB4833: F3 0F 11 07              -  movss [rdi],xmm0
+"Borderlands3.exe"+9DB4837: C6 47 08 00              -  mov byte ptr [rdi+08],00
+"Borderlands3.exe"+9DB483B: 48 83 C4 20              -  add rsp,20
+"Borderlands3.exe"+9DB483F: 5F                       -  pop rdi
+"Borderlands3.exe"+9DB4840: C3                       -  ret 
+"Borderlands3.exe"+9DB4841: CC                       -  int 3 
+"Borderlands3.exe"+9DB4842: 48 8B 1C 24              -  mov rbx,[rsp]
+"Borderlands3.exe"+9DB4846: 41 54                    -  push r12
+}"""
+
+[[cheat]]
+id = "loot-rarity-roll-v2"
+name = "Loot Rarity Roll v2"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Finds the RNG-ish roll used to decide item rarity.
+//How this value is translated depends on the source!
+//The same value might be a legendary from a boss, but ammo in a chest.
+//So using the same drop while checking helps lots.
+//(Check the FearlessRevolution thread for more info.)
+
+//The game jumps to ucrtbase.rand shortly before doing the magic.
+/*
+ucrtbase.rand   - 48 83 EC 28           - sub rsp,28 { 40 }
+ucrtbase.rand+4 - E8 2B2A0000           - call ucrtbase.localeconv+154
+ucrtbase.rand+9 - 69 48 28 FD430300     - imul ecx,[rax+28],000343FD { (0) }
+ucrtbase.rand+10- 81 C1 C39E2600        - add ecx,00269EC3 { 2531011 }
+ucrtbase.rand+16- 89 48 28              - mov [rax+28],ecx
+ucrtbase.rand+19- C1 E9 10              - shr ecx,10 { 16 }
+ucrtbase.rand+1C- 81 E1 FF7F0000        - and ecx,00007FFF { 32767 }
+ucrtbase.rand+22- 8B C1                 - mov eax,ecx
+ucrtbase.rand+24- 48 83 C4 28           - add rsp,28 { 40 }
+ucrtbase.rand+28- C3                    - ret
+*/
+//Finding a call to rand is a no-go, it's spammed even in the escape menu.
+//So "find what accesses this address" on the ret.
+//CE will list all the return locations!
+//Find the right one when you open a locker or something.
+//It'll likely have more than one run.  2 if it's ammo, etc.
+
+[ENABLE]
+
+aobscanmodule(applyrarity2,Borderlands3.exe,45 8B C5 66 0F 6E C0) // should be unique
+alloc(newmem,$1000,applyrarity2)
+
+label(code)
+label(return)
+
+globalalloc(_lootvalue2,4) //Allocate some memory for the override.
+
+_lootvalue2:
+db FF 7F 00 00
+//Max RNG result, legendaries from sources that can give them.
+
+newmem:
+
+code:
+  //cmp RBP,8CDC00 //Check this value.
+  //jl skip //Skip over the override if something?
+  //comiss xmm8,[_comparevalue] //Check this value.
+  //comisd xmm2,xmm15 //Check this value.
+  cmp r11,5 //Check which type of roll the game is doing.
+  jne skip //Skip the override if it's not the right type.
+  //cmp r11,6 //Some DLC pools seem to use type 6.
+  //jg skip
+  mov eax,[_lootvalue2] //Legendaries!
+
+skip:
+  //Original code.
+  mov r8d,r13d
+  movd xmm0,eax
+  jmp return
+
+applyrarity2:
+  jmp newmem
+  nop 2
+return:
+registersymbol(applyrarity2)
+
+[DISABLE]
+
+applyrarity2:
+  db 45 8B C5 66 0F 6E C0
+
+unregistersymbol(applyrarity2)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF6323DE9C0
+
+7FF6323DE97E: 44 0F 29 84 24 00 02 00 00  - movaps [rsp+00000200],xmm8
+7FF6323DE987: F3 44 0F 10 85 B0 01 00 00  - movss xmm8,[rbp+000001B0]
+7FF6323DE990: 44 0F 29 8C 24 F0 01 00 00  - movaps [rsp+000001F0],xmm9
+7FF6323DE999: F3 44 0F 10 0D EA 87 0C 01  - movss xmm9,[7FF6334A718C]
+7FF6323DE9A2: FF 15 88 74 05 01           - call qword ptr [7FF633435E30]
+7FF6323DE9A8: F3 0F 10 BD 80 00 00 00     - movss xmm7,[rbp+00000080]
+7FF6323DE9B0: 41 8B CD                    - mov ecx,r13d
+7FF6323DE9B3: 44 8B 9D B0 00 00 00        - mov r11d,[rbp+000000B0]
+7FF6323DE9BA: 0F 57 F6                    - xorps xmm6,xmm6
+7FF6323DE9BD: 89 4D C0                    - mov [rbp-40],ecx
+// ---------- INJECTING HERE ----------
+7FF6323DE9C0: 45 8B C5                    - mov r8d,r13d
+// ---------- DONE INJECTING  ----------
+7FF6323DE9C3: 66 0F 6E C0                 - movd xmm0,eax
+7FF6323DE9C7: 48 8D 85 98 00 00 00        - lea rax,[rbp+00000098]
+7FF6323DE9CE: C7 45 C4 01 00 00 00        - mov [rbp-3C],00000001
+7FF6323DE9D5: 48 89 45 C8                 - mov [rbp-38],rax
+7FF6323DE9D9: C7 45 D0 FF FF FF FF        - mov [rbp-30],FFFFFFFF
+7FF6323DE9E0: 4C 89 6D D4                 - mov [rbp-2C],r13
+7FF6323DE9E4: 0F 5B C0                    - cvtdq2ps xmm0,xmm0
+7FF6323DE9E7: F3 41 0F 59 C1              - mulss xmm0,xmm9
+7FF6323DE9EC: F3 0F 59 F8                 - mulss xmm7,xmm0
+7FF6323DE9F0: 45 85 DB                    - test r11d,r11d
+}"""
+
+[[cheat]]
+id = "loot-value-hex"
+name = "Loot Value (Hex)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "_lootvalue2"
+hops = []
+
+[[cheat]]
+id = "loot-value-decimal"
+name = "Loot Value (Decimal)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_lootvalue2"
+hops = []
+
+[[cheat]]
+id = "loot-anointment-roll-v2"
+name = "Loot Anointment Roll v2"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Finds the RNG-ish roll used to decide if an item
+//has an anointment on it or not, and which anointment.
+//Change the override value to determine where the roll lands.
+
+//The game jumps to ucrtbase.rand shortly before doing the magic.
+/*
+ucrtbase.rand   - 48 83 EC 28           - sub rsp,28 { 40 }
+ucrtbase.rand+4 - E8 2B2A0000           - call ucrtbase.localeconv+154
+ucrtbase.rand+9 - 69 48 28 FD430300     - imul ecx,[rax+28],000343FD { (0) }
+ucrtbase.rand+10- 81 C1 C39E2600        - add ecx,00269EC3 { 2531011 }
+ucrtbase.rand+16- 89 48 28              - mov [rax+28],ecx
+ucrtbase.rand+19- C1 E9 10              - shr ecx,10 { 16 }
+ucrtbase.rand+1C- 81 E1 FF7F0000        - and ecx,00007FFF { 32767 }
+ucrtbase.rand+22- 8B C1                 - mov eax,ecx
+ucrtbase.rand+24- 48 83 C4 28           - add rsp,28 { 40 }
+ucrtbase.rand+28- C3                    - ret
+*/
+//Finding a call to rand is a no-go, it's spammed even in the escape menu.
+//So "find what accesses this address" on the ret.
+//CE will list all the return locations!
+//Find the right one when you open the golden chest or something.
+//Rolled 29-60 times for me with the golden chest.
+
+[ENABLE]
+
+aobscanmodule(rollanoint,Borderlands3.exe,66 0F 6E F8 0F 5B FF F3 0F 59 ?? ?? ?? ?? ?? F3 0F 59 3E)
+//The AoB is NOT unique, but we're targeting the first hit in memory.
+alloc(newmem,$1000,rollanoint)
+
+label(code)
+label(return)
+
+globalalloc(_anointvalue,4) //Allocate some memory for the override.
+
+_anointvalue:
+db FF 7F 00 00
+//Max roll.
+
+newmem:
+
+code:
+  //The comparison value has been 39 and other things in the past.
+  cmp r14,48 //Check if this is the specific roll we want to modify.
+  jne skip //If not, skip the override.
+  push rbx
+  mov rbx,_anointvalue
+  mov rax,[rbx]
+  pop rbx
+
+skip:
+  //Original code.
+  movd xmm7,eax
+  cvtdq2ps xmm7,xmm7
+  jmp return
+
+rollanoint:
+  jmp newmem
+  nop 2
+return:
+registersymbol(rollanoint)
+
+[DISABLE]
+
+rollanoint:
+  db 66 0F 6E F8 0F 5B FF
+
+unregistersymbol(rollanoint)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF62FAC24C2
+
+7FF62FAC249C: 48 81 EC B0 00 00 00     - sub rsp,000000B0
+7FF62FAC24A3: 0F 29 70 D8              - movaps [rax-28],xmm6
+7FF62FAC24A7: 4C 8B E2                 - mov r12,rdx
+7FF62FAC24AA: 0F 57 F6                 - xorps xmm6,xmm6
+7FF62FAC24AD: 0F 29 78 C8              - movaps [rax-38],xmm7
+7FF62FAC24B1: 0F 2F D6                 - comiss xmm2,xmm6
+7FF62FAC24B4: 48 8B F1                 - mov rsi,rcx
+7FF62FAC24B7: 0F 28 FA                 - movaps xmm7,xmm2
+7FF62FAC24BA: 73 15                    - jae 7FF62FAC24D1
+7FF62FAC24BC: FF 15 6E 39 97 03        - call qword ptr [7FF633435E30]
+// ---------- INJECTING HERE ----------
+7FF62FAC24C2: 66 0F 6E F8              - movd xmm7,eax
+// ---------- DONE INJECTING  ----------
+7FF62FAC24C6: 0F 5B FF                 - cvtdq2ps xmm7,xmm7
+7FF62FAC24C9: F3 0F 59 3D BB 4C 9E 03  - mulss xmm7,[7FF6334A718C]
+7FF62FAC24D1: F3 0F 59 3E              - mulss xmm7,[rsi]
+7FF62FAC24D5: 45 33 D2                 - xor r10d,r10d
+7FF62FAC24D8: 48 83 C6 08              - add rsi,08
+7FF62FAC24DC: C7 45 BB 01 00 00 00     - mov [rbp-45],00000001
+7FF62FAC24E3: 44 8B 76 28              - mov r14d,[rsi+28]
+7FF62FAC24E7: 48 8D 7E 10              - lea rdi,[rsi+10]
+7FF62FAC24EB: 48 89 7D BF              - mov [rbp-41],rdi
+7FF62FAC24EF: 41 8B CA                 - mov ecx,r10d
+}"""
+
+[[cheat]]
+id = "anoint-value-hex"
+name = "Anoint Value (Hex)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "_anointvalue"
+hops = []
+
+[[cheat]]
+id = "anoint-value-decimal"
+name = "Anoint Value (Decimal)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_anointvalue"
+hops = []
+
+[[cheat]]
+id = "slot-roll"
+name = "Slot Roll"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Hook the ret of ucrtbase.rand and watch what pops up when you roll it.
+//It'll be one of the lines that runs just once.
+//Edit right after the call to overwrite EAX.
+
+//As with loot drops, 0 to 7FFF are possible results.
+//Unlike normal loot, higher isn't specifically better.
+//Like the BL2 slots, BL3 slots have specific prizes in specific ranges.
+//And it's different for the different types of slots too...
+
+/*
+Loot Boxer
+5800 = purple gun
+5900 = legendary gun
+5A00 = weapon skin
+5B00 = weapon trinket
+7FFF = anointed?  (heart/heart/heart)
+
+Vault Line
+6C00 = legendary gun
+7300 = legendary shield
+7900 = legendary grenade
+7FFF = artifact
+This machine rolls a second time for rarity on artifacts.
+So editing the main roll is not enough for a legendary artifact.
+
+Cash Trap
+5700 = purple class mod
+5780 = legendary class mod
+5800 = player skin
+5900 = room decoration
+6000 = player head
+
+Tink's Hijinx
+5500 = purple shield
+5600 = legendary shield
+6700 = purple grenade
+68C0 = legendary grenade
+
+Tink's Hijinx (DLC3 - Vestige)
+5500 = purple shield
+5600 = legendary shield
+6700 = purple grenade
+68C0 = legendary grenade
+*/
+
+[ENABLE]
+
+aobscanmodule(slotresult,Borderlands3.exe,48 8B 5C 24 50 F3 0F 5C F7) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+1E23CBFB)
+
+label(code)
+label(return)
+
+globalalloc(_slotvalue,4) //Allocate some memory for the value.
+//I've only seen the game using two bytes but you never know.
+
+_slotvalue:
+db 00 6C 00 00
+//Default modifier, works on Vault Line for legendaries.
+
+newmem:
+
+code:
+  mov eax,[_slotvalue] //Legendaries!
+  //Back to normal code.
+  mov rbx,[rsp+50]
+  jmp return
+
+slotresult:
+  jmp newmem
+return:
+registersymbol(slotresult)
+
+[DISABLE]
+
+slotresult:
+  db 48 8B 5C 24 50
+
+unregistersymbol(slotresult)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+1E23CBFB
+
+"Borderlands3.exe"+1E23CBD1: E8 9A CD 40 E3           -  call Borderlands3.exe+1649970
+"Borderlands3.exe"+1E23CBD6: 48 8B 43 20              -  mov rax,[rbx+20]
+"Borderlands3.exe"+1E23CBDA: 31 C9                    -  xor ecx,ecx
+"Borderlands3.exe"+1E23CBDC: F3 0F 10 74 24 58        -  movss xmm6,[rsp+58]
+"Borderlands3.exe"+1E23CBE2: 48 85 C0                 -  test rax,rax
+"Borderlands3.exe"+1E23CBE5: F3 0F 10 7C 24 60        -  movss xmm7,[rsp+60]
+"Borderlands3.exe"+1E23CBEB: 0F 95 D1                 -  setne cl
+"Borderlands3.exe"+1E23CBEE: 48 01 C1                 -  add rcx,rax
+"Borderlands3.exe"+1E23CBF1: 48 89 4B 20              -  mov [rbx+20],rcx
+"Borderlands3.exe"+1E23CBF5: FF 15 15 DA 95 04        -  call qword ptr [Borderlands3.exe+22B9A610]
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+1E23CBFB: 48 8B 5C 24 50           -  mov rbx,[rsp+50]
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+1E23CC00: F3 0F 5C F7              -  subss xmm6,xmm7
+"Borderlands3.exe"+1E23CC04: 66 0F 6E C0              -  movd xmm0,eax
+"Borderlands3.exe"+1E23CC08: 0F 5B C0                 -  cvtdq2ps xmm0,xmm0
+"Borderlands3.exe"+1E23CC0B: F3 0F 59 05 51 23 D2 E5  -  mulss xmm0,[Borderlands3.exe+3F5EF64]
+"Borderlands3.exe"+1E23CC13: F3 0F 59 C6              -  mulss xmm0,xmm6
+"Borderlands3.exe"+1E23CC17: 0F 28 74 24 30           -  movaps xmm6,[rsp+30]
+"Borderlands3.exe"+1E23CC1C: F3 0F 58 C7              -  addss xmm0,xmm7
+"Borderlands3.exe"+1E23CC20: 0F 28 7C 24 20           -  movaps xmm7,[rsp+20]
+"Borderlands3.exe"+1E23CC25: F3 0F 11 07              -  movss [rdi],xmm0
+"Borderlands3.exe"+1E23CC29: 48 83 C4 40              -  add rsp,40
+}"""
+
+[[cheat]]
+id = "slot-value-hex"
+name = "Slot Value (Hex)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "_slotvalue"
+hops = []
+
+[[cheat]]
+id = "slot-value-decimal"
+name = "Slot Value (Decimal)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_slotvalue"
+hops = []
+
+[[cheat]]
+id = "always-rare-enemies"
+name = "Always Rare Enemies"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Found this while checking returns from ucrtbase.rand
+//Makes skags into chubbies and such.
+
+[ENABLE]
+
+aobscanmodule(enemytype,Borderlands3.exe,0F 5B FF F3 0F 59 3D E3 B5 9B 03) // should be unique
+alloc(newmem,$1000,enemytype)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,7FFF
+  movd xmm7,eax //Override the rarity value.
+  //Back to normal code.
+  cvtdq2ps xmm7,xmm7
+  mulss xmm7,[7FF621726234]
+  jmp return
+
+enemytype:
+  jmp newmem
+  nop 6
+return:
+registersymbol(enemytype)
+
+[DISABLE]
+
+enemytype:
+  db 0F 5B FF F3 0F 59 3D E3 B5 9B 03
+
+unregistersymbol(enemytype)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF61DD6AC46
+
+7FF61DD6AC23: 0F 29 70 D8              - movaps [rax-28],xmm6
+7FF61DD6AC27: 4C 8B E2                 - mov r12,rdx
+7FF61DD6AC2A: 0F 57 F6                 - xorps xmm6,xmm6
+7FF61DD6AC2D: 0F 29 78 C8              - movaps [rax-38],xmm7
+7FF61DD6AC31: 0F 2F D6                 - comiss xmm2,xmm6
+7FF61DD6AC34: 48 8B F1                 - mov rsi,rcx
+7FF61DD6AC37: 0F 28 FA                 - movaps xmm7,xmm2
+7FF61DD6AC3A: 73 15                    - jae 7FF61DD6AC51
+7FF61DD6AC3C: FF 15 EE 81 94 03        - call qword ptr [7FF6216B2E30]
+7FF61DD6AC42: 66 0F 6E F8              - movd xmm7,eax
+// ---------- INJECTING HERE ----------
+7FF61DD6AC46: 0F 5B FF                 - cvtdq2ps xmm7,xmm7
+// ---------- DONE INJECTING  ----------
+7FF61DD6AC49: F3 0F 59 3D E3 B5 9B 03  - mulss xmm7,[7FF621726234]
+7FF61DD6AC51: F3 0F 59 3E              - mulss xmm7,[rsi]
+7FF61DD6AC55: 45 33 D2                 - xor r10d,r10d
+7FF61DD6AC58: 48 83 C6 08              - add rsi,08
+7FF61DD6AC5C: C7 45 BB 01 00 00 00     - mov [rbp-45],00000001
+7FF61DD6AC63: 44 8B 76 28              - mov r14d,[rsi+28]
+7FF61DD6AC67: 48 8D 7E 10              - lea rdi,[rsi+10]
+7FF61DD6AC6B: 48 89 7D BF              - mov [rbp-41],rdi
+7FF61DD6AC6F: 41 8B CA                 - mov ecx,r10d
+7FF61DD6AC72: 89 4D B7                 - mov [rbp-49],ecx
+}"""
+
+[[cheat]]
+id = "ucrtbase-rand-modifier"
+name = "ucrtbase.rand Modifier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//ucrtbase.rand is what the game uses for most/all RNG calls.
+//It puts the result in EAX, which seems to be a two byte result.
+
+[ENABLE]
+
+aobscanmodule(randend,ucrtbase.dll,C3 CC CC CC CC CC CC CC 48 83 EC 28 48 8D 4C) // should be unique
+alloc(newmem,$1000,randend)
+
+label(code)
+label(return)
+
+globalalloc(_randvalue,8) //Allocate some memory for the address, 64-bit.
+
+_randvalue:
+db FF 7F 00 00
+//Maximum RNG roll?
+
+newmem:
+
+code:
+  mov eax,[_randvalue] //Override!
+  //Back to normal.
+  ret
+  int 3
+  int 3
+  int 3
+  int 3
+  jmp return
+
+randend:
+  jmp newmem
+return:
+registersymbol(randend)
+
+[DISABLE]
+
+randend:
+  db C3 CC CC CC CC
+
+unregistersymbol(randend)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: ucrtbase.rand+28
+
+ucrtbase.initialize_wide_environment+8F: CC                    - int 3
+ucrtbase.rand: 48 83 EC 28           - sub rsp,28
+ucrtbase.rand+4: E8 77 25 FF FF        - call ucrtbase._stdio_common_vsprintf_s+140
+ucrtbase.rand+9: 69 48 28 FD 43 03 00  - imul ecx,[rax+28],000343FD
+ucrtbase.rand+10: 81 C1 C3 9E 26 00     - add ecx,00269EC3
+ucrtbase.rand+16: 89 48 28              - mov [rax+28],ecx
+ucrtbase.rand+19: C1 E9 10              - shr ecx,10
+ucrtbase.rand+1C: 81 E1 FF 7F 00 00     - and ecx,00007FFF
+ucrtbase.rand+22: 8B C1                 - mov eax,ecx
+ucrtbase.rand+24: 48 83 C4 28           - add rsp,28
+// ---------- INJECTING HERE ----------
+ucrtbase.rand+28: C3                    - ret
+// ---------- DONE INJECTING  ----------
+ucrtbase.rand+29: CC                    - int 3
+ucrtbase.rand+2A: CC                    - int 3
+ucrtbase.rand+2B: CC                    - int 3
+ucrtbase.rand+2C: CC                    - int 3
+ucrtbase.rand+2D: CC                    - int 3
+ucrtbase.rand+2E: CC                    - int 3
+ucrtbase.rand+2F: CC                    - int 3
+ucrtbase.rand+30: 48 83 EC 28           - sub rsp,28
+ucrtbase.rand+34: 48 8D 4C 24 30        - lea rcx,[rsp+30]
+ucrtbase.rand+39: FF 15 09 8B 09 00     - call qword ptr [ucrtbase.strset+4C98]
+}"""
+
+[[cheat]]
+id = "result-hex"
+name = "Result (Hex)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "_randvalue"
+hops = []
+
+[[cheat]]
+id = "result-decimal"
+name = "Result (Decimal)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_randvalue"
+hops = []
+
+[[cheat]]
+id = "find-code-skill-reading"
+name = "Find Code: Skill Reading"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Skills are 4-byte values.
+//Find the code that reads them when you open the skill menu.
+
+[ENABLE]
+aobscanmodule(readskills,Borderlands3.exe,41 8B 41 28 89 43 08) // should be unique
+registersymbol(readskills)
+
+[DISABLE]
+unregistersymbol(readskills)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 7FF743F1A473
+
+7FF743F1A457: 49 8B D3        - mov rdx,r11
+7FF743F1A45A: 4D 85 C9        - test r9,r9
+7FF743F1A45D: 74 4E           - je 7FF743F1A4AD
+7FF743F1A45F: 48 85 D2        - test rdx,rdx
+7FF743F1A462: 74 49           - je 7FF743F1A4AD
+7FF743F1A464: 4D 85 DB        - test r11,r11
+7FF743F1A467: 74 44           - je 7FF743F1A4AD
+7FF743F1A469: 49 83 7B 08 00  - cmp qword ptr [r11+08],00
+7FF743F1A46E: 74 3D           - je 7FF743F1A4AD
+7FF743F1A470: 4C 89 13        - mov [rbx],r10
+// ---------- INJECTING HERE ----------
+7FF743F1A473: 41 8B 41 28     - mov eax,[r9+28]
+// ---------- DONE INJECTING  ----------
+7FF743F1A477: 89 43 08        - mov [rbx+08],eax
+7FF743F1A47A: 41 8B 41 2C     - mov eax,[r9+2C]
+7FF743F1A47E: 89 43 0C        - mov [rbx+0C],eax
+7FF743F1A481: 41 80 79 24 00  - cmp byte ptr [r9+24],00
+7FF743F1A486: 74 06           - je 7FF743F1A48E
+7FF743F1A488: 0F B6 42 31     - movzx eax,byte ptr [rdx+31]
+7FF743F1A48C: EB 04           - jmp 7FF743F1A492
+7FF743F1A48E: 0F B6 42 30     - movzx eax,byte ptr [rdx+30]
+7FF743F1A492: 88 43 10        - mov [rbx+10],al
+7FF743F1A495: 41 0F B6 41 24  - movzx eax,byte ptr [r9+24]
+}"""
+
+[[cheat]]
+id = "overwrite-event-stats"
+name = "Overwrite Event Stats"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//Find one of your event stats, then find what modifies it.
+//Go for a stat that's not something like 1/1.
+//Use this code to edit that.
+
+[ENABLE]
+
+aobscanmodule(readeventcode,Borderlands3.exe,03 79 30 48 83 C1 38 48 3B CA 75 F4 8B) // should be unique
+alloc(newmem,$1000,"Borderlands3.exe"+2E13650)
+
+label(code)
+label(return)
+
+globalalloc(_eventbase,8) //Allocate some memory for the address, 64-bit.
+_eventbase:
+db 00 00 00 00
+
+newmem:
+
+code:
+  //add edi,[rcx+30]
+  //add edi,[_eventbase] //Our override.
+  //Workaround needed for 64-bit limitations.
+  push rax //Free a register.
+  mov rax,_eventbase //Make it hold our allocated address.
+  add edi,[rax] //Copy our target value there.
+  pop rax //Fix stuff.
+  //Back to normal stuff.
+  add rcx,38
+  jmp return
+
+readeventcode:
+  jmp newmem
+  nop 2
+return:
+registersymbol(readeventcode)
+
+[DISABLE]
+
+readeventcode:
+  db 03 79 30 48 83 C1 38
+
+unregistersymbol(readeventcode)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "Borderlands3.exe"+2E13650
+
+"Borderlands3.exe"+2E13627: 83 B8 A8 00 00 00 00           -  cmp dword ptr [rax+000000A8],00
+"Borderlands3.exe"+2E1362E: 7E 37                          -  jle Borderlands3.exe+2E13667
+"Borderlands3.exe"+2E13630: 48 8B 4B 40                    -  mov rcx,[rbx+40]
+"Borderlands3.exe"+2E13634: 33 FF                          -  xor edi,edi
+"Borderlands3.exe"+2E13636: 48 63 43 48                    -  movsxd  rax,dword ptr [rbx+48]
+"Borderlands3.exe"+2E1363A: 48 6B D0 38                    -  imul rdx,rax,38
+"Borderlands3.exe"+2E1363E: 48 03 D1                       -  add rdx,rcx
+"Borderlands3.exe"+2E13641: 48 3B CA                       -  cmp rcx,rdx
+"Borderlands3.exe"+2E13644: 74 16                          -  je Borderlands3.exe+2E1365C
+"Borderlands3.exe"+2E13646: 66 66 0F 1F 84 00 00 00 00 00  -  nop word ptr [rax+rax+00000000]
+// ---------- INJECTING HERE ----------
+"Borderlands3.exe"+2E13650: 03 79 30                       -  add edi,[rcx+30]
+"Borderlands3.exe"+2E13653: 48 83 C1 38                    -  add rcx,38
+// ---------- DONE INJECTING  ----------
+"Borderlands3.exe"+2E13657: 48 3B CA                       -  cmp rcx,rdx
+"Borderlands3.exe"+2E1365A: 75 F4                          -  jne Borderlands3.exe+2E13650
+"Borderlands3.exe"+2E1365C: 8B C7                          -  mov eax,edi
+"Borderlands3.exe"+2E1365E: 48 83 C4 20                    -  add rsp,20
+"Borderlands3.exe"+2E13662: 41 5D                          -  pop r13
+"Borderlands3.exe"+2E13664: 5F                             -  pop rdi
+"Borderlands3.exe"+2E13665: 5B                             -  pop rbx
+"Borderlands3.exe"+2E13666: C3                             -  ret 
+"Borderlands3.exe"+2E13667: 80 B8 10 01 00 00 00           -  cmp byte ptr [rax+00000110],00
+"Borderlands3.exe"+2E1366E: 74 85                          -  je Borderlands3.exe+2E135F5
+}"""
+
+[[cheat]]
+id = "overwrite-value"
+name = "Overwrite Value"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "_eventbase"
+hops = []

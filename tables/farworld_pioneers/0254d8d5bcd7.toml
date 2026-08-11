@@ -1,0 +1,207 @@
+[game]
+name = "Farworld Pioneers"
+exe = "farworld_pioneers.exe"
+notes = "Converted from a Cheat Engine table by Zanzer. Source: https://fearlessrevolution.com/viewtopic.php?t=24802"
+verified = []
+author = "Zanzer"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "pickup-pointer"
+name = "Pickup Pointer"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(pickup,?? 0F ?? ?? ?? 8B ?? ?? 8B ?? ?? 83 ?? 00 48 8D ?? ?? ?? BB ?? ?? ?? ?? ?? ?? ?? ?? 41 FF ?? 48 89)
+alloc(newmem,$1000,pickup)
+
+label(pickupPtr)
+label(pickupBkp)
+label(return)
+
+newmem:
+  mov rcx,pickupPtr
+  mov [rcx],rax
+pickupBkp:
+  readmem(pickup+1F,7)
+  jmp return
+
+align 10
+pickupPtr:
+  dq 0
+
+pickup+1F:
+  jmp newmem
+  nop 2
+return:
+registersymbol(pickup)
+registersymbol(pickupBkp)
+registersymbol(pickupPtr)
+
+[DISABLE]
+pickup+1F:
+  readmem(pickupBkp,7)
+unregistersymbol(pickup)
+unregistersymbol(pickupBkp)
+unregistersymbol(pickupPtr)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: SlotItemStack:ExtractTram+16b
+
+SlotItemStack:ExtractTram+141: 48 63 45 C8                    - movsxd  rax,dword ptr [rbp-38]
+SlotItemStack:ExtractTram+145: 41 0F AF C4                    - imul eax,r12d
+SlotItemStack:ExtractTram+149: 4C 8B F0                       - mov r14,rax
+SlotItemStack:ExtractTram+14c: 44 0F AF F3                    - imul r14d,ebx
+SlotItemStack:ExtractTram+150: 49 8B CF                       - mov rcx,r15
+SlotItemStack:ExtractTram+153: 49 8B D6                       - mov rdx,r14
+SlotItemStack:ExtractTram+156: 41 83 3F 00                    - cmp dword ptr [r15],00
+SlotItemStack:ExtractTram+15a: 48 8D 6D 00                    - lea rbp,[rbp+00]
+SlotItemStack:ExtractTram+15e: 49 BB 20 BE 01 72 00 00 00 00  - mov r11,ItemStack:Split
+SlotItemStack:ExtractTram+168: 41 FF D3                       - call r11
+// ---------- INJECTING HERE ----------
+SlotItemStack:ExtractTram+16b: 48 89 45 B8                    - mov [rbp-48],rax
+// ---------- DONE INJECTING  ----------
+SlotItemStack:ExtractTram+16f: 48 8B C8                       - mov rcx,rax
+SlotItemStack:ExtractTram+172: 83 38 00                       - cmp dword ptr [rax],00
+SlotItemStack:ExtractTram+175: 90                             - nop 
+SlotItemStack:ExtractTram+176: 49 BB 20 BB 04 7F 00 00 00 00  - mov r11,ItemStack:get_Empty
+SlotItemStack:ExtractTram+180: 41 FF D3                       - call r11
+SlotItemStack:ExtractTram+183: 85 C0                          - test eax,eax
+SlotItemStack:ExtractTram+185: 74 0C                          - je SlotItemStack:ExtractTram+193
+SlotItemStack:ExtractTram+187: 4C 89 7D B8                    - mov [rbp-48],r15
+SlotItemStack:ExtractTram+18b: 4C 8B 3C 25 B8 26 A2 7C        - mov r15,[7CA226B8]
+SlotItemStack:ExtractTram+193: 33 C9                          - xor ecx,ecx
+}"""
+
+[[cheat]]
+id = "quantity"
+name = "Quantity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pickupPtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "instant-research"
+name = "Instant Research"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(research,?? 0F B6 ?? 48 8B ?? ?? ?? 00 00 F3 0F 10 ?? ?? F3 0F 5A)
+alloc(newmem,$1000,research)
+
+label(researchBkp)
+label(return)
+
+newmem:
+  add rax,04
+researchBkp:
+  readmem(research+0B,5)
+  sub rax,04
+  jmp return
+
+research+0B:
+  jmp newmem
+return:
+registersymbol(research)
+registersymbol(researchBkp)
+
+[DISABLE]
+research+0B:
+  db F3 0F 10 40 38
+unregistersymbol(research)
+unregistersymbol(researchBkp)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 78613E8F
+
+78613E5C: F3 0F 11 68 38           - movss [rax+38],xmm5
+78613E61: 0F B6 86 CC 01 00 00     - movzx eax,byte ptr [rsi+000001CC]
+78613E68: 85 C0                    - test eax,eax
+78613E6A: 0F 84 62 00 00 00        - je 78613ED2
+78613E70: 0F B6 86 CD 01 00 00     - movzx eax,byte ptr [rsi+000001CD]
+78613E77: 85 C0                    - test eax,eax
+78613E79: 0F 84 53 00 00 00        - je 78613ED2
+78613E7F: B8 01 00 00 00           - mov eax,00000001
+78613E84: 4C 0F B6 F8              - movzx r15,al
+78613E88: 48 8B 87 A0 00 00 00     - mov rax,[rdi+000000A0]
+// ---------- INJECTING HERE ----------
+78613E8F: F3 0F 10 40 38           - movss xmm0,[rax+38]
+// ---------- DONE INJECTING  ----------
+78613E94: F3 0F 5A C0              - cvtss2sd xmm0,xmm0
+78613E98: F3 0F 10 8E D0 01 00 00  - movss xmm1,[rsi+000001D0]
+78613EA0: F3 0F 5A C9              - cvtss2sd xmm1,xmm1
+78613EA4: F3 0F 10 15 34 05 00 00  - movss xmm2,[786143E0]
+78613EAC: F3 0F 5A D2              - cvtss2sd xmm2,xmm2
+78613EB0: F2 0F 59 CA              - mulsd xmm1,xmm2
+78613EB4: B9 34 24 C8 75           - mov ecx,75C82434
+78613EB9: F3 0F 10 11              - movss xmm2,[rcx]
+78613EBD: F3 0F 5A D2              - cvtss2sd xmm2,xmm2
+78613EC1: F2 0F 59 CA              - mulsd xmm1,xmm2
+}"""
+
+[[cheat]]
+id = "no-hunger"
+name = "No Hunger"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(hunger,FF ?? 48 8B ?? 48 8B ?? FF ?? ?? ?? 00 00 48 8B ?? 48 8B ?? FF ?? ?? ?? 00 00 E9)
+hunger:
+  db FF C2
+registersymbol(hunger)
+
+[DISABLE]
+hunger:
+  db FF CA
+unregistersymbol(hunger)
+
+{
+// ORIGINAL CODE - INJECTION POINT: HealthComponent:Tick+d9b
+
+HealthComponent:Tick+d6c: 66 0F 2F C8              - comisd xmm1,xmm0
+HealthComponent:Tick+d70: 0F 8A 54 00 00 00        - jp HealthComponent:Tick+dca
+HealthComponent:Tick+d76: 0F 87 4E 00 00 00        - ja HealthComponent:Tick+dca
+HealthComponent:Tick+d7c: 66 0F 57 C0              - xorpd xmm0,xmm0
+HealthComponent:Tick+d80: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+HealthComponent:Tick+d84: F3 0F 11 AE 80 01 00 00  - movss [rsi+00000180],xmm5
+HealthComponent:Tick+d8c: 48 8B CE                 - mov rcx,rsi
+HealthComponent:Tick+d8f: 48 8B 06                 - mov rax,[rsi]
+HealthComponent:Tick+d92: FF 90 A8 00 00 00        - call qword ptr [rax+000000A8]
+HealthComponent:Tick+d98: 48 8B D0                 - mov rdx,rax
+// ---------- INJECTING HERE ----------
+HealthComponent:Tick+d9b: FF CA                    - dec edx
+// ---------- DONE INJECTING  ----------
+HealthComponent:Tick+d9d: 48 8B CE                 - mov rcx,rsi
+HealthComponent:Tick+da0: 48 8B 06                 - mov rax,[rsi]
+HealthComponent:Tick+da3: FF 90 A0 00 00 00        - call qword ptr [rax+000000A0]
+HealthComponent:Tick+da9: 48 8B CE                 - mov rcx,rsi
+HealthComponent:Tick+dac: 48 8B 06                 - mov rax,[rsi]
+HealthComponent:Tick+daf: FF 90 88 00 00 00        - call qword ptr [rax+00000088]
+HealthComponent:Tick+db5: E9 10 00 00 00           - jmp HealthComponent:Tick+dca
+HealthComponent:Tick+dba: 66 0F 57 C0              - xorpd xmm0,xmm0
+HealthComponent:Tick+dbe: F2 0F 5A E8              - cvtsd2ss xmm5,xmm0
+HealthComponent:Tick+dc2: F3 0F 11 AE 80 01 00 00  - movss [rsi+00000180],xmm5
+}"""

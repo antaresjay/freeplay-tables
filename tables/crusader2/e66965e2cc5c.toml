@@ -1,0 +1,638 @@
+[game]
+name = "Stronghold Crusader 2"
+exe = "crusader2.exe"
+notes = "Converted from a Cheat Engine table by PeaceBeUponYou. Source: https://fearlessrevolution.com/viewtopic.php?t=14749"
+verified = []
+author = "PeaceBeUponYou"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "items"
+name = "Items"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,$100)
+label(code itemLimit)
+label(return)
+
+
+newmem:
+
+code:
+  mov ecx,[ebp+08]
+  push [itemLimit]
+  mov eax,[ebp+0c]
+  call arrayScan
+  mov [ebp+0c],eax
+  mov eax,[ecx+0000020C]
+  jmp return
+itemLimit:
+  dd (float)1000
+items:
+  jmp newmem
+  nop 4
+return:
+registersymbol(itemLimit)
+
+[DISABLE]
+
+items:
+  db 8B 4D 08 8B 81 0C 02 00 00
+
+unregistersymbol(itemLimit)
+dealloc(*)"""
+
+[[cheat]]
+id = "limit"
+name = "Limit"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemLimit"
+hops = []
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,$100)
+label(code goldLimit)
+label(return)
+
+newmem:
+
+code:
+  mov ecx,esi
+  mov eax,[ebp+08]
+  push [goldLimit]
+  call arrayScan
+  mov [ebp+08],eax
+  mov eax,[esi+0000020C]
+  jmp return
+goldLimit:
+  dd (float)1000
+gold+01:
+  jmp newmem
+  nop
+return:
+registersymbol(goldLimit)
+
+[DISABLE]
+
+gold+01:
+  db 8B 86 0C 02 00 00
+
+unregistersymbol(goldLimit)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "limit-2"
+name = "Limit"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "goldLimit"
+hops = []
+
+[[cheat]]
+id = "no-building-restriction"
+name = "No Building Restriction"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+noBuildingRestriction:
+  inc al
+
+
+[DISABLE]
+
+noBuildingRestriction:
+  test al,al"""
+
+[[cheat]]
+id = "no-building-costs"
+name = "No Building Costs"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(noBuildingCost,StrongholdBase.dll,DB 40 10 8B 58 0C) // should be unique
+alloc(newmem,$100)
+
+label(code noBuildingCost_bkpBytes)
+label(return)
+
+newmem:
+  pop eax
+
+code:
+  fldz
+  fistp [eax+10]
+noBuildingCost_bkpBytes:
+  readmem(noBuildingCost,10)
+  jmp return
+
+
+noBuildingCost:
+  push eax
+  mov eax,newmem
+  jmp eax
+  nop 2
+  return:
+registersymbol(noBuildingCost noBuildingCost_bkpBytes)
+
+[DISABLE]
+
+noBuildingCost:
+  readmem(noBuildingCost_bkpBytes,10)
+
+unregistersymbol(noBuildingCost)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "inst-peasant-spawn"
+name = "Inst Peasant Spawn"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,$1000)
+label(code)
+label(return)
+
+newmem:
+  cmp [edi+78],1
+  jne code
+  mov eax,7FFFFFFF
+code:
+  mov [edi],eax
+  mov eax,[esi+0000020C]
+  jmp return
+
+instantPeasentSpawn:
+  jmp newmem
+  nop 3
+return:
+
+
+[DISABLE]
+
+instantPeasentSpawn:
+  db 89 07 8B 86 0C 02 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "troop-health"
+name = "Troop Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,$100)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [hamesaDosts],00
+  je code
+  push edi
+  push ebx
+  push eax
+  mov eax,[ecx+39C]
+  xor ebx,ebx
+looper:
+  lea edi,[hamesaDosts]
+  mov edi,[edi+ebx*4]
+  test edi,edi
+  je end
+  mov edi,[edi]
+  test edi,edi
+  je end
+  cmp eax,[edi+84]
+  jne @f
+  fld dword ptr [ecx+00000390]
+  fstp dword ptr [ecx+0000038C]
+  jmp end
+  @@:
+  inc ebx
+  cmp ebx,[counter]
+  jl looper
+end:
+  pop eax
+  pop ebx
+  pop edi
+code:
+  fld dword ptr [ecx+0000038C]
+  jmp return
+
+troopsHealth+01:
+  jmp newmem
+  nop
+return:
+
+
+[DISABLE]
+
+troopsHealth+01:
+  db D9 81 8C 03 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "walking-speed"
+name = "Walking Speed"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(newmem,$100)
+label(code ws_ptr)
+label(return)
+
+newmem:
+
+code:
+  fld dword ptr [ecx+eax+04]
+  lea esi,[ecx+eax+04]
+  mov [ws_ptr],esi
+  pop esi
+  jmp return
+ws_ptr:
+  dd 00
+troopWalkingSpeed:
+  jmp newmem
+return:
+registersymbol(ws_ptr)
+
+[DISABLE]
+
+troopWalkingSpeed:
+  db D9 44 01 04 5E
+
+unregistersymbol(ws_ptr)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "current-speed"
+name = "Current Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ws_ptr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "teleport-to-mouse-position"
+name = "Teleport To Mouse Position"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(teleportSelectedTroop,StrongholdBase.dll,8B 08 89 4D E8 8B) // should be unique
+alloc(newmem,$100)
+registersymbol(teleportSelectedTroop condTele)
+label(code condTele)
+label(return)
+aobscanmodule(getMousePosition,StrongholdBase.dll,89 4F 4C 8B 8C 24 EC 00 00 00) // should be unique
+alloc(savingAllPositions,20,getMousePosition)
+alloc(newmemMP,$100)
+
+label(backtoMain)
+
+newmemMP:
+  movups xmm3,[edi+4C]
+  movaps [savingAllPositions],xmm3
+  mov [edi+4C],ecx
+  mov ecx,[esp+000000EC]
+  jmp backtoMain
+  align 10,CC
+savingAllPositions:
+  resb 20
+getMousePosition:
+  jmp newmemMP
+  nop 5
+backtoMain:
+registersymbol(getMousePosition savingAllPositions)
+
+newmem:
+  cmp [condTele],00
+  je code
+  cmp [savingAllPositions],00
+  je code
+  movaps xmm4,[savingAllPositions]
+  movups [eax],xmm4
+code:
+  mov [condTele],00
+  mov ecx,[eax]
+  mov [ebp-18],ecx
+  jmp return
+condTele:
+dd 00
+teleportSelectedTroop:
+  jmp newmem
+return:
+
+
+[DISABLE]
+getMousePosition:
+  db 89 4F 4C 8B 8C 24 EC 00 00 00
+teleportSelectedTroop:
+  db 8B 08 89 4D E8
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "teleportcondition-f1"
+name = "TeleportCondition [F1]"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "condTele"
+hops = []
+
+[[cheat]]
+id = "x"
+name = "X"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "savingAllPositions"
+hops = []
+
+[[cheat]]
+id = "y"
+name = "Y"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "savingAllPositions"
+hops = []
+
+[[cheat]]
+id = "z"
+name = "Z"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "savingAllPositions"
+hops = []
+
+[[cheat]]
+id = "w"
+name = "W"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "savingAllPositions"
+hops = []
+
+[[cheat]]
+id = "freeze-movement-of-selected-entity"
+name = "Freeze Movement of Selected Entity"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(frzCoordz,StrongholdBase.dll,CE FF D2 8B 08 8B 50 04 89 4C 24 10 8B) // should be unique
+alloc(newmem,$100)
+
+label(code frz save)
+label(return)
+
+newmem:
+  cmp [eax],00
+  je code
+  cmp [frz],00
+  jne @f
+  movups xmm4,[eax]
+  movups [save],xmm4
+  @@:
+  mov [frz],01
+  cmp [save],00
+  je code
+  movups xmm4,[save]
+  movups [eax],xmm4
+code:
+  mov ecx,[eax]
+  mov edx,[eax+04]
+  jmp return
+frz:
+  dd 00
+save:
+resb 20
+frzCoordz+03:
+  jmp newmem
+return:
+registersymbol(frzCoordz)
+
+[DISABLE]
+
+frzCoordz+03:
+  db 8B 08 8B 50 04
+
+unregistersymbol(*)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-weapon-cost"
+name = "No Weapon Cost"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(hmps,StrongholdBase.dll,8B 40 10 89 45 E8) // should be unique
+alloc(newmem,$100)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  push 00
+  pop [eax+10]
+  mov eax,[eax+10]
+  mov [ebp-18],eax
+  jmp return
+
+hmps:
+  jmp newmem
+  nop
+return:
+registersymbol(hmps)
+
+[DISABLE]
+
+hmps:
+  db 8B 40 10 89 45 E8
+
+unregistersymbol(hmps)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-gold-cost"
+name = "No Gold Cost"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(goldCostReset,StrongholdBase.dll,83 7F 08 00 7E 64) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov dword ptr [edi+08],00
+  jle StrongholdBase.StrongholdBase::Estate::GetKeep+2486
+  jmp return
+
+goldCostReset:
+  jmp newmem
+  nop
+return:
+registersymbol(goldCostReset)
+
+[DISABLE]
+
+goldCostReset:
+  db 83 7F 08 00 7E 64
+
+unregistersymbol(goldCostReset)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "time-minutes-days"
+name = "Time: Minutes  [DAYS]"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "timeptr1"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "time-seconds"
+name = "Time: Seconds"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "timeptr1"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "time-time-flow"
+name = "Time: Time Flow"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "timeptr1"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "time-day-length"
+name = "Time: Day Length"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "timeptr2"
+hops = ["+0x0"]

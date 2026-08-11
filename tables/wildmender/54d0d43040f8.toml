@@ -1,0 +1,113 @@
+[game]
+name = "Wildmender"
+exe = "wildmender.exe"
+notes = "Converted from a Cheat Engine table by N3rveMods. Source: https://fearlessrevolution.com/viewtopic.php?t=27073"
+verified = []
+author = "N3rveMods"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "mana-never-decrease"
+name = "Mana Never Decrease"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanregion(Mana_Set_AOB,CombatModelBase:set_Mana,CombatModelBase:set_Mana+210,F3 0F 11 AE * * 00 00 48) // should be unique
+alloc(newmem,$1000,Mana_Set_AOB)
+
+label(code)
+label(return)
+
+alloc(Mana_CodeSave,8)
+Mana_CodeSave:
+  readmem(Mana_Set_AOB,8)
+registersymbol(Mana_CodeSave)
+
+newmem:
+  db 0F 2F AE
+  readmem(Mana_Set_AOB+4,4)  //comiss xmm5,[rsi+F4]
+  jae code
+  db F3 0F 10 AE
+  readmem(Mana_Set_AOB+4,4)  //movss xmm5,[rsi+F4]
+code:
+  readmem(Mana_Set_AOB,8)
+  jmp return
+
+Mana_Set_AOB:
+  jmp newmem
+  nop 3
+return:
+registersymbol(Mana_Set_AOB)
+
+aobscanregion(Mana_Set2_AOB,CombatModelBase:set_Mana,CombatModelBase:set_Mana+167,F3 0F 11 AE * * 00 00) // should be unique
+alloc(newmem2,$1000,Mana_Set2_AOB)
+
+label(code2)
+label(return2)
+
+newmem2:
+  db 0F 2F AE
+  readmem(Mana_Set_AOB+4,4)  //comiss xmm5,[rsi+F4]
+  jae code2
+  db F3 0F 10 AE
+  readmem(Mana_Set_AOB+4,4)  //movss xmm5,[rsi+F4]
+code2:
+  readmem(Mana_Set_AOB,8)
+  jmp return2
+
+Mana_Set2_AOB:
+  jmp newmem2
+  nop 3
+return2:
+registersymbol(Mana_Set2_AOB)
+
+[DISABLE]
+
+Mana_Set_AOB:
+  readmem(Mana_CodeSave,8)"""
+
+[[cheat]]
+id = "unlimited-item"
+name = "Unlimited Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(Item_Get_Quantity,InventoryItem:get_Quantity,InventoryItem:get_Quantity+10,48)
+aobscanregion(Item_Get_AOB,UICharacterInventoryPanel+SelectedInventoryItem:GetButtonActions,UICharacterInventoryPanel+SelectedInventoryItem:GetButtonActions+101a,48 63 40 2C 83 F8 01 0F 8E 24) // should be unique
+alloc(newmem,$1000,Item_Get_AOB)
+
+label(code)
+label(return)
+
+newmem:
+  mov dword ptr [rax+2C],#77
+code:
+  movsxd  rax,dword ptr [rax+2C]
+  cmp eax,01
+  jmp return
+
+Item_Get_AOB:
+  jmp newmem
+  nop 2
+return:
+registersymbol(Item_Get_AOB)
+
+[DISABLE]
+
+Item_Get_AOB:
+  db 48 63 40 2C 83 F8 01
+
+unregistersymbol(Item_Get_AOB)
+dealloc(newmem)"""

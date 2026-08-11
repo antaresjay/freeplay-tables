@@ -1,0 +1,1779 @@
+[game]
+name = "Dragon Quest III HD 2D Remake [Steam, Windows Store]"
+exe = "dqiiihd2dremake.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=32684"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-trainer-2-controls-gold-pointer"
+name = "Activate Trainer 2 (Controls Gold Pointer)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(GetGoldPointerAOB1,$process,8B 51 28 48 8B 4B 38 E8 * * * *)
+registersymbol(GetGoldPointerAOB1)
+alloc(newmem,1024,GetGoldPointerAOB1)
+
+///
+label(return)
+label(GetGoldPointerAOB1Save)
+registersymbol(GetGoldPointerAOB1Save)
+
+///
+newmem:
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,GoldPtr
+  mov [r15],rcx
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+GetGoldPointerAOB1Save:
+  readmem(GetGoldPointerAOB1,7)
+  jmp GetGoldPointerAOB1+07
+  
+R14Save:
+dq 0
+R15Save:
+dq 0
+  
+///
+GetGoldPointerAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+GetGoldPointerAOB1:
+  readmem(GetGoldPointerAOB1Save,7)
+
+unregistersymbol(GetGoldPointerAOB1)
+unregistersymbol(GetGoldPointerAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "activate-trainer-3-controls-character-pointers"
+name = "Activate Trainer 3 (Controls Character Pointers)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(GetCharacterPointerAOB1,$process,8B 51 2C 66 0F 6E F2 0F 5B F6 F3 0F 5E F0)
+registersymbol(GetCharacterPointerAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(GetCharacterPointerAOB1Save)
+registersymbol(GetCharacterPointerAOB1Save)
+
+///
+newmem:
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,GrabCharacterPtrNumTimes
+  mov r13,[r15]
+  cmp r13d,4
+  jge MyCleanUp1
+  mov r15,CharacterPtr
+  mov [r15+r13*8],rcx
+  mov r15,GrabCharacterPtrNumTimes
+  inc [r15]
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+GetCharacterPointerAOB1Save:
+  readmem(GetCharacterPointerAOB1,14)
+  jmp GetCharacterPointerAOB1+0E
+  
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+  
+///
+GetCharacterPointerAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+GetCharacterPointerAOB1:
+  readmem(GetCharacterPointerAOB1Save,14)
+
+unregistersymbol(GetCharacterPointerAOB1)
+unregistersymbol(GetCharacterPointerAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "activate-trainer-4-controls-damage-modifier"
+name = "Activate Trainer 4 (Controls Damage Modifier)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(DamageModAOB1,$process,41 8B 75 28 8B C6 99 33 C2 2B C2)
+registersymbol(DamageModAOB1)
+alloc(newmem,1024,DamageModAOB1)
+
+///
+label(return)
+label(DamageModAOB1Save)
+registersymbol(DamageModAOB1Save)
+
+///
+newmem:
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,bDoHeroCannotDie
+  xor r14,r14
+  mov [r15],r14  
+  {-- Calculate Our Damage}
+  xor r15,r15
+  mov r15d,[r13+28]
+  mov r13,[rbp-29]
+  cmp byte ptr [r13+1C4],0
+  je HeroHit
+  jmp EnemyHit
+HeroHit:
+  cmp r15d,0
+  je SkipEntireCode
+  jg HeroDamageHit
+  jmp HeroHealingHit
+HeroDamageHit:
+  mov r14,fHeroDamageMult
+  push r15d
+  fild dword ptr [esp]
+  fmul dword ptr [r14]
+  fistp dword ptr [esp]
+  pop r15d
+  // Min Damage of 1
+  cmp r15d,0
+  jg CheckGodMode
+  mov r15d,1
+CheckGodMode:
+  mov r14,GodMode
+  cmp dword ptr [r14],1
+  jne CheckHeroCannotDie
+  xor r15d,r15d
+CheckHeroCannotDie:
+  mov r14,HeroCannotDie
+  cmp dword ptr [r14],1
+  jne MyCleanUp1
+  cmp r15d,[r13+194]
+  jl SkipHeroCannotDie
+  xor r15d,r15d
+  mov [bDoHeroCannotDie],1  
+SkipHeroCannotDie:
+  jmp MyCleanUp1
+HeroHealingHit:
+  mov r14,fHeroHealingMult
+  neg r15d
+  push r15d
+  fild dword ptr [esp]
+  fmul dword ptr [r14]
+  fistp dword ptr [esp]
+  pop r15d
+  // Min Healing of 1
+  cmp r15d,0
+  jg SkipMinHealing
+  mov r15d,1
+SkipMinHealing:
+  neg r15d
+  jmp MyCleanUp1
+EnemyHit:
+  cmp r15d,0
+  jge EnemyDamageHit
+  jmp EnemyHealingHit
+EnemyDamageHit:
+  mov r14,fEnemyDamageMult
+  push r15d
+  fild dword ptr [esp]
+  fmul dword ptr [r14]
+  fistp dword ptr [esp]
+  pop r15d
+  // Min Damage of 1
+  cmp r15d,0
+  jg CheckOneHitKill
+  mov r15d,1
+CheckOneHitKill:
+  mov r14,OneHitKill
+  cmp dword ptr [r14],1
+  jne MyCleanUp1
+  mov r15d,[r13+194]
+  jmp MyCleanUp1
+EnemyHealingHit:
+  mov r14,fEnemyHealingMult
+  neg r15d
+  push r15d
+  fild dword ptr [esp]
+  fmul dword ptr [r14]
+  fistp dword ptr [esp]
+  pop r15d
+  // Min Healing of 1
+  cmp r15d,0
+  jg SkipMinHealing2
+  mov r15d,1
+SkipMinHealing2:
+  neg r15d
+  jmp MyCleanUp1
+
+MyCleanUp1:
+  mov r13,[R13Save]
+  mov [r13+28],r15d
+  cmp dword ptr [bDoHeroCannotDie],1
+  jne SkipEntireCode
+  mov [r13+34],r15b
+SkipEntireCode:
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+DamageModAOB1Save:
+  readmem(DamageModAOB1,6)
+  jmp DamageModAOB1+06
+    
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+bDoHeroCannotDie:
+dq 0
+
+///
+DamageModAOB1:
+  jmp newmem
+  return:
+   
+[DISABLE]
+
+///
+DamageModAOB1:
+  readmem(DamageModAOB1Save,6)
+  
+unregistersymbol(DamageModAOB1)
+unregistersymbol(DamageModAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "activate-trainer-5-controls-character-personality-pointers-view-status-of-character"
+name = "Activate Trainer 5 (Controls Character Personality Pointers) (View Status Of Character)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(GetCharacterPointerAOB2,$process,84 C0 0F 94 C1 45 85 FF 0F 95 C0 0A C8 74 * 49 89 1C 24 EB * 49 8B 85 AC 00 00 00)
+registersymbol(GetCharacterPointerAOB2)
+alloc(newmem,1024,GetCharacterPointerAOB2)
+
+///
+label(return)
+label(GetCharacterPointerAOB2Save)
+registersymbol(GetCharacterPointerAOB2Save)
+
+///
+newmem:
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r15,CharacterPtr2
+  movsxd r14,dword ptr [r13+C4]
+  cmp r14d,4
+  jge MyCleanUp1
+  mov [r15+r14*8],r13
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+GetCharacterPointerAOB2Save:
+  readmem(GetCharacterPointerAOB2,5)
+  jmp GetCharacterPointerAOB2+05
+  
+R14Save:
+dq 0
+R15Save:
+dq 0
+  
+///
+GetCharacterPointerAOB2:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+GetCharacterPointerAOB2:
+  readmem(GetCharacterPointerAOB2Save,5)
+
+unregistersymbol(GetCharacterPointerAOB2)
+unregistersymbol(GetCharacterPointerAOB2Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "activate-trainer-7-1-controls-mp-damage-modifier"
+name = "Activate Trainer 7.1 (Controls MP Damage Modifier)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(MPDamageModAOB1,$process,44 8B F8 48 8B 44 24 38 44 2B FB 83 78 64 FF)
+registersymbol(MPDamageModAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(MPDamageModAOB1Save)
+registersymbol(MPDamageModAOB1Save)
+
+///
+newmem:
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  cmp byte ptr [rdi+1C4],0
+  je HeroHit
+  jmp EnemyHit
+HeroHit:
+  cmp ebx,0
+  jle SkipEntireCode
+  jmp HeroDamageHit
+HeroDamageHit:
+  mov r14,InfiniteMP
+  cmp dword ptr [r14],1
+  jne CheckSpellsOnlyTakeOneMP
+  xor ebx,ebx
+  jmp MyCleanUp1
+CheckSpellsOnlyTakeOneMP:
+  mov r14,SpellsOnlyTakeOneMP
+  cmp dword ptr [r14],1
+  jne DoMPMultiplier
+  mov ebx,00000001
+  jmp MyCleanUp1
+DoMPMultiplier:
+  mov r14,fHeroMPDamageMult
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [r14]
+  fistp dword ptr [esp]
+  pop ebx
+  // Min Damage of 1
+  cmp ebx,0
+  jg MyCleanUp1
+  mov ebx,1
+  jmp MyCleanUp1
+EnemyHit:
+  cmp ebx,0
+  jle SkipEntireCode
+  jmp EnemyDamageHit
+EnemyDamageHit:
+  mov r14,fEnemyMPDamageMult
+  push ebx
+  fild dword ptr [esp]
+  fmul dword ptr [r14]
+  fistp dword ptr [esp]
+  pop ebx
+  // Min Damage of 1
+  cmp ebx,0
+  jg MyCleanUp1
+  mov ebx,1
+  jmp MyCleanUp1
+
+MyCleanUp1:
+SkipEntireCode:
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+MPDamageModAOB1Save:
+  readmem(MPDamageModAOB1,15)
+  jmp MPDamageModAOB1+0F
+    
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+
+///
+MPDamageModAOB1:
+  jmp newmem
+  return:
+   
+[DISABLE]
+
+///
+MPDamageModAOB1:
+  readmem(MPDamageModAOB1Save,15)
+  
+unregistersymbol(MPDamageModAOB1)
+unregistersymbol(MPDamageModAOB1Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "activate-trainer-7-2-controls-mp-damage-modifier"
+name = "Activate Trainer 7.2 (Controls MP Damage Modifier)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(MPDamageModAOB2,$process,41 29 75 34 B9 00 00 00 00 41 8B 45 34 0F 48 C1)
+registersymbol(MPDamageModAOB2)
+alloc(newmem,1024)
+
+///
+label(return)
+label(MPDamageModAOB2Save)
+registersymbol(MPDamageModAOB2Save)
+
+///
+newmem:
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  jmp HeroHit
+HeroHit:
+  cmp esi,0
+  jle SkipEntireCode
+  jmp HeroDamageHit
+HeroDamageHit:
+  mov r14,InfiniteMP
+  cmp dword ptr [r14],1
+  jne CheckSpellsOnlyTakeOneMP
+  xor esi,esi
+  jmp MyCleanUp1
+CheckSpellsOnlyTakeOneMP:
+  mov r14,SpellsOnlyTakeOneMP
+  cmp dword ptr [r14],1
+  jne DoMPMultiplier
+  mov esi,00000001
+  jmp MyCleanUp1
+DoMPMultiplier:
+  mov r14,fHeroMPDamageMult
+  push esi
+  fild dword ptr [esp]
+  fmul dword ptr [r14]
+  fistp dword ptr [esp]
+  pop esi
+  // Min Damage of 1
+  cmp esi,0
+  jg MyCleanUp1
+  mov esi,1
+  jmp MyCleanUp1
+
+MyCleanUp1:
+SkipEntireCode:
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  jmp originalcode
+  
+originalcode:
+MPDamageModAOB2Save:
+  readmem(MPDamageModAOB2,16)
+  jmp MPDamageModAOB2+10
+    
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+
+///
+MPDamageModAOB2:
+  jmp newmem
+  return:
+   
+[DISABLE]
+
+///
+MPDamageModAOB2:
+  readmem(MPDamageModAOB2Save,16)
+  
+unregistersymbol(MPDamageModAOB2)
+unregistersymbol(MPDamageModAOB2Save)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "hotkeys-active"
+name = "Hotkeys Active"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bHotkeysActive"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier"
+name = "Hero Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier"
+name = "Hero Healing Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-party-cannot-die"
+name = "Hero Party Cannot Die"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier"
+name = "Enemy Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier"
+name = "Enemy Healing Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "hero-mp-damage-multiplier"
+name = "Hero MP Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-mp-damage-multiplier"
+name = "Enemy MP Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyMPDamageMult"
+hops = []
+
+[[cheat]]
+id = "gold-gain-multiplier"
+name = "Gold Gain Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "gold-loss-multiplier"
+name = "Gold Loss Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-exp-multiplier-doesn-t-display-but-still-works"
+name = "ENABLE EXP Multiplier (Doesn't Display, But Still Works)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(EXPMultiplierAOB1,$process,44 8B 41 20 44 03 C2 79 09 33 C0 01 51 24)
+registersymbol(EXPMultiplierAOB1)
+alloc(newmem,1024,EXPMultiplierAOB1)
+
+///
+label(return)
+label(EXPMultiplierAOB1Save)
+registersymbol(EXPMultiplierAOB1Save)
+label(fEXPMultiplier)
+registersymbol(fEXPMultiplier)
+
+///
+newmem:
+  cmp edx,0
+  jle originalcode
+  push edx
+  fild dword ptr [esp]
+  fmul dword ptr [fEXPMultiplier]
+  fistp dword ptr [esp]
+  pop edx
+  jmp originalcode
+  
+originalcode:
+EXPMultiplierAOB1Save:
+  readmem(EXPMultiplierAOB1,7)
+  jmp EXPMultiplierAOB1+07
+  
+fEXPMultiplier:
+dq (float)2.0
+  
+///
+EXPMultiplierAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+EXPMultiplierAOB1:
+  readmem(EXPMultiplierAOB1Save,7)
+  
+unregistersymbol(EXPMultiplierAOB1)
+unregistersymbol(EXPMultiplierAOB1Save)
+unregistersymbol(fEXPMultiplier)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEXPMultiplier"
+hops = []
+
+[[cheat]]
+id = "mini-medal-gain-multiplier"
+name = "Mini Medal Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MiniMedalGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "mini-medal-loss-multiplier"
+name = "Mini Medal Loss Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MiniMedalLossMultiplier"
+hops = []
+
+[[cheat]]
+id = "enemy-always-surprised"
+name = "Enemy Always Surprised"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(EnemyAlwaysSurprisedAOB1,$process,C6 44 24 7C 00 F3 0F 10 70 10 F3 0F 5C C6 41 0F 54 C0 41 0F 2F C1 0F 86 C9 00 00 00)
+registersymbol(EnemyAlwaysSurprisedAOB1)
+  
+///
+EnemyAlwaysSurprisedAOB1+16:
+  db E9 CA 00 00 00 90
+  
+[DISABLE]
+
+///
+EnemyAlwaysSurprisedAOB1+16:
+  db 0F 86 C9 00 00 00
+  
+unregistersymbol(EnemyAlwaysSurprisedAOB1)"""
+
+[[cheat]]
+id = "no-random-battles"
+name = "No Random Battles"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(NoRandomBattlesAOB1,$process,49 8B C5 8B 40 08 C1 E8 1D A8 01 0F 85 C7 06 00 00)
+registersymbol(NoRandomBattlesAOB1)
+  
+///
+NoRandomBattlesAOB1+B:
+  db E9 C8 06 00 00 90
+  
+[DISABLE]
+
+///
+NoRandomBattlesAOB1+B:
+  db 0F 85 C7 06 00 00
+  
+unregistersymbol(NoRandomBattlesAOB1)"""
+
+[[cheat]]
+id = "item-gain-multiplier-excludes-transfers"
+name = "Item Gain Multiplier (Excludes Transfers)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iItemGainMultiplier"
+hops = []
+
+[[cheat]]
+id = "custom-random-battle-multiplier"
+name = "Custom Random Battle Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(RandomBattlesMultiplierAOB1,$process,F3 0F 10 54 24 58 F3 0F 10 4C 24 60 F3 0F 10 44 24 68)
+registersymbol(RandomBattlesMultiplierAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(RandomBattlesMultiplierAOB1Save)
+registersymbol(RandomBattlesMultiplierAOB1Save)
+label(fRandomBattleMultiplier)
+registersymbol(fRandomBattleMultiplier)
+
+///
+newmem:
+  movss xmm2,[fRandomBattleMultiplier]  
+  movss xmm1,[fRandomBattleMultiplier]
+  movss xmm0,[rsp+68]
+  jmp RandomBattlesMultiplierAOB1+12
+
+fRandomBattleMultiplier:
+dq (float)1.0  
+RandomBattlesMultiplierAOB1Save:
+  readmem(RandomBattlesMultiplierAOB1,18)
+
+///
+RandomBattlesMultiplierAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+RandomBattlesMultiplierAOB1:
+  readmem(RandomBattlesMultiplierAOB1Save,18)
+  
+unregistersymbol(RandomBattlesMultiplierAOB1)
+unregistersymbol(RandomBattlesMultiplierAOB1Save)
+unregistersymbol(fRandomBattleMultiplier)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "random-battle-multiplier"
+name = "Random Battle Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:No Battles",
+    "inf:Quarter As Many Battles",
+    "40000000:Twice As Many Battles",
+    "40400000:Three Times As Many Battles",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "fRandomBattleMultiplier"
+hops = []
+
+[[cheat]]
+id = "can-always-capture-monsters-without-monster-wrangler-in-party"
+name = "Can Always Capture Monsters Without Monster Wrangler In Party"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(CanCaptureMonstersAOB1,$process,75 09 80 B8 AA 00 00 00 0A 74 61 48 8B 7D F8)
+registersymbol(CanCaptureMonstersAOB1)
+
+///
+aobscanmodule(CanCaptureMonstersAOB2,$process,40 80 FE 0A 74 7D 48 83 C7 10 48 3B FD 75 98)
+registersymbol(CanCaptureMonstersAOB2)
+
+///
+CanCaptureMonstersAOB1:
+  db 90 90
+
+///
+CanCaptureMonstersAOB1+9:
+  db EB
+
+///
+CanCaptureMonstersAOB2+4:
+  db EB
+  
+[DISABLE]
+
+///
+CanCaptureMonstersAOB1:
+  db 75 09
+
+///
+CanCaptureMonstersAOB1+9:
+  db 74
+  
+unregistersymbol(CanCaptureMonstersAOB1)
+
+///
+CanCaptureMonstersAOB2+4:
+  db 74
+
+unregistersymbol(CanCaptureMonstersAOB2)"""
+
+[[cheat]]
+id = "anyone-can-equip-everything"
+name = "Anyone Can Equip Everything"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(CanEquipEverythingAOB1,$process,41 0F B6 96 D9 00 00 00 E8 * * * * 84 C0 74 05)
+registersymbol(CanEquipEverythingAOB1)
+
+///
+aobscanmodule(CanEquipEverythingAOB2,$process,48 89 75 97 44 0F B6 E8 48 89 5D 9F 0F 57 C9 48 85 DB 74 03)
+registersymbol(CanEquipEverythingAOB2)
+alloc(newmem2,1024)
+
+///
+aobscanmodule(CanEquipEverythingAOB3,$process,41 0F B6 97 AA 00 00 00 49 8B 0C 24 E8 * * * * 0F B6 F8 48 85 DB 74 22 83 6B 08 01 75 1C)
+registersymbol(CanEquipEverythingAOB3)
+alloc(newmem3,1024,CanEquipEverythingAOB3)
+
+///
+label(return2)
+label(CanEquipEverythingAOB2Save)
+registersymbol(CanEquipEverythingAOB2Save)
+
+///
+label(return3)
+label(CanEquipEverythingAOB3Save)
+registersymbol(CanEquipEverythingAOB3Save)
+
+///
+newmem2:
+  mov al,01
+  jmp originalcode2
+  
+originalcode2:
+CanEquipEverythingAOB2Save:
+  readmem(CanEquipEverythingAOB2,15)
+  jmp CanEquipEverythingAOB2+0F
+
+///
+newmem3:
+  mov al,01
+  jmp originalcode3
+  
+originalcode3:
+CanEquipEverythingAOB3Save:
+  readmem(CanEquipEverythingAOB3+11,6)
+  jmp CanEquipEverythingAOB3+17
+
+///
+CanEquipEverythingAOB1+F:
+  db 90 90
+
+///
+CanEquipEverythingAOB2:
+  jmp newmem2
+  return2:
+
+///
+CanEquipEverythingAOB3+11:
+  jmp newmem3
+  return3:
+  
+[DISABLE]
+
+///
+CanEquipEverythingAOB1+F:
+  db 74 05
+
+unregistersymbol(CanEquipEverythingAOB1)
+
+///
+CanEquipEverythingAOB2:
+  readmem(CanEquipEverythingAOB2Save,15)
+
+unregistersymbol(CanEquipEverythingAOB2)
+
+///
+CanEquipEverythingAOB3+11:
+  readmem(CanEquipEverythingAOB3Save,6)
+
+unregistersymbol(CanEquipEverythingAOB3)
+
+///
+dealloc(newmem2)
+dealloc(newmem3)"""
+
+[[cheat]]
+id = "override-job-change-at-alltrades-abby-based-on-option-from-yuka"
+name = "Override Job Change At Alltrades Abby (Based On Option From yuka)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(OverrideJobChangeAOB1,$process,0F B6 14 11 8B 88 E8 00 00 00 E8 * * * * 48 8B BC 24 88 00 00 00)
+registersymbol(OverrideJobChangeAOB1)
+alloc(newmem,1024,OverrideJobChangeAOB1)
+
+///
+aobscanmodule(OverrideJobChangeAOB2,$process,48 8B 80 D8 00 00 00 0F B6 0C 01 E8 * * * * 4C 8D 45 40 B2 08)
+registersymbol(OverrideJobChangeAOB2)
+alloc(newmem2,1024,OverrideJobChangeAOB2)
+
+///
+label(return)
+label(OverrideJobChangeAOB1Save)
+registersymbol(OverrideJobChangeAOB1Save)
+label(iOverrideJobChange)
+registersymbol(iOverrideJobChange)
+
+///
+label(return2)
+label(OverrideJobChangeAOB2Save)
+registersymbol(OverrideJobChangeAOB2Save)
+
+///
+newmem:
+  cmp dword ptr [iOverrideJobChange],0
+  jle DoOriginalCode
+  cmp dword ptr [iOverrideJobChange],A
+  jg DoOriginalCode
+  jmp DoOurCode
+DoOurCode:
+  mov edx,[iOverrideJobChange]
+  readmem(OverrideJobChangeAOB1+4,6)
+  jmp OverrideJobChangeAOB1+A
+DoOriginalCode:
+OverrideJobChangeAOB1Save:
+  readmem(OverrideJobChangeAOB1,10)
+  jmp OverrideJobChangeAOB1+A
+  
+iOverrideJobChange:
+dq 1
+
+///
+newmem2:
+  readmem(OverrideJobChangeAOB2,7)
+  mov [R15Save2],r15
+  mov r15,iOverrideJobChange
+  cmp dword ptr [r15],0
+  jle DoOriginalCode2
+  cmp dword ptr [r15],A
+  jg DoOriginalCode2
+  jmp DoOurCode2
+DoOurCode2:
+  mov ecx,[r15]
+  mov r15,[R15Save2]
+  jmp OverrideJobChangeAOB2+B
+DoOriginalCode2:
+  mov r15,[R15Save2]
+  readmem(OverrideJobChangeAOB2+7,4)
+  jmp OverrideJobChangeAOB2+B
+  
+R15Save2:
+dq 0
+OverrideJobChangeAOB2Save:
+  readmem(OverrideJobChangeAOB2,11)
+  
+///
+OverrideJobChangeAOB1:
+  jmp newmem
+  return:
+
+///
+OverrideJobChangeAOB2:
+  jmp newmem2
+  return2:
+  
+[DISABLE]
+
+///
+OverrideJobChangeAOB1:
+  readmem(OverrideJobChangeAOB1Save,10)
+  
+unregistersymbol(OverrideJobChangeAOB1)
+unregistersymbol(OverrideJobChangeAOB1Save)
+unregistersymbol(iOverrideJobChange)
+
+///
+OverrideJobChangeAOB2:
+  readmem(OverrideJobChangeAOB2Save,11)
+  
+unregistersymbol(OverrideJobChangeAOB2)
+unregistersymbol(OverrideJobChangeAOB2Save)
+
+///
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "override-job-change-at-alltrades-abbey-can-change-to-hero-or-sage-w-o-words-of-wisdom"
+name = "Override Job Change At Alltrades Abbey (Can Change To Hero or Sage w/o Words of Wisdom)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Hero/勇者",
+    "2:Warrior/戦士",
+    "3:Martial Artist/武闘家",
+    "4:Mage/魔法使い",
+    "5:Priest/僧侶",
+    "6:Merchant/商人",
+    "7:Gadabout/遊び人",
+    "8:Thief/盗賊",
+    "9:Sage/賢者",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "iOverrideJobChange"
+hops = []
+
+[[cheat]]
+id = "caution-only-choose-hero-when-appearance-type-is-1-change-it-on-east-side-of-alltrades-abbey"
+name = "CAUTION:  Only Choose Hero When Appearance Type Is 1 (Change it on east side of Alltrades Abbey)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Hero/勇者",
+    "2:Warrior/戦士",
+    "3:Martial Artist/武闘家",
+    "4:Mage/魔法使い",
+    "5:Priest/僧侶",
+    "6:Merchant/商人",
+    "7:Gadabout/遊び人",
+    "8:Thief/盗賊",
+    "9:Sage/賢者",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "iOverrideJobChange"
+hops = []
+
+[[cheat]]
+id = "hero-can-change-jobs-based-on-option-by-yuka-save-data-will-not-display-correctly-w-o-at-least-one-hero"
+name = "Hero Can Change Jobs (Based On Option By yuka) (Save Data Will Not Display Correctly W/O At Least One Hero)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(HeroChangeJobsAOB1,$process,40 80 FD 01 75 0C B2 02 48 8B CE)
+registersymbol(HeroChangeJobsAOB1)
+
+///
+HeroChangeJobsAOB1+4:
+  db EB
+  
+[DISABLE]
+
+///
+HeroChangeJobsAOB1+4:
+  db 75
+  
+unregistersymbol(HeroChangeJobsAOB1)"""
+
+[[cheat]]
+id = "can-always-use-dig-w-o-changing-areas-normally-you-can-only-use-it-5-times-per-load-screen"
+name = "Can Always Use Dig W/O Changing Areas (Normally, You Can Only Use It 5 Times Per Load Screen)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(CanAlwaysUseDigAOB1,$process,44 0F 29 94 24 10 01 00 00 E8 * * * * 8D 4B 01 45 0F 57 D2)
+registersymbol(CanAlwaysUseDigAOB1)
+
+///
+CanAlwaysUseDigAOB1+10:
+  db 00
+  
+[DISABLE]
+
+///
+CanAlwaysUseDigAOB1+10:
+  db 01
+  
+unregistersymbol(CanAlwaysUseDigAOB1)"""
+
+[[cheat]]
+id = "disable-xenlon-post-game-boss-turn-count-always-grant-wish-if-you-win-battle"
+name = "Disable Xenlon (Post-Game Boss) Turn Count (Always Grant Wish If You Win Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+///
+aobscanmodule(XenlonTurnCountAOB1,$process,B8 FF FF 00 00 41 8B 54 24 40 49 8B CF FF C2 3B D0 0F 4E C2)
+registersymbol(XenlonTurnCountAOB1)
+
+///
+XenlonTurnCountAOB1+0D:
+  db 90 90
+  
+[DISABLE]
+
+///
+XenlonTurnCountAOB1+0D:
+  db FF C2
+  
+unregistersymbol(XenlonTurnCountAOB1)"""
+
+[[cheat]]
+id = "current-gold-view-main-menu-to-populate"
+name = "Current Gold (View Main Menu To Populate)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldPtr"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "current-mini-medal-view-main-menu-to-populate"
+name = "Current Mini Medal (View Main Menu To Populate)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GoldPtr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "aliahan-shop-item-1-go-to-item-shop-in-aliahan-then-change-this-and-hit-buy"
+name = "Aliahan Shop Item 1 (Go To Item Shop In Aliahan, Then Change This And Hit Buy)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "ShopBasePtr"
+hops = [
+    "+0x0",
+    "+0x310",
+    "+0x798",
+    "+0x298",
+    "+0x28",
+    "+0x80",
+    "+0x0",
+    "+0x8",
+]
+
+[[cheat]]
+id = "current-hp-character-1"
+name = "Current HP Character 1"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "current-hp-character-2"
+name = "Current HP Character 2"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "current-hp-character-3"
+name = "Current HP Character 3"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "current-hp-character-4"
+name = "Current HP Character 4"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "current-mp-character-1"
+name = "Current MP Character 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "current-mp-character-2"
+name = "Current MP Character 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "current-mp-character-3"
+name = "Current MP Character 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "current-mp-character-4"
+name = "Current MP Character 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "current-exp-character-1"
+name = "Current EXP Character 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "current-exp-character-2"
+name = "Current EXP Character 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "current-exp-character-3"
+name = "Current EXP Character 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "current-exp-character-4"
+name = "Current EXP Character 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x20"]
+
+[[cheat]]
+id = "current-level-character-1"
+name = "Current Level Character 1"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "current-level-character-2"
+name = "Current Level Character 2"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "current-level-character-3"
+name = "Current Level Character 3"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "current-level-character-4"
+name = "Current Level Character 4"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr"
+hops = ["+0x1c"]
+
+[[cheat]]
+id = "personality-character-1"
+name = "Personality Character 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "personality-character-2"
+name = "Personality Character 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "personality-character-3"
+name = "Personality Character 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "personality-character-4"
+name = "Personality Character 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "vocation-character-1-save-and-reload-can-freeze-events-if-hero-changed"
+name = "Vocation Character 1 (Save and Reload, Can Freeze Events If Hero Changed)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Hero/勇者",
+    "2:Warrior/戦士",
+    "3:Martial Artist/武闘家",
+    "4:Mage/魔法使い",
+    "5:Priest/僧侶",
+    "6:Merchant/商人",
+    "7:Gadabout/遊び人",
+    "8:Thief/盗賊",
+    "9:Sage/賢者",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xaa"]
+
+[[cheat]]
+id = "vocation-character-2-save-and-reload-can-freeze-events-if-hero-changed"
+name = "Vocation Character 2 (Save and Reload, Can Freeze Events If Hero Changed)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Hero/勇者",
+    "2:Warrior/戦士",
+    "3:Martial Artist/武闘家",
+    "4:Mage/魔法使い",
+    "5:Priest/僧侶",
+    "6:Merchant/商人",
+    "7:Gadabout/遊び人",
+    "8:Thief/盗賊",
+    "9:Sage/賢者",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xaa"]
+
+[[cheat]]
+id = "vocation-character-3-save-and-reload-can-freeze-events-if-hero-changed"
+name = "Vocation Character 3 (Save and Reload, Can Freeze Events If Hero Changed)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Hero/勇者",
+    "2:Warrior/戦士",
+    "3:Martial Artist/武闘家",
+    "4:Mage/魔法使い",
+    "5:Priest/僧侶",
+    "6:Merchant/商人",
+    "7:Gadabout/遊び人",
+    "8:Thief/盗賊",
+    "9:Sage/賢者",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xaa"]
+
+[[cheat]]
+id = "vocation-character-4-save-and-reload-can-freeze-events-if-hero-changed"
+name = "Vocation Character 4 (Save and Reload, Can Freeze Events If Hero Changed)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Hero/勇者",
+    "2:Warrior/戦士",
+    "3:Martial Artist/武闘家",
+    "4:Mage/魔法使い",
+    "5:Priest/僧侶",
+    "6:Merchant/商人",
+    "7:Gadabout/遊び人",
+    "8:Thief/盗賊",
+    "9:Sage/賢者",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "CharacterPtr2"
+hops = ["+0xaa"]

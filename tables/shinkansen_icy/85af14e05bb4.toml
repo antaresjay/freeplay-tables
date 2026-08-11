@@ -1,0 +1,1879 @@
+[game]
+name = "Icy"
+exe = "shinkansen_icy.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2679"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playermanager-base-address-scan-initialization-activate-this-first"
+name = "PlayerManager Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerManager_basepointer)
+registersymbol(PlayerManager_update_enable)
+registersymbol(PlayerManager_set_enable)
+registersymbol(PlayerManager_healthset_enable)
+registersymbol(PlayerManager_resourcesset_enable)
+registersymbol(PlayerManager_expset_enable)
+
+alloc(PlayerManager_basepointer, 4)
+alloc(PlayerManager_update_enable, 4)
+alloc(PlayerManager_set_enable, 4)
+alloc(PlayerManager_healthset_enable, 4)
+alloc(PlayerManager_resourcesset_enable, 4)
+alloc(PlayerManager_expset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayerManager_basepointer)
+unregistersymbol(PlayerManager_update_enable)
+unregistersymbol(PlayerManager_set_enable)
+unregistersymbol(PlayerManager_healthset_enable)
+unregistersymbol(PlayerManager_resourcesset_enable)
+unregistersymbol(PlayerManager_expset_enable)
+
+dealloc(PlayerManager_basepointer)
+dealloc(PlayerManager_update_enable)
+dealloc(PlayerManager_set_enable)
+dealloc(PlayerManager_healthset_enable)
+dealloc(PlayerManager_resourcesset_enable)
+dealloc(PlayerManager_expset_enable)"""
+
+[[cheat]]
+id = "playermanager-base-address-scan-to-activate-view-map-to-update-view-map"
+name = "PlayerManager Base Address Scan (To Activate: View Map, To Update: View Map)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerManager_savedAOB)
+label(PlayerManager_returnhere)
+label(PlayerManager_originalcode)
+label(PlayerManager_exit)
+
+label(PlayerManager_update_exit)
+label(PlayerManager_set_exit)
+label(PlayerManager_healthset_exit)
+label(PlayerManager_resourcesset_exit)
+label(PlayerManager_expset_exit)
+
+registersymbol(PlayerManager_savedAOB)
+
+//04735A6D - C7 87 58010000 00000000 - mov [edi+00000158],00000000
+//04735A77 - D9 47 78              - fld dword ptr [edi+78]
+//PlayerManager:CheckMapIDPosition+3a2
+//04735A7A - D9 9F 70010000        - fstp dword ptr [edi+00000170]
+//04735A80 - D9EE                  - fldz
+//04735A82 - D9 9F 14010000        - fstp dword ptr [edi+00000114]
+//04735A88 - D9 87 7C010000        - fld dword ptr [edi+0000017C]
+aobscan(PlayerManager_searchedAOB, D9 9F 70 01 00 00 D9 EE)
+
+alloc(PlayerManager_newmem, 2048)
+alloc(PlayerManager_temp1, 4)
+
+
+PlayerManager_newmem:
+mov [PlayerManager_temp1], ebx
+
+cmp dword ptr [PlayerManager_update_enable], #0
+je PlayerManager_update_exit
+mov [PlayerManager_basepointer], edi
+PlayerManager_update_exit:
+
+cmp dword ptr [PlayerManager_set_enable], #0
+je PlayerManager_set_exit
+PlayerManager_set_exit:
+
+cmp dword ptr [PlayerManager_healthset_enable], #0
+je PlayerManager_healthset_exit
+mov ebx, [edi+80]
+mov [edi+7c], ebx
+PlayerManager_healthset_exit:
+
+cmp dword ptr [PlayerManager_resourcesset_enable], #0
+je PlayerManager_resourcesset_exit
+mov [edi+84], #9999
+mov [edi+88], (float)9999
+mov [edi+8c], #9999
+mov [edi+90], #9999
+mov [edi+94], #9999
+mov [edi+98], (float)9999
+PlayerManager_resourcesset_exit:
+
+cmp dword ptr [PlayerManager_expset_enable], #0
+je PlayerManager_expset_exit
+mov [edi+9c], #9999
+PlayerManager_expset_exit:
+
+mov ebx, [PlayerManager_temp1]
+
+
+PlayerManager_originalcode:
+db D9 9F 70 01 00 00
+//fstp dword ptr [edi+00000170]
+
+
+PlayerManager_exit:
+jmp PlayerManager_returnhere
+
+
+PlayerManager_searchedAOB:
+PlayerManager_savedAOB:
+jmp PlayerManager_newmem
+nop
+PlayerManager_returnhere:
+
+
+[DISABLE]
+PlayerManager_savedAOB:
+db D9 9F 70 01 00 00
+//fstp dword ptr [edi+00000170]
+
+unregistersymbol(PlayerManager_savedAOB)
+
+dealloc(PlayerManager_newmem)
+dealloc(PlayerManager_temp1)"""
+
+[[cheat]]
+id = "playermanager-view-player-base-address-scan-to-activate-view-player-to-update-view-player"
+name = "PlayerManager View Player Base Address Scan (To Activate: View Player , To Update: View Player )"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerManager_player_savedAOB)
+label(PlayerManager_player_returnhere)
+label(PlayerManager_player_originalcode)
+label(PlayerManager_player_exit)
+
+label(PlayerManager_player_update_exit)
+label(PlayerManager_player_set_exit)
+label(PlayerManager_player_healthset_exit)
+label(PlayerManager_player_resourcesset_exit)
+label(PlayerManager_player_expset_exit)
+
+registersymbol(PlayerManager_player_savedAOB)
+
+//0474C5ED - 89 45 EC              - mov [ebp-14],eax
+//0474C5F0 - E8 1B5DFBFF           - call 04702310
+// PlayerStatsPanelHandler:SetHPValue+15
+//0474C5F5 - 8B 40 7C              - mov eax,[eax+7C]
+//0474C5F8 - 50                    - push eax
+//0474C5F9 - DB 04 24              - fild dword ptr [esp]
+//0474C5FC - D9 1C 24              - fstp dword ptr [esp]
+//0474C5FF - D9 04 24              - fld dword ptr [esp]
+//0474C602 - 83 C4 04              - add esp,04
+//0474C605 - D9E8                  - fld1
+aobscan(PlayerManager_player_searchedAOB, 8B 40 7C 50 DB 04 24 D9 1C 24)
+
+alloc(PlayerManager_player_newmem, 2048)
+alloc(PlayerManager_player_temp1, 4)
+alloc(PlayerManager_player_temp2, 4)
+
+
+PlayerManager_player_newmem:
+mov [PlayerManager_player_temp1], ebx
+
+cmp dword ptr [PlayerManager_update_enable], #0
+je PlayerManager_player_update_exit
+mov [PlayerManager_basepointer], eax
+PlayerManager_player_update_exit:
+
+cmp dword ptr [PlayerManager_set_enable], #0
+je PlayerManager_player_set_exit
+PlayerManager_player_set_exit:
+
+cmp dword ptr [PlayerManager_healthset_enable], #0
+je PlayerManager_player_healthset_exit
+mov ebx, [eax+80]
+mov [eax+7c], ebx
+PlayerManager_player_healthset_exit:
+
+cmp dword ptr [PlayerManager_resourcesset_enable], #0
+je PlayerManager_player_resourcesset_exit
+mov [eax+84], #9999
+mov [eax+88], (float)9999
+mov [eax+8c], #9999
+mov [eax+90], #9999
+mov [eax+94], #9999
+mov [eax+98], (float)9999
+PlayerManager_player_resourcesset_exit:
+
+cmp dword ptr [PlayerManager_expset_enable], #0
+je PlayerManager_player_expset_exit
+mov [eax+9c], #9999
+PlayerManager_player_expset_exit:
+
+mov ebx, [PlayerManager_player_temp1]
+
+
+PlayerManager_player_originalcode:
+db 8B 40 7C 50 DB 04 24
+//mov eax,[eax+7C]
+//push eax
+//fild dword ptr [esp]
+
+
+PlayerManager_player_exit:
+jmp PlayerManager_player_returnhere
+
+
+PlayerManager_player_searchedAOB:
+PlayerManager_player_savedAOB:
+jmp PlayerManager_player_newmem
+nop
+nop
+PlayerManager_player_returnhere:
+
+
+[DISABLE]
+PlayerManager_player_savedAOB:
+db 8B 40 7C 50 DB 04 24
+//mov eax,[eax+7C]
+//push eax
+//fild dword ptr [esp]
+
+unregistersymbol(PlayerManager_player_savedAOB)
+
+dealloc(PlayerManager_player_newmem)
+dealloc(PlayerManager_player_temp1)
+dealloc(PlayerManager_player_temp2)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "resources-set-to-massive"
+name = "Resources Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_resourcesset_enable"
+hops = []
+
+[[cheat]]
+id = "exp-set-to-massive"
+name = "Exp Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_expset_enable"
+hops = []
+
+[[cheat]]
+id = "playermanager-update-base-address"
+name = "PlayerManager Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "playerspeed"
+name = "playerSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "health"
+name = "health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "healthmax"
+name = "healthMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "medicine"
+name = "medicine"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "food"
+name = "food"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "ammo"
+name = "ammo"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "grenade"
+name = "grenade"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "smokebomb"
+name = "smokeBomb"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "fuel"
+name = "fuel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "exppoints"
+name = "expPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "playerlevel"
+name = "playerLevel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "baseskillcost"
+name = "baseSkillCost"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "trainsteps"
+name = "trainSteps"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xa8"]
+
+[[cheat]]
+id = "randomeventon"
+name = "randomEventOn"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "bagsize"
+name = "bagSize"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "overweight"
+name = "overweight"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "ray-type-unityengine-ray-unknown"
+name = "ray (type: UnityEngine.Ray) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "raygui-type-unityengine-ray-unknown"
+name = "rayGUI (type: UnityEngine.Ray) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "position-type-unityengine-vector3-unknown"
+name = "position (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "lockmovement"
+name = "lockMovement"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "previousposition-type-unityengine-vector3-unknown"
+name = "previousPosition (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "previousanimposition-type-unityengine-vector3-unknown"
+name = "previousAnimPosition (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "randomeventchance"
+name = "randomEventChance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "modevenchance"
+name = "modEvenChance"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x114"]
+
+[[cheat]]
+id = "previoustargetpos-type-unityengine-vector3-unknown"
+name = "previousTargetPos (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "playerwasonmove"
+name = "playerWasOnMove"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x124"]
+
+[[cheat]]
+id = "lastrightpos-type-unityengine-vector3-unknown"
+name = "lastRightPos (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "dragspeed"
+name = "dragSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "dragorigin-type-unityengine-vector3-unknown"
+name = "dragOrigin (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "previousmousepos-type-unityengine-vector3-unknown"
+name = "previousMousePos (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x144"]
+
+[[cheat]]
+id = "stopdrag"
+name = "stopDrag"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "touchtime"
+name = "touchTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "currentenviromentarea-type-enviromentareaenum-unknown"
+name = "currentEnviromentArea (type: EnviromentAreaEnum) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "timeitemselected"
+name = "timeItemSelected"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x15c"]
+
+[[cheat]]
+id = "itemoriginposition-type-unityengine-vector3-unknown"
+name = "itemOriginPosition (type: UnityEngine.Vector3) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "clickstartedongui"
+name = "clickStartedOnGUI"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x16c"]
+
+[[cheat]]
+id = "currentplayerspeed"
+name = "currentPlayerSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x170"]
+
+[[cheat]]
+id = "roadspeed"
+name = "roadSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "forestspeed"
+name = "forestSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "previousplayerspeed"
+name = "previousPlayerSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerManager_basepointer"
+hops = ["+0x17c"]
+
+[[cheat]]
+id = "combatpanelhandler-base-address-scan-initialization-activate-this-first"
+name = "CombatPanelHandler Base Address Scan Initialization (Activate This First)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(CombatPanelHandler_basepointer)
+registersymbol(CombatPanelHandler_update_enable)
+registersymbol(CombatPanelHandler_set_enable)
+registersymbol(CombatPanelHandler_hpmoraleset_enable)
+registersymbol(CombatPanelHandler_enemyset_enable)
+
+alloc(CombatPanelHandler_basepointer, 4)
+alloc(CombatPanelHandler_update_enable, 4)
+alloc(CombatPanelHandler_set_enable, 4)
+alloc(CombatPanelHandler_hpmoraleset_enable, 4)
+alloc(CombatPanelHandler_enemyset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(CombatPanelHandler_basepointer)
+unregistersymbol(CombatPanelHandler_update_enable)
+unregistersymbol(CombatPanelHandler_set_enable)
+unregistersymbol(CombatPanelHandler_hpmoraleset_enable)
+unregistersymbol(CombatPanelHandler_enemyset_enable)
+
+dealloc(CombatPanelHandler_basepointer)
+dealloc(CombatPanelHandler_update_enable)
+dealloc(CombatPanelHandler_set_enable)
+dealloc(CombatPanelHandler_hpmoraleset_enable)
+dealloc(CombatPanelHandler_enemyset_enable)"""
+
+[[cheat]]
+id = "combatpanelhandler-base-address-scan-to-activate-battle-to-update-battle"
+name = "CombatPanelHandler Base Address Scan (To Activate: Battle, To Update: Battle)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(CombatPanelHandler_savedAOB)
+label(CombatPanelHandler_returnhere)
+label(CombatPanelHandler_originalcode)
+label(CombatPanelHandler_exit)
+
+label(CombatPanelHandler_update_exit)
+label(CombatPanelHandler_set_exit)
+label(CombatPanelHandler_hpmoraleset_exit)
+label(CombatPanelHandler_enemyset_exit)
+
+registersymbol(CombatPanelHandler_savedAOB)
+
+//045E1E96 - 89 87 F8000000        - mov [edi+000000F8],eax
+//045E1E9C - 8B 87 FC000000        - mov eax,[edi+000000FC]
+//045E1EA2 - 8B 4E 2C              - mov ecx,[esi+2C]
+//045E1EA5 - 03 C1                 - add eax,ecx
+// CombatPanelHandler:CalculateGroupValues+14f
+//045E1EA7 - 89 87 FC000000        - mov [edi+000000FC],eax
+//045E1EAD - 8B 46 28              - mov eax,[esi+28]
+//045E1EB0 - 85 C0                 - test eax,eax
+aobscan(CombatPanelHandler_searchedAOB, 89 87 FC 00 00 00 8B 46 28)
+
+alloc(CombatPanelHandler_newmem, 2048)
+alloc(CombatPanelHandler_temp1, 2048)
+
+
+CombatPanelHandler_newmem:
+mov [CombatPanelHandler_temp1], ebx
+
+cmp dword ptr [CombatPanelHandler_update_enable], #0
+je CombatPanelHandler_update_exit
+mov [CombatPanelHandler_basepointer], edi
+CombatPanelHandler_update_exit:
+
+cmp dword ptr [CombatPanelHandler_set_enable], #0
+je CombatPanelHandler_set_exit
+CombatPanelHandler_set_exit:
+
+cmp dword ptr [CombatPanelHandler_hpmoraleset_enable], #0
+je CombatPanelHandler_hpmoraleset_exit
+mov [edi+f8], #9999
+mov [edi+100], #9999
+CombatPanelHandler_hpmoraleset_exit:
+
+cmp dword ptr [CombatPanelHandler_enemyset_enable], #0
+je CombatPanelHandler_enemyset_exit
+cmp dword ptr [edi+b0], #0
+je CombatPanelHandler_enemyset_exit
+mov ebx, [edi+b0]
+cmp dword ptr [ebx+14], #3
+jle CombatPanelHandler_enemyset_exit
+mov [ebx+14], #1
+mov [ebx+1c], #1
+mov [ebx+24], #0
+mov [ebx+28], #0
+mov [ebx+2c], #0
+mov [ebx+30], #0
+mov [ebx+34], #0
+mov [ebx+38], #0
+CombatPanelHandler_enemyset_exit:
+
+mov ebx, [CombatPanelHandler_temp1]
+
+
+CombatPanelHandler_originalcode:
+db 89 87 FC 00 00 00
+//mov [edi+000000FC],eax
+
+
+CombatPanelHandler_exit:
+jmp CombatPanelHandler_returnhere
+
+
+CombatPanelHandler_searchedAOB:
+CombatPanelHandler_savedAOB:
+jmp CombatPanelHandler_newmem
+nop
+CombatPanelHandler_returnhere:
+
+
+[DISABLE]
+CombatPanelHandler_savedAOB:
+db 89 87 FC 00 00 00
+//mov [edi+000000FC],eax
+
+unregistersymbol(CombatPanelHandler_savedAOB)
+
+dealloc(CombatPanelHandler_newmem)
+dealloc(CombatPanelHandler_temp1)"""
+
+[[cheat]]
+id = "hp-morale-set-to-massive"
+name = "HP & Morale Set to Massive?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_hpmoraleset_enable"
+hops = []
+
+[[cheat]]
+id = "enemy-set-to-weak"
+name = "Enemy Set to Weak?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_enemyset_enable"
+hops = []
+
+[[cheat]]
+id = "combatpanelhandler-update-base-address"
+name = "CombatPanelHandler Update Base Address?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x0",
+]
+
+[[cheat]]
+id = "enemyhp"
+name = "enemyHP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x14",
+]
+
+[[cheat]]
+id = "enemymax-hp"
+name = "enemyMAX_HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x18",
+]
+
+[[cheat]]
+id = "enemymorale"
+name = "enemyMorale"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "enemymax-morale"
+name = "enemyMAX_Morale"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x20",
+]
+
+[[cheat]]
+id = "enemyattackmeleepower"
+name = "enemyAttackMeleePower"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x24",
+]
+
+[[cheat]]
+id = "enemyattackbowpower"
+name = "enemyAttackBowPower"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x28",
+]
+
+[[cheat]]
+id = "enemyattackfirepower"
+name = "enemyAttackFirePower"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "enemydefense"
+name = "enemyDefense"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x30",
+]
+
+[[cheat]]
+id = "enemycover"
+name = "enemyCover"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x34",
+]
+
+[[cheat]]
+id = "enemysuppressive"
+name = "enemySuppressive"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = [
+    "+0xb0",
+    "+0x38",
+]
+
+[[cheat]]
+id = "enemycover-2"
+name = "enemyCover"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "enemytemporarycover"
+name = "enemyTemporaryCover"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "enemydefensemod"
+name = "enemyDefenseMod"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "enemyattackmod"
+name = "enemyAttackMod"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0xf0"]
+
+[[cheat]]
+id = "enemymoralemod"
+name = "enemyMoraleMod"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0xf4"]
+
+[[cheat]]
+id = "grouphp"
+name = "groupHP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "groupmax-hp"
+name = "groupMAX_HP"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "groupmorale"
+name = "groupMorale"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "groupmax-morale"
+name = "groupMAX_Morale"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "groupattackmeleepower"
+name = "groupAttackMeleePower"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "groupattackbowpower"
+name = "groupAttackBowPower"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x10c"]
+
+[[cheat]]
+id = "groupattackfirepower"
+name = "groupAttackFirePower"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x110"]
+
+[[cheat]]
+id = "groupmoralebalance"
+name = "groupMoraleBalance"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x114"]
+
+[[cheat]]
+id = "groupdefensemod"
+name = "groupDefenseMod"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x118"]
+
+[[cheat]]
+id = "groupattackmod"
+name = "groupAttackMod"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x11c"]
+
+[[cheat]]
+id = "groupmoralemod"
+name = "groupMoraleMod"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x120"]
+
+[[cheat]]
+id = "groupcover"
+name = "groupCover"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x124"]
+
+[[cheat]]
+id = "grouptemporarycover"
+name = "groupTemporaryCover"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "groupsuppressive"
+name = "groupSuppressive"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x12c"]
+
+[[cheat]]
+id = "activenpcs"
+name = "activeNPCs"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CombatPanelHandler_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "createplayerpanelhandler-base-address-scan-initialization-activate-this-first"
+name = "CreatePlayerPanelHandler Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(CreatePlayerPanelHandler_basepointer)
+registersymbol(CreatePlayerPanelHandler_update_enable)
+registersymbol(CreatePlayerPanelHandler_set_enable)
+registersymbol(CreatePlayerPanelHandler_attributepointsset_enable)
+registersymbol(CreatePlayerPanelHandler_exppointsset_enable)
+
+alloc(CreatePlayerPanelHandler_basepointer, 4)
+alloc(CreatePlayerPanelHandler_update_enable, 4)
+alloc(CreatePlayerPanelHandler_set_enable, 4)
+alloc(CreatePlayerPanelHandler_attributepointsset_enable, 4)
+alloc(CreatePlayerPanelHandler_exppointsset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(CreatePlayerPanelHandler_basepointer)
+unregistersymbol(CreatePlayerPanelHandler_update_enable)
+unregistersymbol(CreatePlayerPanelHandler_set_enable)
+unregistersymbol(CreatePlayerPanelHandler_attributepointsset_enable)
+unregistersymbol(CreatePlayerPanelHandler_exppointsset_enable)
+
+dealloc(CreatePlayerPanelHandler_basepointer)
+dealloc(CreatePlayerPanelHandler_update_enable)
+dealloc(CreatePlayerPanelHandler_set_enable)
+dealloc(CreatePlayerPanelHandler_attributepointsset_enable)
+dealloc(CreatePlayerPanelHandler_exppointsset_enable)"""
+
+[[cheat]]
+id = "createplayerpanelhandler-base-address-scan-to-activate-add-attribute-to-update-add-attribute"
+name = "CreatePlayerPanelHandler Base Address Scan (To Activate: Add Attribute, To Update: Add Attribute)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(CreatePlayerPanelHandler_savedAOB)
+label(CreatePlayerPanelHandler_returnhere)
+label(CreatePlayerPanelHandler_originalcode)
+label(CreatePlayerPanelHandler_exit)
+
+label(CreatePlayerPanelHandler_update_exit)
+label(CreatePlayerPanelHandler_set_exit)
+label(CreatePlayerPanelHandler_attributepointsset_exit)
+label(CreatePlayerPanelHandler_exppointsset_exit)
+
+registersymbol(CreatePlayerPanelHandler_savedAOB)
+
+//046E26AB - 8B 7D 0C              - mov edi,[ebp+0C]
+//046E26AE - C7 45 F4 00000000     - mov [ebp-0C],00000000
+// CreatePlayerPanelHandler:BuyAttributePoint+15
+//046E26B5 - 8B 46 60              - mov eax,[esi+60]
+//046E26B8 - 85 C0                 - test eax,eax
+//046E26BA - 0F8E 9E000000         - jng 046E275E
+//046E26C0 - 8B 46 1C              - mov eax,[esi+1C]
+//046E26C3 - 39 78 0C              - cmp [eax+0C],edi
+//046E26C6 - 0F86 D5000000         - jbe 046E27A1
+aobscan(CreatePlayerPanelHandler_searchedAOB, 8B 46 60 85 C0 * * * * * * 8B 46 1C)
+
+alloc(CreatePlayerPanelHandler_newmem, 2048)
+
+
+CreatePlayerPanelHandler_newmem:
+cmp dword ptr [CreatePlayerPanelHandler_update_enable], #0
+je CreatePlayerPanelHandler_update_exit
+mov [CreatePlayerPanelHandler_basepointer], esi
+CreatePlayerPanelHandler_update_exit:
+
+cmp dword ptr [CreatePlayerPanelHandler_set_enable], #0
+je CreatePlayerPanelHandler_set_exit
+CreatePlayerPanelHandler_set_exit:
+
+cmp dword ptr [CreatePlayerPanelHandler_attributepointsset_enable], #0
+je CreatePlayerPanelHandler_attributepointsset_exit
+mov [esi+60], #9999
+CreatePlayerPanelHandler_attributepointsset_exit:
+
+cmp dword ptr [CreatePlayerPanelHandler_exppointsset_enable], #0
+je CreatePlayerPanelHandler_exppointsset_exit
+mov [esi+50], #9999
+CreatePlayerPanelHandler_exppointsset_exit:
+
+
+CreatePlayerPanelHandler_originalcode:
+db 8B 46 60 85 C0
+//mov eax,[esi+60]
+//test eax,eax
+
+
+CreatePlayerPanelHandler_exit:
+jmp CreatePlayerPanelHandler_returnhere
+
+
+CreatePlayerPanelHandler_searchedAOB:
+CreatePlayerPanelHandler_savedAOB:
+jmp CreatePlayerPanelHandler_newmem
+CreatePlayerPanelHandler_returnhere:
+
+
+[DISABLE]
+CreatePlayerPanelHandler_savedAOB:
+db 8B 46 60 85 C0
+//mov eax,[esi+60]
+//test eax,eax
+
+unregistersymbol(CreatePlayerPanelHandler_savedAOB)
+
+dealloc(CreatePlayerPanelHandler_newmem)"""
+
+[[cheat]]
+id = "attribute-points-set-to-massive"
+name = "Attribute Points Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_attributepointsset_enable"
+hops = []
+
+[[cheat]]
+id = "exp-points-default-set-to-massive-reset-to-update"
+name = "Exp Points Default Set to Massive? Reset to Update"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_exppointsset_enable"
+hops = []
+
+[[cheat]]
+id = "createplayerpanelhandler-update-base-address"
+name = "CreatePlayerPanelHandler Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "exppoints-2"
+name = "expPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_basepointer"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "attrpoints"
+name = "attrPoints"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_basepointer"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "currentsex"
+name = "currentSex"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_basepointer"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "currentavatarindex"
+name = "currentAvatarIndex"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_basepointer"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "currentattrpoint"
+name = "currentAttrPoint"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_basepointer"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "currentexppoint"
+name = "currentExpPoint"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CreatePlayerPanelHandler_basepointer"
+hops = ["+0x64"]

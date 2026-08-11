@@ -1,0 +1,390 @@
+[game]
+name = "Anno 1404 Vanice"
+exe = "addon.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2586"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "anno-1404-venice-script"
+name = "Anno 1404 Venice Script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+===============================================
+ Anno 1404 Venice
+ Game Version  : 2.00.5008
+ Script Version: 1.0
+ CE Version    : 5.6
+ GodMode, Treasure, Honour, WareHouse and ShipÂ´s Cargo
+ 11-Mar-2010
+===============================================
+}
+
+[ENABLE]
+//=========================================
+// Check if script is compatible to this game version
+// If false the script will not be loaded
+
+assert(AddOn.exe+24A6F6,8b 48 04 8b 50 08)
+assert(AddOn.exe+1f4bd1,8b 81 a0 00 00 00)
+assert(AddOn.exe+387215,e8 66 47 75 00)
+assert(AddOn.exe+3C85C0,74 03 8b 69 14)
+assert(AddOn.exe+34C0E4,8b 8b c0 00 00 00)
+
+//=========================================
+
+alloc(MyCode,1024)
+
+//=========================================
+// Declaration section
+label(_MonCargo)
+label(_BackMC)
+label(_ExitMC)
+label(_MonTreasure)
+label(_BackMT)
+label(_ExitMT)
+label(_GodMode)
+label(_BackGM)
+label(_ExitGM)
+label(_MonWareHouse)
+label(_BackMW)
+label(_ExitMW)
+label(_ExitMW1)
+label(_MonT0)
+label(_MonSelected)
+label(_BackMS)
+label(pCargo)
+label(pTreasure)
+label(pSel)
+label(iEnableMC)
+label(iEnableMT)
+label(iEnableMH)
+label(iEnableGM)
+label(iEnableMW)
+label(iMinTreasure)
+label(iMinHonour)
+
+registersymbol(MyCode)
+registersymbol(pCargo)
+registersymbol(pTreasure)
+registersymbol(pSel)
+registersymbol(iEnableMC)
+registersymbol(iEnableMT)
+registersymbol(iEnableMH)
+registersymbol(iEnableGM)
+registersymbol(iEnableMW)
+
+//=========================================
+// Hacking Points
+AddOn.exe+24A6F6:
+ jmp _MonCargo
+ nop
+_BackMC:
+
+AddOn.exe+1f4bd1:
+ jmp _MonTreasure
+ nop
+_BackMT:
+
+AddOn.exe+387215:
+ jmp _GodMode
+_BackGM:
+
+AddOn.exe+3C85C0:
+ jmp _MonWareHouse
+_BackMW:
+
+AddOn.exe+34C0E4:
+ jmp _MonSelected
+ nop
+_BackMS:
+
+MyCode:
+//=========================================
+_MonCargo:
+ mov ecx,[eax+04]             // Original code
+
+ mov edx,[eax]                // Get Cargo Type
+ or edx,edx
+ jz _ExitMC                   // Jump if invalid
+
+ mov [pCargo],eax             // Save ptr to last valid cargo
+
+ cmp dword ptr [iEnableMC],0
+ je _ExitMC                   // Jump if feature is disabled
+
+ cmp edx,#100                 // Special cargo?
+ jge _ExitMC                  // Jump if true
+
+ cmp ecx,#30                  // Current Cargo >= 30?
+ jge _ExitMC                  // Jump if true
+
+ mov ecx,#30
+ mov [eax+04],ecx             // Make cargo = 30
+
+_ExitMC:
+ mov edx,[eax+08]             // Original code
+ jmp _BackMC                  // Back to main code
+
+//=========================================
+_MonTreasure:
+ mov [pTreasure],ecx          // Save ptr for debugging
+
+ cmp dword ptr [iEnableMT],0
+ je _MonT0                    // Jump if feature is disabled
+
+ mov eax,[iMinTreasure]
+ cmp eax,[ecx+000000a0]
+ jle _MonT0                   // Jump if current treasure >= minimum
+
+ mov [ecx+000000a0],eax       // Make treasure = minimum
+
+_MonT0:
+ cmp dword ptr [iEnableMH],0
+ je _ExitMT                   // Jump if feature is disabled
+
+ cmp eax,[ecx+000000a8]
+ or eax,eax
+ jz _ExitMT                   // Jump if honour = 0
+
+ mov eax,[iMinHonour]
+ cmp eax,[ecx+000000a8]
+ jle _ExitMT                  // Jump if current honour >= minimum
+
+ mov [ecx+000000a8],eax       // Make honour = minimum
+
+_ExitMT:
+ mov eax,[ecx+000000a0]       // Original code
+ jmp _BackMT                  // Back to main code
+
+//=========================================
+_GodMode:
+ call AddOn.exe+00ADB980      // Original code
+ pushfd
+ push ecx
+
+ cmp dword ptr [iEnableGM],0
+ je _ExitGM                   // Jump if feature is disabled
+
+ mov ecx,[ebx+04]             // Get ptr to unit
+ cmp dword ptr [ecx+000000c0],0 // PlayerÂ´s unit?
+ jne _ExitGM                  // Jump if false
+
+ mov dword ptr [ebx+08],#40960000  // Make %HP = 100%
+ mov dword ptr [ebx+0c],00    // Make %HP = 100%
+
+ xor eax,eax
+ mov edx,eax                  // % to decrease = 0
+
+_ExitGM:
+ pop ecx
+ popfd
+ jmp _BackGM                  // Back to main code
+
+//=========================================
+// ESI = pIslandStore
+// ECX = pStoreItem
+_MonWareHouse:
+ je _ExitMW1                  // Original code (simulating)
+
+ cmp dword ptr [iEnableMW],0
+ je _ExitMW                   // Jump if feature is disabled
+
+ or esi,esi
+ je _ExitMW                   // Jump if invalid pointer
+
+ cmp dword ptr [esi+10],0     // Is it a PlayerÂ´s Island ?
+ je _ExitMW                   // Jump if false
+
+ mov ebp,[esi+0000033c]       // Get default capacity
+ mov [ecx+14],ebp             // Update item current value.
+
+_ExitMW:
+ mov ebp,[ecx+14]             // Original code
+
+_ExitMW1:
+ jmp _BackMW                  // Back to main code
+
+//=========================================
+_MonSelected:
+ mov [pSel],ebx               // Save ptr for debugging
+
+ mov ecx,[ebx+000000c0]       // Original code
+ jmp _BackMS                  // Back to main code
+
+//=========================================
+// Variables
+pCargo:
+ dd 0
+pTreasure:
+ dd 0
+pSel:
+ dd 0
+iEnableMC:
+ dd 1
+iEnableMT:
+ dd 1
+iEnableMH:
+ dd 1
+iEnableGM:
+ dd 1
+iEnableMW:
+ dd 1
+iMinTreasure:
+ dd #102400000
+iMinHonour:
+ dd #614400
+
+//=========================================
+// Original Codes
+[DISABLE]
+AddOn.exe+24A6F6:
+ mov ecx,[eax+04]
+ mov edx,[eax+08]
+
+AddOn.exe+1f4bd1:
+ mov eax,[ecx+000000a0]
+
+AddOn.exe+387215:
+ call AddOn.exe+00ae7d90
+
+AddOn.exe+3C85C0:
+ je 007C85C5
+ mov ebp,[ecx+14]
+
+AddOn.exe+34C0E4:
+ mov ecx,[ebx+000000c0]
+
+dealloc(MyCode)
+unregistersymbol(MyCode)
+unregistersymbol(pCargo)
+unregistersymbol(iEnableMC)
+unregistersymbol(iEnableMT)
+unregistersymbol(iEnableMH)
+unregistersymbol(iEnableGM)
+unregistersymbol(iEnableMW)
+unregistersymbol(pTreasure)
+unregistersymbol(pSel)"""
+
+[[cheat]]
+id = "enable-disable-god-mode"
+name = "Enable/Disable God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableGM"
+hops = []
+
+[[cheat]]
+id = "enable-disable-ship-cargo"
+name = "Enable/Disable Ship Cargo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMC"
+hops = []
+
+[[cheat]]
+id = "enable-disable-minimum-treasure"
+name = "Enable/Disable Minimum Treasure"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMT"
+hops = []
+
+[[cheat]]
+id = "enable-disable-minimum-honour"
+name = "Enable/Disable Minimum Honour"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMH"
+hops = []
+
+[[cheat]]
+id = "enable-disable-warehouse-minimum"
+name = "Enable/Disable Warehouse Minimum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iEnableMW"
+hops = []
+
+[[cheat]]
+id = "cargo-type"
+name = "Cargo Type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCargo"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "cargo-quantity"
+name = "Cargo Quantity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCargo"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "selected-ship-building-owner"
+name = "Selected Ship/Building Owner"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSel"
+hops = ["+0xc0"]

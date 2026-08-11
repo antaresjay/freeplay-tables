@@ -1,0 +1,2744 @@
+[game]
+name = "Legend of Heroes: Trails of Cold Steel 2"
+exe = "ed8_2_pc_us.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=11920"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script-god-mode-one-hit-kill-etc"
+name = "Damage Modifier Script (God Mode, One Hit Kill, etc.)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(DamageModAOB,ed8_2_PC_US.exe,8B 45 B8 2B C3 33 C9 85 C0) // should be unique
+aobscanmodule(DamageModAOB,ed8_2_PC_US.exe,8B 4D B8 33 C0 2B CB 85 C9) // should be unique
+registersymbol(DamageModAOB)
+alloc(newmem,4096,DamageModAOB)
+
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(fEnemyDamageMult)
+registersymbol(fEnemyDamageMult)
+label(fEnemyHealingMult)
+registersymbol(fEnemyHealingMult)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+label(fHeroHealingMult)
+registersymbol(fHeroHealingMult)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+newmem:
+  mov ecx,[ebp-48]
+  cmp dword ptr [esi+F8],0
+  jne EnemyHit
+HeroHit:
+  cmp ebx,0
+  jl HeroHealingHit
+  jg HeroDamageHit
+  jmp CleanUp
+HeroDamageHit:
+  cmp [fHeroDamageMult],(float)0.0
+  je CheckGodMode
+  push ebx
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroDamageMult]
+  fistp dword ptr [rsp]
+  pop ebx
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor ebx,ebx
+  jmp CleanUp
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne CleanUp
+  cmp ebx,ecx
+  jl @F
+  xor ebx,ebx
+@@:
+  jmp CleanUp  
+HeroHealingHit:
+  cmp [fHeroHealingMult],(float)0.0
+  je CleanUp
+  neg ebx
+  push ebx
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroHealingMult]
+  fistp dword ptr [rsp]
+  pop ebx
+  neg ebx
+  jmp CleanUp
+EnemyHit:
+  cmp ebx,0
+  jl EnemyHealingHit
+  jg EnemyDamageHit
+  jmp CheckOneHitKill
+EnemyDamageHit:
+  cmp [fEnemyDamageMult],(float)0.0
+  je CheckOneHitKill
+  push ebx
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyDamageMult]
+  fistp dword ptr [rsp]
+  pop ebx
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne CleanUp
+  mov ebx,#49999
+  jmp CleanUp
+EnemyHealingHit:
+  cmp [fEnemyHealingMult],(float)0.0
+  je CleanUp
+  neg ebx
+  push ebx
+  fild dword ptr [rsp]
+  fmul dword ptr [fEnemyHealingMult]
+  fistp dword ptr [rsp]
+  pop ebx
+  neg ebx
+
+CleanUp:  
+  mov [ebp+08],ebx
+  xor eax,eax
+  sub ecx,ebx
+  jmp return
+
+
+GodMode:
+dq 0
+OneHitKill:
+dq 0
+fEnemyDamageMult:
+dq (float)4.0
+fEnemyHealingMult:
+dq (float)0.0
+fHeroDamageMult:
+dq (float)0.25
+fHeroHealingMult:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+
+DamageModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+DamageModAOB:
+  db 8B 4D B8 33 C0 2B CB
+
+unregistersymbol(DamageModAOB)
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(fEnemyDamageMult)
+unregistersymbol(fEnemyHealingMult)
+unregistersymbol(fHeroDamageMult)
+unregistersymbol(fHeroHealingMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-damage-to-hero-party"
+name = "Hero Damage Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half damage to hero party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-set-to-zero-off-otherwise-multiplier-to-hero-party-healing"
+name = "Hero Healing Multiplier (Set to Zero = Off; Otherwise multiplier to hero party healing)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroHealingMult"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-if-on-and-god-mode-off-then-you-take-damage-until-the-hit-will-kill-you"
+name = "Hero Cannot Die (If On and God Mode Off, Then You Take Damage Until The Hit Will Kill You)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier-to-damage-you-deal-to-enemies"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier to damage you deal to enemies)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyDamageMult"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-set-to-0-0-off-otherwise-multiplier-so-0-5-is-half-healing-to-enemy-party"
+name = "Enemy Healing Multiplier (Set to 0.0 = Off; Otherwise multiplier so 0.5 is half healing to enemy party)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEnemyHealingMult"
+hops = []
+
+[[cheat]]
+id = "infinite-battle-ep"
+name = "Infinite Battle EP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(BattleEPModAOB,ed8_2_PC_US.exe,0F B7 86 88 02 00 00 2B 45 08 0F B7 8E 8A 02 00 00) // should be unique
+aobscanmodule(BattleEPModAOB,ed8_2_PC_US.exe,0F B7 87 88 02 00 00 2B 45 08 0F B7 B7 8A 02 00 00) // should be unique
+registersymbol(BattleEPModAOB)
+alloc(newmem,2048,BattleEPModAOB)
+
+label(return)
+
+newmem:
+  movzx eax,word ptr [edi+00000288]
+  cmp dword ptr [edi+F8],0
+  jne _NotPlayer
+  cmp [ebp+08],0
+  jle @F  
+  mov [ebp+08],0
+@@:
+_NotPlayer:
+
+  jmp return
+
+  
+BattleEPModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+BattleEPModAOB:
+  db 0F B7 87 88 02 00 00
+
+unregistersymbol(BattleEPModAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "battle-cp-script"
+name = "Battle CP Script"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(BattleCPModAOB,ed8_2_PC_US.exe,0F B7 86 8C 02 00 00 2B 45 08 0F B7 8E 8E 02 00 00) // should be unique
+aobscanmodule(BattleCPModAOB,ed8_2_PC_US.exe,0F B7 87 8C 02 00 00 2B 45 08 0F B7 B7 8E 02 00 00) // should be unique
+registersymbol(BattleCPModAOB)
+alloc(newmem,2048,BattleCPModAOB)
+
+label(return)
+label(InfiniteCP)
+registersymbol(InfiniteCP)
+label(MaxCPOnHit)
+registersymbol(MaxCPOnHit)
+
+newmem:
+  movzx eax,word ptr [edi+0000028C]
+  cmp dword ptr [edi+F8],0
+  jne _NotPlayer
+  cmp [InfiniteCP],1
+  jne @F
+  cmp [ebp+08],0
+  jle @F
+  mov [ebp+08],0
+@@:
+  cmp [MaxCPOnHit],1
+  jne @F
+  cmp [ebp+08],0
+  jg @F
+  mov [ebp+08],#-200
+@@:
+  _NotPlayer:
+
+  jmp return
+ 
+InfiniteCP:
+dd 1
+MaxCPOnHit:
+dd 0
+
+BattleCPModAOB:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+BattleCPModAOB:
+  db 0F B7 87 8C 02 00 00
+
+unregistersymbol(BattleCPModAOB)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinitecp"
+name = "InfiniteCP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InfiniteCP"
+hops = []
+
+[[cheat]]
+id = "max-cp-on-hit"
+name = "Max CP On Hit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "MaxCPOnHit"
+hops = []
+
+[[cheat]]
+id = "always-critical-hit-allies"
+name = "Always Critical Hit (Allies)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+This changes the critical hit rate for allies to 100%, this code executes every attack and looks up the item data critical hit rate
+and puts the result in [ebp-00000098], [ebp+0C] is the target structure, [eax+40] of the item structure is critical hit rate
+}
+
+aobscanmodule(CriticalHitAOB,ed8_2_PC_US.exe,80 78 4F CE 75 79 8B 48 34 F3 0F 10 95 68 FF FF FF) // should be unique
+alloc(newmem,1024,CriticalHitAOB)
+registersymbol(CriticalHitAOB)
+
+///
+label(return)
+label(originalcode)
+label(EBXSave)
+label(CriticalHitPct)
+
+newmem:
+  mov [EBXSave],ebx
+  mov ebx,[ebp+0C]
+  cmp dword ptr [ebx+F8],0
+  mov ebx,[EBXSave]
+  je originalcode
+DoAlwaysCriticalHit:
+  movss xmm2,[CriticalHitPct]
+  movss [ebp-00000098],xmm2
+  
+originalcode:
+  cmp byte ptr [eax+4F],-32
+  jne CriticalHitAOB+7F
+  jmp return
+
+EBXSave:
+dq 0
+CriticalHitPct:
+dq (float)100.0
+
+CriticalHitAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+CriticalHitAOB:
+  db 80 78 4F CE 75 79
+  
+unregistersymbol(CriticalHitAOB)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bravery-points-max-5"
+name = "Bravery Points MAX(5)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(ToCS_Bravery_Points_MAX,ed8_2_PC_US.exe,8A 86 AC 01 00 00 3A C8 74 11) // should be unique
+aobscanmodule(ToCS_Bravery_Points_MAX,ed8_2_PC_US.exe,8A 8E AC 01 00 00 8A 86 B4 01 00 00 3A C1 74 11) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+  cmp byte ptr [esi+000001AC],#5
+  jge code
+  mov byte ptr [esi+000001AC],#5
+
+code:
+  mov cl,[esi+000001AC]
+  jmp return
+
+ToCS_Bravery_Points_MAX:
+  jmp newmem
+  nop
+return:
+registersymbol(ToCS_Bravery_Points_MAX)
+
+[DISABLE]
+
+ToCS_Bravery_Points_MAX:
+  db 8A 8E AC 01 00 00
+
+unregistersymbol(ToCS_Bravery_Points_MAX)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "overdrive-multiplier-instant-overdrive"
+name = "Overdrive Multiplier/Instant Overdrive"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+//code from here to '[DISABLE]' will be used to enable the cheat\t\t  
+//aobscanmodule(OverdriveAOB,ed8_2_PC_US.exe,03 75 08 57 68 13 19 00 00 33 FF) // should be unique
+aobscanmodule(OverdriveAOB,ed8_2_PC_US.exe,03 7D 08 68 13 19 00 00 33 F6) // should be unique
+registersymbol(OverdriveAOB)
+alloc(newmem,1024,OverdriveAOB)
+
+///
+label(return)
+label(originalcode)
+label(OverdriveMult)
+registersymbol(OverdriveMult)
+label(InstantOverdrive)
+registersymbol(InstantOverdrive)
+
+newmem:
+  cmp [InstantOverdrive],1
+  jne @F
+  mov [ebp+08],#1000
+  jmp originalcode
+@@:
+  push eax
+  mov eax,[ebp+08]
+  imul eax,[OverdriveMult]
+  mov [ebp+08],eax
+  pop eax
+  
+originalcode:
+  add edi,[ebp+08]
+  push 00001913
+  jmp return
+ 
+OverdriveMult:
+dd #5
+InstantOverdrive:
+dd 0
+    
+OverdriveAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+OverdriveAOB:
+  db 03 7D 08 68 13 19 00 00
+  
+unregistersymbol(OverdriveMult)
+unregistersymbol(InstantOverdrive)
+unregistersymbol(OverdriveAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "overdrive-multiplier"
+name = "Overdrive Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverdriveMult"
+hops = []
+
+[[cheat]]
+id = "instant-overdrive"
+name = "Instant Overdrive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InstantOverdrive"
+hops = []
+
+[[cheat]]
+id = "set-minimum-item-amount-on-use-toss-0-off"
+name = "Set Minimum Item Amount On Use/Toss (0 = Off)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SetItemAmount"
+hops = []
+
+[[cheat]]
+id = "override-item-id-on-gain-of-item-turn-off-when-not-needed"
+name = "Override Item ID On Gain of Item (Turn Off When Not Needed)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(OverrideItemIDAOB,ed8_2_PC_US.exe,89 4D B8 0F B7 7D 08 8B 0D ?? ?? ?? ?? 8B 5D 10 8B 89 E8 82 10 00) // should be unique
+registersymbol(OverrideItemIDAOB)
+alloc(newmem,1024,OverrideItemIDAOB)
+
+label(OverrideItemID)
+registersymbol(OverrideItemID)
+label(OverrideQty)
+registersymbol(OverrideQty)
+label(return)
+
+newmem:
+  mov [ebp-48],ecx
+  mov ebx,#100
+  cmp [ebp+08],bx
+  jb DoOverrideItemID
+  mov ebx,#200
+  cmp [ebp+08],bx
+  jae NextCheck
+  jmp originalcode
+NextCheck:
+  mov ebx,#3200
+  cmp [ebp+08],bx
+  jb DoOverrideItemID
+  mov ebx,#3250
+  cmp [ebp+08],bx
+  ja DoOverrideItemID
+  jmp originalcode
+DoOverrideItemID:
+  mov ebx,FFFFFFFF
+  cmp [OverrideItemID],bx
+  je originalcode
+  mov ebx,[OverrideItemID]
+  mov [ebp+08],bx
+  mov ebx,[OverrideQty]
+  mov [ebp+0C],bx
+
+originalcode:
+  movzx edi,word ptr [ebp+08]
+  jmp return
+
+OverrideItemID:
+dq FFFF
+OverrideQty:
+dq 1
+
+OverrideItemIDAOB:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+OverrideItemIDAOB:
+  db 89 4D B8 0F B7 7D 08
+  
+unregistersymbol(OverrideItemIDAOB)
+unregistersymbol(OverrideItemID)
+unregistersymbol(OverrideQty)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "override-item-id"
+name = "Override Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemID"
+hops = []
+
+[[cheat]]
+id = "override-item-qty-when-adding"
+name = "Override Item Qty When Adding"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideQty"
+hops = []
+
+[[cheat]]
+id = "easiest-way-just-add-and-remove-quartz-with-infinite-item-usage-on-to-get-any-item-you-want"
+name = "Easiest Way, Just Add and Remove Quartz With Infinite Item Usage On To Get Any Item You Want"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemID"
+hops = []
+
+[[cheat]]
+id = "infinite-turns-left-positive-status-effects-allies-bad-status-effects-over-quick"
+name = "Infinite Turns Left Positive Status Effects (Allies) / Bad Status Effects Over Quick"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+Status Effects Figured Out
+
+00000001 = Poison (Negative)
+00000002 = Seal (Negative)
+00000004 = Mute (Negative)
+00000008 = Blind (Negative)
+00000010 = Sleep (Negative)
+00000020 = Burn  (Negative)
+00000040 = Freeze (Negative)
+00000080 = Petrify (Negative)
+00000100 = Faint (Negative)
+00000200 = Confuse (Negative)
+00000400 = Nothing
+00000800 = Nightmare (Negative)
+00001000 = Nothing
+00002000 = Vanish (Negative)
+00004000 = STR Up
+00008000 = DEF Up
+00010000 = ATS Up
+00020000 = ADF Up
+00040000 = SPD Up
+00080000 = MOV Up
+00100000 = Insight
+00200000 = Link Break (Negative)
+00400000 = HP Regen
+00800000 = CP Regen
+01000000 = Physical Immunity
+02000000 = Art Reflect
+04000000 = Red Insight Icon
+08000000 = Nothing
+10000000 = Stealth
+20000000 = BLN (Balance) Down Arrow
+40000000 = Blue Purple Down Arrow
+80000000 = Dead
+
+}
+
+aobscanmodule(WriteTurnsLeftAOB,ed8_2_PC_US.exe,80 B8 63 0E 00 00 00 75 2D) // should be unique
+registersymbol(WriteTurnsLeftAOB)
+alloc(newmem,2048,WriteTurnsLeftAOB)
+
+label(return)
+label(originalcode2)
+label(StatusUpPower)
+registersymbol(StatusUpPower)
+label(HPCPRegenPower)
+registersymbol(HPCPRegenPower)
+label(InsightPower)
+registersymbol(InsightPower)
+label(UseCustomPower)
+registersymbol(UseCustomPower)
+
+newmem:
+  cmp dword ptr [edi+F8],0
+  jne originalcode2
+  push ebx
+  mov ebx,[StatusUpEffects]
+  test dword ptr [ecx],ebx
+  je SkipStatusUpEffect
+  cmp [UseCustomPower],1
+  jne @F
+  mov ebx,[StatusUpPower]
+  mov [ecx+C],bx
+@@:
+  pop ebx
+  inc [ecx+08]
+  jmp originalcode2
+SkipStatusUpEffect:
+  test dword ptr [ecx],C00000
+  je @F
+  cmp [UseCustomPower],1
+  jne @F
+  mov ebx,[HPCPRegenPower]
+  mov [ecx+C],bx
+@@:
+  test dword ptr [ecx],100000
+  je @F
+  cmp [UseCustomPower],1
+  jne @F
+  mov ebx,[InsightPower]
+  mov [ecx+C],bx
+@@:
+  mov ebx,[AdditionalPositiveStatusEffects]
+  test dword ptr [ecx],ebx
+  pop ebx
+  je BadStatusEffect
+  inc [ecx+08]
+  jmp originalcode2
+BadStatusEffect:
+  mov word ptr [ecx+08],1
+  jmp originalcode2
+
+originalcode2:
+  cmp byte ptr [eax+00000E63],00
+  jmp return
+
+StatusUpEffects:
+dd 000FC000
+AdditionalPositiveStatusEffects:
+dd 17D00000
+StatusUpPower:
+dd #50
+HPCPRegenPower:
+dd #30
+InsightPower:
+dd #50
+UseCustomPower:
+dd 1
+
+WriteTurnsLeftAOB:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+WriteTurnsLeftAOB:
+  db 80 B8 63 0E 00 00 00
+
+unregistersymbol(WriteTurnsLeftAOB)
+unregistersymbol(StatusUpPower)
+unregistersymbol(HPCPRegenPower)
+unregistersymbol(InsightPower)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "use-custom-power"
+name = "Use Custom Power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "UseCustomPower"
+hops = []
+
+[[cheat]]
+id = "status-up-power"
+name = "Status Up Power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "StatusUpPower"
+hops = []
+
+[[cheat]]
+id = "hp-cp-regen-power"
+name = "HP CP Regen Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HPCPRegenPower"
+hops = []
+
+[[cheat]]
+id = "insight-power"
+name = "Insight Power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InsightPower"
+hops = []
+
+[[cheat]]
+id = "add-positive-status-effects-when-adding-a-status"
+name = "Add Positive Status Effects (When Adding A Status)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+{
+Status Effects Figured Out
+
+0004000 = STR Up
+0008000 = DEF Up
+0010000 = ATS Up
+0020000 = ADF Up
+0040000 = SPD Up
+0080000 = MOV Up
+0100000 = Insight
+0200000 = Link Break (Negative)
+0400000 = HP Regen
+0800000 = CP Regen
+1000000 = Craft Guard
+2000000 = Art Reflect
+}
+
+aobscanmodule(AddStatusAOB,ed8_2_PC_US.exe,C6 45 F3 00 85 55 EC) // should be unique
+registersymbol(AddStatusAOB)
+alloc(newmem,2048,AddStatusAOB)
+
+aobscanmodule(AddStatusAOB2,ed8_2_PC_US.exe,C7 45 EC 01 00 00 00 8B FF 8B 55 10) // should be unique
+registersymbol(AddStatusAOB2)
+
+///
+label(return)
+label(originalcode)
+label(EffectsToAdd)
+registersymbol(EffectsToAdd)
+label(SavedPower)
+registersymbol(SavedPower)
+label(SavedTurns)
+registersymbol(SavedTurns)
+label(NumTurns)
+registersymbol(NumTurns)
+label(StatusUpPower2)
+registersymbol(StatusUpPower2)
+label(HPCPRegenPower2)
+registersymbol(HPCPRegenPower2)
+label(InsightPower2)
+registersymbol(InsightPower2)
+
+//
+label(return2)
+label(originalcode2)
+
+newmem:
+  mov byte ptr [ebp-0D],00
+  push eax
+  mov eax,[ebp-7C]
+  cmp dword ptr [eax+F8],0
+  pop eax
+  jne originalcode
+  push eax
+  mov eax,[EffectsToAdd]
+  test [ebp-14],eax
+  je @F
+  mov edx,[ebp-14]
+@@:
+  mov eax,[ebp+10]
+  test [ebp-14],eax
+  je @F
+  mov edx,[ebp+10]
+@@:
+  test [ebp-14],edx
+  je DoRegular
+  mov eax,[EffectsToAdd]
+  test edx,eax
+  je DoRegular
+  mov eax,[StatusUpEffects2]
+  test edx,eax
+  je @F
+  mov eax,[StatusUpPower2]
+  mov [ebp+14],ax
+  jmp DoTurns
+@@:
+  test edx,C00000
+  je @F
+  mov eax,[HPCPRegenPower2]
+  mov [ebp+14],ax
+  jmp DoTurns
+@@:
+  test edx,100000
+  je @F
+  mov eax,[InsightPower2]
+  mov [ebp+14],ax
+  jmp DoTurns
+@@:  
+  mov eax,[SavedPower]
+  mov [ebp+14],eax
+DoTurns:
+  mov eax,[NumTurns]
+  mov [ebp+18],ax
+  pop eax
+  jmp originalcode
+DoRegular:
+  mov eax,[SavedPower]
+  mov [ebp+14],eax
+  mov eax,[SavedTurns]
+  mov [ebp+18],eax
+  pop eax
+  
+originalcode:
+  test [ebp-14],edx  
+  jmp return  
+
+newmem2:
+  push eax
+  mov eax,[ebp+14]
+  mov [SavedPower],eax
+  mov eax,[ebp+18]
+  mov [SavedTurns],eax
+  pop eax
+  
+originalcode2:
+  mov [ebp-14],00000001
+  jmp return2
+  
+EffectsToAdd:
+dd 00DFC000
+SavedPower:
+dd 0
+SavedTurns:
+dd 0
+StatusUpEffects2:
+dd 000FC000
+StatusUpPower2:
+dd #50
+HPCPRegenPower2:
+dd #30
+InsightPower2:
+dd #50
+NumTurns:
+dd #9
+    
+AddStatusAOB:
+  jmp newmem
+  nop
+  nop
+  return:
+
+AddStatusAOB2:
+  jmp newmem2
+  nop
+  nop
+  return2:
+ 
+[DISABLE]
+
+AddStatusAOB:
+  db C6 45 F3 00 85 55 EC
+
+unregistersymbol(AddStatusAOB)
+unregistersymbol(EffectsToAdd)
+unregistersymbol(SavedPower)
+unregistersymbol(SavedTurns)
+unregistersymbol(StatusUpPower2)
+unregistersymbol(HPCPRegenPower2)
+unregistersymbol(InsightPower2)
+unregistersymbol(NumTurns)
+
+AddStatusAOB2:
+  db C7 45 EC 01 00 00 00
+    
+dealloc(newmem)"""
+
+[[cheat]]
+id = "num-turns-to-add"
+name = "Num Turns To Add"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "NumTurns"
+hops = []
+
+[[cheat]]
+id = "status-up-power-2"
+name = "Status Up Power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "StatusUpPower2"
+hops = []
+
+[[cheat]]
+id = "hp-cp-regen-power-2"
+name = "HP CP Regen Power"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HPCPRegenPower2"
+hops = []
+
+[[cheat]]
+id = "insight-power-2"
+name = "Insight Power"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InsightPower2"
+hops = []
+
+[[cheat]]
+id = "run-speed-multiplier"
+name = "Run Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(RunSpeedMultAOB,ed8_2_PC_US.exe,F3 0F 11 80 A4 02 00 00 F3 0F 59 45 08) // should be unique
+registersymbol(RunSpeedMultAOB)
+alloc(newmem,1024,RunSpeedMultAOB)
+
+label(return)
+label(fRunSpeedMultiplier)
+registersymbol(fRunSpeedMultiplier)
+
+newmem:
+  mulss xmm0,dword ptr [fRunSpeedMultiplier]
+  movss [eax+000002A4],xmm0
+  jmp return
+  
+fRunSpeedMultiplier:
+dq (float)1.75
+
+RunSpeedMultAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+RunSpeedMultAOB:
+  db F3 0F 11 80 A4 02 00 00
+
+unregistersymbol(RunSpeedMultAOB)
+unregistersymbol(fRunSpeedMultiplier)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "run-speed-multiplier-2"
+name = "Run Speed Multiplier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fRunSpeedMultiplier"
+hops = []
+
+[[cheat]]
+id = "battle-trophy-multiplier-overdrive-link-attack-etc"
+name = "Battle Trophy Multiplier (Overdrive, Link Attack, etc)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BattleTrophyMultAOB,ed8_2_PC_US.exe,73 04 40 89 41 44 5D C2 04 00) // should be unique
+registersymbol(BattleTrophyMultAOB)
+alloc(newmem,1024,BattleTrophyMultAOB)
+
+label(return)
+label(iBattleTrophyMult)
+registersymbol(iBattleTrophyMult)
+
+newmem:
+  jae BattleTrophyMultAOB+06
+  add eax,[iBattleTrophyMult]
+  mov [ecx+44],eax
+  jmp return
+  
+iBattleTrophyMult:
+dq #10
+
+BattleTrophyMultAOB:
+  jmp newmem
+  nop
+return:
+  
+[DISABLE]
+
+BattleTrophyMultAOB:
+  db 73 04 40 89 41 44
+
+unregistersymbol(BattleTrophyMultAOB)
+unregistersymbol(iBattleTrophyMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "battle-trophy-multiplier"
+name = "Battle Trophy Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iBattleTrophyMult"
+hops = []
+
+[[cheat]]
+id = "infinite-new-game-plus-points-usage"
+name = "Infinite New Game Plus Points Usage"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(InfiniteNGPlusUsageAOB,ed8_2_PC_US.exe,66 01 88 FA 08 07 00 8B 56 20 83 45 FC 10) // should be unique
+aobscanmodule(InfiniteNGPlusUsageAOB,ed8_2_PC_US.exe,66 01 87 FA 08 07 00 8B 45 F8 8B 75 FC 8B 00 46) // should be unique
+registersymbol(InfiniteNGPlusUsageAOB)
+ 
+InfiniteNGPlusUsageAOB:
+  db 90 90 90 90 90 90 90
+  
+[DISABLE]
+
+InfiniteNGPlusUsageAOB:
+  db 66 01 87 FA 08 07 00
+  
+unregistersymbol(InfiniteNGPlusUsageAOB)"""
+
+[[cheat]]
+id = "infinite-fishing-attempts"
+name = "Infinite Fishing Attempts"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(InfFishAttemptsAOB,ed8_2_PC_US.exe,0F BF 08 33 D2 49 0F 98 C2 4A) // should be unique
+aobscanmodule(InfFishAttemptsAOB,ed8_2_PC_US.exe,0F BF 01 48 0F 48 C2 66 89 01) // should be unique
+registersymbol(InfFishAttemptsAOB)
+ 
+InfFishAttemptsAOB+3:
+  db 90
+  
+[DISABLE]
+
+InfFishAttemptsAOB+3:
+  db 48
+  
+unregistersymbol(InfFishAttemptsAOB)"""
+
+[[cheat]]
+id = "add-bonus-ap-when-completing-a-quest"
+name = "Add Bonus AP When Completing A Quest"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(BonusQuestAPAOB,ed8_2_PC_US.exe,08 5E 02 80 FB 02 74 05 80 FB 08) // should be unique
+alloc(newmem,2048,BonusQuestAPAOB)
+registersymbol(BonusQuestAPAOB)
+
+label(return)
+label(originalcode)
+label(BonusAPAmount)
+registersymbol(BonusAPAmount)
+
+newmem:
+  test bl,02
+  je originalcode
+  push eax
+  mov eax,[BonusAPAmount]
+  add [esi+24],al
+  pop eax
+
+originalcode:
+  or [esi+02],bl
+  cmp bl,02
+  jmp return
+
+BonusAPAmount:
+dq #5
+    
+BonusQuestAPAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+BonusQuestAPAOB:
+  db 08 5E 02 80 FB 02
+  
+unregistersymbol(BonusAPAmount)
+unregistersymbol(BonusQuestAPAOB)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bonus-ap-amount"
+name = "Bonus AP Amount"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "BonusAPAmount"
+hops = []
+
+[[cheat]]
+id = "moebius-effect-for-increase-item-range-always-available-only-works-for-items-targeting-enemies"
+name = "Moebius Effect For Increase Item Range Always Available (Only Works for Items Targeting Enemies)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(MoebiusAOB1,ed8_2_PC_US.exe,8A 45 08 88 46 3E D9 6D 0E) // should be unique
+registersymbol(MoebiusAOB1)
+alloc(newmem,1024,MoebiusAOB1)
+
+aobscanmodule(MoebiusAOB2,ed8_2_PC_US.exe,8A 45 08 88 46 3D D9 6D 0E) // should be unique
+registersymbol(MoebiusAOB2)
+alloc(newmem2,1024,MoebiusAOB2)
+
+label(return)
+label(CustomItemRange)
+registersymbol(CustomItemRange)
+
+newmem:
+  mov eax,[CustomItemRange]
+  mov [ebp+08],eax
+originalcode:
+  mov al,[ebp+08]
+  mov [esi+3E],al
+  jmp return
+
+CustomItemRange:
+dq #50
+
+newmem2:
+  mov eax,[CustomItemRange]
+  mov [ebp+08],eax
+originalcode2:
+  mov al,[ebp+08]
+  mov [esi+3D],al
+  jmp return2
+  
+MoebiusAOB1:
+  jmp newmem
+  nop
+  return:
+
+MoebiusAOB2:
+  jmp newmem2
+  nop
+  return2:
+  
+[DISABLE]
+
+MoebiusAOB1:
+  db 8A 45 08 88 46 3E
+
+unregistersymbol(MoebiusAOB1)
+unregistersymbol(CustomItemRange)
+
+MoebiusAOB2:
+  db 8A 45 08 88 46 3D
+
+unregistersymbol(MoebiusAOB2)
+  
+dealloc(newmem)
+dealloc(newmem2)"""
+
+[[cheat]]
+id = "megalith-effect-for-hp-ep-cp-regeneration-always-available"
+name = "Megalith Effect For HP/EP/CP Regeneration Always Available"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(MegalithAOB1,ed8_2_PC_US.exe,BA 96 0C 00 00 66 39 10 0F 85 9D 00 00 00) // should be unique
+aobscanmodule(MegalithAOB1,ed8_2_PC_US.exe,B9 96 0C 00 00 66 39 08 0F 85 A7 00 00 00) // should be unique
+registersymbol(MegalithAOB1)
+
+//aobscanmodule(MegalithAOB2,ed8_2_PC_US.exe,3C 05 0F 82 83 00 00 00 8B 0F) // should be unique
+aobscanmodule(MegalithAOB2,ed8_2_PC_US.exe,3C 05 0F 82 8D 00 00 00 8B 06) // should be unique
+registersymbol(MegalithAOB2)
+  
+MegalithAOB1+8:
+  db 90 90 90 90 90 90
+
+MegalithAOB2+2:
+  db 90 90 90 90 90 90
+ 
+[DISABLE]
+
+MegalithAOB1+8:
+  db 0F 85 A7 00 00 00
+  
+MegalithAOB2+2:
+  db 0F 82 8D 00 00 00
+
+unregistersymbol(MegalithAOB1)
+unregistersymbol(MegalithAOB2)"""
+
+[[cheat]]
+id = "magius-effect-for-arts-area-always-available"
+name = "Magius Effect For Arts Area Always Available"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(MagiusAOB1,ed8_2_PC_US.exe,B9 95 0C 00 00 66 3B C1 75 6C 66 39 5F 18 7E 66) // should be unique
+aobscanmodule(MagiusAOB1,ed8_2_PC_US.exe,B9 95 0C 00 00 66 3B C1 0F 85 93 00 00 00 66 83 7C 9F E4 FF 0F 8E 87 00 00 00) // should be unique
+registersymbol(MagiusAOB1)
+
+//aobscanmodule(MagiusAOB3,ed8_2_PC_US.exe,B9 81 0C 00 00 66 3B C1 75 77) // should be unique
+aobscanmodule(MagiusAOB3,ed8_2_PC_US.exe,B9 81 0C 00 00 66 3B C1 0F 85 98 00 00 00) // should be unique
+registersymbol(MagiusAOB3)
+
+//aobscanmodule(MagiusAOB4,ed8_2_PC_US.exe,BA 92 0C 00 00 66 3B C2 75 74) // should be unique
+aobscanmodule(MagiusAOB4,ed8_2_PC_US.exe,B9 92 0C 00 00 66 3B C1 0F 85 98 00 00 00) // should be unique
+registersymbol(MagiusAOB4)
+
+MagiusAOB1+8:
+  db 90 90 90 90 90 90
+
+MagiusAOB1+14:
+  db 90 90 90 90 90 90
+
+MagiusAOB3+8:
+  db E9 99 00 00 00 90
+
+MagiusAOB4+8:
+  db E9 99 00 00 00 90
+  
+[DISABLE]
+
+MagiusAOB1+8:
+  db 0F 85 93 00 00 00
+
+MagiusAOB1+14:
+  db 0F 8E 87 00 00 00
+  
+MagiusAOB3+8:
+  db 0F 85 98 00 00 00
+
+MagiusAOB4+8:
+  db 0F 85 98 00 00 00
+
+unregistersymbol(MagiusAOB1)
+unregistersymbol(MagiusAOB3)
+unregistersymbol(MagiusAOB4)"""
+
+[[cheat]]
+id = "emblem-effect-always-on-for-100-triple-advantage-chance"
+name = "Emblem Effect Always On For 100% Triple Advantage Chance"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(EmblemEffectAOB1,ed8_2_PC_US.exe,84 C0 0F 84 AF 00 00 00 8B 8F 84 06 00 00) // should be unique
+registersymbol(EmblemEffectAOB1)
+alloc(newmem,1024,EmblemEffectAOB1)
+
+///
+aobscanmodule(EmblemEffectAOB2,ed8_2_PC_US.exe,2B C1 89 45 08 66 83 7C 82 E4 FF 7E 6A) // should be unique
+registersymbol(EmblemEffectAOB2)
+
+///
+aobscanmodule(EmblemEffectAOB3,ed8_2_PC_US.exe,D9 6D 0A 0F 42 F1 56 52) // should be unique
+registersymbol(EmblemEffectAOB3)
+
+label(return)
+label(originalcode)
+
+newmem:
+  mov al,01
+  mov byte ptr [ebp+0F],5
+originalcode:
+  test al,al
+  je EmblemEffectAOB1+B7
+  jmp return
+
+///  
+EmblemEffectAOB1:
+  jmp newmem
+  nop
+  nop
+  nop
+  return:
+
+EmblemEffectAOB2+B:
+  db 90 90
+
+EmblemEffectAOB3+3:
+  db 8B F1 90
+  
+[DISABLE]
+
+EmblemEffectAOB1:
+  db 84 C0 0F 84 AF 00 00 00
+
+unregistersymbol(EmblemEffectAOB1)
+
+///
+EmblemEffectAOB2+B:
+  db 7E 6A
+
+unregistersymbol(EmblemEffectAOB2)
+
+///
+EmblemEffectAOB3+3:
+  db 0F 42 F1
+
+unregistersymbol(EmblemEffectAOB3)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "fast-link-exp-event-n-event-item"
+name = "Fast Link EXP Event n Event Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(ToCS_Fast_Link_AOB,ed8_2_PC_US.exe,8B 94 BE 04 2D 00 00 89 55 E0 85 D2) // should be unique
+aobscanmodule(ToCS_Fast_Link_AOB,ed8_2_PC_US.exe,8B 84 87 04 2D 00 00 89 45 E0 85 C0) // should be unique
+registersymbol(ToCS_Fast_Link_AOB)
+alloc(newmem,$1000)
+label(code)
+label(return)
+label(linkMult)
+registersymbol(linkMult)
+
+newmem:
+  push ebx
+  mov ebx,eax
+  mov eax,[edi+ebx*4+00002D04]
+  imul eax,[linkMult]
+code:
+  mov [edi+ebx*4+00002D04],eax
+  pop ebx
+  jmp return
+
+linkMult:
+dd #5
+
+ToCS_Fast_Link_AOB:
+  jmp newmem
+  nop
+  nop
+return:
+
+[DISABLE]
+
+ToCS_Fast_Link_AOB:
+  db 8B 84 87 04 2D 00 00
+
+unregistersymbol(ToCS_Fast_Link_AOB)
+unregistersymbol(linkMult)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "link-exp-multiplier-event"
+name = "Link EXP Multiplier (Event)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "linkMult"
+hops = []
+
+[[cheat]]
+id = "fast-link-exp-battle"
+name = "Fast Link EXP Battle"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ToCS_FastLinkBattle_AOB,ed8_2_PC_US.exe,03 7D 10 3B F8 73 02 8B C7) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(linkMult2)
+registersymbol(linkMult2)
+
+newmem:
+
+code:
+  push ebx
+  mov ebx,[ebp+10]
+  imul ebx,[linkMult2]
+  mov [ebp+10],ebx
+  pop ebx
+  add edi,[ebp+10]
+  cmp edi,eax
+  jmp return
+
+linkMult2:
+dd #100
+
+ToCS_FastLinkBattle_AOB:
+  jmp newmem
+return:
+registersymbol(ToCS_FastLinkBattle_AOB)
+
+[DISABLE]
+
+ToCS_FastLinkBattle_AOB:
+  db 03 7D 10 3B F8
+
+unregistersymbol(ToCS_FastLinkBattle_AOB)
+unregistersymbol(linkMult2)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "link-exp-multiplier-battle"
+name = "Link EXP Multiplier (Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "linkMult2"
+hops = []
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(EXPMultAOB2,ed8_2_PC_US.exe,8B 8F D4 01 00 00 8B 97 AC 01 00 00 03 CE B8 9F 86 01 00) // should be unique
+registersymbol(EXPMultAOB2)
+alloc(newmem,1024,EXPMultAOB2)
+
+///
+label(return)
+label(originalcode)
+label(fEXPMult2)
+registersymbol(fEXPMult2)
+
+newmem:
+  push esi
+  fild dword ptr [esp]
+  fmul dword ptr [fEXPMult2]
+  fistp dword ptr [esp]
+  pop esi
+  
+originalcode:
+  mov ecx,[edi+000001D4]
+  jmp return
+ 
+fEXPMult2:
+dq (float)5.0
+    
+EXPMultAOB2:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+EXPMultAOB2:
+  db 8B 8F D4 01 00 00
+  
+unregistersymbol(EXPMultAOB2)
+unregistersymbol(fEXPMult2)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier-2"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEXPMult2"
+hops = []
+
+[[cheat]]
+id = "improved-master-quartz-exp-multiplier"
+name = "Improved Master Quartz Exp Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ImprovedMasterQuartzExpMultAOB,ed8_2_PC_US.exe,8B 8B D8 01 00 00 03 C8 B8 9F 86 01 00 3B C8 0F 42 C1) // should be unique
+alloc(newmem,1024,ImprovedMasterQuartzExpMultAOB)
+registersymbol(ImprovedMasterQuartzExpMultAOB)
+
+label(return)
+label(originalcode)
+label(fImprovedMasterQuartzExpMult)
+registersymbol(fImprovedMasterQuartzExpMult)
+
+newmem:
+originalcode:
+  mov ecx,[ebx+00001D8]
+DoImprovedMQEXPMult:
+  push eax
+  fild dword ptr [esp]
+  fmul dword ptr [fImprovedMasterQuartzExpMult]
+  fistp dword ptr [esp]
+  pop eax
+  jmp return
+  
+fImprovedMasterQuartzExpMult:
+dq (float)5.0
+
+ImprovedMasterQuartzExpMultAOB:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+ImprovedMasterQuartzExpMultAOB:
+  db 8B 8B D8 01 00 00
+
+unregistersymbol(ImprovedMasterQuartzExpMultAOB)
+unregistersymbol(fImprovedMasterQuartzExpMult)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "improved-mq-exp-multiplier"
+name = "Improved MQ EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fImprovedMasterQuartzExpMult"
+hops = []
+
+[[cheat]]
+id = "fast-master-quartz-level"
+name = "Fast Master Quartz Level"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ToCS_FastMasterQuartzLeveling,ed8_2_PC_US.exe,8B 40 04 5D C2 04 00 33 C0 5D C2 04 00 CC CC CC CC) // should be unique
+alloc(newmem,$1000)
+label(L1)
+label(L2)
+label(L3)
+label(L4)
+label(code)
+label(return)
+
+newmem:
+  cmp [eax],#1
+  je L1
+  cmp [eax],#2
+  je L2
+  cmp [eax],#3
+  je L3
+  cmp [eax],#4
+  je L4
+  jmp code
+
+L1:
+  mov [eax+04],#7199
+  jmp code
+L2:
+  mov [eax+04],#22999
+  jmp code
+L3:
+  mov [eax+04],#48999
+  jmp code
+L4:
+  mov [eax+04],#89999
+  jmp code
+
+code:
+  mov eax,[eax+04]
+  pop ebp
+  ret 0004
+  jmp return
+
+ToCS_FastMasterQuartzLeveling:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(ToCS_FastMasterQuartzLeveling)
+
+[DISABLE]
+
+ToCS_FastMasterQuartzLeveling:
+  db 8B 40 04 5D C2 04 00
+
+unregistersymbol(ToCS_FastMasterQuartzLeveling)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "multiply-stats-on-equip-add-bonus-acc-eva-on-equip"
+name = "Multiply Stats On Equip / Add Bonus ACC+/EVA+ On Equip"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(StatWriteAOB,ed8.exe,66 89 55 B8 89 45 D4 F3 A5) // should be unique
+//aobscanmodule(StatWriteAOB,ed8_2_PC_US.exe,8D 75 BC 66 89 45 C8 F3 A5) // should be unique
+aobscanmodule(StatWriteAOB,ed8_2_PC_US.exe,66 89 45 C8 8B 45 9C 66 89 4D C4) // should be unique
+registersymbol(StatWriteAOB)
+alloc(newmem,2048,StatWriteAOB)
+
+label(return)
+label(fHeroStatMult)
+registersymbol(fHeroStatMult)
+label(ApplyToReanOnly)
+registersymbol(ApplyToReanOnly)
+label(HPStatCap)
+registersymbol(HPStatCap)
+label(OtherStatCap)
+registersymbol(OtherStatCap)
+label(BonusACC)
+registersymbol(BonusACC)
+label(BonusEVA)
+registersymbol(BonusEVA)
+
+newmem:
+  lea esi,[ebp-44]
+  cmp [ApplyToReanOnly],1
+  jne @F
+  cmp edi,[CharacterBasePtr]
+  jne originalcode
+@@:
+  push rax
+  xor rax,rax  
+  mov rax,dword ptr [esi]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp eax,[HPStatCap]
+  jle @F
+  mov eax,[HPStatCap]
+@@:
+  mov [esi],eax
+  xor rax,rax  
+  mov rax,dword ptr [esi+04]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp eax,[HPStatCap]
+  jle @F
+  mov eax,[HPStatCap]
+@@:
+  mov [esi+04],eax
+  xor rax,rax  
+  mov ax,[esi+08]  
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+08],ax
+  xor rax,rax  
+  mov eax,[esi+0A]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+0A],ax
+  xor rax,rax  
+  mov ax,[esi+10]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+10],ax
+  xor rax,rax  
+  mov ax,[esi+12]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+12],ax
+  xor rax,rax  
+  mov ax,[esi+14]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+14],ax
+  xor rax,rax  
+  mov ax,[esi+16]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+16],ax
+  xor rax,rax  
+  mov ax,[esi+18]  
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+18],ax
+  xor rax,rax  
+  mov ax,[esi+1A]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+1A],ax
+  xor rax,rax  
+  mov ax,[esi+1C]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+1C],ax
+  xor rax,rax  
+  mov ax,[esi+1E]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  mov [esi+1E],ax
+  xor rax,rax  
+  mov ax,[esi+26]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  add ax,[BonusACC]
+  mov [esi+26],ax
+  xor rax,rax  
+  mov ax,[esi+2C]
+  push rax
+  fild dword ptr [rsp]
+  fmul dword ptr [fHeroStatMult]
+  fistp dword ptr [rsp]
+  pop rax
+  cmp ax,[OtherStatCap]
+  jle @F
+  mov ax,[OtherStatCap]
+@@:
+  add ax,[BonusEVA]
+  mov [esi+2C],ax
+  pop rax
+  
+originalcode:
+  mov [ebp-38],ax
+  mov eax,[ebp-64]
+  jmp return
+
+fHeroStatMult:
+dd (float)1.1
+ApplyToReanOnly:
+dd 0
+HPStatCap:
+dd #99999
+OtherStatCap:
+dd #9999
+BonusACC:
+dq #100
+BonusEVA:
+dq #10
+  
+StatWriteAOB:
+  jmp newmem
+  nop
+  nop
+return:
+  
+[DISABLE]
+
+StatWriteAOB:
+  db 66 89 45 C8 8B 45 9C
+
+unregistersymbol(StatWriteAOB)
+unregistersymbol(fHeroStatMult)
+unregistersymbol(ApplyToReanOnly)
+unregistersymbol(HPStatCap)
+unregistersymbol(OtherStatCap)
+unregistersymbol(BonusACC)
+unregistersymbol(BonusEVA)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "hero-stat-multiplier"
+name = "Hero Stat Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroStatMult"
+hops = []
+
+[[cheat]]
+id = "bonus-acc-to-add"
+name = "Bonus ACC To Add"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "BonusACC"
+hops = []
+
+[[cheat]]
+id = "bonus-eva-to-add"
+name = "Bonus EVA To Add"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "BonusEVA"
+hops = []
+
+[[cheat]]
+id = "apply-to-rean-only"
+name = "Apply To Rean Only"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ApplyToReanOnly"
+hops = []
+
+[[cheat]]
+id = "hp-stat-cap"
+name = "HP Stat Cap"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HPStatCap"
+hops = []
+
+[[cheat]]
+id = "other-stat-cap"
+name = "Other Stat Cap"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "OtherStatCap"
+hops = []
+
+[[cheat]]
+id = "sepith-mass-crystals"
+name = "Sepith Mass Crystals"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "CrystalPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "mira"
+name = "Mira"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MiraPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "current-rank"
+name = "Current Rank"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "APPtr"
+hops = ["+0x2588"]
+
+[[cheat]]
+id = "current-regular-ap"
+name = "Current Regular AP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "APPtr"
+hops = ["+0x258c"]
+
+[[cheat]]
+id = "current-bonus-ap"
+name = "Current Bonus AP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "APPtr"
+hops = ["+0x25b8"]
+
+[[cheat]]
+id = "bonding-points-current"
+name = "Bonding Points Current"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "APPtr"
+hops = ["+0x2578"]
+
+[[cheat]]
+id = "bonding-points-max"
+name = "Bonding Points Max"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "APPtr"
+hops = ["+0x257c"]
+
+[[cheat]]
+id = "angler-points-current"
+name = "Angler Points (Current)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AnglerPointsPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "angler-points-cumulative"
+name = "Angler Points (Cumulative)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AnglerPointsPtr"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "times-left-to-fish"
+name = "Times Left To Fish"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AnglerPointsPtr"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "last-selected-master-quartz-level"
+name = "Last Selected Master Quartz Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedMasterQuartzPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "last-selected-master-quartz-exp"
+name = "Last Selected Master Quartz EXP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedMasterQuartzPtr"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "earth-sepith"
+name = "Earth Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "water-sepith"
+name = "Water Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "fire-sepith"
+name = "Fire Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "wind-sepith"
+name = "Wind Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "time-sepith"
+name = "Time Sepith"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "space-sepith"
+name = "Space Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "mirage-sepith"
+name = "Mirage Sepith"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EarthSepithPtr"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "selected-char-for-orbments"
+name = "Selected Char for Orbments"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Rean",
+    "1:Alisa",
+    "2:Elliot",
+    "3:Laura",
+    "4:Machias",
+    "5:Emma",
+    "6:Jusis",
+    "7:Fie",
+    "8:Gaius",
+    "9:Millium",
+    "11:Instructor Sara",
+    "12:Angelica",
+    "13:Towa",
+    "14:Sharon",
+    "15:Captain Claire",
+    "16:Toval",
+    "17:Elise",
+    "18:Princess Alfin",
+    "23:Crow",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedQuartzChar"
+hops = []
+
+[[cheat]]
+id = "selected-party-member"
+name = "Selected Party Member"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Rean",
+    "1:Alisa",
+    "2:Elliot",
+    "3:Laura",
+    "4:Machias",
+    "5:Emma",
+    "6:Jusis",
+    "7:Fie",
+    "8:Gaius",
+    "9:Millium",
+    "11:Instructor Sara",
+    "12:Angelica",
+    "13:Towa",
+    "14:Sharon",
+    "15:Captain Claire",
+    "16:Toval",
+    "17:Elise",
+    "18:Princess Alfin",
+    "23:Crow",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "CurrentSelectedCharacter"
+hops = []
+
+[[cheat]]
+id = "inventory-slot"
+name = "Inventory Slot"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 0
+choices = [
+    "0:Slot 1",
+    "20:Slot 2",
+    "40:Slot 3",
+    "60:Slot 4",
+    "80:Slot 5",
+    "0:Slot 8",
+    "100:Slot 9",
+    "120:Slot 10",
+    "140:Slot 11",
+    "160:Slot 12",
+    "180:Slot 13",
+    "1:Slot 16",
+    "200:Slot 17",
+    "220:Slot 18",
+    "240:Slot 19",
+    "260:Slot 20",
+    "280:Slot 21",
+    "2:Slot 24",
+    "300:Slot 25",
+    "320:Slot 26",
+    "340:Slot 27",
+    "360:Slot 28",
+    "380:Slot 29",
+    "3:Slot 32",
+    "400:Slot 33",
+    "420:Slot 34",
+    "440:Slot 35",
+    "460:Slot 36",
+    "480:Slot 37",
+    "4:Slot 40",
+    "500:Slot 41",
+    "520:Slot 42",
+    "540:Slot 43",
+    "560:Slot 44",
+    "580:Slot 45",
+    "5:Slot 48",
+    "600:Slot 49",
+    "620:Slot 50",
+    "640:Slot 51",
+    "660:Slot 52",
+    "680:Slot 53",
+    "6:Slot 56",
+    "700:Slot 57",
+    "720:Slot 58",
+    "740:Slot 59",
+    "760:Slot 60",
+    "780:Slot 61",
+    "7:Slot 64",
+    "800:Slot 65",
+    "820:Slot 66",
+    "840:Slot 67",
+    "860:Slot 68",
+    "880:Slot 69",
+    "8:Slot 72",
+    "900:Slot 73",
+    "920:Slot 74",
+    "940:Slot 75",
+    "960:Slot 76",
+    "980:Slot 77",
+    "9:Slot 80",
+    "0:Slot 113",
+    "0:Slot 114",
+    "0:Slot 115",
+    "0:Slot 116",
+    "0:Slot 117",
+    "1000:Slot 129",
+    "1020:Slot 130",
+    "1040:Slot 131",
+    "1060:Slot 132",
+    "1080:Slot 133",
+    "10:Slot 136",
+    "1100:Slot 137",
+    "1120:Slot 138",
+    "1140:Slot 139",
+    "1160:Slot 140",
+    "1180:Slot 141",
+    "11:Slot 144",
+    "1200:Slot 145",
+    "1220:Slot 146",
+    "1240:Slot 147",
+    "1260:Slot 148",
+    "1280:Slot 149",
+    "12:Slot 152",
+    "1300:Slot 153",
+    "1320:Slot 154",
+    "1340:Slot 155",
+    "1360:Slot 156",
+    "1380:Slot 157",
+    "13:Slot 160",
+    "1400:Slot 161",
+    "1420:Slot 162",
+    "1440:Slot 163",
+    "1460:Slot 164",
+    "1480:Slot 165",
+    "14:Slot 168",
+    "1500:Slot 169",
+    "1520:Slot 170",
+    "1540:Slot 171",
+    "1560:Slot 172",
+    "1580:Slot 173",
+    "15:Slot 176",
+    "1600:Slot 177",
+    "1620:Slot 178",
+    "1640:Slot 179",
+    "1660:Slot 180",
+    "1680:Slot 181",
+    "16:Slot 184",
+    "1700:Slot 185",
+    "1720:Slot 186",
+    "1740:Slot 187",
+    "1760:Slot 188",
+    "1780:Slot 189",
+    "17:Slot 192",
+    "1800:Slot 193",
+    "1820:Slot 194",
+    "1840:Slot 195",
+    "1860:Slot 196",
+    "1880:Slot 197",
+    "18:Slot 200",
+    "1900:Slot 201",
+    "1920:Slot 202",
+    "1940:Slot 203",
+    "1960:Slot 204",
+    "1980:Slot 205",
+    "19:Slot 208",
+    "1:Slot 241",
+    "100000000000000000000:Slot 242",
+    "10000000000000000000000000000000000000000:Slot 243",
+    "1000000000000000000000000000000000000000000000000000000000000:Slot 244",
+    "100000000000000000000000000000000000000000000000000000000000000000000000000000000:Slot 245",
+]
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventorySlotOffset"
+hops = []

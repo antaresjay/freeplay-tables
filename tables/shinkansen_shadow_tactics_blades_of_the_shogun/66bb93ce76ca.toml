@@ -1,0 +1,503 @@
+[game]
+name = "Shadow Tactics: Blades of the Shogun"
+exe = "shinkansen_shadow_tactics_blades_of_the_shogun.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=984"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "detection-base-address-scan-initialization-activate-this-first"
+name = "Detection Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Detection_basepointer)
+registersymbol(Detection_update_enable)
+registersymbol(Detection_set_enable)
+registersymbol(Detection_nodetectset_enable)
+
+alloc(Detection_basepointer, 4)
+alloc(Detection_update_enable, 4)
+alloc(Detection_set_enable, 4)
+alloc(Detection_nodetectset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Detection_basepointer)
+unregistersymbol(Detection_update_enable)
+unregistersymbol(Detection_set_enable)
+unregistersymbol(Detection_nodetectset_enable)
+
+dealloc(Detection_basepointer)
+dealloc(Detection_update_enable)
+dealloc(Detection_set_enable)
+dealloc(Detection_nodetectset_enable)"""
+
+[[cheat]]
+id = "detection-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Detection Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Detection_savedAOB)
+label(Detection_returnhere)
+label(Detection_originalcode)
+label(Detection_exit)
+
+label(Detection_update_exit)
+label(Detection_set_exit)
+label(Detection_nodetectset_exit)
+
+registersymbol(Detection_savedAOB)
+
+//17E4B239 - E8 6A74A6FE           - call 168B26A8
+//17E4B23E - 89 45 B4              - mov [ebp-4C],eax
+// Detection:updateTrackedObjects+19
+//17E4B241 - 8B 47 10              - mov eax,[edi+10]
+//17E4B244 - 8D 4D DC              - lea ecx,[ebp-24]
+//17E4B247 - 83 EC 08              - sub esp,08
+//17E4B24A - 50                    - push eax
+//17E4B24B - 51                    - push ecx
+//17E4B24C - 39 00                 - cmp [eax],eax
+//17E4B24E - E8 8D3B65ED           - call 0549EDE0
+//17E4B253 - 83 C4 0C              - add esp,0C
+//17E4B256 - 8B 45 B4              - mov eax,[ebp-4C]
+//17E4B259 - D9 47 74              - fld dword ptr [edi+74]
+//17E4B25C - 8B 4F 4C              - mov ecx,[edi+4C]
+//17E4B25F - 83 EC 08              - sub esp,08
+aobscan(Detection_searchedAOB, 8B 47 10 8D 4D DC 83 EC 08 50 51 39 00 * * * * * 83 C4 0C 8B 45 B4 D9 47 74)
+
+alloc(Detection_newmem, 2048, Detection_searchedAOB)
+alloc(Detection_temp1, 4, Detection_searchedAOB)
+alloc(Detection_temp2, 4, Detection_searchedAOB)
+alloc(Detection_temp3, 4, Detection_searchedAOB)
+alloc(Detection_temp4, 4, Detection_searchedAOB)
+
+
+Detection_newmem:
+mov [Detection_temp1], eax
+mov [Detection_temp2], ebx
+mov [Detection_temp3], ecx
+mov [Detection_temp4], edx
+
+cmp dword ptr [Detection_update_enable], #0
+je Detection_update_exit
+mov [Detection_basepointer], edi
+Detection_update_exit:
+
+cmp dword ptr [Detection_set_enable], #0
+je Detection_set_exit
+Detection_set_exit:
+
+cmp dword ptr [Detection_nodetectset_enable], #0
+je Detection_nodetectset_exit
+mov [edi+74], (float)0
+mov [edi+78], (float)0
+mov [edi+84], (float)0
+Detection_nodetectset_exit:
+
+mov eax, [Detection_temp1]
+mov ebx, [Detection_temp2]
+mov ecx, [Detection_temp3]
+mov edx, [Detection_temp4]
+
+
+Detection_originalcode:
+db 8B 47 10 8D 4D DC
+//mov eax,[edi+10]
+//lea ecx,[ebp-24]
+
+
+Detection_exit:
+jmp Detection_returnhere
+
+
+Detection_searchedAOB:
+Detection_savedAOB:
+jmp Detection_newmem
+nop
+Detection_returnhere:
+
+
+[DISABLE]
+Detection_savedAOB:
+db 8B 47 10 8D 4D DC
+//mov eax,[edi+10]
+//lea ecx,[ebp-24]
+
+unregistersymbol(Detection_savedAOB)
+
+dealloc(Detection_newmem)
+dealloc(Detection_temp1)
+dealloc(Detection_temp2)
+dealloc(Detection_temp3)
+dealloc(Detection_temp4)"""
+
+[[cheat]]
+id = "enemies-set-to-can-t-detect"
+name = "Enemies Set to Can't Detect?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_nodetectset_enable"
+hops = []
+
+[[cheat]]
+id = "detection-update-base-address"
+name = "Detection Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "m-feyeheight"
+name = "m_fEyeHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "m-fviewangle"
+name = "m_fViewAngle"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "m-fviewrange"
+name = "m_fViewRange"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "m-fcrawldistance"
+name = "m_fCrawlDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "m-fnonormalvisionheight"
+name = "m_fNoNormalVisionHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "m-fnovisionheight"
+name = "m_fNoVisionHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "m-fvisioncapbottom"
+name = "m_fVisionCapBottom"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "m-fyclamptop"
+name = "m_fYClampTop"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "m-fyclampbot"
+name = "m_fYClampBot"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x8c"]
+
+[[cheat]]
+id = "m-fvcemptyspeed"
+name = "m_fVCEmptySpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "m-fcolliderheight"
+name = "m_fColliderHeight"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x94"]
+
+[[cheat]]
+id = "m-fcollideroffsety"
+name = "m_fColliderOffsetY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "m-fdetectionrange"
+name = "m_fDetectionRange"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "m-bvcfillspeedoverride"
+name = "m_bVCFillSpeedOverride"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "m-brangechanged"
+name = "m_bRangeChanged"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xb0"]
+
+[[cheat]]
+id = "m-fdetectionrangeondecreaseinit"
+name = "m_fDetectionRangeOnDecreaseInit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xb4"]
+
+[[cheat]]
+id = "m-bdetectionrangemaxedthisframe"
+name = "m_bDetectionRangeMaxedThisFrame"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xb8"]
+
+[[cheat]]
+id = "m-bdetectionrangemaxedlastframe"
+name = "m_bDetectionRangeMaxedLastFrame"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xb9"]
+
+[[cheat]]
+id = "m-icurrenctdetectiondisablereason"
+name = "m_iCurrenctDetectionDisableReason"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xbc"]
+
+[[cheat]]
+id = "m-btryactivatevconactivate"
+name = "m_bTryActivateVCOnActivate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Detection_basepointer"
+hops = ["+0xc0"]

@@ -1,0 +1,863 @@
+[game]
+name = "Hogwarts Legacy [Last Updated: April 27, 2025]"
+exe = "hogwartslegacy.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=28682"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-trainer-2"
+name = "Activate Trainer 2"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+//aobscanmodule(SQLUpdateAOB,$process,B2 01 48 8D 4D ?? E8 ?? ?? ?? ?? 48 8B 4D ?? E9 ?? ?? ?? ?? BA 03 00 00 00 48)
+aobscanmodule(SQLUpdateAOB,$process,B2 01 48 8D 4D ?? E8 ?? ?? ?? ?? 48 8B 4D ?? E9 ?? ?? ?? ?? BA 60 00 00 00 4C)
+registersymbol(SQLUpdateAOB)
+alloc(newmem,4096)
+
+///
+label(SQLUpdateAOBSave)
+registersymbol(SQLUpdateAOBSave)
+
+///
+newmem:
+  readmem(SQLUpdateAOB,6)
+  mov [R9Save],r9
+  mov [R10Save],r10
+  mov [R11Save],r11
+  mov [R12Save],r12
+  mov [R13Save],r13
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r14,[rcx]
+  mov [RCXSave],r14
+  test r14,r14
+  je MyCleanUp1
+  // Determine The SQL Statement Size
+  xor r12,r12
+StartSizeCheckLoop:
+  cmp word ptr [r14],0
+  je EndOfString
+  add r14,2
+  inc r12d
+  jmp StartSizeCheckLoop
+EndOfString:
+  inc r12d
+  mov [CurrentSQLSize],r12d
+  // Check if this is updating Inventory
+  mov r14,[rcx]
+  test r14,r14
+  je MyCleanUp1
+  xor r12,r12
+  mov r15,constInventoryUpdate1
+StartFirstCheckLoop:
+  cmp r12,6
+  jge PassedFirstCheck
+  mov r13,[r15+r12*8]
+  mov r10,[r14]
+  cmp r10,r13
+  jne MyCleanUp1
+  inc r12
+  add r14,08
+  jmp StartFirstCheckLoop
+PassedFirstCheck:
+  // Check for VendorStock Update
+  xor r11,r11
+  mov r14,[rcx]
+  test r14,r14
+  je MyCleanUp1
+  mov [R14Save2],r14
+StartVendorCheckOuterLoop:
+  mov r14,[R14Save2]
+  cmp r11d,[CurrentSQLSize]
+  jge DoneWithVendorStockSearch
+  xor r12,r12
+  mov r15,constVendorStock1
+StartVendorCheckInnerLoop:
+  cmp r12,3
+  jge PassedVendorStockTest
+  mov r13,[r15+r12*8]
+  mov r10,[r14]
+  cmp r10,r13
+  jne SkipRestOfVendorStockInnerLoop
+  add r14,08
+  inc r12d
+  jmp StartVendorCheckInnerLoop
+SkipRestOfVendorStockInnerLoop:
+  mov r14,[R14Save2]
+  add r14,2
+  mov [R14Save2],r14
+  inc r11d
+  jmp StartVendorCheckOuterLoop
+DoneWithVendorStockSearch:
+  jmp CheckPlayer0
+PassedVendorStockTest:
+  // This is something we want to change the count of
+  // First, search for Count = in the SQL  
+  xor r11,r11
+  mov r14,[rcx]
+  test r14,r14
+  je MyCleanUp1
+  mov [R14Save2],r14
+StartCountCheckOuterLoop:
+  mov r14,[R14Save2]
+  cmp r11d,[CurrentSQLSize]
+  jge DoneWithCountSearch
+  xor r12,r12
+  mov r15,constCount1
+StartCountCheckInnerLoop:
+  cmp r12,2
+  jge PassedCountTest
+  mov r13,[r15+r12*8]
+  mov r10,[r14]
+  cmp r10,r13
+  jne SkipRestOfCountInnerLoop
+  add r14,08
+  inc r12d
+  jmp StartCountCheckInnerLoop
+SkipRestOfCountInnerLoop:
+  mov r14,[R14Save2]
+  add r14,2
+  mov [R14Save2],r14
+  inc r11d
+  jmp StartCountCheckOuterLoop
+DoneWithCountSearch:
+  jmp MyCleanUp1
+PassedCountTest:
+  mov r15,bInfiniteVendorStock
+  cmp dword ptr [r15],1
+  jne MyCleanUp1
+  add r14,08
+  cmp byte ptr [r14],39
+  je MyCleanUp1
+  inc [r14]
+  jmp MyCleanUp1
+CheckPlayer0:
+  xor r11,r11
+  mov r14,[rcx]
+  test r14,r14
+  je MyCleanUp1
+  mov [R14Save2],r14
+StartPlayer0CheckOuterLoop:
+  mov r14,[R14Save2]
+  cmp r11d,[CurrentSQLSize]
+  jge DoneWithPlayer0Search
+  xor r12,r12
+  mov r15,constPlayer01
+StartPlayer0CheckInnerLoop:
+  cmp r12,2
+  jge PassedPlayer0Test
+  mov r13,[r15+r12*8]
+  mov r10,[r14]
+  cmp r10,r13
+  jne SkipRestOfPlayer0InnerLoop
+  add r14,08
+  inc r12d
+  jmp StartPlayer0CheckInnerLoop
+SkipRestOfPlayer0InnerLoop:
+  mov r14,[R14Save2]
+  add r14,2
+  mov [R14Save2],r14
+  inc r11d
+  jmp StartPlayer0CheckOuterLoop
+DoneWithPlayer0Search:
+  jmp MyCleanUp1
+PassedPlayer0Test:
+  // Check for Knuts Update
+  xor r11,r11
+  mov r14,[rcx]
+  test r14,r14
+  je MyCleanUp1
+  mov [R14Save2],r14
+StartKnutsCheckOuterLoop:
+  mov r14,[R14Save2]
+  cmp r11d,[CurrentSQLSize]
+  jge DoneWithKnutsSearch
+  xor r12,r12
+  mov r15,constKnuts1
+StartKnutsCheckInnerLoop:
+  cmp r12,2
+  jge PassedKnutsTest
+  mov r13,[r15+r12*8]
+  mov r10,[r14]
+  cmp r10,r13
+  jne SkipRestOfKnutsInnerLoop
+  add r14,08
+  inc r12d
+  jmp StartKnutsCheckInnerLoop
+SkipRestOfKnutsInnerLoop:
+  mov r14,[R14Save2]
+  add r14,2
+  mov [R14Save2],r14
+  inc r11d
+  jmp StartKnutsCheckOuterLoop
+DoneWithKnutsSearch:
+  jmp CheckMaxInventoryItem
+PassedKnutsTest:
+  mov r15,bSetMaxKnutsOnUpdate
+  cmp dword ptr [r15],1
+  je DoKnutsUpdate
+  mov r15,bSetLowKnutsInsteadOnUpdate
+  cmp dword ptr [r15],1
+  jne MyCleanUp1
+DoKnutsUpdate:
+  // First, search for Count
+  xor r11,r11
+  mov r14,[rcx]
+  test r14,r14
+  je MyCleanUp1
+  mov [R14Save2],r14
+StartCountCheckOuterLoop2:
+  mov r14,[R14Save2]
+  cmp r11d,[CurrentSQLSize]
+  jge DoneWithCountSearch2
+  xor r12,r12
+  mov r15,constCount1
+StartCountCheckInnerLoop2:
+  cmp r12,2
+  jge PassedCountTest2
+  mov r13,[r15+r12*8]
+  mov r10,[r14]
+  cmp r10,r13
+  jne SkipRestOfCountInnerLoop2
+  add r14,08
+  inc r12d
+  jmp StartCountCheckInnerLoop2
+SkipRestOfCountInnerLoop2:
+  mov r14,[R14Save2]
+  add r14,2
+  mov [R14Save2],r14
+  inc r11d
+  jmp StartCountCheckOuterLoop2
+DoneWithCountSearch2:
+  jmp MyCleanUp1
+PassedCountTest2:
+StartCommaSearchLoop:
+  cmp word ptr [r14],002C
+  je FoundComma
+  mov r15,bSetMaxKnutsOnUpdate
+  cmp [r15],1
+  je SetMaxKnuts
+  mov word ptr [r14],0030
+  add r14,2
+  jmp StartCommaSearchLoop  
+SetMaxKnuts:
+  mov word ptr [r14],0039
+  add r14,2
+  jmp StartCommaSearchLoop
+FoundComma:
+  mov r15,bSetLowKnutsInsteadOnUpdate
+  cmp [r15],1
+  jne MyCleanUp1
+  sub r14,2
+  mov word ptr [r14],0039
+  add r14,2
+  jmp MyCleanUp1
+CheckMaxInventoryItem:
+  mov r15,bSetMaxPlayerInventory
+  cmp dword ptr [r15],1
+  je DoPlayerInventoryUpdate
+  mov r15,bSetLowPlayerInventoryInsteadOnUpdate
+  cmp dword ptr [r15],1
+  jne MyCleanUp1
+DoPlayerInventoryUpdate:
+  // First, search for Count
+  xor r11,r11
+  mov r14,[rcx]
+  test r14,r14
+  je MyCleanUp1
+  mov [R14Save2],r14
+StartCountCheckOuterLoop3:
+  mov r14,[R14Save2]
+  cmp r11d,[CurrentSQLSize]
+  jge DoneWithCountSearch3
+  xor r12,r12
+  mov r15,constCount1
+StartCountCheckInnerLoop3:
+  cmp r12,2
+  jge PassedCountTest3
+  mov r13,[r15+r12*8]
+  mov r10,[r14]
+  cmp r10,r13
+  jne SkipRestOfCountInnerLoop3
+  add r14,08
+  inc r12d
+  jmp StartCountCheckInnerLoop3
+SkipRestOfCountInnerLoop3:
+  mov r14,[R14Save2]
+  add r14,2
+  mov [R14Save2],r14
+  inc r11d
+  jmp StartCountCheckOuterLoop3
+DoneWithCountSearch3:
+  jmp MyCleanUp1
+PassedCountTest3:
+StartCommaSearchLoop2:
+  cmp word ptr [r14],002C
+  je FoundComma2
+  mov r15,bSetMaxPlayerInventory
+  cmp [r15],1
+  je SetMaxPlayerInventory
+  mov word ptr [r14],0030
+  add r14,2
+  jmp StartCommaSearchLoop  
+SetMaxPlayerInventory:
+  mov word ptr [r14],0039
+  add r14,2
+  jmp StartCommaSearchLoop2
+FoundComma2:
+  mov r15,bSetLowPlayerInventoryInsteadOnUpdate
+  cmp [r15],1
+  jne MyCleanUp1
+  sub r14,2
+  mov word ptr [r14],0039
+  add r14,2
+  jmp MyCleanUp1
+  
+MyCleanUp1:
+  mov r9,[R9Save]
+  mov r10,[R10Save]
+  mov r11,[R11Save]
+  mov r12,[R12Save]
+  mov r13,[R13Save]
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  
+originalcode:
+  call SQLCommitCall
+  readmem(SQLUpdateAOB+B,4)
+  jmp SQLUpdateAOB+0F
+
+SQLUpdateAOBSave:
+  readmem(SQLUpdateAOB,15)
+  
+CurrentSQLSize:
+dq 0
+NewSQLSize:
+dq 0
+RCXSave:
+dq 0
+R14Save2:
+dq 0
+R9Save:
+dq 0
+R10Save:
+dq 0
+R11Save:
+dq 0
+R12Save:
+dq 0
+R13Save:
+dq 0
+R14Save:
+dq 0
+R15Save:
+dq 0
+
+SQLUpdateAOB:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+SQLUpdateAOB:
+  readmem(SQLUpdateAOBSave,15)
+
+unregistersymbol(SQLUpdateAOBSave)
+
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "activate-trainer-3"
+name = "Activate Trainer 3"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+registersymbol(SQLExec)
+alloc(SQLExec,16384)
+
+SQLExec:
+  sub rsp,348
+  mov [R14Save],r14
+  mov [R15Save],r15
+  mov r14,pBuffer
+  mov r15,iCustomSQLNum
+  cmp dword ptr [r15],1
+  jne SkipFirstSQL
+  mov r15,pCustomSQL1
+  mov [r14],r15
+  jmp DoSQL
+SkipFirstSQL:
+  mov r15,pCustomSQL2
+  mov [r14],r15
+  jmp DoSQL
+DoSQL:
+  mov r14,[R14Save]
+  mov r15,[R15Save]
+  mov rcx,pCustomSQL1
+  call lstrlenW
+  mov [pBuffer+8],eax
+  add eax,4
+  mov [pBuffer+C],eax
+  mov dl,1
+  mov rcx,pBuffer
+  call SQLCommitCall
+  add rsp,348
+  ret
+
+align 10 CC
+
+R14Save:
+dq 0
+R15Save:
+dq 0
+pBuffer:
+dq pCustomSQL1 // pointer to SQL statement UNICODE string
+dd 0 // size without terminator
+dd 0 // size with terminator (above + 4)
+
+align 10 CC
+  
+[DISABLE]
+
+unregistersymbol(SQLExec)
+
+///
+dealloc(SQLExec)"""
+
+[[cheat]]
+id = "infinite-hp"
+name = "Infinite HP"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanmodule(InfiniteHPAOB1,$process,F3 0F 10 B7 F8 03 00 00 48 8B 4D D0 48 89 45 E0 44 39 75 D8 74 *)
+registersymbol(InfiniteHPAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(InfiniteHPAOB1Save)
+registersymbol(InfiniteHPAOB1Save)
+label(fHeroDamageMult)
+registersymbol(fHeroDamageMult)
+
+newmem:
+  mov [R15Save],r15
+  cmp dword ptr [rdi+68],1
+  je originalcode
+  mov r15,[R15Save]
+  movss xmm6,[fHeroDamageMult]
+  jmp SkipDefaultCode
+  
+originalcode:
+  mov r15,[R15Save]
+  readmem(InfiniteHPAOB1,8)
+SkipDefaultCode:
+  readmem(InfiniteHPAOB1+8,12)
+  je JumpFar
+  jmp InfiniteHPAOB1+16
+JumpFar:
+  jmp InfiniteHPAOB1+40
+
+InfiniteHPAOB1Save:
+  readmem(InfiniteHPAOB1,15)
+R15Save:
+dq 0
+fHeroDamageMult:
+dq (float)0
+
+///
+InfiniteHPAOB1:
+  jmp newmem
+  return:
+
+[DISABLE]
+
+InfiniteHPAOB1:
+  readmem(InfiniteHPAOB1Save,15)
+
+unregistersymbol(InfiniteHPAOB1)
+unregistersymbol(InfiniteHPAOB1Save)
+unregistersymbol(fHeroDamageMult)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "hero-damage-multiplier"
+name = "Hero Damage Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fHeroDamageMult"
+hops = []
+
+[[cheat]]
+id = "enable-vendor-price-multiplier-0-for-free-items"
+name = "Enable Vendor Price Multiplier (0 For Free Items)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+//aobscanmodule(VendorPriceMultAOB1,$process,F3 0F 10 B6 28 24 00 00 48 89 44 24 30 74 37)
+aobscanmodule(VendorPriceMultAOB1,$process,F3 0F 10 B6 28 25 00 00 48 8B 4D D0 48 89 45 E0 44 39 75 D8 74 *)
+registersymbol(VendorPriceMultAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(VendorPriceMultAOB1Save)
+registersymbol(VendorPriceMultAOB1Save)
+label(fVendorPriceMult)
+registersymbol(fVendorPriceMult)
+
+newmem:
+  movss xmm6,[fVendorPriceMult]
+  jmp SkipDefaultCode
+  
+originalcode:  
+  readmem(VendorPriceMultAOB1,8)
+SkipDefaultCode:
+  readmem(VendorPriceMultAOB1+8,12)
+  je JumpFar
+  jmp VendorPriceMultAOB1+16
+JumpFar:
+  jmp VendorPriceMultAOB1+40
+
+VendorPriceMultAOB1Save:
+  readmem(VendorPriceMultAOB1,15)
+
+fVendorPriceMult:
+dq (float)-1.0
+
+///
+VendorPriceMultAOB1:
+  jmp newmem
+  return:
+
+[DISABLE]
+
+VendorPriceMultAOB1:
+  readmem(VendorPriceMultAOB1Save,15)
+
+unregistersymbol(VendorPriceMultAOB1)
+unregistersymbol(VendorPriceMultAOB1Save)
+unregistersymbol(fVendorPriceMult)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "vendor-price-multiplier"
+name = "Vendor Price Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fVendorPriceMult"
+hops = []
+
+[[cheat]]
+id = "infinite-potion-use"
+name = "Infinite Potion Use"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+//aobscanmodule(InfinitePotionUseAOB1,$process,3B C1 0F 4E C8 F3 0F 2C 86 98 2C 00 00 3B C8)
+aobscanmodule(InfinitePotionUseAOB1,$process,3B C1 0F 4E C8 F3 0F 2C 86 98 2D 00 00 3B C8)
+registersymbol(InfinitePotionUseAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(InfinitePotionUseAOB1Save)
+registersymbol(InfinitePotionUseAOB1Save)
+
+newmem:
+  readmem(InfinitePotionUseAOB1,5)
+  mov eax,#100
+  readmem(InfinitePotionUseAOB1+0D,2)
+  jmp InfinitePotionUseAOB1+0F
+  
+InfinitePotionUseAOB1Save:
+  readmem(InfinitePotionUseAOB1,15)
+
+///
+InfinitePotionUseAOB1:
+  jmp newmem
+  return:
+
+[DISABLE]
+
+InfinitePotionUseAOB1:
+  readmem(InfinitePotionUseAOB1Save,15)
+
+unregistersymbol(InfinitePotionUseAOB1)
+unregistersymbol(InfinitePotionUseAOB1Save)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "always-critical-hit"
+name = "Always Critical Hit"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanmodule(AlwaysCriticalHitAOB1,$process,3B C1 0F 4E C8 F3 0F 2C 87 08 09 00 00 FF C1)
+registersymbol(AlwaysCriticalHitAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(AlwaysCriticalHitAOB1Save)
+registersymbol(AlwaysCriticalHitAOB1Save)
+
+newmem:
+  mov [R15Save],r15
+  cmp dword ptr [rdi+68],1
+  je MyCleanUp1
+  mov r15,[R15Save]
+  readmem(AlwaysCriticalHitAOB1,5)
+  mov eax,#100
+  readmem(AlwaysCriticalHitAOB1+0D,2)
+  jmp AlwaysCriticalHitAOB1+0F
+
+MyCleanUp1:
+  mov r15,[R15Save]
+AlwaysCriticalHitAOB1Save:
+  readmem(AlwaysCriticalHitAOB1,15)
+  jmp AlwaysCriticalHitAOB1+0F
+
+R15Save:
+dq 0
+
+///
+AlwaysCriticalHitAOB1:
+  jmp newmem
+  return:
+
+[DISABLE]
+
+AlwaysCriticalHitAOB1:
+  readmem(AlwaysCriticalHitAOB1Save,15)
+
+unregistersymbol(AlwaysCriticalHitAOB1)
+unregistersymbol(AlwaysCriticalHitAOB1Save)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "no-spell-cooldown"
+name = "No Spell Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+aobscanmodule(NoSpellCooldownAOB1,$process,F3 0F 10 B6 48 0B 00 00 48 8B 4D D0 48 89 45 E0 44 39 75 D8 74 *)
+registersymbol(NoSpellCooldownAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(NoSpellCooldownAOB1Save)
+registersymbol(NoSpellCooldownAOB1Save)
+
+newmem:
+  mov [R15Save],r15
+  cmp dword ptr [rsi+68],1
+  je originalcode
+  mov r15,[R15Save]
+  movss xmm6,[fFloatOneHundred]
+  jmp SkipDefaultCode
+  
+originalcode:
+  mov r15,[R15Save]
+  readmem(NoSpellCooldownAOB1,8)
+SkipDefaultCode:
+  readmem(NoSpellCooldownAOB1+8,12)
+  je JumpFar
+  jmp NoSpellCooldownAOB1+16
+JumpFar:
+  jmp NoSpellCooldownAOB1+40
+
+NoSpellCooldownAOB1Save:
+  readmem(NoSpellCooldownAOB1,15)
+R15Save:
+dq 0
+fFloatOneHundred:
+dq (float)100.0
+
+///
+NoSpellCooldownAOB1:
+  jmp newmem
+  return:
+
+[DISABLE]
+
+NoSpellCooldownAOB1:
+  readmem(NoSpellCooldownAOB1Save,15)
+
+unregistersymbol(NoSpellCooldownAOB1)
+unregistersymbol(NoSpellCooldownAOB1Save)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-ancient-magic-focus"
+name = "Infinite Ancient Magic / Focus"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+//aobscanmodule(InfiniteAncientMagicUseAOB1,$process,0F 2F CF 72 0F F3 0F 10 83 28 1C 00 00 F3 0F 5D C1 0F 28 F8)
+aobscanmodule(InfiniteAncientMagicUseAOB1,$process,0F 2F CF 72 0F F3 0F 10 83 28 1D 00 00 F3 0F 5D C1 0F 28 F8)
+registersymbol(InfiniteAncientMagicUseAOB1)
+alloc(newmem,1024)
+
+///
+label(InfiniteAncientMagicUseAOB1Save)
+registersymbol(InfiniteAncientMagicUseAOB1Save)
+
+newmem:
+InfiniteAncientMagicUseAOB1Save:
+  readmem(InfiniteAncientMagicUseAOB1,20)
+
+///
+InfiniteAncientMagicUseAOB1+03:
+  db 90 90
+
+///
+InfiniteAncientMagicUseAOB1+0D:
+  db 90 90 90 90
+
+[DISABLE]
+
+InfiniteAncientMagicUseAOB1:
+  readmem(InfiniteAncientMagicUseAOB1Save,20)
+
+unregistersymbol(InfiniteAncientMagicUseAOB1)
+unregistersymbol(InfiniteAncientMagicUseAOB1Save)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enable-exp-multiplier"
+name = "Enable EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+///
+//aobscanmodule(EXPMultAOB1,$process,F3 0F 10 81 08 23 00 00 C3 CC CC CC CC CC)
+aobscanmodule(EXPMultAOB1,$process,F3 0F 10 81 08 24 00 00 C3 CC CC CC CC CC)
+registersymbol(EXPMultAOB1)
+alloc(newmem,1024)
+
+///
+label(return)
+label(EXPMultAOB1Save)
+registersymbol(EXPMultAOB1Save)
+label(fEXPMult)
+registersymbol(fEXPMult)
+
+newmem:
+  movss xmm0,[fEXPMult]
+  ret
+
+EXPMultAOB1Save:
+  readmem(EXPMultAOB1,14)
+
+fEXPMult:
+dq (float)5.0
+
+///
+EXPMultAOB1:
+  jmp newmem
+  return:
+
+[DISABLE]
+
+EXPMultAOB1:
+  readmem(EXPMultAOB1Save,14)
+
+unregistersymbol(EXPMultAOB1)
+unregistersymbol(EXPMultAOB1Save)
+unregistersymbol(fEXPMult)
+  
+///
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fEXPMult"
+hops = []

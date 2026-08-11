@@ -1,0 +1,82 @@
+[game]
+name = "Idling Idol"
+exe = "idlingidol.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=24984"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-pointers"
+name = "Activate Pointers"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(aobIdleBase, IdleDataManager:IdleStaminaChange+1d, IdleDataManager:IdleStaminaChange+3e, 39 48 18 0F 86)
+alloc(newmem,$1000,aobIdleBase)
+alloc(idle,8)
+label(code)
+label(return)
+
+newmem:
+  test rax,rax                // test if the address in rax is valid
+  je code
+  mov [idle],rax              // copy address from rax to our symbol
+
+code:
+  cmp [rax+18],ecx            // original code
+  jbe aobIdleBase+2C2         // this is a tip in case you can't use symbol names that it will jump to the address offset from aobIdleBase+2C2
+                              // Which equates to the default resolved symbol: IdleDataManager:IdleStaminaChange+2e6
+  jmp return
+
+aobIdleBase:
+  jmp newmem
+  nop 4
+return:
+registersymbol(aobIdleBase)
+registersymbol(idle)
+[DISABLE]
+
+aobIdleBase:
+  db 39 48 18 0F 86 B9 02 00 00
+
+unregistersymbol(aobIdleBase)
+unregistersymbol(idle)
+dealloc(newmem)
+dealloc(idle)
+
+{
+// ORIGINAL CODE - INJECTION POINT: IdleDataManager:IdleStaminaChange+24
+
+IdleDataManager:IdleStaminaChange+1: 48 8B EC           - mov rbp,rsp
+IdleDataManager:IdleStaminaChange+4: 48 83 EC 40        - sub rsp,40
+IdleDataManager:IdleStaminaChange+8: 48 89 75 E8        - mov [rbp-18],rsi
+IdleDataManager:IdleStaminaChange+c: 48 89 7D F0        - mov [rbp-10],rdi
+IdleDataManager:IdleStaminaChange+10: 4C 89 7D F8        - mov [rbp-08],r15
+IdleDataManager:IdleStaminaChange+14: 4C 8B F9           - mov r15,rcx
+IdleDataManager:IdleStaminaChange+17: 48 8B FA           - mov rdi,rdx
+IdleDataManager:IdleStaminaChange+1a: 49 8B F0           - mov rsi,r8
+IdleDataManager:IdleStaminaChange+1d: 49 8B 47 48        - mov rax,[r15+48]
+IdleDataManager:IdleStaminaChange+21: 48 63 CF           - movsxd  rcx,edi
+// ---------- INJECTING HERE ----------
+IdleDataManager:IdleStaminaChange+24: 39 48 18           - cmp [rax+18],ecx
+// ---------- DONE INJECTING  ----------
+IdleDataManager:IdleStaminaChange+27: 0F 86 B9 02 00 00  - jbe IdleDataManager:IdleStaminaChange+2e6
+IdleDataManager:IdleStaminaChange+2d: 48 8D 44 C8 20     - lea rax,[rax+rcx*8+20]
+IdleDataManager:IdleStaminaChange+32: 48 8B 00           - mov rax,[rax]
+IdleDataManager:IdleStaminaChange+35: 48 85 C0           - test rax,rax
+IdleDataManager:IdleStaminaChange+38: 0F 84 1D 02 00 00  - je IdleDataManager:IdleStaminaChange+25b
+IdleDataManager:IdleStaminaChange+3e: 49 8B 47 48        - mov rax,[r15+48]
+IdleDataManager:IdleStaminaChange+42: 48 63 CF           - movsxd  rcx,edi
+IdleDataManager:IdleStaminaChange+45: 39 48 18           - cmp [rax+18],ecx
+IdleDataManager:IdleStaminaChange+48: 0F 86 91 02 00 00  - jbe IdleDataManager:IdleStaminaChange+2df
+IdleDataManager:IdleStaminaChange+4e: 48 8D 44 C8 20     - lea rax,[rax+rcx*8+20]
+}"""

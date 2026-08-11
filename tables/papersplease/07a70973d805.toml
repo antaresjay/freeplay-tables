@@ -1,0 +1,234 @@
+[game]
+name = "Papers Please"
+exe = "papersplease.exe"
+notes = "Converted from a Cheat Engine table by dennisab. Source: https://fearlessrevolution.com/viewtopic.php?t=6298"
+verified = []
+author = "dennisab"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "time"
+name = "Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "PapersPlease.exe"
+offset = "0x382f70"
+hops = [
+    "+0x78",
+    "+0x78",
+    "+0x84",
+    "+0x5c",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "reason-finder"
+name = "Reason Finder"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : PapersPlease.exe
+  Version: 1.1.67
+  Date   : 2018-03-23
+  Author : Dennis
+}
+
+[ENABLE]
+
+aobscanmodule(reasonFinder,PapersPlease.exe,51 8B C4 C7 00 00 00 00 00 8D 45 9C 50 8D 4D F8) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(clearESICodes)
+label(ESICode1)
+label(ESICode2)
+label(ESICode3)
+label(setESI1)
+label(setESI2)
+label(setESI3)
+
+newmem:
+  cmp [EDI+1C],0
+  jz clearESICodes
+  cmp [EDI+1C],1
+  je setESI1
+  cmp [EDI+1C],2
+  je setESI2
+  cmp [EDI+1C],3
+  je setESI3
+
+clearESICodes:
+  mov [ESICode1],0
+  mov [ESICode2],0
+  mov [ESICode3],0
+
+setESI1:
+  mov [ESICode1],esi
+  mov [ESICode2],0
+  mov [ESICode3],0
+  jmp code
+
+setESI2:
+  mov [ESICode2],esi
+  mov [ESICode3],0
+  jmp code
+
+setESI3:
+  mov [ESICode3],esi
+  jmp code
+
+code:
+  push ecx
+  mov eax,esp
+  mov [eax],00000000
+  jmp return
+
+ESICode1:
+  dd 00000000
+
+ESICode2:
+  dd 00000000
+
+ESICode3:
+  dd 00000000
+
+reasonFinder:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+return:
+registersymbol(reasonFinder)
+registersymbol(ESICode1)
+registersymbol(ESICode2)
+registersymbol(ESICode3)
+
+
+[DISABLE]
+
+reasonFinder:
+  db 51 8B C4 C7 00 00 00 00 00
+
+unregistersymbol(reasonFinder)
+unregistersymbol(ESICode1)
+unregistersymbol(ESICode2)
+unregistersymbol(ESICode3)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "PapersPlease.exe"+1CA00E
+
+"PapersPlease.exe"+1C9FF4: 8B C4                          -  mov eax,esp
+"PapersPlease.exe"+1C9FF6: 89 10                          -  mov [eax],edx
+"PapersPlease.exe"+1C9FF8: 8B 4D FC                       -  mov ecx,[ebp-04]
+"PapersPlease.exe"+1C9FFB: 89 48 04                       -  mov [eax+04],ecx
+"PapersPlease.exe"+1C9FFE: 8B 17                          -  mov edx,[edi]
+"PapersPlease.exe"+1CA000: 8B 92 C8 00 00 00              -  mov edx,[edx+000000C8]
+"PapersPlease.exe"+1CA006: 8D 45 CE                       -  lea eax,[ebp-32]
+"PapersPlease.exe"+1CA009: 50                             -  push eax
+"PapersPlease.exe"+1CA00A: 8B CF                          -  mov ecx,edi
+"PapersPlease.exe"+1CA00C: FF D2                          -  call edx
+// ---------- INJECTING HERE ----------
+"PapersPlease.exe"+1CA00E: 51                             -  push ecx
+"PapersPlease.exe"+1CA00F: 8B C4                          -  mov eax,esp
+"PapersPlease.exe"+1CA011: C7 00 00 00 00 00              -  mov [eax],00000000
+// ---------- DONE INJECTING  ----------
+"PapersPlease.exe"+1CA017: 8D 45 9C                       -  lea eax,[ebp-64]
+"PapersPlease.exe"+1CA01A: 50                             -  push eax
+"PapersPlease.exe"+1CA01B: 8D 4D F8                       -  lea ecx,[ebp-08]
+"PapersPlease.exe"+1CA01E: 89 5D 9C                       -  mov [ebp-64],ebx
+"PapersPlease.exe"+1CA021: C7 45 A0 BC 83 BA 00           -  mov [ebp-60],PapersPlease.exe+2D83BC
+"PapersPlease.exe"+1CA028: E8 33 2F 0E 00                 -  call PapersPlease.exe+2ACF60
+"PapersPlease.exe"+1CA02D: 85 C0                          -  test eax,eax
+"PapersPlease.exe"+1CA02F: 78 24                          -  js PapersPlease.exe+1CA055
+"PapersPlease.exe"+1CA031: 51                             -  push ecx
+"PapersPlease.exe"+1CA032: 8B CC                          -  mov ecx,esp
+}"""
+
+[[cheat]]
+id = "reason-finder-fix"
+name = "Reason Finder Fix"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : PapersPlease.exe
+  Version: 1.1.67
+  Date   : 2018-03-24
+  Author : Dennis
+
+  (Clears Reasons if there are 0 Document Issues)
+}
+
+[ENABLE]
+
+aobscanmodule(reasonTextClear,PapersPlease.exe,89 7E 1C E8 F7 24 E4 FF) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+  mov [esi+1C],edi
+  cmp [esi+1C],0
+  jnz code
+  mov [ESICode1],0
+  mov [ESICode2],0
+  mov [ESICode3],0
+
+code:
+  call PapersPlease.cpp::FastIterator_obj<String>::_dynamicNext+830
+  jmp return
+
+reasonTextClear:
+  jmp newmem
+  nop
+  nop
+  nop
+return:
+registersymbol(reasonTextClear)
+
+[DISABLE]
+
+reasonTextClear:
+  db 89 7E 1C E8 F7 24 E4 FF
+
+unregistersymbol(reasonTextClear)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "issues-amount"
+name = "Issues Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "PapersPlease.exe"
+offset = "0x382f70"
+hops = [
+    "+0x78",
+    "+0x7c",
+    "+0x78",
+    "+0x4",
+    "+0x1c",
+]

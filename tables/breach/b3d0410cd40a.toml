@@ -1,0 +1,447 @@
+[game]
+name = "Into the Breach"
+exe = "breach.exe"
+notes = "Converted from a Cheat Engine table by plaxor. Source: https://fearlessrevolution.com/viewtopic.php?t=20911"
+verified = []
+author = "plaxor"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "symbols"
+name = "Symbols"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobScanModule(isPlayer, Breach.exe, 83 B9 * 00 00 00 01 0F 94)
+aobScanModule(isEnemy, Breach.exe, 83 B9 * 00 00 00 06 0F)
+aobScanModule(isMech, Breach.exe, 8A 81 * ?9 00 00 C3 CC)
+
+registerSymbol(isPlayer isEnemy isMech)
+
+[DISABLE]
+unregisterSymbol(isPlayer isEnemy isMech)"""
+
+[[cheat]]
+id = "reputation"
+name = "Reputation"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Breach.exe"
+offset = "0x4b107c"
+hops = ["+0x8334"]
+
+[[cheat]]
+id = "reactor-cores"
+name = "Reactor Cores"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Breach.exe"
+offset = "0x4b107c"
+hops = ["+0x8338"]
+
+[[cheat]]
+id = "grid-defense"
+name = "Grid Defense"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "Breach.exe"
+offset = "0x4b0f64"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "can-always-attack-enable-before-turning"
+name = "Can Always Attack (enable before turning)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobscanmodule(canAlwaysAttack, Breach.exe, C6 86 * * 00 00 00 C6 86 * * 00 00 00 68)
+canAlwaysAttack+6:
+  db 01
+registersymbol(canAlwaysAttack)
+
+[DISABLE]
+canAlwaysAttack+6:
+  db 00
+unregistersymbol(canAlwaysAttack)"""
+
+[[cheat]]
+id = "can-always-move"
+name = "Can Always Move"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobscanmodule(bMoved, Breach.exe, 56 8B F1 80 BE * * 00 00 00 75 * E8)
+bMoved:
+  mov al 01
+  ret
+registersymbol(bMoved)
+
+[DISABLE]
+bMoved:
+  db 56 8B F1
+unregistersymbol(bMoved)"""
+
+[[cheat]]
+id = "road-runner"
+name = "Road Runner"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+
+  Passing through movement.
+}
+
+[ENABLE]
+aobScanModule(roadRunner,Breach.exe, 74 17 8B 87 * 00 00 00 BE 04)
+roadRunner:
+  nop 2
+registersymbol(roadRunner)
+
+[DISABLE]
+roadRunner:
+  db 74 17
+unregistersymbol(roadRunner)"""
+
+[[cheat]]
+id = "mechs-movement-on-grid-100"
+name = "Mechs Movement on Grid +100"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobScanModule(getMoveSpeed, Breach.exe, 56 8B F1 8B 06 8B * * FF D0 84 C0 75)
+alloc(newmem, $1000)
+
+newmem:
+  call isPlayer
+  test al al
+  je short getMoveSpeed_bytes
+  mov eax #100
+  ret
+
+getMoveSpeed_bytes:
+  readMem(getMoveSpeed, 5)
+  jmp return
+
+getMoveSpeed:
+  jmp newmem
+return:
+registersymbol(getMoveSpeed getMoveSpeed_bytes)
+
+[DISABLE]
+getMoveSpeed:
+  readMem(getMoveSpeed_bytes, 5)
+
+unregistersymbol(getMoveSpeed getMoveSpeed_bytes)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "mechs-shielded"
+name = "Mechs Shielded"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobscanmodule(isShield, Breach.exe, 8A 86 * * 00 00 5E 8B E5 5D C3)
+alloc(newmem, $1000)
+
+newmem:
+  push ecx
+  mov ecx, esi
+  call isPlayer
+  pop ecx
+  jne short isShield_bytes
+  mov al 01
+  jmp return
+
+isShield_bytes:
+  readMem(isShield, 6)
+  jmp return
+
+isShield:
+  jmp newmem
+  nop
+return:
+registersymbol(isShield isShield_bytes)
+
+[DISABLE]
+isShield:
+  readMem(isShield_bytes, 6)
+
+unregistersymbol(isShield isShield_bytes)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "mechs-boosted"
+name = "Mechs Boosted"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobscanmodule(isBoosted, Breach.exe, 55 8B EC 51 56 8B F1 80 BE * * 00 00 00 75 3C)
+alloc(newmem, $1000)
+
+newmem:
+  call isMech
+  jne short isBoosted_bytes
+  call isEnemy
+  je short isBoosted_bytes
+  call isPlayer
+  jne short isBoosted_bytes
+  mov al 01
+  ret
+
+isBoosted_bytes:
+  readMem(isBoosted, 5)
+  jmp return
+
+isBoosted:
+  jmp newmem
+return:
+registersymbol(isBoosted isBoosted_bytes)
+
+[DISABLE]
+IsBoosted:
+  readMem(isBoosted_bytes, 5)
+unregistersymbol(isBoosted isBoosted_bytes)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "unlimited-undo"
+name = "Unlimited Undo"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobscanmodule(isUndoPossible, Breach.exe, 55 8B EC 83 E4 F8 51 56 8B F1 80 BE * * 00 00 00 74)
+isUndoPossible:
+  mov al 01
+  ret
+registersymbol(isUndoPossible)
+
+[DISABLE]
+isUndoPossible:
+  db 55 8B EC
+unregistersymbol(isUndoPossible)"""
+
+[[cheat]]
+id = "unlimited-reset-turn"
+name = "Unlimited Reset Turn"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobScanModule(unliResetTurn, Breach.exe, FF B7 * * 00 00 8B * E8 * * * * 56 8D)
+alloc(unliResetTurn_bytes, $1000)
+
+unliResetTurn_bytes:
+  reassemble(unliResetTurn)
+
+unliResetTurn:
+  push #99
+  nop 4
+
+registersymbol(unliResetTurn unliResetTurn_bytes)
+
+[DISABLE]
+unliResetTurn:
+  reassemble(unliResetTurn_bytes)
+
+unregistersymbol(unliResetTurn unliResetTurn_bytes)
+
+deAlloc(unliResetTurn_bytes)"""
+
+[[cheat]]
+id = "able-to-buy-squads-even-without-coins"
+name = "Able to Buy Squads (even without coins)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobscanmodule(buyAllSquads, Breach.exe, 0F??????????5683????8B??6A)
+alloc(buyAllSquads_bytes, $1000)
+
+buyAllSquads_bytes:
+  reassemble(buyAllSquads)
+
+buyAllSquads:
+  nop 6
+
+registersymbol(buyAllSquads buyAllSquads_bytes)
+
+[DISABLE]
+buyAllSquads:
+  reassemble(buyAllSquads_bytes)
+
+unregistersymbol(buyAllSquads buyAllSquads_bytes)
+dealloc(buyAllSquads_bytes)"""
+
+[[cheat]]
+id = "all-mechs-active-buggy"
+name = "All Mechs Active (buggy)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Into the Breach
+  Author : plaxor
+}
+
+[ENABLE]
+aobscanmodule(isActive, Breach.exe, 55 8B EC 83 EC 10 53 56 8B F1 33 D2)
+alloc(newmem, $1000)
+
+newmem:
+  cmp ecx, esi
+  jne short isActive_bytes
+
+  call isPlayer
+  jne short isActive_bytes
+  call isEnemy
+  je short isActive_bytes
+
+  mov al 01
+  ret
+
+isActive_bytes:
+  readMem(isActive, 6)
+  jmp return
+
+isActive:
+  jmp newmem
+  nop
+return:
+
+registerSymbol(isActive isActive_bytes)
+
+[DISABLE]
+isActive:
+  readMem(isActive_bytes, 6)
+
+unregisterSymbol(isActive isActive_bytes)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "ispassiveskill"
+name = "IsPassiveSkill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game: Into the Breach
+  Author: plaxor
+}
+
+[ENABLE]
+aobScanModule(isPassiveSkill, Breach.exe, 558B??6A??68????????64??????????5083????A1????????33??89????535657508D????64??????????33)
+
+alloc(myPassiveSkill, $1000)
+
+myPassiveSkill:
+  push eax
+  pop eax
+
+isPassiveSkill_orig:
+  readMem(isPassiveSkill, 5)
+  jmp return
+
+isPassiveSkill:
+  jmp myPassiveSkill
+return:
+
+registerSymbol(isPassiveSkill isPassiveSkill_orig)
+
+[DISABLE]
+isPassiveSkill:
+  readMem(isPassiveSkill_orig, 5)
+
+deAlloc(myPassiveSkill)
+
+unregisterSymbol(isPassiveSkill isPassiveSkill_orig)"""

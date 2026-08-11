@@ -1,0 +1,1307 @@
+[game]
+name = "Crimson Desert"
+exe = "crimsondesert.exe"
+notes = "Converted from a Cheat Engine table by MPElite. Source: https://fearlessrevolution.com/viewtopic.php?t=38679"
+verified = []
+author = "MPElite"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "step-2-enable-initialize-table-enable-this-second"
+name = "[STEP 2] Enable / Initialize Table (Enable this SECOND)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Allocates a shared executable trampoline region near the game process.
+// All scripts in this table use offsets into this region (freejumpmem+XX)
+// to avoid allocating scattered memory on every enable.
+define(freejumpmem,$process+500)
+fullaccess(freejumpmem,$1000)
+registersymbol(freejumpmem)
+[DISABLE]
+unregistersymbol(freejumpmem)"""
+
+[[cheat]]
+id = "current-player-pointers-values-may-take-a-few-seconds-to-populate-credits-tuuuup"
+name = "Current Player Pointers - Values may take a few seconds to populate  [Credits: Tuuuup!]"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks into the player update path to capture cplayer (actor base)
+// and csplayer (stat component). freejumpmem+10 is the trampoline entry.
+aobscanmodule(getcurrentplayer,$process,48xxxxxx48xxxxxxxxxxxx48xxxxxx0FB7xxxx66xxxxxxxxB8xxxxxxxx66xxxx74xx48xxxxxxxxE8xxxxxxxx0FB7xx48xxxxxxxx48xxxxB2xxFFxxxx0FB7xx48xxxxxxxxE8xxxxxxxx3A)
+registersymbol(getcurrentplayer getcurrentplayerbkp cplayer csplayer)
+alloc(newmem,128)
+label(code return cplayer csplayer)
+label(getcurrentplayerbkp)
+
+newmem:
+  mov [cplayer],rbx       // save player actor pointer
+
+code:
+  mov rax,[rbx+68]        // original instruction (restored)
+  mov [csplayer],rax      // save stat component pointer
+  mov rcx,[rax+000001A0] // Offset Updated after latest Game Update
+  jmp return
+
+getcurrentplayerbkp:
+readmem(getcurrentplayer,11)
+align 10 cc
+
+cplayer:
+dq 0
+align 10 cc
+
+csplayer:
+dq 0
+align 10 cc
+
+freejumpmem+10:
+  jmp newmem
+
+getcurrentplayer:
+  jmp freejumpmem+10
+  nop 6
+return:
+
+[DISABLE]
+getcurrentplayer:
+  // db 48 8B 43 68 48 8B 88 B0 01 00 00
+readmem(getcurrentplayerbkp,11)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe.debug+1BA972E
+CrimsonDesert.exe.debug+1BA972E: 48 8B 43 68           - mov rax,[rbx+68]
+CrimsonDesert.exe.debug+1BA9732: 48 8B 88 B0 01 00 00  - mov rcx,[rax+000001B0]
+}"""
+
+[[cheat]]
+id = "max-health-stamina-spirit-godmode-will-cause-frequent-crashes-when-in-use"
+name = "Max Health + Stamina + Spirit (Godmode) | WILL cause frequent crashes when in use"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the stat-write path. Detects the player by checking Spirit values.
+// Sets Health, Stamina, and Spirit current+max to 999,999,999.
+// Trampoline: freejumpmem+C0
+aobscanmodule(StaminaInj,$process,48 89 5F 08 48 8B 5C 24 48)
+registersymbol(StaminaInj StaminaInjbkp)
+alloc(newmem,128)
+label(code isPlayer return)
+label(StaminaInjbkp)
+
+newmem:
+  // Check if this entity is the player via Spirit stat identifiers
+  //cmp [rdi+5A8],0
+  //jne isPlayer
+  cmp [rdi+5A0],#19
+  je isPlayer
+  jmp code
+
+// =====================
+// PLAYER BRANCH - set all resources to max
+// =====================
+isPlayer:
+  push rax
+  mov eax,#999999999
+
+  // Set maximum values
+  mov [rdi+18],eax   // Max Health
+  mov [rdi+528],eax  // Max Stamina
+  mov [rdi+5B8],eax  // Max Spirit
+
+  // Set current values
+  mov [rdi+08],eax
+  mov [rdi+518],eax  // Current Stamina
+  mov [rdi+5A8],eax  // Current Spirit
+  // (Current Health is handled by the game from max)
+
+  pop rax
+  mov rbx,[rsp+48]
+  jmp return
+
+// =====================
+// ORIGINAL CODE (non-player / fallthrough)
+// =====================
+code:
+  mov [rdi+08],rbx
+  mov rbx,[rsp+48]
+  jmp return
+
+StaminaInjbkp:
+readmem(StaminaInj,9)
+align 10 cc
+
+freejumpmem+C0:
+  jmp newmem
+
+StaminaInj:
+  jmp freejumpmem+C0
+  nop 4
+return:
+
+[DISABLE]
+StaminaInj:
+  //db 48 89 5F 08 48 8B 5C 24 48
+readmem(StaminaInjbkp,9)
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "gain-multiplier-on-pickup-buy-sell-earn-x9-x99-x99999"
+name = "Gain Multiplier on Pickup / Buy / Sell / Earn  (x9 / x99 / x99999)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the quantity-add instruction. Replaces rcx (amount) with the
+// selected multiplier before it is added to the inventory slot.
+// Only ONE multiplier flag should be 1 at a time (Lua enforces this).
+aobscanmodule(Inv,$process,49 01 4C 38 10)
+registersymbol(_smallAmount _gainItems _gainMoney Inv Invbkp)
+alloc(newmem,128)
+label(code return is_Small is_Items is_Money _smallAmount _gainItems _gainMoney)
+label(Invbkp)
+
+newmem:
+  cmp [_smallAmount],1
+  je is_Small
+  cmp [_gainItems],1
+  je is_Items
+  cmp [_gainMoney],1
+  je is_Money
+  jmp code
+
+is_Small:
+  mov rcx,(int)9
+  jmp code
+
+is_Items:
+  mov rcx,(int)99
+  jmp code
+
+is_Money:
+  mov rcx,(int)99999
+  jmp code
+
+code:
+  add [r8+rdi+10],rcx   // original instruction
+  jmp return
+
+Invbkp:
+readmem(Inv,5)
+align 10 cc
+
+_smallAmount:
+dd 0
+align 10 cc
+
+_gainItems:
+dd 0
+align 10 cc
+
+_gainMoney:
+dd 0
+align 10 cc
+
+freejumpmem+20:
+  jmp newmem
+
+Inv:
+  jmp freejumpmem+20
+return:
+
+[DISABLE]
+Inv:
+  //db 49 01 4C 38 10
+readmem(Invbkp,5)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+FC948CA
+CrimsonDesert.exe+FC948CA: 49 01 4C 38 10  - add [r8+rdi+10],rcx
+}"""
+
+[[cheat]]
+id = "x9"
+name = "x9"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "_smallAmount"
+hops = []
+
+[[cheat]]
+id = "x99"
+name = "x99"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "_gainItems"
+hops = []
+
+[[cheat]]
+id = "gain-99999-copper-trigger-sell-any-item"
+name = "Gain 99999 Copper  (Trigger: Sell any item)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Directly writes 99999 into the Copper balance field on every sell.
+// This is a direct write, not a multiplier - independent of x99999 above.
+aobscanmodule(Money,CrimsonDesert.exe,48 89 8B D0 00 00 00 48 8B BD)
+alloc(newmem,$1000,Money)
+label(code)
+label(return)
+
+newmem:
+code:
+  mov [rbx+000000D0],(int)99999
+  jmp return
+
+Money:
+  jmp newmem
+  nop 2
+return:
+registersymbol(Money)
+
+[DISABLE]
+Money:
+  db 48 89 8B D0 00 00 00
+unregistersymbol(Money)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+BE5E8D
+CrimsonDesert.exe+BE5E8D: 48 89 8B D0 00 00 00  - mov [rbx+000000D0],rcx
+}"""
+
+[[cheat]]
+id = "v1-original-dublicates-equipment"
+name = "v1 (Original, Dublicates equipment)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Replaces the item decrement with sub 0 (effectively a NOP).
+// WARNING: Also duplicates equipment items on use.
+// Trampoline: freejumpmem+30
+aobscanmodule(ItemNoDec2,$process,48 29 4C 02 10)
+registersymbol(ItemNoDec2 ItemNoDec2bkp)
+alloc(newmem,128)
+label(code return)
+label(ItemNoDec2bkp)
+
+newmem:
+code:
+  sub [rdx+rax+10],0   // subtract 0 instead of rcx - item count unchanged
+  jmp return
+
+ItemNoDec2bkp:
+readmem(ItemNoDec2,5)
+align 10 cc
+
+freejumpmem+30:
+  jmp newmem
+
+ItemNoDec2:
+  jmp freejumpmem+30
+return:
+
+[DISABLE]
+ItemNoDec2:
+  //db 48 29 4C 02 10
+readmem(ItemNoDec2bkp,5)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+1B872F2
+CrimsonDesert.exe+1B872F2: 48 29 4C 02 10    - sub [rdx+rax+10],rcx
+}"""
+
+[[cheat]]
+id = "v2-improved-ignores-anything-that-can-t-be-stacked-e-g-equipment"
+name = """v2 (Improved, Ignores anything that can't be "stacked", e.g. Equipment)"""
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Improved version: checks if item count is already at 1 before decrementing.
+// If count > 1, skips the decrement - preserving stackable items.
+// Equipment (count=1, non-stackable) decrements normally.
+// Trampoline: freejumpmem+40
+aobscanmodule(ItemNoDec,$process,48 29 4C 02 10)
+registersymbol(ItemNoDec ItemNoDecbkp)
+alloc(newmem,128)
+label(return doSub)
+label(ItemNoDecbkp)
+
+newmem:
+  mov rcx,[rdx+rax+10]  // read current item count
+  cmp rcx,1
+  jle doSub            // if count <= 1, allow normal decrement (equipment)
+  jmp return            // else skip decrement (stackable consumable)
+
+doSub:
+  sub [rdx+rax+10],rcx  // original decrement
+  jmp return
+
+ItemNoDecbkp:
+readmem(ItemNoDec,5)
+align 10 cc
+
+freejumpmem+40:
+  jmp newmem
+
+ItemNoDec:
+  jmp freejumpmem+40
+return:
+
+[DISABLE]
+ItemNoDec:
+  //db 48 29 4C 02 10
+readmem(ItemNoDecbkp,5)
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "inventory-stack-modifier"
+name = "Inventory Stack Modifier"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks both the slot-read and item-drop paths.
+// Captures the current slot stack into [stack], then on drop:
+//   - If count would go below 1, restores it from [stack].
+//   - If [Stack Amount] is nonzero, locks the slot to that count.
+// Set "Stack Amount" to the desired locked stack size.
+// Trampoline: freejumpmem+100 (invCheck), freejumpmem+110 (itemNoDrop)
+aobscanmodule(invCheck,$process,48 83 78 10 ? 7E ? 80 B8 A0 00 00 00)
+aobscanmodule(itemNoDrop,$process,48 29 ? ? ? 49 8B ? 48 03)
+registersymbol(invCheck invCheckbkp itemNoDrop itemNoDropbkp stack)
+alloc(newmem,256)
+label(invCheckCode noDropCode incItem noDropExec)
+label(invReturn noDropReturn)
+label(invCheckbkp itemNoDropbkp stack)
+
+newmem:
+
+// =====================
+// HOOK 1 - Slot reader: capture current slot stack count
+// =====================
+invCheckCode:
+mov r10,[rax+10]
+mov [stack],r10 // capture current slot count
+jmp invReturn
+
+// =====================
+// HOOK 2 - Drop interceptor: restore/lock stack count on decrement
+// =====================
+noDropCode:
+mov r8,[rdx+rax+10]
+cmp r8,1
+jge incItem
+jmp noDropExec // count <= 1, allow normal decrement
+
+incItem:
+cmp [stack],0
+jz noDropExec // if stack=0, don't interfere
+mov r10,[stack]
+cmp rcx,r10
+je noDropExec // if drop amount == stack amount, allow
+mov [rdx+rax+10],r10 // restore stack count
+jmp noDropExec
+
+noDropExec:
+sub [rdx+rax+10],rcx // original decrement
+jmp noDropReturn
+
+invCheckbkp:
+readmem(invCheck,5)
+align 10 cc
+
+itemNoDropbkp:
+readmem(itemNoDrop,5)
+align 10 cc
+
+stack:
+dd 0
+align 10 cc
+
+freejumpmem+100:
+jmp invCheckCode
+
+freejumpmem+110:
+jmp noDropCode
+
+invCheck:
+jmp freejumpmem+100
+invReturn:
+
+itemNoDrop:
+jmp freejumpmem+110
+noDropReturn:
+
+[DISABLE]
+invCheck:
+//db 48 83 78 10 00
+readmem(invCheckbkp,5)
+itemNoDrop:
+//db 49 29 4C 07 10
+readmem(itemNoDropbkp,5)
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "stack-amount-0-disabled-set-to-desired-locked-count"
+name = "Stack Amount  (0 = disabled, set to desired locked count)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "stack"
+hops = []
+
+[[cheat]]
+id = "inventory-item-swapper"
+name = "Inventory Item Swapper"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// HOOK 1 (freejumpmem+D0 - slot reader):
+//   Reads the hovered slot's item count -> selectedNum
+//   Reads the hovered slot's item ID   -> invId
+//
+// HOOK 2 (freejumpmem+E0 - drop interceptor):
+//   When an item is dropped, writes swapId into that slot's ID field
+//   and forces the count to 1, effectively swapping the item.
+//
+// USAGE:
+//   1. Hover/select the target slot - note "Inventory Item ID"
+//   2. Set "Item Swap ID" to the ID of the item you want
+//   3. Drop the item in that slot - it becomes the swap ID item
+aobscanmodule(slots,$process,48 83 78 10 ? 7E ? 80 B8 A0 00 00 00)
+aobscanmodule(drops,$process,48 29 ? ? ? 49 8B ? 48 03)
+registersymbol(slots slotsbkp drops dropsbkp selectedNum invId swapId)
+alloc(newmem,256)
+label(slotsCode slotsReturn dropsCode dropsReturn)
+label(slotsbkp dropsbkp selectedNum invId swapId)
+
+newmem:
+
+// =====================
+// HOOK 1 - Read slot info
+// =====================
+slotsCode:
+mov r10,[rax+10]
+mov [selectedNum],r10 // current item count in slot
+mov r10,[rax+08]
+mov [invId],r10 // item ID in slot
+cmp qword ptr [rax+10],00
+jmp slotsReturn
+
+// =====================
+// HOOK 2 - Swap item on drop
+// =====================
+dropsCode:
+mov [rdx+rax+10],1 // set count to 1
+mov r8,[swapId]
+mov [rdx+rax+8],r8 // write target item ID
+jmp dropsReturn
+
+slotsbkp:
+readmem(slots,5)
+align 10 cc
+
+dropsbkp:
+readmem(drops,5)
+align 10 cc
+
+selectedNum:
+dd 0
+align 10 cc
+
+invId:
+dd 0
+align 10 cc
+
+swapId:
+dd 0
+align 10 cc
+
+freejumpmem+D0:
+jmp slotsCode
+
+freejumpmem+E0:
+jmp dropsCode
+
+slots:
+jmp freejumpmem+D0
+slotsReturn:
+
+drops:
+jmp freejumpmem+E0
+dropsReturn:
+
+[DISABLE]
+slots:
+//db 48 83 78 10 00
+readmem(slotsbkp,5)
+drops:
+//db 49 29 4C 07 10
+readmem(dropsbkp,5)
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "inventory-item-count-read-current-slot-count"
+name = "Inventory Item Count  [READ - current slot count]"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectedNum"
+hops = []
+
+[[cheat]]
+id = "inventory-item-id-read-hovered-slot-item-id"
+name = "Inventory Item ID  [READ - hovered slot item ID]"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "invId"
+hops = []
+
+[[cheat]]
+id = "item-swap-id-write-set-this-to-the-desired-item-id-to-inject"
+name = "Item Swap ID  [WRITE - set this to the desired item ID to inject]"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "swapId"
+hops = []
+
+[[cheat]]
+id = "max-trust-only-common-unnamed-people-pets-trigger-greet-gift-or-pet-the-target-twice"
+name = "Max Trust - ONLY (Common/Unnamed) People/Pets  [Trigger: Greet/Gift or Pet the target twice]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the trust-data copy path. Replaces the source trust value with
+// 100 (max) in xmm1 before it is written to the destination struct.
+// Trigger by gifting or petting the NPC/pet twice.
+// Trampoline: freejumpmem+50
+aobscanmodule(MaxTrust,$process,4E * * * * * * * * * * * * 20 C5 FC 11 49 20)
+registersymbol(MaxTrust MaxTrustbkp)
+alloc(newmem,128)
+label(code return)
+label(MaxTrustbkp)
+newmem:
+code:
+  //vmovups [rcx+20],ymm1  //Original Instruction
+  mov [rcx+20],#100  //New working instruction
+  jmp return
+MaxTrustbkp:
+readmem(MaxTrust+0E,5)
+align 10 cc
+
+freejumpmem+50:
+  jmp newmem
+
+MaxTrust+0E:
+  jmp freejumpmem+50
+  nop 7
+return:
+[DISABLE]
+MaxTrust+0E:
+  //db 0F 10 4F 10 0F 11 4A 10 0F 10 47 20
+readmem(MaxTrustbkp,5)
+unregistersymbol(*)
+dealloc(*)
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+E2DA7B1
+CrimsonDesert.exe+E2DA7B1: 0F 10 4F 10  - movups xmm1,[rdi+10]
+}"""
+
+[[cheat]]
+id = "max-trust-horse-trigger-gain-any-trust-with-horse"
+name = "Max Trust - Horse  [Trigger: Gain any trust with horse]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Writes 350 (horse max trust cap) directly into the horse trust field.
+// Trigger by performing any trust-gaining action with the horse.
+// Trampoline: freejumpmem+60
+aobscanmodule(HorseTrust,$process,49 89 47 08 41 89 36)
+registersymbol(HorseTrust HorseTrustbkp)
+alloc(newmem,128)
+label(code return)
+label(HorseTrustbkp)
+
+newmem:
+code:
+  mov rax,#350            // horse max trust value
+  mov [r15+08],rax        // write to trust field
+  mov [r14],esi           // original secondary write
+  jmp return
+
+HorseTrustbkp:
+readmem(HorseTrust,7)
+align 10 cc
+
+freejumpmem+60:
+  jmp newmem
+
+HorseTrust:
+  jmp freejumpmem+60
+  nop 2
+return:
+
+[DISABLE]
+HorseTrust:
+  //db 49 89 47 08 41 89 36
+readmem(HorseTrustbkp,7)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+E2E6835
+CrimsonDesert.exe+E2E6835: 49 89 47 08  - mov [r15+08],rax
+CrimsonDesert.exe+E2E6839: 41 89 36     - mov [r14],esi
+}"""
+
+[[cheat]]
+id = "max-contribution-trigger-steal-something-deactivate-gain-contribution"
+name = "Max Contribution  [Trigger: Steal something -> Deactivate -> Gain contribution]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the contribution total write. Replaces the written value with 99999.
+// USAGE: Enable -> steal something -> Disable -> gain any contribution to level up.
+// Also works for skill upgrades (upgrade the skill twice each time).
+// Trampoline: freejumpmem+70
+aobscanmodule(MaxContribution,$process,48 89 41 10 8B 84 24 B8 00 00 00 3B F8 7D 78)
+registersymbol(MaxContribution MaxContributionbkp)
+alloc(newmem,128)
+label(code return)
+label(MaxContributionbkp)
+
+newmem:
+code:
+  mov [rcx+10],(int)99999      // override contribution total
+  mov eax,[rsp+000000B8]        // original secondary instruction (restored)
+  jmp return
+
+MaxContributionbkp:
+readmem(MaxContribution,11)
+align 10 cc
+
+freejumpmem+70:
+  jmp newmem
+
+MaxContribution:
+  jmp freejumpmem+70
+  nop 6
+return:
+
+[DISABLE]
+MaxContribution:
+  //db 48 89 41 10 8B 84 24 B8 00 00 00
+readmem(MaxContributionbkp,11)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+1C41008
+CrimsonDesert.exe+1C40FFD: 89 70 0C                 - mov [rax+0C],esi
+CrimsonDesert.exe+1C41000: 48 8B 84 24 B0 00 00 00  - mov rax,[rsp+000000B0]
+CrimsonDesert.exe+1C41008: 48 89 41 10              - mov [rcx+10],rax         << injection
+CrimsonDesert.exe+1C4100C: 8B 84 24 B8 00 00 00     - mov eax,[rsp+000000B8]
+CrimsonDesert.exe+1C41013: 3B F8                    - cmp edi,eax
+CrimsonDesert.exe+1C41015: 7D 78                    - jnl CrimsonDesert.exe+1C4108F
+}"""
+
+[[cheat]]
+id = "max-resistance-stats-fire-ice-lightning-attack-defense-stat"
+name = "Max Resistance Stats (Fire, Ice, Lightning) + Attack & Defense Stat"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the stat-increment instruction. Replaces the add with a direct
+// write of 999,999,999 to whichever stat slot is being updated.
+// Trampoline: freejumpmem+80
+aobscanmodule(Stats,$process,4A 01 34 F1 48 03 D6)
+registersymbol(Stats Statsbkp)
+alloc(newmem,128)
+label(code return)
+label(Statsbkp)
+
+newmem:
+code:
+  mov [rcx+r14*8],#999999999  // override stat value with max
+  add rdx,rsi                 // original follow-up instruction
+  jmp return
+
+Statsbkp:
+readmem(Stats,7)
+align 10 cc
+
+freejumpmem+80:
+  jmp newmem
+
+Stats:
+  jmp freejumpmem+80
+  nop 2
+return:
+
+[DISABLE]
+Stats:
+  //db 4A 01 34 F1 48 03 D6
+readmem(Statsbkp,7)
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "instant-horse-capture-enable-before-starting-capture"
+name = "Instant Horse Capture  (Enable before starting capture)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the horse capture progress write (VEX-encoded after game update).
+// Reads the capture threshold from [rbx+1C] and writes it as the
+// current progress to [rbx], instantly completing the capture attempt.
+// The setp/cmp NaN-check block is included in the 9-byte window and skipped.
+// Trampoline: freejumpmem+90
+aobscanmodule(HorseWrite,$process,C5 FA 11 13 0F 9A D0 3C 01)
+registersymbol(HorseWrite HorseWritebkp)
+alloc(newmem,128)
+label(return)
+label(HorseWritebkp)
+
+newmem:
+  vmovss xmm2,[rbx+1C]   // load max capture threshold
+  vmovss [rbx],xmm2      // write as current progress -> instant capture
+  jmp return
+
+HorseWritebkp:
+readmem(HorseWrite,9)
+align 10 cc
+
+freejumpmem+90:
+  jmp newmem
+
+HorseWrite:
+  jmp freejumpmem+90
+  nop 4
+return:
+
+[DISABLE]
+HorseWrite:
+  //db C5 FA 11 13 0F 9A D0 3C 01
+readmem(HorseWritebkp,9)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+8FB4190
+CrimsonDesert.exe+8FB4188: C5 F2 58 D2        - vaddss xmm2,xmm1,xmm2
+CrimsonDesert.exe+8FB418C: C5 F8 2E D2        - vucomiss xmm2,xmm2
+CrimsonDesert.exe+8FB4190: C5 FA 11 13        - vmovss [rbx],xmm2
+CrimsonDesert.exe+8FB4194: 0F 9A D0           - setp al
+CrimsonDesert.exe+8FB4197: 3C 01              - cmp al,01
+}"""
+
+[[cheat]]
+id = "wild-west-archery-shooting-first-hit-wins-the-minigame"
+name = "Wild West Archery / Shooting  (First hit wins the minigame)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the score-comparison read in the archery/shooting minigame.
+// Sets the winning threshold to 1 and your current score to 0 each frame,
+// meaning the first successful hit immediately satisfies win condition.
+// Trampoline: freejumpmem+A0
+aobscanmodule(Archery,$process,8B 47 14 8B 4F 10 3B C1 0F 93 C2)
+registersymbol(Archery Archerybkp)
+alloc(newmem,128)
+label(code return)
+label(Archerybkp)
+
+newmem:
+code:
+  mov [rdi+14],#0    // set required score to 0 (your score to beat)
+  mov [rdi+10],#1    // set win threshold to 1 (first hit wins)
+  mov eax,[rdi+14]   // load for comparison (original reads)
+  mov ecx,[rdi+10]
+  jmp return
+
+Archerybkp:
+readmem(Archery,6)
+align 10 cc
+
+freejumpmem+A0:
+  jmp newmem
+
+Archery:
+  jmp freejumpmem+A0
+  nop
+return:
+
+[DISABLE]
+Archery:
+  //db 8B 47 14 8B 4F 10
+readmem(Archerybkp,6)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+1A82D31
+CrimsonDesert.exe+1A82D31: 8B 47 14  - mov eax,[rdi+14]
+CrimsonDesert.exe+1A82D34: 8B 4F 10  - mov ecx,[rdi+10]
+CrimsonDesert.exe+1A82D37: 3B C1     - cmp eax,ecx
+}"""
+
+[[cheat]]
+id = "set-equipment-durability-to-100-trigger-use-equipment-once-save-reload"
+name = "Set Equipment Durability to 100  [Trigger: use equipment once -> save -> reload]"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the durability update write. Replaces the written ax value
+// with 100 (word write), keeping durability at max. NOTE: Cannot be
+// active at the same time as "Disable Durability Damage" - both hook
+// the same instruction (66 89 45 38 79 0B).
+// Trampoline: freejumpmem+B0
+aobscanmodule(InfDurability,$process,66 89 45 40 79 0B)
+registersymbol(InfDurability InfDurabilitybkp)
+alloc(newmem,128)
+label(code return)
+label(InfDurabilitybkp)
+newmem:
+code:
+  mov word ptr [rbp+40],#100      // write 100 as 16-bit word (matches original ax write)
+  jns CrimsonDesert.exe+1E0371B
+  jmp return
+InfDurabilitybkp:
+readmem(InfDurability,6)
+align 10 cc
+freejumpmem+B0:
+  jmp newmem
+InfDurability:
+  jmp freejumpmem+B0
+  nop
+return:
+[DISABLE]
+InfDurability:
+  //db 66 89 45 40 79 0B
+readmem(InfDurabilitybkp,6)
+unregistersymbol(*)
+dealloc(*)
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+1E0370A
+CrimsonDesert.exe+1E0370A: 66 89 45 40           - mov [rbp+40],ax
+CrimsonDesert.exe+1E0370E: 79 0B                 - jns CrimsonDesert.exe+1E0371B
+}"""
+
+[[cheat]]
+id = "disable-durability-damage-equipment-takes-no-damage-at-all-credits-bobdandy-mpelite"
+name = "Disable Durability Damage  (Equipment takes no damage at all)  [Credits: bobdandy / MPElite]"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the durability write instruction and skips it entirely.
+// Instead of writing the new (lower) durability value, execution jumps
+// directly past both the write and the sign branch, leaving durability
+// completely unchanged on every hit/use.
+// NOTE: Cannot be active at the same time as "Set Durability to 100"
+//       - they both hook the same instruction (66 89 45 38).
+// Trampoline: freejumpmem+F0
+aobscanmodule(DisableDur,$process,66 89 45 40 79 0B)
+registersymbol(DisableDur DisableDurbkp)
+alloc(newmem,128)
+label(return)
+label(DisableDurbkp)
+
+newmem:
+  // Skip both the durability write (66 89 45 38) and the branch (79 0B).
+  // Jump directly to the instruction that follows, preserving all registers.
+  jmp return
+
+DisableDurbkp:
+readmem(DisableDur,6)
+align 10 cc
+
+freejumpmem+F0:
+  jmp newmem
+
+DisableDur:
+  jmp freejumpmem+F0
+  nop
+return:
+
+[DISABLE]
+DisableDur:
+  //db 66 89 45 40 79 0B
+readmem(DisableDurbkp,6)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+1D3D47A
+CrimsonDesert.exe+1D3D47A: 66 89 45 38  - mov [rbp+38],ax
+CrimsonDesert.exe+1D3D47E: 79 0B        - jns CrimsonDesert.exe+1D3D48B
+}"""
+
+[[cheat]]
+id = "timescale-modifier-credits-supex0-mpelite"
+name = "TimeScale Modifier  [Credits: supex0 | MPElite]"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the timescale write at [r10+CD0] and NOP-s the downstream
+// divss + CD4 write, preventing the game from recomputing the inverse.
+// Both CD0 (forward timescale) and CD4 (inverse timescale) are written
+// directly with TimeScaleFloat on every tick.
+// Trampoline: freejumpmem+120 | NOP patch: TimeScaleDivFix (13 bytes)
+aobscanmodule(TimeScaleInj,$process,C5 FA 11 83 D0 0C 00 00)
+aobscanmodule(TimeScaleDivFix,$process,C5 FA 5E C1 C5 FA 11 83 D4 0C 00 00)
+registersymbol(TimeScaleInj TimeScaleInjbkp TimeScaleDivFix TimeScaleDivFixbkp TimeScaleFloat)
+alloc(newmem,128)
+label(return TimeScaleFloat)
+label(TimeScaleInjbkp TimeScaleDivFixbkp)
+newmem:
+mov ecx,[TimeScaleFloat]
+mov [rbx+00000CD0],ecx // write custom forward timescale
+mov [rbx+00000CD4],ecx // write custom inverse timescale (divss NOP-ed below)
+jmp return
+TimeScaleInjbkp:
+readmem(TimeScaleInj,8)
+align 10 cc
+TimeScaleDivFixbkp:
+readmem(TimeScaleDivFix,12)
+align 10 cc
+TimeScaleFloat:
+dd (float)1.0
+align 10 cc
+freejumpmem+120:
+jmp newmem
+TimeScaleInj:
+jmp freejumpmem+120
+nop 3 // // 1.04.02 - only 8 bytes
+return:
+// NOP out: divss xmm0,xmm1 (4) + movss [r10+CD4],xmm0 (9) = 13 bytes
+// Without this, the game recomputes CD4 = originalXmm0 / ourScale each tick
+TimeScaleDivFix:
+nop #12 // 1.04.02 - only 12 bytes
+[DISABLE]
+TimeScaleInj:
+//db F3 41 0F 11 82 D0 0C 00 00
+readmem(TimeScaleInjbkp,8)
+TimeScaleDivFix:
+readmem(TimeScaleDivFixbkp,12)
+unregistersymbol(*)
+dealloc(*)
+
+
+
+{
+V1.04.02
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+8D35E5
+
+CrimsonDesert.exe+8D355B: 83 E9 01 - sub ecx,01
+CrimsonDesert.exe+8D355E: 74 24 - je CrimsonDesert.exe+8D3584
+CrimsonDesert.exe+8D3560: 83 F9 01 - cmp ecx,01
+CrimsonDesert.exe+8D3563: 75 72 - jne CrimsonDesert.exe+8D35D7
+CrimsonDesert.exe+8D3565: 80 BB 54 10 00 00 00 - cmp byte ptr [rbx+00001054],00
+CrimsonDesert.exe+8D356C: 74 69 - je CrimsonDesert.exe+8D35D7
+CrimsonDesert.exe+8D356E: 48 8B CB - mov rcx,rbx
+CrimsonDesert.exe+8D3571: E8 7A 9C EA FF - call CrimsonDesert.exe+77D1F0
+CrimsonDesert.exe+8D3576: C5 7A 11 6C 24 38 - vmovss [rsp+38],xmm13
+CrimsonDesert.exe+8D357C: C5 7A 11 6C 24 30 - vmovss [rsp+30],xmm13
+CrimsonDesert.exe+8D3582: EB 25 - jmp CrimsonDesert.exe+8D35A9
+CrimsonDesert.exe+8D3584: 80 BB 54 10 00 00 00 - cmp byte ptr [rbx+00001054],00
+CrimsonDesert.exe+8D358B: 74 4A - je CrimsonDesert.exe+8D35D7
+CrimsonDesert.exe+8D358D: 48 8B CB - mov rcx,rbx
+CrimsonDesert.exe+8D3590: E8 5B 9C EA FF - call CrimsonDesert.exe+77D1F0
+CrimsonDesert.exe+8D3595: C5 FA 10 0D 7B BB 73 04 - vmovss xmm1,[CrimsonDesert.exe+500F118]
+CrimsonDesert.exe+8D359D: C5 FA 11 4C 24 38 - vmovss [rsp+38],xmm1
+CrimsonDesert.exe+8D35A3: C5 FA 11 4C 24 30 - vmovss [rsp+30],xmm1
+CrimsonDesert.exe+8D35A9: C5 FA 11 44 24 28 - vmovss [rsp+28],xmm0
+CrimsonDesert.exe+8D35AF: C5 FA 11 44 24 20 - vmovss [rsp+20],xmm0
+CrimsonDesert.exe+8D35B5: C6 84 24 F0 01 00 00 03 - mov byte ptr [rsp+000001F0],03
+CrimsonDesert.exe+8D35BD: C4 C1 78 28 DA - vmovaps xmm3,xmm10
+CrimsonDesert.exe+8D35C2: C4 C1 78 28 D2 - vmovaps xmm2,xmm10
+CrimsonDesert.exe+8D35C7: 48 8D 94 24 F0 01 00 00 - lea rdx,[rsp+000001F0]
+CrimsonDesert.exe+8D35CF: 48 8B CB - mov rcx,rbx
+CrimsonDesert.exe+8D35D2: E8 D9 88 EA FF - call CrimsonDesert.exe+77BEB0
+CrimsonDesert.exe+8D35D7: C5 F8 28 D6 - vmovaps xmm2,xmm6
+CrimsonDesert.exe+8D35DB: 33 D2 - xor edx,edx
+CrimsonDesert.exe+8D35DD: 48 8B CB - mov rcx,rbx
+CrimsonDesert.exe+8D35E0: E8 6B 91 EA FF - call CrimsonDesert.exe+77C750
+// ---------- INJECTING HERE ----------
+CrimsonDesert.exe+8D35E5: C5 FA 11 83 D0 0C 00 00 - vmovss [rbx+00000CD0],xmm0
+// ---------- DONE INJECTING ----------
+CrimsonDesert.exe+8D35ED: C5 F8 28 D6 - vmovaps xmm2,xmm6
+CrimsonDesert.exe+8D35F1: B2 01 - mov dl,01
+CrimsonDesert.exe+8D35F3: 48 8B CB - mov rcx,rbx
+CrimsonDesert.exe+8D35F6: E8 55 91 EA FF - call CrimsonDesert.exe+77C750
+CrimsonDesert.exe+8D35FB: C5 FA 10 8B D0 0C 00 00 - vmovss xmm1,[rbx+00000CD0]
+// ---------- NOPPING HERE -----------
+CrimsonDesert.exe+8D3603: C5 FA 5E C1 - vdivss xmm0,xmm0,xmm1
+CrimsonDesert.exe+8D3607: C5 FA 11 83 D4 0C 00 00 - vmovss [rbx+00000CD4],xmm0
+// ---------- DONE NOPPING -----------
+CrimsonDesert.exe+8D360F: 48 8B 47 58 - mov rax,[rdi+58]
+CrimsonDesert.exe+8D3613: C5 F2 59 40 64 - vmulss xmm0,xmm1,[rax+64]
+CrimsonDesert.exe+8D3618: C5 FA 11 40 64 - vmovss [rax+64],xmm0
+CrimsonDesert.exe+8D361D: 45 84 F6 - test r14b,r14b
+CrimsonDesert.exe+8D3620: 74 04 - je CrimsonDesert.exe+8D3626
+CrimsonDesert.exe+8D3622: C5 C2 59 F9 - vmulss xmm7,xmm7,xmm1
+CrimsonDesert.exe+8D3626: 48 8B 47 58 - mov rax,[rdi+58]
+CrimsonDesert.exe+8D362A: 0F B6 48 50 - movzx ecx,byte ptr [rax+50]
+CrimsonDesert.exe+8D362E: 80 F9 01 - cmp cl,01
+CrimsonDesert.exe+8D3631: 75 45 - jne CrimsonDesert.exe+8D3678
+CrimsonDesert.exe+8D3633: C5 FA 10 48 54 - vmovss xmm1,[rax+54]
+CrimsonDesert.exe+8D3638: C4 C1 72 5C D5 - vsubss xmm2,xmm1,xmm13
+CrimsonDesert.exe+8D363D: C5 FA 10 05 0B BB 73 04 - vmovss xmm0,[CrimsonDesert.exe+500F150]
+CrimsonDesert.exe+8D3645: C5 F8 2F C2 - vcomiss xmm0,xmm2
+CrimsonDesert.exe+8D3649: 72 0A - jb CrimsonDesert.exe+8D3655
+CrimsonDesert.exe+8D364B: C5 F8 2F 15 E1 C6 73 04 - vcomiss xmm2,[CrimsonDesert.exe+500FD34]
+CrimsonDesert.exe+8D3653: 73 68 - jae CrimsonDesert.exe+8D36BD
+CrimsonDesert.exe+8D3655: C5 F2 59 40 64 - vmulss xmm0,xmm1,[rax+64]
+CrimsonDesert.exe+8D365A: C5 FA 11 40 64 - vmovss [rax+64],xmm0
+CrimsonDesert.exe+8D365F: 48 8B 47 58 - mov rax,[rdi+58]
+CrimsonDesert.exe+8D3663: C5 F2 59 40 68 - vmulss xmm0,xmm1,[rax+68]
+CrimsonDesert.exe+8D3668: C5 FA 11 40 68 - vmovss [rax+68],xmm0
+CrimsonDesert.exe+8D366D: 45 84 F6 - test r14b,r14b
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+896CD8
+
+CrimsonDesert.exe+896C5A: 0F B6 88 88 01 00 00 - movzx ecx,byte ptr [rax+00000188]
+CrimsonDesert.exe+896C61: 80 F9 FF - cmp cl,-01
+CrimsonDesert.exe+896C64: 75 05 - jne CrimsonDesert.exe+896C6B
+CrimsonDesert.exe+896C66: 49 8B C7 - mov rax,r15
+CrimsonDesert.exe+896C69: EB 0B - jmp CrimsonDesert.exe+896C76
+CrimsonDesert.exe+896C6B: 48 8B 80 78 01 00 00 - mov rax,[rax+00000178]
+CrimsonDesert.exe+896C72: 48 8B 04 C8 - mov rax,[rax+rcx*8]
+CrimsonDesert.exe+896C76: 48 8B 70 30 - mov rsi,[rax+30]
+CrimsonDesert.exe+896C7A: 8B 40 38 - mov eax,[rax+38]
+CrimsonDesert.exe+896C7D: 48 8D 2C C6 - lea rbp,[rsi+rax*8]
+CrimsonDesert.exe+896C81: 48 3B F5 - cmp rsi,rbp
+CrimsonDesert.exe+896C84: 74 2E - je CrimsonDesert.exe+896CB4
+CrimsonDesert.exe+896C86: 66 66 0F 1F 84 00 00 00 00 00 - nop word ptr [rax+rax+00000000]
+CrimsonDesert.exe+896C90: 48 8B 1E - mov rbx,[rsi]
+CrimsonDesert.exe+896C93: 48 8D 8B 08 01 00 00 - lea rcx,[rbx+00000108]
+CrimsonDesert.exe+896C9A: E8 91 AF C0 01 - call CrimsonDesert.exe+24A1C30
+CrimsonDesert.exe+896C9F: 48 8D 8B 30 01 00 00 - lea rcx,[rbx+00000130]
+CrimsonDesert.exe+896CA6: E8 85 AF C0 01 - call CrimsonDesert.exe+24A1C30
+CrimsonDesert.exe+896CAB: 48 83 C6 08 - add rsi,08
+CrimsonDesert.exe+896CAF: 48 3B F5 - cmp rsi,rbp
+CrimsonDesert.exe+896CB2: 75 DC - jne CrimsonDesert.exe+896C90
+CrimsonDesert.exe+896CB4: 48 8D 4C 24 20 - lea rcx,[rsp+20]
+CrimsonDesert.exe+896CB9: E8 72 A7 A4 FF - call CrimsonDesert.exe+2E1430
+CrimsonDesert.exe+896CBE: 4C 8B 57 20 - mov r10,[rdi+20]
+CrimsonDesert.exe+896CC2: 48 8B 47 58 - mov rax,[rdi+58]
+CrimsonDesert.exe+896CC6: F3 0F 10 70 5C - movss xmm6,[rax+5C]
+CrimsonDesert.exe+896CCB: 0F 28 D6 - movaps xmm2,xmm6
+CrimsonDesert.exe+896CCE: 33 D2 - xor edx,edx
+CrimsonDesert.exe+896CD0: 49 8B CA - mov rcx,r10
+CrimsonDesert.exe+896CD3: E8 28 E4 EA FF - call CrimsonDesert.exe+745100
+// ---------- INJECTING HERE ----------
+CrimsonDesert.exe+896CD8: F3 41 0F 11 82 D0 0C 00 00 - movss [r10+00000CD0],xmm0
+// ---------- DONE INJECTING ----------
+CrimsonDesert.exe+896CE1: 0F 28 D6 - movaps xmm2,xmm6
+CrimsonDesert.exe+896CE4: B2 01 - mov dl,01
+CrimsonDesert.exe+896CE6: 49 8B CA - mov rcx,r10
+CrimsonDesert.exe+896CE9: E8 12 E4 EA FF - call CrimsonDesert.exe+745100
+CrimsonDesert.exe+896CEE: F3 41 0F 10 8A D0 0C 00 00 - movss xmm1,[r10+00000CD0]
+// ---------- NOPPING HERE ----------
+CrimsonDesert.exe+896CF7: F3 0F 5E C1 - divss xmm0,xmm1
+CrimsonDesert.exe+896CFB: F3 41 0F 11 82 D4 0C 00 00 - movss [r10+00000CD4],xmm0
+// ---------- DONE NOPPING ----------
+CrimsonDesert.exe+896D04: 48 8B 47 58 - mov rax,[rdi+58]
+CrimsonDesert.exe+896D08: 0F 28 C1 - movaps xmm0,xmm1
+CrimsonDesert.exe+896D0B: F3 0F 59 40 5C - mulss xmm0,[rax+5C]
+CrimsonDesert.exe+896D10: F3 0F 11 40 5C - movss [rax+5C],xmm0
+CrimsonDesert.exe+896D15: 45 84 F6 - test r14b,r14b
+CrimsonDesert.exe+896D18: 74 04 - je CrimsonDesert.exe+896D1E
+CrimsonDesert.exe+896D1A: F3 0F 59 F9 - mulss xmm7,xmm1
+CrimsonDesert.exe+896D1E: 48 8B 47 58 - mov rax,[rdi+58]
+CrimsonDesert.exe+896D22: 0F B6 48 48 - movzx ecx,byte ptr [rax+48]
+CrimsonDesert.exe+896D26: 80 F9 01 - cmp cl,01
+CrimsonDesert.exe+896D29: 75 4C - jne CrimsonDesert.exe+896D77
+CrimsonDesert.exe+896D2B: F3 0F 10 50 4C - movss xmm2,[rax+4C]
+CrimsonDesert.exe+896D30: 0F 28 CA - movaps xmm1,xmm2
+CrimsonDesert.exe+896D33: F3 41 0F 5C CD - subss xmm1,xmm13
+CrimsonDesert.exe+896D38: F3 0F 10 05 EC 06 5D 04 - movss xmm0,[CrimsonDesert.exe+4E6742C]
+CrimsonDesert.exe+896D40: 0F 2F C1 - comiss xmm0,xmm1
+CrimsonDesert.exe+896D43: 72 09 - jb CrimsonDesert.exe+896D4E
+CrimsonDesert.exe+896D45: 0F 2F 0D A0 11 5D 04 - comiss xmm1,[CrimsonDesert.exe+4E67EEC]
+CrimsonDesert.exe+896D4C: 73 75 - jae CrimsonDesert.exe+896DC3
+CrimsonDesert.exe+896D4E: 0F 28 C2 - movaps xmm0,xmm2
+CrimsonDesert.exe+896D51: F3 0F 59 40 5C - mulss xmm0,[rax+5C]
+CrimsonDesert.exe+896D56: F3 0F 11 40 5C - movss [rax+5C],xmm0
+CrimsonDesert.exe+896D5B: 48 8B 47 58 - mov rax,[rdi+58]
+}"""
+
+[[cheat]]
+id = "press-to-speed-down"
+name = "Press [-] to Speed-down"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "TimeScaleFloat"
+hops = []
+
+[[cheat]]
+id = "always-perfect-easy-parry-all-parry-attempts-succeed-instantly-credits-supex0-mpelite-broken"
+name = "Always Perfect/Easy Parry  (All parry attempts succeed instantly)  [Credits: supex0 | MPElite] (BROKEN)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Hooks the parry validation function at its entry point.
+// Immediately returns al=1 (success) to the original caller via ret -
+// the hooked function's prologue never executes.
+// No return: label needed - ret unwinds directly to the game caller.
+// Trampoline: freejumpmem+130
+aobscanmodule(EasyParryInj,$process,48 8B C4 55 41 56 48 81)
+registersymbol(EasyParryInj EasyParryInjbkp)
+alloc(newmem,128)
+label(EasyParryInjbkp)
+
+newmem:
+  mov al,1   // signal parry success
+  ret        // return directly to game caller - prologue never runs
+
+EasyParryInjbkp:
+readmem(EasyParryInj,6)
+align 10 cc
+
+freejumpmem+130:
+  jmp newmem
+
+EasyParryInj:
+  jmp freejumpmem+130
+  nop
+// return: intentionally omitted - ret in newmem unwinds the call stack directly
+
+[DISABLE]
+EasyParryInj:
+  //db 48 8B C4 55 41 56
+readmem(EasyParryInjbkp,6)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: CrimsonDesert.exe+???? (parry check function entry)
+// CrimsonDesert.exe+????: 48 8B C4     - mov rax,rsp
+// CrimsonDesert.exe+????: 55           - push rbp
+// CrimsonDesert.exe+????: 41 56        - push r14
+// CrimsonDesert.exe+????: 48 81 ...    - sub rsp,... (remainder of prologue)
+}"""

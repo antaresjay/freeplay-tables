@@ -1,0 +1,745 @@
+[game]
+name = "Deprecated - Imperator: Rome"
+exe = "imperator.exe"
+notes = "Converted from a Cheat Engine table by CompactDisc. Source: https://fearlessrevolution.com/viewtopic.php?t=9302"
+verified = []
+author = "CompactDisc"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "x-godmode"
+name = "[X] <== Godmode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//=========================================
+// God Mode Script
+//=========================================
+
+define(ApplyDamage,   "imperator.exe"+C908DA)
+define(PerformAssault,"imperator.exe"+CADEB8)
+
+//=========================================
+  [ENABLE]
+//=========================================
+
+assert(ApplyDamage,    48 8B 83 A8 01 00 00 48 29 43 20 48 8B 83 B0 01 00 00)
+assert(PerformAssault, 49 89 49 20 49 8B 41 28 48 2B C5 48 0F 48 C2 49 89 41)
+
+alloc(GodModeScript,$1000,"imperator.exe"+C908DA)
+
+label(prevent_damage)
+label(exit_prevent_damage)
+label(return_prevent_damage)
+
+label(siege_assault)
+label(exit_siege_assault)
+label(return_siege_assault)
+
+//=========================================
+// Actual script
+ GodModeScript:
+//=========================================
+
+prevent_damage:
+  push rsi
+  mov rsi, [iPlayerID]
+  cmp [rbx+000001A0],esi
+  pop rsi
+  jne exit_prevent_damage
+
+  mov [rbx+000001A8],00000000
+  mov [rbx+000001B0],00000000
+
+exit_prevent_damage:
+  mov rax,[rbx+000001A8]   // original code
+  jmp return_prevent_damage
+
+siege_assault:
+  push rsi
+  mov rsi,[iPlayerID]
+  cmp [r9+000001A0],esi
+  pop rsi
+  jne exit_siege_assault
+
+  mov rcx, #1000
+  xor rbp, rbp
+
+exit_siege_assault:
+  mov [r9+20],rcx
+  mov rax,[r9+28]
+  jmp return_siege_assault
+
+//=========================================
+// Hack Points
+//=========================================
+
+ApplyDamage:
+  jmp prevent_damage
+  nop
+  nop
+return_prevent_damage:
+
+PerformAssault:
+  jmp siege_assault
+  nop
+  nop
+  nop
+return_siege_assault:
+
+//=========================================
+[DISABLE]
+//=========================================
+ApplyDamage:
+  // mov rax,[rbx+000001A8]
+  db 48 8B 83 A8 01 00 00
+
+PerformAssault:
+  // mov [r9+20],rcx
+  // mov rax,[r9+28]
+  db 49 89 49 20 49 8B 41 28
+
+dealloc(GodModeScript)"""
+
+[[cheat]]
+id = "x-instant-movement"
+name = "[X] <== Instant Movement"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+//=========================================
+// Instant Movement Script
+//=========================================
+
+define(UnitMovement,"imperator.exe"+C99CB2)
+
+//=========================================
+  [ENABLE]
+//=========================================
+
+assert(UnitMovement,48 01 87 90 01 00 00 49 8B 45 08 48 8B AF 60 01 00 00)
+
+alloc(InstantMovementScript,$1000,"imperator.exe"+C99CB2)
+
+label(instant_move)
+label(exit_instant_move)
+label(return_instant_move)
+
+//=========================================
+// Actual script
+ InstantMovementScript:
+//=========================================
+
+instant_move:
+  push rsi
+  mov rsi, [iPlayerID]
+  cmp [rdi+0000014C],esi
+  pop rsi
+  jne exit_instant_move
+
+  add [rdi+00000190],ebx
+  jmp return_instant_move
+
+exit_instant_move:
+  add [rdi+00000190],rax // original code
+  jmp return_instant_move
+
+//=========================================
+// Hack Points
+//=========================================
+
+UnitMovement:
+  jmp InstantMovementScript
+  nop
+  nop
+return_instant_move:
+
+//=========================================
+[DISABLE]
+//=========================================
+UnitMovement:
+// cmp byte ptr [rsi+imperator.dtor_list_head+79],00
+// add [rdi+00000190],rax
+ db 48 01 87 90 01 00 00
+
+dealloc(InstantMovementScript)"""
+
+[[cheat]]
+id = "x-instant-construction"
+name = "[X] <== Instant Construction"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//=========================================
+// Instant Construction Script
+//=========================================
+
+define(DailyUpdateD2, "imperator.exe"+C5854A)
+
+//=========================================
+  [ENABLE]
+//=========================================
+
+assert(DailyUpdateD2, 48 8B 47 10 48 39 47 08 0F 9D C0 84 C0 74)
+
+alloc(InstantConstructionScript,$1000,"imperator.exe"+C5854A)
+
+label(instant_construction)
+label(exit_instant_construction)
+label(return_instant_construction)
+
+//=========================================
+// Actual script
+ InstantConstructionScript:
+//=========================================
+
+instant_construction:
+  mov rax, [iPlayerID]
+  cmp [rbx+000001A8], eax         //rbx = pProvince, +1A8 = playerID
+  jne exit_instant_construction
+
+  mov rax,[rdi+10]
+  mov [rdi+08],rax
+
+exit_instant_construction:
+  mov rax,[rdi+10]
+  cmp [rdi+08],rax // original code
+  jmp return_instant_construction
+
+//=========================================
+// Hack Points
+//=========================================
+
+DailyUpdateD2:
+  jmp instant_construction
+  nop
+  nop
+  nop
+return_instant_construction:
+
+//=========================================
+[DISABLE]
+//=========================================
+
+DailyUpdateD2:
+  //mov rax,[rdi+10]
+  //cmp [rdi+08],rax
+  db 48 8B 47 10 48 39 47 08
+
+dealloc(InstantConstructionScript)"""
+
+[[cheat]]
+id = "x-instant-recruitment"
+name = "[X] <== Instant Recruitment"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+//=========================================
+// Instant Recruitment Script
+//=========================================
+
+define(DailyUpdate1F6,"imperator.exe"+C58676)
+
+//=========================================
+  [ENABLE]
+//=========================================
+
+assert(DailyUpdate1F6,48 8B 46 10 48 39 46 08 0F 9D C0 84 C0 74)
+
+alloc(InstantRecruitmentScript,$1000,"imperator.exe"+C58676)
+
+label(instant_recruitment)
+label(exit_instant_recruitment)
+label(return_instant_recruitment)
+
+//=========================================
+// Actual script
+ InstantRecruitmentScript:
+//=========================================
+
+instant_recruitment:
+  mov rax, [iPlayerID]
+  cmp [rbx+000001A8], eax         //rbx = pProvince, +1A8 = playerID
+  jne exit_instant_recruitment
+
+  mov rax,[rsi+10]
+  mov [rsi+08],rax
+
+exit_instant_recruitment:
+  mov rax,[rsi+10]
+  cmp [rsi+08],rax // original code
+  jmp return_instant_recruitment
+
+//=========================================
+// Hack Points
+//=========================================
+
+DailyUpdate1F6:
+  jmp instant_recruitment
+  nop
+  nop
+  nop
+return_instant_recruitment:
+
+//=========================================
+[DISABLE]
+//=========================================
+
+DailyUpdate1F6:
+  //mov rax,[rsi+10]
+  //cmp [rsi+08],rax
+  db 48 8B 46 10 48 39 46 08
+
+dealloc(InstantRecruitmentScript)"""
+
+[[cheat]]
+id = "cash-x1000"
+name = "Cash ==> (x1000)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x648"]
+
+[[cheat]]
+id = "manpower"
+name = "Manpower ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x7f0"]
+
+[[cheat]]
+id = "military-power"
+name = "Military Power ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x860"]
+
+[[cheat]]
+id = "civic-power"
+name = "Civic Power ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x864"]
+
+[[cheat]]
+id = "oratory-power"
+name = "Oratory Power ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x868"]
+
+[[cheat]]
+id = "religious-power"
+name = "Religious Power ==>"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x86c"]
+
+[[cheat]]
+id = "stability-x1000"
+name = "Stability ==> (x1000)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x788"]
+
+[[cheat]]
+id = "aggressive-expansion-x1000"
+name = "Aggressive Expansion ==> (x1000)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x658"]
+
+[[cheat]]
+id = "tyranny-x1000"
+name = "Tyranny ==> (x1000)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x878"]
+
+[[cheat]]
+id = "martial-advances-x1000"
+name = "Martial Advances ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = [
+    "+0x990",
+    "+0x38",
+    "+0x0",
+]
+
+[[cheat]]
+id = "civic-advances-x1000"
+name = "Civic Advances ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = [
+    "+0x990",
+    "+0x38",
+    "+0x8",
+]
+
+[[cheat]]
+id = "oratory-advances-x1000"
+name = "Oratory Advances ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = [
+    "+0x990",
+    "+0x38",
+    "+0x10",
+]
+
+[[cheat]]
+id = "religious-advances-x1000"
+name = "Religious Advances ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = [
+    "+0x990",
+    "+0x38",
+    "+0x18",
+]
+
+[[cheat]]
+id = "character-id"
+name = "Character ID ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "age"
+name = "Age ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x98"]
+
+[[cheat]]
+id = "martial"
+name = "Martial ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "finesse"
+name = "Finesse ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "charisma"
+name = "Charisma ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xd0"]
+
+[[cheat]]
+id = "zeal"
+name = "Zeal ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0xd4"]
+
+[[cheat]]
+id = "prominence-x1000"
+name = "Prominence ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x260"]
+
+[[cheat]]
+id = "popularity-x1000"
+name = "Popularity ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x258"]
+
+[[cheat]]
+id = "loyalty-x1000"
+name = "Loyalty ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x250"]
+
+[[cheat]]
+id = "corruption-x1000"
+name = "Corruption ==>(x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x248"]
+
+[[cheat]]
+id = "wealth-x1000"
+name = "Wealth ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x278"]
+
+[[cheat]]
+id = "succession-support-x1000"
+name = "Succession Support ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x2f8"]
+
+[[cheat]]
+id = "health-x1000"
+name = "Health ==> (x1000)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "civic-conviction-x1000"
+name = "Civic Conviction ==> (x1000)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "city-id"
+name = "City ID ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pProvince"
+hops = [
+    "+0x8",
+    "+0x20",
+]
+
+[[cheat]]
+id = "city-owner"
+name = "City Owner ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pProvince"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "city-controller"
+name = "City Controller ==>"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pProvince"
+hops = ["+0x1b0"]

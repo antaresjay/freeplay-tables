@@ -1,0 +1,287 @@
+[game]
+name = "Windrose Demo"
+exe = "windrose-win64-shipping.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=38369"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "enable-hovered-item-pointer-send"
+name = "Enable Hovered Item Pointer (Send)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+   ── General Information ──
+   Hook           : HoveredItemPtrHook
+   Process        : Windrose-Win64-Shipping.exe
+   Module         : Windrose-Win64-Shipping.exe
+   Process Base   : 00007FF685760000
+   Module Base    : 00007FF685760000
+   Table Author   : SEND @ SINTRIX | FEARLESSREVOLUTION
+   Discord        : https://discord.gg/NTFcdAUWxb
+
+   ── Script Details ──
+   Cheat Name         : HoveredItemPtr
+   Date               : 2026-02-26
+   Version            : 1.0.0
+   Injection Address  : Windrose-Win64-Shipping.exe.text+610F488
+   Original Bytes     : 8B 83 80 00 00 00
+   Original Signature : 8B 83 80 00 00 00 89 47 58
+
+   Instructions:
+\t  Windrose-Win64-Shipping.exe+6110487 - 90 - nop 
+\t  Windrose-Win64-Shipping.exe+6110488 - 8B 83 80 00 00 00 - mov eax,[rbx+00000080]
+\t  Windrose-Win64-Shipping.exe+611048E - 89 47 58 - mov [rdi+58],eax
+
+   ── Additional Information ──
+  Manifold Template Loader: ── https://github.com/Leunsel/CheatEngineLua/tree/main
+}
+
+[ENABLE]
+
+aobScanModule(HoveredItemPtrHook,$process,8B 83 80 00 00 00 89 47 58)
+alloc(n_HoveredItemPtr,$1000,HoveredItemPtrHook)
+
+label(o_HoveredItemPtr r_HoveredItemPtr)
+label(HoveredItemPtrPtr)
+
+n_HoveredItemPtr:
+  push r12
+  lea r12,[rbx+80]
+  mov [HoveredItemPtrPtr],r12
+  pop r12
+
+o_HoveredItemPtr:
+  mov eax,[rbx+00000080]
+  jmp r_HoveredItemPtr
+  
+HoveredItemPtrPtr:
+ dq 0
+
+HoveredItemPtrHook:
+  jmp n_HoveredItemPtr
+  db 90
+
+r_HoveredItemPtr:
+registersymbol(HoveredItemPtrHook HoveredItemPtrPtr)
+
+[DISABLE]
+
+HoveredItemPtrHook:
+  db 8B 83 80 00 00 00
+
+unregisterSymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-item-quantity-on-click-bytrl"
+name = "Set Item Quantity On Click (Bytrl)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(itemsOnClick,$process,8Bxxxxxxxxxx89xxxx488Bxx488Bxxxxxx4883xxxx5FC3xx4889xxxxxx57)
+alloc(newmemitemsOnClick,$100,itemsOnClick)
+alloc(nVal,8,itemsOnClick)
+label(codeitemsOnClick returnitemsOnClick)
+
+nVal:
+dd #10
+
+newmemitemsOnClick:
+push rsi
+mov rsi,[nVal]
+mov [rbx+00000080],rsi
+pop rsi
+
+codeitemsOnClick:
+mov eax,[rbx+00000080]
+jmp returnitemsOnClick
+
+itemsOnClick:
+jmp newmemitemsOnClick
+nop 1
+returnitemsOnClick:
+registersymbol(itemsOnClick nVal)
+
+[DISABLE]
+
+itemsOnClick:
+db 8B 83 80 00 00 00
+unregistersymbol(itemsOnClick nVal)
+dealloc(newmemitemsOnClick nVal)"""
+
+[[cheat]]
+id = "new-value-when-clicked"
+name = "new value when clicked"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "nVal"
+hops = []
+
+[[cheat]]
+id = "enable-ai-movement-modifier"
+name = "Enable AI Movement Modifier"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(SlowAI,$process,48 8B 01 FF 90 D8 07 00 00 84 C0 74 07)
+alloc(newmem,$1000,SlowAI)
+label(code return SlowAIMultiplier FreezeAIFlag)
+
+//Send @ Sintrix | FearlessRevolution
+newmem:
+cmp byte ptr [rcx+6C4],1
+je code
+push r15
+mov r15,[rcx+2E8]
+test r15,r15
+je @f
+movss xmm15,[SlowAIMultiplier]
+movss [r15+68],xmm15
+
+@@:
+pop r15
+
+
+code:
+  mov rax,[rcx]
+  call qword ptr [rax+000007D8]
+  jmp return
+
+SlowAIMultiplier:
+dd (float)1
+
+FreezeAIFlag:
+dd 0
+//Send @ Sintrix | FearlessRevolution
+SlowAI:
+  jmp newmem
+  nop 4
+return:
+registersymbol(SlowAI SlowAIMultiplier FreezeAIFlag)
+
+[DISABLE]
+
+SlowAI:
+  db 48 8B 01 FF 90 D8 07 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-ai-movement-speed"
+name = "Set AI Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 1
+choices = [
+    "1:Default",
+    "0.5:Half Speed",
+    "0:Frozen",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SlowAIMultiplier"
+hops = []
+
+[[cheat]]
+id = "grab-character-experience-open-inventory"
+name = "Grab Character Experience (Open Inventory)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{
+   ── General Information ──
+   Hook           : ExperienceHook
+   Process        : Windrose-Win64-Shipping.exe
+   Module         : Windrose-Win64-Shipping.exe
+   Process Base   : 00007FF620E30000
+   Module Base    : 00007FF620E30000
+   Table Author   : SEND @ HTTPS://SINTRIX.NET | HTTPS://FEARLESSREVOLUTION.COM
+   Discord        : https://discord.gg/NTFcdAUWxb
+
+   ── Script Details ──
+   Cheat Name         : Experience
+   Date               : 2026-03-02
+   Version            : 1.0.0
+   Injection Address  : Windrose-Win64-Shipping.exe.text+6A2A2C1
+   Original Bytes     : 8B 30 33 FF 48 8B 4C 24 38
+   Original Signature : 8B 30 33 FF 48 8B 4C 24 38
+
+   Instructions:
+\t  Windrose-Win64-Shipping.exe+6A2B2BC - E8 2F 78 3B FF - call Windrose-Win64-Shipping.exe+5DE2AF0
+\t  Windrose-Win64-Shipping.exe+6A2B2C1 - 8B 30 - mov esi,[rax]
+\t  Windrose-Win64-Shipping.exe+6A2B2C3 - 33 FF - xor edi,edi
+
+   ── Additional Information ──
+  Much love to everyone who has ever lent me a helping hand or has supported my journey in this hobby.
+  
+  Send's Verified Ko-fi: https://ko-fi.com/sendxkofi
+  Leunsel's Verified Patreon: https://patreon.com/cw/Leunsel [ An individual that has provided a lot of knowledge and an absolute great developer. ]
+  LeFiXER's Verified Ko-fi: https://ko-fi.com/LeFiXER [ The GOAT. Great development partner and even greater friend. ]
+  Manifold Template Loader: ── https://github.com/Leunsel/CheatEngineLua/tree/main
+}
+
+[ENABLE]
+
+aobScanModule(ExperienceHook,Windrose-Win64-Shipping.exe,8B 30 33 FF 48 8B 4C 24 38)
+alloc(n_Experience,$1000,ExperienceHook)
+
+label(o_Experience r_Experience)
+label(ExperiencePtr)
+
+n_Experience:
+  mov [ExperiencePtr],rax
+
+o_Experience:
+  mov esi,[rax]
+  xor edi,edi
+  mov rcx,[rsp+38]
+  jmp r_Experience
+  
+ExperiencePtr:
+ dq 0
+
+ExperienceHook:
+  jmp n_Experience
+  db 90 90 90 90
+
+r_Experience:
+registersymbol(ExperienceHook ExperiencePtr)
+
+[DISABLE]
+
+ExperienceHook:
+  db 8B 30 33 FF 48 8B 4C 24 38
+
+unregisterSymbol(*)
+dealloc(*)"""

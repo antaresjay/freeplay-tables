@@ -1,0 +1,642 @@
+[game]
+name = "Don't Escape: 4 Days in a Wasteland"
+exe = "shinkansen_don_t_escape_4_days_in_a_wasteland.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=8907"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "gamedatacontroller-static-base-address-scan-initialization-activate-this-first"
+name = "GameDataController_static Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(GameDataController_static_basepointer)
+registersymbol(GameDataController_static_update_enable)
+registersymbol(GameDataController_static_timesett_enable)
+registersymbol(GameDataController_static_fuelset_enable)
+
+alloc(GameDataController_static_basepointer, 4)
+alloc(GameDataController_static_update_enable, 4)
+alloc(GameDataController_static_timesett_enable, 4)
+alloc(GameDataController_static_fuelset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(GameDataController_static_basepointer)
+unregistersymbol(GameDataController_static_update_enable)
+unregistersymbol(GameDataController_static_timesett_enable)
+unregistersymbol(GameDataController_static_fuelset_enable)
+
+dealloc(GameDataController_static_basepointer)
+dealloc(GameDataController_static_update_enable)
+dealloc(GameDataController_static_timesett_enable)
+dealloc(GameDataController_static_fuelset_enable)"""
+
+[[cheat]]
+id = "gamedatacontroller-static-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "GameDataController_static Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(GameDataController_static_savedAOB)
+label(GameDataController_static_returnhere)
+label(GameDataController_static_originalcode)
+label(GameDataController_static_exit)
+
+label(GameDataController_static_update_exit)
+label(GameDataController_static_timesett_exit)
+label(GameDataController_static_fuelset_exit)
+
+registersymbol(GameDataController_static_originalcode)
+registersymbol(GameDataController_static_savedAOB)
+
+//0416CCA3 - 83 EC 08              - sub esp,08
+//0416CCA6 - 8B 0D C44F060E        - mov ecx,[0E064FC4] : [0E9F1B60]
+// GameDataController:Update+c
+//0416CCAC - 8B 45 08              - mov eax,[ebp+08]
+//0416CCAF - 89 48 0C              - mov [eax+0C],ecx
+//0416CCB2 - C9                    - leave
+//0416CCB3 - C3                    - ret
+aobscan(GameDataController_static_searchedAOB, 8B 45 08 89 48 0C C9 C3)
+
+alloc(GameDataController_static_newmem, 2048, GameDataController_static_searchedAOB)
+alloc(GameDataController_static_temp1, 4, GameDataController_static_searchedAOB)
+alloc(GameDataController_static_temp2, 4, GameDataController_static_searchedAOB)
+alloc(GameDataController_static_temp3, 4, GameDataController_static_searchedAOB)
+alloc(GameDataController_static_temp4, 4, GameDataController_static_searchedAOB)
+alloc(GameDataController_static_temp5, 4, GameDataController_static_searchedAOB)
+
+
+GameDataController_static_newmem:
+mov [GameDataController_static_temp1], eax
+mov [GameDataController_static_temp2], ebx
+mov [GameDataController_static_temp3], ecx
+mov [GameDataController_static_temp4], edx
+
+mov ebx, [GameDataController_static_savedAOB-4]
+sub ebx, 4
+
+cmp dword ptr [GameDataController_static_update_enable], #0
+je GameDataController_static_update_exit
+mov [GameDataController_static_basepointer], ebx
+GameDataController_static_update_exit:
+
+cmp dword ptr [GameDataController_static_timesett_enable], #0
+je GameDataController_static_timesett_exit
+mov ecx, [ebx]
+test ecx, ecx
+je GameDataController_static_timesett_exit
+mov [ecx+3c], #0
+GameDataController_static_timesett_exit:
+
+cmp dword ptr [GameDataController_static_fuelset_enable], #0
+je GameDataController_static_fuelset_exit
+mov [ebx+2c], #350000
+GameDataController_static_fuelset_exit:
+
+mov eax, [GameDataController_static_temp1]
+mov ebx, [GameDataController_static_temp2]
+mov ecx, [GameDataController_static_temp3]
+mov edx, [GameDataController_static_temp4]
+
+
+GameDataController_static_originalcode:
+readmem(GameDataController_static_searchedAOB, 6)
+
+
+GameDataController_static_exit:
+jmp GameDataController_static_returnhere
+
+
+GameDataController_static_searchedAOB:
+GameDataController_static_savedAOB:
+jmp GameDataController_static_newmem
+nop
+GameDataController_static_returnhere:
+
+
+[DISABLE]
+GameDataController_static_savedAOB:
+readmem(GameDataController_static_originalcode, 6)
+
+unregistersymbol(GameDataController_static_originalcode)
+unregistersymbol(GameDataController_static_savedAOB)
+
+dealloc(GameDataController_static_newmem)
+dealloc(GameDataController_static_temp1)
+dealloc(GameDataController_static_temp2)
+dealloc(GameDataController_static_temp3)
+dealloc(GameDataController_static_temp4)
+dealloc(GameDataController_static_temp5)"""
+
+[[cheat]]
+id = "elapsed-time-set-to-0"
+name = "Elapsed Time Set to 0?"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_timesett_enable"
+hops = []
+
+[[cheat]]
+id = "max-fuel-set-to-massive"
+name = "Max Fuel Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_fuelset_enable"
+hops = []
+
+[[cheat]]
+id = "gamedatacontroller-static-update-base-address"
+name = "GameDataController_static Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x0",
+]
+
+[[cheat]]
+id = "gametime"
+name = "gameTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "timelimit"
+name = "timeLimit"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x40",
+]
+
+[[cheat]]
+id = "traveledtime"
+name = "traveledTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x44",
+]
+
+[[cheat]]
+id = "workedtime"
+name = "workedTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x48",
+]
+
+[[cheat]]
+id = "currentx"
+name = "currentX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "currenty"
+name = "currentY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x50",
+]
+
+[[cheat]]
+id = "previousx"
+name = "previousX"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x54",
+]
+
+[[cheat]]
+id = "previousy"
+name = "previousY"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = [
+    "+0x0",
+    "+0x58",
+]
+
+[[cheat]]
+id = "steam"
+name = "STEAM"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = ["+0xc"]
+
+[[cheat]]
+id = "gog"
+name = "GOG"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = ["+0xd"]
+
+[[cheat]]
+id = "kart"
+name = "KART"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = ["+0xe"]
+
+[[cheat]]
+id = "wantsave"
+name = "wantSave"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "max-fuel"
+name = "MAX_FUEL"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "GameDataController_static_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "inventorycontroller-base-address-scan-initialization-activate-this-first"
+name = "InventoryController Base Address Scan Initialization (Activate This First)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(InventoryController_basepointer)
+registersymbol(InventoryController_update_enable)
+registersymbol(InventoryController_weightset_enable)
+
+alloc(InventoryController_basepointer, 4)
+alloc(InventoryController_update_enable, 4)
+alloc(InventoryController_weightset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(InventoryController_basepointer)
+unregistersymbol(InventoryController_update_enable)
+unregistersymbol(InventoryController_weightset_enable)
+
+dealloc(InventoryController_basepointer)
+dealloc(InventoryController_update_enable)
+dealloc(InventoryController_weightset_enable)"""
+
+[[cheat]]
+id = "inventorycontroller-base-address-scan-to-activate-view-inventory-to-update-view-inventory"
+name = "InventoryController Base Address Scan (To Activate: View Inventory, To Update: View Inventory)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(InventoryController_savedAOB)
+label(InventoryController_returnhere)
+label(InventoryController_originalcode)
+label(InventoryController_exit)
+
+label(InventoryController_update_exit)
+label(InventoryController_weightset_exit)
+
+registersymbol(InventoryController_originalcode)
+registersymbol(InventoryController_savedAOB)
+
+//0419AF0D - E9 D6000000           - jmp 0419AFE8
+//0419AF12 - 8D AD 00000000        - lea ebp,[ebp+00000000]
+// InventoryController:getCurrentWeight+30
+//0419AF18 - 8B 47 18              - mov eax,[edi+18]
+//0419AF1B - 8D 4B FF              - lea ecx,[ebx-01]
+//0419AF1E - 8D 56 FF              - lea edx,[esi-01]
+//0419AF21 - 89 45 E8              - mov [ebp-18],eax
+//0419AF24 - 8B 40 08              - mov eax,[eax+08]
+//0419AF27 - 89 45 DC              - mov [ebp-24],eax
+aobscan(InventoryController_searchedAOB, 8B 47 18 8D 4B FF 8D 56 FF 89 45 E8)
+
+alloc(InventoryController_newmem, 2048, InventoryController_searchedAOB)
+alloc(InventoryController_temp1, 4, InventoryController_searchedAOB)
+alloc(InventoryController_temp2, 4, InventoryController_searchedAOB)
+alloc(InventoryController_temp3, 4, InventoryController_searchedAOB)
+alloc(InventoryController_temp4, 4, InventoryController_searchedAOB)
+alloc(InventoryController_temp5, 4, InventoryController_searchedAOB)
+
+
+InventoryController_newmem:
+mov [InventoryController_temp1], eax
+mov [InventoryController_temp2], ebx
+mov [InventoryController_temp3], ecx
+mov [InventoryController_temp4], edx
+
+cmp dword ptr [InventoryController_update_enable], #0
+je InventoryController_update_exit
+mov [InventoryController_basepointer], edi
+InventoryController_update_exit:
+
+cmp dword ptr [InventoryController_weightset_enable], #0
+je InventoryController_weightset_exit
+mov [edi+40], #9999
+InventoryController_weightset_exit:
+
+mov eax, [InventoryController_temp1]
+mov ebx, [InventoryController_temp2]
+mov ecx, [InventoryController_temp3]
+mov edx, [InventoryController_temp4]
+
+
+InventoryController_originalcode:
+readmem(InventoryController_searchedAOB, 6)
+
+
+InventoryController_exit:
+jmp InventoryController_returnhere
+
+
+InventoryController_searchedAOB:
+InventoryController_savedAOB:
+jmp InventoryController_newmem
+nop
+InventoryController_returnhere:
+
+
+[DISABLE]
+InventoryController_savedAOB:
+readmem(InventoryController_originalcode, 6)
+
+unregistersymbol(InventoryController_originalcode)
+unregistersymbol(InventoryController_savedAOB)
+
+dealloc(InventoryController_newmem)
+dealloc(InventoryController_temp1)
+dealloc(InventoryController_temp2)
+dealloc(InventoryController_temp3)
+dealloc(InventoryController_temp4)
+dealloc(InventoryController_temp5)"""
+
+[[cheat]]
+id = "max-weight-set-to-massive"
+name = "Max Weight Set to Massive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryController_weightset_enable"
+hops = []
+
+[[cheat]]
+id = "inventorycontroller-update-base-address"
+name = "InventoryController Update Base Address?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryController_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryController_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "maxcapacity"
+name = "maxCapacity"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "InventoryController_basepointer"
+hops = ["+0x40"]

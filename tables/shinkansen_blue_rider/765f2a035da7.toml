@@ -1,0 +1,968 @@
+[game]
+name = "Blue Rider"
+exe = "shinkansen_blue_rider.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=1926"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "playership-base-address-scan-initialization-activate-this-first"
+name = "PlayerShip Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(PlayerShip_basepointer)
+registersymbol(PlayerShip_update_enable)
+registersymbol(PlayerShip_set_enable)
+registersymbol(PlayerShip_lifeset_enable)
+registersymbol(PlayerShip_bombset_enable)
+registersymbol(PlayerShip_invulnerableset_enable)
+registersymbol(PlayerShip_damageset_enable)
+
+alloc(PlayerShip_basepointer, 4)
+alloc(PlayerShip_update_enable, 4)
+alloc(PlayerShip_set_enable, 4)
+alloc(PlayerShip_lifeset_enable, 4)
+alloc(PlayerShip_bombset_enable, 4)
+alloc(PlayerShip_invulnerableset_enable, 4)
+alloc(PlayerShip_damageset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(PlayerShip_basepointer)
+unregistersymbol(PlayerShip_update_enable)
+unregistersymbol(PlayerShip_set_enable)
+unregistersymbol(PlayerShip_lifeset_enable)
+unregistersymbol(PlayerShip_bombset_enable)
+unregistersymbol(PlayerShip_invulnerableset_enable)
+unregistersymbol(PlayerShip_damageset_enable)
+
+dealloc(PlayerShip_basepointer)
+dealloc(PlayerShip_update_enable)
+dealloc(PlayerShip_set_enable)
+dealloc(PlayerShip_lifeset_enable)
+dealloc(PlayerShip_bombset_enable)
+dealloc(PlayerShip_invulnerableset_enable)
+dealloc(PlayerShip_damageset_enable)"""
+
+[[cheat]]
+id = "playership-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "PlayerShip Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(PlayerShip_savedAOB)
+label(PlayerShip_returnhere)
+label(PlayerShip_originalcode)
+label(PlayerShip_exit)
+
+label(PlayerShip_update_exit)
+label(PlayerShip_set_exit)
+label(PlayerShip_lifeset_exit)
+label(PlayerShip_bombset_exit)
+label(PlayerShip_invulnerableset_exit)
+label(PlayerShip_damageset_exit)
+
+registersymbol(PlayerShip_savedAOB)
+
+//04BE8156 - C7 85 60FDFFFF 00000000 - mov [ebp-000002A0],00000000
+//04BE8160 - C7 85 64FDFFFF 00000000 - mov [ebp-0000029C],00000000
+// PlayerShip:Update+e2
+//04BE816A - C7 85 68FDFFFF 00000000 - mov [ebp-00000298],00000000
+//04BE8174 - 0FB6 87 34010000      - movzx eax,byte ptr [edi+00000134]
+//04BE817B - 85 C0                 - test eax,eax
+//04BE817D - 0F85 6E010000         - jne 04BE82F1
+//04BE8183 - BA D89AFC0A           - mov edx,0AFC9AD8 : [09B26EB0]
+aobscan(PlayerShip_searchedAOB, C7 85 68 FD FF FF 00 00 00 00 0F B6 87 34 01 00 00 85 C0)
+
+alloc(PlayerShip_newmem, 2048, PlayerShip_searchedAOB)
+alloc(PlayerShip_temp1, 4, PlayerShip_searchedAOB)
+
+
+PlayerShip_newmem:
+mov [PlayerShip_temp1], ebx
+
+cmp dword ptr [PlayerShip_update_enable], #0
+je PlayerShip_update_exit
+mov [PlayerShip_basepointer], edi
+PlayerShip_update_exit:
+
+cmp dword ptr [PlayerShip_set_enable], #0
+je PlayerShip_set_exit
+PlayerShip_set_exit:
+
+cmp dword ptr [PlayerShip_lifeset_enable], #0
+je PlayerShip_lifeset_exit
+fld [edi+7c]
+fstp [edi+80]
+PlayerShip_lifeset_exit:
+
+cmp dword ptr [PlayerShip_bombset_enable], #0
+je PlayerShip_bombset_exit
+cmp dword ptr [edi+9c], #0
+je PlayerShip_bombset_exit
+mov ebx, [edi+9c]
+mov [ebx+30], #8
+mov byte ptr [edi+12c], #1
+PlayerShip_bombset_exit:
+
+cmp dword ptr [PlayerShip_invulnerableset_enable], #0
+je PlayerShip_invulnerableset_exit
+mov byte ptr [edi+150], #1
+PlayerShip_invulnerableset_exit:
+
+cmp dword ptr [PlayerShip_damageset_enable], #0
+je PlayerShip_damageset_exit
+mov [edi+130], #0
+mov [edi+15c], (float)0
+PlayerShip_damageset_exit:
+
+mov ebx, [PlayerShip_temp1]
+
+
+PlayerShip_originalcode:
+db C7 85 68 FD FF FF 00 00 00 00
+//mov [ebp-00000298],00000000
+
+
+PlayerShip_exit:
+jmp PlayerShip_returnhere
+
+
+PlayerShip_searchedAOB:
+PlayerShip_savedAOB:
+jmp PlayerShip_newmem
+nop
+nop
+nop
+nop
+nop
+PlayerShip_returnhere:
+
+
+[DISABLE]
+PlayerShip_savedAOB:
+db C7 85 68 FD FF FF 00 00 00 00
+//mov [ebp-00000298],00000000
+
+unregistersymbol(PlayerShip_savedAOB)
+
+dealloc(PlayerShip_newmem)
+dealloc(PlayerShip_temp1)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_lifeset_enable"
+hops = []
+
+[[cheat]]
+id = "bombs-set-to-massive"
+name = "Bombs Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_bombset_enable"
+hops = []
+
+[[cheat]]
+id = "invulnerable-set-to-invulnerable"
+name = "Invulnerable Set to Invulnerable?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_invulnerableset_enable"
+hops = []
+
+[[cheat]]
+id = "damages-set-to-0"
+name = "Damages Set to 0?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_damageset_enable"
+hops = []
+
+[[cheat]]
+id = "playership-update-base-address"
+name = "PlayerShip Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "maxlife"
+name = "maxLife"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "life"
+name = "life"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x0",
+]
+
+[[cheat]]
+id = "base-address-4"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x18",
+    "+0x0",
+]
+
+[[cheat]]
+id = "missilequantity"
+name = "missileQuantity"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x18",
+    "+0x18",
+]
+
+[[cheat]]
+id = "level"
+name = "level"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x18",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "currentmissiletype"
+name = "currentMissileType"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:PLAYER_BULLET_BLUE_BIG",
+    "1:PLAYER_BULLET_BLUE_SMALL",
+    "2:PLAYER_BULLET_RED_BIG",
+    "3:PLAYER_BULLET_RED_SMALL",
+    "4:ENEMY_BULLET_BASIC_00",
+    "5:ENEMY_BULLET_BASIC_01",
+    "6:ENEMY_BULLET_BASIC_02",
+    "7:ENEMY_BULLET_BASIC_03",
+    "8:ENEMY_BULLET_DIVISIBLE_01",
+    "9:ENEMY_BULLET_DIVISIBLE_02",
+    "10:ENEMY_BULLET_DIVISIBLE_03",
+    "11:BOSS_A_RING",
+    "12:BOSS_B_RAY",
+    "13:BOSS_C_SPREAD",
+    "14:BOSS_C_HARPOON",
+    "15:BOSS_A_MACHINE_GUN",
+    "16:PLAYER_MISSILE_DIRECT",
+    "17:PLAYER_MISSILE_HOMMING",
+    "18:ENEMY_MISSILE_RED",
+    "19:ENEMY_MISSILE_ORANGE",
+    "20:ENEMY_MISSILE_YELLOW",
+    "21:BOSS_E_TORPEDO",
+    "22:BOSS_B_BULLET_BASIC_01",
+    "23:BOSS_C_BULLET_BASIC_01",
+    "24:BOSS_C_MISSILE",
+    "25:ENEMY_SHORT_RAY",
+    "26:BOSS_F_RAY",
+    "27:AMIGO_BULLET",
+    "28:ENEMY_MISSILE_AGILE_RED",
+    "29:ENEMY_MISSILE_AGILE_ORANGE",
+    "30:ENEMY_MISSILE_AGILE_YELLOW",
+    "31:BOSS_E_TORPEDO_AGILE",
+    "32:ENEMY_VERTICAL_TORPEDO",
+    "33:PLAYER_SPECIAL_BULLET",
+    "34:ENEMY_BOOMERANG_BULLET",
+    "35:MONSTER_BULLET_DIVISIBLE_01",
+    "36:MONSTER_BULLET_DIVISIBLE_02",
+    "37:MONSTER_BULLET_DIVISIBLE_03",
+    "38:MONSTER_BULLET_SPHERE",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x18",
+    "+0x20",
+]
+
+[[cheat]]
+id = "bombsamount"
+name = "bombsAmount"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x30",
+]
+
+[[cheat]]
+id = "currentprimarylevel"
+name = "currentPrimaryLevel"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x34",
+]
+
+[[cheat]]
+id = "currentbomblevel"
+name = "currentBombLevel"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0x9c",
+    "+0x38",
+]
+
+[[cheat]]
+id = "base-address-5"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0xa0",
+    "+0x0",
+]
+
+[[cheat]]
+id = "range"
+name = "range"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0xa0",
+    "+0x68",
+]
+
+[[cheat]]
+id = "currentlevel"
+name = "currentLevel"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = [
+    "+0xa0",
+    "+0x6c",
+]
+
+[[cheat]]
+id = "maxvelocity"
+name = "maxVelocity"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0xdc"]
+
+[[cheat]]
+id = "accelerationfactor"
+name = "accelerationFactor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "turbomultiplier"
+name = "turboMultiplier"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "setturbineintensity"
+name = "setTurbineIntensity"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "initialaccelerationfactor"
+name = "initialAccelerationFactor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0xf8"]
+
+[[cheat]]
+id = "maxaltitude"
+name = "maxAltitude"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0xfc"]
+
+[[cheat]]
+id = "actualoutofboundsdamage"
+name = "actualOutOfBoundsDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x100"]
+
+[[cheat]]
+id = "rotationspeed"
+name = "rotationSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x104"]
+
+[[cheat]]
+id = "rspeed"
+name = "rSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x108"]
+
+[[cheat]]
+id = "smoothed-input-speed"
+name = "SMOOTHED_INPUT_SPEED"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x128"]
+
+[[cheat]]
+id = "isbombready"
+name = "isBombReady"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x12c"]
+
+[[cheat]]
+id = "acumulateddamage"
+name = "acumulatedDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "iscontroldisabled"
+name = "isControlDisabled"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "isshootingdisabled"
+name = "isShootingDisabled"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x135"]
+
+[[cheat]]
+id = "altitudedamageenabled"
+name = "altitudeDamageEnabled"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x136"]
+
+[[cheat]]
+id = "turbotime"
+name = "turboTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "turboready"
+name = "turboReady"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x13c"]
+
+[[cheat]]
+id = "verticalinput"
+name = "verticalInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x140"]
+
+[[cheat]]
+id = "horizontalinput"
+name = "horizontalInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x144"]
+
+[[cheat]]
+id = "turboinput"
+name = "turboInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "rotationinput"
+name = "rotationInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x14c"]
+
+[[cheat]]
+id = "invulnerable"
+name = "invulnerable"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x150"]
+
+[[cheat]]
+id = "inialtitude"
+name = "iniAltitude"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x154"]
+
+[[cheat]]
+id = "endaltitude"
+name = "endAltitude"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x158"]
+
+[[cheat]]
+id = "acumulatedcontinuousdamage"
+name = "acumulatedContinuousDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x15c"]
+
+[[cheat]]
+id = "timetocontinuousdamage"
+name = "timeToContinuousDamage"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "hypermode"
+name = "hyperMode"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "PlayerShip_basepointer"
+hops = ["+0x17c"]

@@ -1,0 +1,5821 @@
+[game]
+name = "Baten Kaitos I & II HD Remaster"
+exe = "batenkaitos.exe"
+notes = "Converted from a Cheat Engine table by Alfon. Source: https://fearlessrevolution.com/viewtopic.php?t=30046"
+verified = []
+author = "Alfon"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "inf-hp-in-battle"
+name = "inf hp in battle"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-01
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah cmp rcx+10=0/ rcx+48=0 is enemy,rcx+18=maxhp
+}
+
+[ENABLE]
+
+aobscanmodule(bhpdmg,GameAssembly.dll,89 41 14 48 8B 87 10 01 00 00) // should be unique
+alloc(newmem,$100,bhpdmg)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [rcx+10],#0
+  je code
+  cmp [rcx+48],#0
+  je code
+  mov [rcx+32],#0
+  mov eax,[rcx+18]
+code:
+  mov [rcx+14],eax
+  mov rax,[rdi+00000110]
+  jmp return
+
+bhpdmg:
+  jmp newmem
+  nop 5
+return:
+registersymbol(bhpdmg)
+
+[DISABLE]
+
+bhpdmg:
+  db 89 41 14 48 8B 87 10 01 00 00
+
+unregistersymbol(bhpdmg)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+13AB8D0
+
+GameAssembly.dll.il2cpp+13AB8A2: 48 8B 5C 24 30                 - mov rbx,[rsp+30]
+GameAssembly.dll.il2cpp+13AB8A7: C7 87 24 01 00 00 00 00 00 00  - mov [rdi+00000124],00000000
+GameAssembly.dll.il2cpp+13AB8B1: 48 83 C4 20                    - add rsp,20
+GameAssembly.dll.il2cpp+13AB8B5: 5F                             - pop rdi
+GameAssembly.dll.il2cpp+13AB8B6: C3                             - ret 
+GameAssembly.dll.il2cpp+13AB8B7: 48 8B 8F 10 01 00 00           - mov rcx,[rdi+00000110]
+GameAssembly.dll.il2cpp+13AB8BE: 48 85 C9                       - test rcx,rcx
+GameAssembly.dll.il2cpp+13AB8C1: 0F 84 18 01 00 00              - je GameAssembly.dll.il2cpp+13AB9DF
+GameAssembly.dll.il2cpp+13AB8C7: 8B 41 14                       - mov eax,[rcx+14]
+GameAssembly.dll.il2cpp+13AB8CA: 2B 87 24 01 00 00              - sub eax,[rdi+00000124]
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+13AB8D0: 89 41 14                       - mov [rcx+14],eax
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+13AB8D3: 48 8B 87 10 01 00 00           - mov rax,[rdi+00000110]
+GameAssembly.dll.il2cpp+13AB8DA: 48 85 C0                       - test rax,rax
+GameAssembly.dll.il2cpp+13AB8DD: 0F 84 FC 00 00 00              - je GameAssembly.dll.il2cpp+13AB9DF
+GameAssembly.dll.il2cpp+13AB8E3: 48 8B 0D DE 27 5B 03           - mov rcx,[GameAssembly.dll.data+1690C8]
+GameAssembly.dll.il2cpp+13AB8EA: 0F B7 58 32                    - movzx ebx,word ptr [rax+32]
+GameAssembly.dll.il2cpp+13AB8EE: 83 B9 E0 00 00 00 00           - cmp dword ptr [rcx+000000E0],00
+GameAssembly.dll.il2cpp+13AB8F5: 75 05                          - jne GameAssembly.dll.il2cpp+13AB8FC
+GameAssembly.dll.il2cpp+13AB8F7: E8 44 4B C0 FE                 - call GameAssembly.dll.text+411440
+GameAssembly.dll.il2cpp+13AB8FC: F6 C3 01                       - test bl,01
+GameAssembly.dll.il2cpp+13AB8FF: 76 17                          - jna GameAssembly.dll.il2cpp+13AB918
+}"""
+
+[[cheat]]
+id = "modify-atk-def"
+name = "modify atk/def"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-04
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah rbx
+}
+
+[ENABLE]
+
+aobscanmodule(modif_at,GameAssembly.dll,F3 0F 59 71 14 F3) // should be unique
+alloc(newmem,$200,modif_at)
+alloc(mod_atk,8)
+alloc(mod_def,8)
+registersymbol(mod_atk)
+registersymbol(mod_def)
+label(code)
+label(code1)
+label(code2)
+label(return)
+
+mod_atk:
+  dd 00 00 00 00
+
+mod_def:
+  dd 00 00 00 00
+
+newmem:
+  cmp [mod_atk],0
+  jg code1
+  cmp [mod_def],0
+  jg code2
+code:
+  mulss xmm6,[rcx+14]
+  jmp return
+code1:
+  push rbx
+  mov rbx,[mod_atk]
+  mov [rcx+04],rbx
+  pop rbx
+  jmp code
+code2:
+  push rbx
+  mov rbx,[mod_def]
+  mov [rcx+0C],rbx
+  pop rbx
+  jmp code
+modif_at:
+  jmp newmem
+return:
+registersymbol(modif_at)
+
+[DISABLE]
+
+modif_at:
+  db F3 0F 59 71 14
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+143582B
+
+GameAssembly.dll.il2cpp+14357FE: 66 44 0F 6E C3              - movd xmm8,ebx
+GameAssembly.dll.il2cpp+1435803: 33 DB                       - xor ebx,ebx
+GameAssembly.dll.il2cpp+1435805: 45 0F 5B C0                 - cvtdq2ps xmm8,xmm8
+GameAssembly.dll.il2cpp+1435809: 66 0F 6E F7                 - movd xmm6,edi
+GameAssembly.dll.il2cpp+143580D: F3 44 0F 59 41 04           - mulss xmm8,[rcx+04]
+GameAssembly.dll.il2cpp+1435813: 0F 5B F6                    - cvtdq2ps xmm6,xmm6
+GameAssembly.dll.il2cpp+1435816: 41 0F 28 C0                 - movaps xmm0,xmm8
+GameAssembly.dll.il2cpp+143581A: F3 0F 59 01                 - mulss xmm0,[rcx]
+GameAssembly.dll.il2cpp+143581E: F3 0F 59 B4 24 80 00 00 00  - mulss xmm6,[rsp+00000080]
+GameAssembly.dll.il2cpp+1435827: F3 0F 58 C7                 - addss xmm0,xmm7
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+143582B: F3 0F 59 71 14              - mulss xmm6,[rcx+14]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+1435830: F3 0F 2C F8                 - cvttss2si edi,xmm0
+GameAssembly.dll.il2cpp+1435834: 0F 28 C6                    - movaps xmm0,xmm6
+GameAssembly.dll.il2cpp+1435837: F3 0F 59 01                 - mulss xmm0,[rcx]
+GameAssembly.dll.il2cpp+143583B: F3 0F 58 C7                 - addss xmm0,xmm7
+GameAssembly.dll.il2cpp+143583F: F3 0F 2C F0                 - cvttss2si esi,xmm0
+GameAssembly.dll.il2cpp+1435843: 85 FF                       - test edi,edi
+GameAssembly.dll.il2cpp+1435845: 75 04                       - jne GameAssembly.dll.il2cpp+143584B
+GameAssembly.dll.il2cpp+1435847: 8B FB                       - mov edi,ebx
+GameAssembly.dll.il2cpp+1435849: EB 37                       - jmp GameAssembly.dll.il2cpp+1435882
+GameAssembly.dll.il2cpp+143584B: 48 8B 05 AE 42 72 03        - mov rax,[GameAssembly.dll+4FBBB00]
+}"""
+
+[[cheat]]
+id = "atk-multiply-by"
+name = "atk multiply by"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "mod_atk"
+hops = []
+
+[[cheat]]
+id = "def-multiply-by"
+name = "def multiply by"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "mod_def"
+hops = []
+
+[[cheat]]
+id = "get-base-access-camp-to-fill-all-data"
+name = "get Base(access camp to fill all data)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-01
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(get_goldinj,GameAssembly.dll,8B BB DC 00 00 00 83 B9 E0 00 00 00 00 75 0C E8 B4) // should be unique
+alloc(newmem,$100,get_goldinj)
+alloc(gbase,8)
+registersymbol(gbase)
+label(code)
+label(return)
+
+newmem:
+  mov [gbase],rbx
+code:
+  mov edi,[rbx+000000DC]
+  jmp return
+
+get_goldinj:
+  jmp newmem
+  nop
+return:
+registersymbol(get_goldinj)
+
+[DISABLE]
+
+get_goldinj:
+  db 8B BB DC 00 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+14AEB78
+
+GameAssembly.dll.il2cpp+14AEB4D: 48 8B 0D EC D0 4B 03  - mov rcx,[GameAssembly.dll.data+176C40]
+GameAssembly.dll.il2cpp+14AEB54: 48 89 5C 24 30        - mov [rsp+30],rbx
+GameAssembly.dll.il2cpp+14AEB59: E8 22 CA 34 01        - call GameAssembly.dll.il2cpp+27FB580
+GameAssembly.dll.il2cpp+14AEB5E: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+14AEB61: 74 74                 - je GameAssembly.dll.il2cpp+14AEBD7
+GameAssembly.dll.il2cpp+14AEB63: 48 8B 58 20           - mov rbx,[rax+20]
+GameAssembly.dll.il2cpp+14AEB67: 48 85 DB              - test rbx,rbx
+GameAssembly.dll.il2cpp+14AEB6A: 74 6B                 - je GameAssembly.dll.il2cpp+14AEBD7
+GameAssembly.dll.il2cpp+14AEB6C: 48 8B 0D 0D A8 40 03  - mov rcx,[GameAssembly.dll.data+C4380]
+GameAssembly.dll.il2cpp+14AEB73: 48 89 7C 24 20        - mov [rsp+20],rdi
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+14AEB78: 8B BB DC 00 00 00     - mov edi,[rbx+000000DC]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+14AEB7E: 83 B9 E0 00 00 00 00  - cmp dword ptr [rcx+000000E0],00
+GameAssembly.dll.il2cpp+14AEB85: 75 0C                 - jne GameAssembly.dll.il2cpp+14AEB93
+GameAssembly.dll.il2cpp+14AEB87: E8 B4 18 B0 FE        - call GameAssembly.dll.text+411440
+GameAssembly.dll.il2cpp+14AEB8C: 48 8B 0D ED A7 40 03  - mov rcx,[GameAssembly.dll.data+C4380]
+GameAssembly.dll.il2cpp+14AEB93: 48 8B 81 B8 00 00 00  - mov rax,[rcx+000000B8]
+GameAssembly.dll.il2cpp+14AEB9A: 3B 38                 - cmp edi,[rax]
+GameAssembly.dll.il2cpp+14AEB9C: 48 8B 7C 24 20        - mov rdi,[rsp+20]
+GameAssembly.dll.il2cpp+14AEBA1: 7E 24                 - jle GameAssembly.dll.il2cpp+14AEBC7
+GameAssembly.dll.il2cpp+14AEBA3: 83 B9 E0 00 00 00 00  - cmp dword ptr [rcx+000000E0],00
+GameAssembly.dll.il2cpp+14AEBAA: 75 0C                 - jne GameAssembly.dll.il2cpp+14AEBB8
+}"""
+
+[[cheat]]
+id = "base"
+name = "base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "hp"
+name = "Hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x12",
+]
+
+[[cheat]]
+id = "hpmax"
+name = "HpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x14",
+]
+
+[[cheat]]
+id = "hpmaxplus"
+name = "HpMaxPlus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x16",
+]
+
+[[cheat]]
+id = "decknum"
+name = "DeckNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x18",
+]
+
+[[cheat]]
+id = "deckmax"
+name = "DeckMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "level"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "classlv"
+name = "Classlv"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x1d",
+]
+
+[[cheat]]
+id = "hand"
+name = "Hand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "exp"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x20",
+]
+
+[[cheat]]
+id = "maxcombo"
+name = "MaxCombo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x24",
+]
+
+[[cheat]]
+id = "inittime"
+name = "InitTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x25",
+]
+
+[[cheat]]
+id = "atk"
+name = "Atk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x28",
+]
+
+[[cheat]]
+id = "def"
+name = "Def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "agi"
+name = "Agi"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x30",
+]
+
+[[cheat]]
+id = "vit"
+name = "Vit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x34",
+]
+
+[[cheat]]
+id = "status"
+name = "Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x20",
+    "+0x38",
+]
+
+[[cheat]]
+id = "hp-2"
+name = "Hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x12",
+]
+
+[[cheat]]
+id = "hpmax-2"
+name = "HpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x14",
+]
+
+[[cheat]]
+id = "hpmaxplus-2"
+name = "HpMaxPlus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x16",
+]
+
+[[cheat]]
+id = "decknum-2"
+name = "DeckNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x18",
+]
+
+[[cheat]]
+id = "deckmax-2"
+name = "DeckMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "level-2"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "classlv-2"
+name = "Classlv"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x1d",
+]
+
+[[cheat]]
+id = "hand-2"
+name = "Hand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "exp-2"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x20",
+]
+
+[[cheat]]
+id = "maxcombo-2"
+name = "MaxCombo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x24",
+]
+
+[[cheat]]
+id = "inittime-2"
+name = "InitTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x25",
+]
+
+[[cheat]]
+id = "atk-2"
+name = "Atk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x28",
+]
+
+[[cheat]]
+id = "def-2"
+name = "Def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "agi-2"
+name = "Agi"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x30",
+]
+
+[[cheat]]
+id = "vit-2"
+name = "Vit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x34",
+]
+
+[[cheat]]
+id = "status-2"
+name = "Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x28",
+    "+0x38",
+]
+
+[[cheat]]
+id = "hp-3"
+name = "Hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x12",
+]
+
+[[cheat]]
+id = "hpmax-3"
+name = "HpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x14",
+]
+
+[[cheat]]
+id = "hpmaxplus-3"
+name = "HpMaxPlus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x16",
+]
+
+[[cheat]]
+id = "decknum-3"
+name = "DeckNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x18",
+]
+
+[[cheat]]
+id = "deckmax-3"
+name = "DeckMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "level-3"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "classlv-3"
+name = "Classlv"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x1d",
+]
+
+[[cheat]]
+id = "hand-3"
+name = "Hand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "exp-3"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x20",
+]
+
+[[cheat]]
+id = "maxcombo-3"
+name = "MaxCombo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x24",
+]
+
+[[cheat]]
+id = "inittime-3"
+name = "InitTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x25",
+]
+
+[[cheat]]
+id = "atk-3"
+name = "Atk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x28",
+]
+
+[[cheat]]
+id = "def-3"
+name = "Def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "agi-3"
+name = "Agi"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x30",
+]
+
+[[cheat]]
+id = "vit-3"
+name = "Vit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x34",
+]
+
+[[cheat]]
+id = "status-3"
+name = "Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x30",
+    "+0x38",
+]
+
+[[cheat]]
+id = "hp-4"
+name = "Hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x12",
+]
+
+[[cheat]]
+id = "hpmax-4"
+name = "HpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x14",
+]
+
+[[cheat]]
+id = "hpmaxplus-4"
+name = "HpMaxPlus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x16",
+]
+
+[[cheat]]
+id = "decknum-4"
+name = "DeckNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x18",
+]
+
+[[cheat]]
+id = "deckmax-4"
+name = "DeckMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "level-4"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "classlv-4"
+name = "Classlv"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x1d",
+]
+
+[[cheat]]
+id = "hand-4"
+name = "Hand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "exp-4"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x20",
+]
+
+[[cheat]]
+id = "maxcombo-4"
+name = "MaxCombo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x24",
+]
+
+[[cheat]]
+id = "inittime-4"
+name = "InitTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x25",
+]
+
+[[cheat]]
+id = "atk-4"
+name = "Atk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x28",
+]
+
+[[cheat]]
+id = "def-4"
+name = "Def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "agi-4"
+name = "Agi"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x30",
+]
+
+[[cheat]]
+id = "vit-4"
+name = "Vit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x34",
+]
+
+[[cheat]]
+id = "status-4"
+name = "Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x38",
+    "+0x38",
+]
+
+[[cheat]]
+id = "hp-5"
+name = "Hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x12",
+]
+
+[[cheat]]
+id = "hpmax-5"
+name = "HpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x14",
+]
+
+[[cheat]]
+id = "hpmaxplus-5"
+name = "HpMaxPlus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x16",
+]
+
+[[cheat]]
+id = "decknum-5"
+name = "DeckNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x18",
+]
+
+[[cheat]]
+id = "deckmax-5"
+name = "DeckMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "level-5"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "classlv-5"
+name = "Classlv"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x1d",
+]
+
+[[cheat]]
+id = "hand-5"
+name = "Hand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "exp-5"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x20",
+]
+
+[[cheat]]
+id = "maxcombo-5"
+name = "MaxCombo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x24",
+]
+
+[[cheat]]
+id = "inittime-5"
+name = "InitTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x25",
+]
+
+[[cheat]]
+id = "atk-5"
+name = "Atk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x28",
+]
+
+[[cheat]]
+id = "def-5"
+name = "Def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "agi-5"
+name = "Agi"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x30",
+]
+
+[[cheat]]
+id = "vit-5"
+name = "Vit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x34",
+]
+
+[[cheat]]
+id = "status-5"
+name = "Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x40",
+    "+0x38",
+]
+
+[[cheat]]
+id = "hp-6"
+name = "Hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x12",
+]
+
+[[cheat]]
+id = "hpmax-6"
+name = "HpMax"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x14",
+]
+
+[[cheat]]
+id = "hpmaxplus-6"
+name = "HpMaxPlus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x16",
+]
+
+[[cheat]]
+id = "decknum-6"
+name = "DeckNum"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x18",
+]
+
+[[cheat]]
+id = "deckmax-6"
+name = "DeckMax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "level-6"
+name = "Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x1c",
+]
+
+[[cheat]]
+id = "classlv-6"
+name = "Classlv"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x1d",
+]
+
+[[cheat]]
+id = "hand-6"
+name = "Hand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x1e",
+]
+
+[[cheat]]
+id = "exp-6"
+name = "Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x20",
+]
+
+[[cheat]]
+id = "maxcombo-6"
+name = "MaxCombo"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x24",
+]
+
+[[cheat]]
+id = "inittime-6"
+name = "InitTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x25",
+]
+
+[[cheat]]
+id = "atk-6"
+name = "Atk"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x28",
+]
+
+[[cheat]]
+id = "def-6"
+name = "Def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "agi-6"
+name = "Agi"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x30",
+]
+
+[[cheat]]
+id = "vit-6"
+name = "Vit"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x34",
+]
+
+[[cheat]]
+id = "status-6"
+name = "Status"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0xb0",
+    "+0x48",
+    "+0x38",
+]
+
+[[cheat]]
+id = "get-magnus-base"
+name = "Get Magnus Base"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-06
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(mag_inj,GameAssembly.dll,0F B7 4C CB 20 33 D2 E8 EB) // should be unique
+alloc(newmem,$100,mag_inj)
+alloc(semag,8)
+alloc(seoff,8)
+registersymbol(semag)
+registersymbol(seoff)
+label(code)
+label(return)
+
+newmem:
+  mov [semag],rbx
+  mov [seoff],rcx
+code:
+  movzx ecx,word ptr [rbx+rcx*8+20]
+  jmp return
+
+mag_inj:
+  jmp newmem
+return:
+registersymbol(mag_inj)
+
+aobscanmodule(tar_deck,GameAssembly.dll,0F B7 50 10 45 33 C0 49) // should be unique
+alloc(newmem1,$100,tar_deck)
+alloc(selectdeck,8)
+registersymbol(selectdeck)
+label(code1)
+label(return1)
+
+newmem1:
+  mov [selectdeck],rax
+code1:
+  movzx edx,word ptr [rax+10]
+  xor r8d,r8d
+  jmp return1
+
+tar_deck:
+  jmp newmem1
+  nop 2
+return1:
+registersymbol(tar_deck)
+
+[DISABLE]
+
+mag_inj:
+  db 0F B7 4C CB 20
+
+tar_deck:
+  db 0F B7 50 10 45 33 C0
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+1957D99
+
+GameAssembly.dll+1957D6A: 48 85 C0              - test rax,rax
+GameAssembly.dll+1957D6D: 0F 84 81 06 00 00     - je GameAssembly.dll+19583F4
+GameAssembly.dll+1957D73: 48 8B 40 20           - mov rax,[rax+20]
+GameAssembly.dll+1957D77: 48 85 C0              - test rax,rax
+GameAssembly.dll+1957D7A: 0F 84 74 06 00 00     - je GameAssembly.dll+19583F4
+GameAssembly.dll+1957D80: 48 85 DB              - test rbx,rbx
+GameAssembly.dll+1957D83: 0F 84 6B 06 00 00     - je GameAssembly.dll+19583F4
+GameAssembly.dll+1957D89: 48 63 88 84 00 00 00  - movsxd  rcx,dword ptr [rax+00000084]
+GameAssembly.dll+1957D90: 3B 4B 18              - cmp ecx,[rbx+18]
+GameAssembly.dll+1957D93: 0F 83 55 06 00 00     - jae GameAssembly.dll+19583EE
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+1957D99: 0F B7 4C CB 20        - movzx ecx,word ptr [rbx+rcx*8+20]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+1957D9E: 33 D2                 - xor edx,edx
+GameAssembly.dll+1957DA0: E8 EB 6C 21 00        - call LB.PRJ0505.Batenkaitos1.MagnusUtils.IsWasteQC
+GameAssembly.dll+1957DA5: 48 85 FF              - test rdi,rdi
+GameAssembly.dll+1957DA8: 0F 84 46 06 00 00     - je GameAssembly.dll+19583F4
+GameAssembly.dll+1957DAE: 45 33 C0              - xor r8d,r8d
+GameAssembly.dll+1957DB1: 0F B6 D0              - movzx edx,al
+GameAssembly.dll+1957DB4: 48 8B CF              - mov rcx,rdi
+GameAssembly.dll+1957DB7: E8 44 0D 6E 02        - call UnityEngine.GameObject.SetActive
+GameAssembly.dll+1957DBC: E9 19 04 00 00        - jmp GameAssembly.dll+19581DA
+GameAssembly.dll+1957DC1: 80 7B 6C 00           - cmp byte ptr [rbx+6C],00
+}"""
+
+[[cheat]]
+id = "quest-magnus-1"
+name = "quest magnus 1"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x20",
+]
+
+[[cheat]]
+id = "quest-magnus-2"
+name = "quest magnus 2"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x28",
+]
+
+[[cheat]]
+id = "quest-magnus-3"
+name = "quest magnus 3"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x30",
+]
+
+[[cheat]]
+id = "quest-magnus-4"
+name = "quest magnus 4"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x38",
+]
+
+[[cheat]]
+id = "quest-magnus-5"
+name = "quest magnus 5"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x40",
+]
+
+[[cheat]]
+id = "quest-magnus-6"
+name = "quest magnus 6"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x48",
+]
+
+[[cheat]]
+id = "quest-magnus-7"
+name = "quest magnus 7"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x50",
+]
+
+[[cheat]]
+id = "quest-magnus-8"
+name = "quest magnus 8"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x88",
+    "+0x58",
+]
+
+[[cheat]]
+id = "selected-quest-magnus-quick-action"
+name = "selected Quest magnus (quick action)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "semag"
+hops = []
+
+[[cheat]]
+id = "selected-card-camp-menu"
+name = "selected card  (camp menu)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "selectdeck"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "id"
+name = "id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemptr"
+hops = []
+
+[[cheat]]
+id = "force-play-music"
+name = "force play music"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-02
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(testunlomus,GameAssembly.dll,0F B6 42 30 48 83 C4 20) // should be unique
+alloc(newmem,$100,testunlomus)
+
+label(code)
+label(return)
+
+newmem:
+  mov [rdx+30],#1
+code:
+  movzx eax,byte ptr [rdx+30]
+  add rsp,20
+  jmp return
+
+testunlomus:
+  jmp newmem
+  nop 3
+return:
+registersymbol(testunlomus)
+
+[DISABLE]
+
+testunlomus:
+  db 0F B6 42 30 48 83 C4 20
+
+unregistersymbol(testunlomus)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+DFE71F
+
+GameAssembly.dll.il2cpp+DFE702: 3B 42 18        - cmp eax,[rdx+18]
+GameAssembly.dll.il2cpp+DFE705: 73 2E           - jae GameAssembly.dll.il2cpp+DFE735
+GameAssembly.dll.il2cpp+DFE707: 48 8B 4A 10     - mov rcx,[rdx+10]
+GameAssembly.dll.il2cpp+DFE70B: 48 85 C9        - test rcx,rcx
+GameAssembly.dll.il2cpp+DFE70E: 74 19           - je GameAssembly.dll.il2cpp+DFE729
+GameAssembly.dll.il2cpp+DFE710: 3B 41 18        - cmp eax,[rcx+18]
+GameAssembly.dll.il2cpp+DFE713: 73 1A           - jae GameAssembly.dll.il2cpp+DFE72F
+GameAssembly.dll.il2cpp+DFE715: 48 8B 54 C1 20  - mov rdx,[rcx+rax*8+20]
+GameAssembly.dll.il2cpp+DFE71A: 48 85 D2        - test rdx,rdx
+GameAssembly.dll.il2cpp+DFE71D: 74 0A           - je GameAssembly.dll.il2cpp+DFE729
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+DFE71F: 0F B6 42 30     - movzx eax,byte ptr [rdx+30]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+DFE723: 48 83 C4 20     - add rsp,20
+GameAssembly.dll.il2cpp+DFE727: 5B              - pop rbx
+GameAssembly.dll.il2cpp+DFE728: C3              - ret 
+GameAssembly.dll.il2cpp+DFE729: E8 42 25 15 FF  - call GameAssembly.mono_get_string_class+DA60
+GameAssembly.dll.il2cpp+DFE72E: CC              - int 3 
+GameAssembly.dll.il2cpp+DFE72F: E8 4C 25 15 FF  - call GameAssembly.mono_get_string_class+DA70
+GameAssembly.dll.il2cpp+DFE734: CC              - int 3 
+GameAssembly.dll.il2cpp+DFE735: 33 C9           - xor ecx,ecx
+GameAssembly.dll.il2cpp+DFE737: E8 E4 CD 72 02  - call System.ThrowHelper.ThrowArgumentOutOfRange_IndexException
+GameAssembly.dll.il2cpp+DFE73C: CC              - int 3 
+}"""
+
+[[cheat]]
+id = "test-unlock-music"
+name = "test unlock music"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-01
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(unlo_mus,GameAssembly.dll,40 38 70 30 74 03) // should be unique
+alloc(newmem,$100,unlo_mus)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  cmp [rax+30],sil
+  je GameAssembly.dll.il2cpp+DFF9F2
+  jmp return
+
+unlo_mus:
+  jmp newmem
+  nop
+return:
+registersymbol(unlo_mus)
+
+[DISABLE]
+
+unlo_mus:
+  db 40 38 70 30 74 03
+
+unregistersymbol(unlo_mus)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+DFF9EC
+
+GameAssembly.dll.il2cpp+DFF9CC: 74 3F              - je GameAssembly.dll.il2cpp+DFFA0D
+GameAssembly.dll.il2cpp+DFF9CE: 39 70 10           - cmp [rax+10],esi
+GameAssembly.dll.il2cpp+DFF9D1: 76 3A              - jna GameAssembly.dll.il2cpp+DFFA0D
+GameAssembly.dll.il2cpp+DFF9D3: 45 33 C9           - xor r9d,r9d
+GameAssembly.dll.il2cpp+DFF9D6: 45 8B C6           - mov r8d,r14d
+GameAssembly.dll.il2cpp+DFF9D9: 8B D7              - mov edx,edi
+GameAssembly.dll.il2cpp+DFF9DB: 48 8B CB           - mov rcx,rbx
+GameAssembly.dll.il2cpp+DFF9DE: E8 0D F4 FF FF     - call LB.PRJ0505.Common.MusicListBaseView.GetMusicData
+GameAssembly.dll.il2cpp+DFF9E3: 48 85 C0           - test rax,rax
+GameAssembly.dll.il2cpp+DFF9E6: 0F 84 E0 01 00 00  - je GameAssembly.dll.il2cpp+DFFBCC
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+DFF9EC: 40 38 70 30        - cmp [rax+30],sil
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+DFF9F0: 74 03              - je GameAssembly.dll.il2cpp+DFF9F5
+GameAssembly.dll.il2cpp+DFF9F2: FF 43 54           - inc [rbx+54]
+GameAssembly.dll.il2cpp+DFF9F5: 48 8B 4B 30        - mov rcx,[rbx+30]
+GameAssembly.dll.il2cpp+DFF9F9: 41 FF C6           - inc r14d
+GameAssembly.dll.il2cpp+DFF9FC: 48 85 C9           - test rcx,rcx
+GameAssembly.dll.il2cpp+DFF9FF: 0F 84 C7 01 00 00  - je GameAssembly.dll.il2cpp+DFFBCC
+GameAssembly.dll.il2cpp+DFFA05: 48 8B D0           - mov rdx,rax
+GameAssembly.dll.il2cpp+DFFA08: E8 E3 34 DB FE     - call GameAssembly.il2cpp_image_get_class_count+1F00
+GameAssembly.dll.il2cpp+DFFA0D: FF C7              - inc edi
+GameAssembly.dll.il2cpp+DFFA0F: E9 FC FE FF FF     - jmp GameAssembly.dll.il2cpp+DFF910
+}"""
+
+[[cheat]]
+id = "inf-dash"
+name = "inf Dash"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-10
+  Author : Alfon Regiantoro
+
+  LB.PRJ0505.Common.CfChar.OnDash
+}
+
+[ENABLE]
+
+aobscanmodule(infdash,GameAssembly.dll,F3 0F 58 70 04 0F) // should be unique
+alloc(newmem,$100,infdash)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  nop 5 //addss xmm6,[rax+04]
+  jmp return
+
+infdash:
+  jmp newmem
+return:
+registersymbol(infdash)
+
+[DISABLE]
+
+infdash:
+  db F3 0F 58 70 04
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+17F5947
+
+GameAssembly.dll+17F590C: 48 8D 0D AD 6D 39 03  - lea rcx,[GameAssembly.dll+4B8C6C0]
+GameAssembly.dll+17F5913: E8 18 C0 BF FE        - call GameAssembly.BrotliDecoderIsFinished+67B0
+GameAssembly.dll+17F5918: 48 8B 0D A1 6D 39 03  - mov rcx,[GameAssembly.dll+4B8C6C0]
+GameAssembly.dll+17F591F: C6 05 7D A1 59 03 01  - mov byte ptr [GameAssembly.dll+4D8FAA3],01
+GameAssembly.dll+17F5926: 83 B9 E0 00 00 00 00  - cmp dword ptr [rcx+000000E0],00
+GameAssembly.dll+17F592D: 75 0C                 - jne GameAssembly.dll+17F593B
+GameAssembly.dll+17F592F: E8 0C FC C1 FE        - call GameAssembly.dll+415540
+GameAssembly.dll+17F5934: 48 8B 0D 85 6D 39 03  - mov rcx,[GameAssembly.dll+4B8C6C0]
+GameAssembly.dll+17F593B: 48 8B 81 B8 00 00 00  - mov rax,[rcx+000000B8]
+GameAssembly.dll+17F5942: F3 0F 59 70 14        - mulss xmm6,[rax+14]
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+17F5947: F3 0F 58 70 04        - addss xmm6,[rax+04]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+17F594C: 0F 28 C6              - movaps xmm0,xmm6
+GameAssembly.dll+17F594F: E8 EC E2 01 00        - call GameAssembly.dll+1813C40
+GameAssembly.dll+17F5954: 80 3D 48 A1 59 03 00  - cmp byte ptr [GameAssembly.dll+4D8FAA3],00
+GameAssembly.dll+17F595B: 75 13                 - jne GameAssembly.dll+17F5970
+GameAssembly.dll+17F595D: 48 8D 0D 5C 6D 39 03  - lea rcx,[GameAssembly.dll+4B8C6C0]
+GameAssembly.dll+17F5964: E8 C7 BF BF FE        - call GameAssembly.BrotliDecoderIsFinished+67B0
+GameAssembly.dll+17F5969: C6 05 33 A1 59 03 01  - mov byte ptr [GameAssembly.dll+4D8FAA3],01
+GameAssembly.dll+17F5970: 48 8B 05 49 6D 39 03  - mov rax,[GameAssembly.dll+4B8C6C0]
+GameAssembly.dll+17F5977: 83 B8 E0 00 00 00 00  - cmp dword ptr [rax+000000E0],00
+GameAssembly.dll+17F597E: 75 0F                 - jne GameAssembly.dll+17F598F
+}"""
+
+[[cheat]]
+id = "equip-break-no-kill-user"
+name = "equip break no kill user"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-13
+  Author : Alfon Regiantoro
+
+  PLAYER.OnBreakEquip
+}
+
+[ENABLE]
+
+aobscanmodule(breaknodie,GameAssembly.dll,C7 43 58 00 00 00 00 48 8B 43) // should be unique
+alloc(newmem,$100,breaknodie)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  nop 7 //mov [rbx+58],00000000
+  jmp return
+
+breaknodie:
+  jmp newmem
+  nop 2
+return:
+registersymbol(breaknodie)
+
+[DISABLE]
+
+breaknodie:
+  db C7 43 58 00 00 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+13AD15C
+
+GameAssembly.dll+13AD13B: 45 33 C0              - xor r8d,r8d
+GameAssembly.dll+13AD13E: 33 D2                 - xor edx,edx
+GameAssembly.dll+13AD140: 33 C9                 - xor ecx,ecx
+GameAssembly.dll+13AD142: E8 39 C0 F7 FF        - call LB.PRJ0505.Batenkaitos2.Battle.EnableDrawEnemyHP
+GameAssembly.dll+13AD147: 45 33 C0              - xor r8d,r8d
+GameAssembly.dll+13AD14A: BA 99 00 00 00        - mov edx,00000099
+GameAssembly.dll+13AD14F: 48 8B CB              - mov rcx,rbx
+GameAssembly.dll+13AD152: E8 09 FB FD FF        - call PERSON.FindSP
+GameAssembly.dll+13AD157: 48 85 C0              - test rax,rax
+GameAssembly.dll+13AD15A: 74 07                 - je GameAssembly.dll+13AD163
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+13AD15C: C7 43 58 00 00 00 00  - mov [rbx+58],00000000
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+13AD163: 48 8B 43 78           - mov rax,[rbx+78]
+GameAssembly.dll+13AD167: 48 85 C0              - test rax,rax
+GameAssembly.dll+13AD16A: 0F 84 AA 00 00 00     - je GameAssembly.dll+13AD21A
+GameAssembly.dll+13AD170: 48 83 78 10 00        - cmp qword ptr [rax+10],00
+GameAssembly.dll+13AD175: 76 68                 - jna GameAssembly.dll+13AD1DF
+GameAssembly.dll+13AD177: 83 78 18 01           - cmp dword ptr [rax+18],01
+GameAssembly.dll+13AD17B: 74 06                 - je GameAssembly.dll+13AD183
+GameAssembly.dll+13AD17D: 83 78 18 02           - cmp dword ptr [rax+18],02
+GameAssembly.dll+13AD181: 75 5C                 - jne GameAssembly.dll+13AD1DF
+GameAssembly.dll+13AD183: 48 8B 0D 86 37 7A 03  - mov rcx,[GameAssembly.dll+4B50910]
+}"""
+
+[[cheat]]
+id = "inf-aura-time"
+name = "inf aura time"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-10
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(infauratime,GameAssembly.dll,F3 41 0F 11 40 18 48 8B) // should be unique
+alloc(newmem,$100,infauratime)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [r8+18],(float)18000
+  jmp return
+
+infauratime:
+  jmp newmem
+  nop
+return:
+registersymbol(infauratime)
+
+[DISABLE]
+
+infauratime:
+  db F3 41 0F 11 40 18
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+13734F9
+
+GameAssembly.dll+13734D5: 48 85 C0              - test rax,rax
+GameAssembly.dll+13734D8: 74 6B                 - je GameAssembly.dll+1373545
+GameAssembly.dll+13734DA: 48 39 B0 E0 00 00 00  - cmp [rax+000000E0],rsi
+GameAssembly.dll+13734E1: 74 0E                 - je GameAssembly.dll+13734F1
+GameAssembly.dll+13734E3: 48 8B 80 E0 00 00 00  - mov rax,[rax+000000E0]
+GameAssembly.dll+13734EA: F3 0F 10 40 10        - movss xmm0,[rax+10]
+GameAssembly.dll+13734EF: EB 03                 - jmp GameAssembly.dll+13734F4
+GameAssembly.dll+13734F1: 0F 57 C0              - xorps xmm0,xmm0
+GameAssembly.dll+13734F4: 4D 85 C0              - test r8,r8
+GameAssembly.dll+13734F7: 74 4C                 - je GameAssembly.dll+1373545
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+13734F9: F3 41 0F 11 40 18     - movss [r8+18],xmm0
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+13734FF: 48 8B 4F 48           - mov rcx,[rdi+48]
+GameAssembly.dll+1373503: 48 85 C9              - test rcx,rcx
+GameAssembly.dll+1373506: 74 3D                 - je GameAssembly.dll+1373545
+GameAssembly.dll+1373508: 3B 59 18              - cmp ebx,[rcx+18]
+GameAssembly.dll+137350B: 73 3E                 - jae GameAssembly.dll+137354B
+GameAssembly.dll+137350D: 48 63 C3              - movsxd  rax,ebx
+GameAssembly.dll+1373510: 48 8B 4C C1 20        - mov rcx,[rcx+rax*8+20]
+GameAssembly.dll+1373515: 48 85 C9              - test rcx,rcx
+GameAssembly.dll+1373518: 74 2B                 - je GameAssembly.dll+1373545
+GameAssembly.dll+137351A: 48 8B 49 30           - mov rcx,[rcx+30]
+}"""
+
+[[cheat]]
+id = "inf-hp-battle"
+name = "inf hp (Battle)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-01
+  Author : Alfon Regiantoro cmp rbx+20=1 player =3 npc player =2 enemy
+
+  This script does blah blah blah cmp rbx+18=1 player =0 enemy,cmp rbx+24=1 player =0 enemy,cmp rbx+130=pointer player =0 enemy
+}
+
+[ENABLE]
+
+aobscanmodule(pdmginj,GameAssembly.dll,89 4B 58 44 38 2D CA 83 9F 03) // should be unique
+alloc(newmem,$100,pdmginj)
+
+label(code)
+label(code1)
+label(return)
+
+newmem:
+  cmp [rbx+20],#1
+  je code1
+  cmp [rbx+20],#3
+  je code1
+code:
+  mov [rbx+58],ecx
+  cmp [GameAssembly.dll+4D937D8],r13b
+  jmp return
+code1:
+  cmp [GameAssembly.dll+4D937D8],r13b
+  jmp return
+
+pdmginj:
+  jmp newmem
+  nop 5
+return:
+registersymbol(pdmginj)
+
+aobscanmodule(mpfullinj,GameAssembly.dll,F3 0F 10 81 80 00 00 00 0F 2F C6) // should be unique
+alloc(newmem1,$100,mpfullinj)
+
+label(code2)
+label(return1)
+
+newmem1:
+  mov [rcx+00000080],(float)500
+code2:
+  movss xmm0,[rcx+00000080]
+  jmp return1
+
+mpfullinj:
+  jmp newmem1
+  nop 3
+return1:
+registersymbol(mpfullinj)
+
+[DISABLE]
+
+pdmginj:
+  db 89 4B 58 44 38 2D CA 83 9F 03
+
+mpfullinj:
+  db F3 0F 10 81 80 00 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+F36404
+
+GameAssembly.dll.il2cpp+F363E0: 0F 84 AB 03 00 00     - je GameAssembly.dll.il2cpp+F36791
+GameAssembly.dll.il2cpp+F363E6: 8B 4A 20              - mov ecx,[rdx+20]
+GameAssembly.dll.il2cpp+F363E9: 2B 4B 58              - sub ecx,[rbx+58]
+GameAssembly.dll.il2cpp+F363EC: F3 41 0F 2C C0        - cvttss2si eax,xmm8
+GameAssembly.dll.il2cpp+F363F1: 03 C8                 - add ecx,eax
+GameAssembly.dll.il2cpp+F363F3: 89 4A 20              - mov [rdx+20],ecx
+GameAssembly.dll.il2cpp+F363F6: 8B 4B 58              - mov ecx,[rbx+58]
+GameAssembly.dll.il2cpp+F363F9: F3 41 0F 2C C0        - cvttss2si eax,xmm8
+GameAssembly.dll.il2cpp+F363FE: 2B C8                 - sub ecx,eax
+GameAssembly.dll.il2cpp+F36400: 41 0F 48 CD           - cmovs ecx,r13d
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+F36404: 89 4B 58              - mov [rbx+58],ecx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+F36407: 44 38 2D CA 83 9F 03  - cmp [GameAssembly.dll+4D937D8],r13b
+GameAssembly.dll.il2cpp+F3640E: F3 0F 58 7B 5C        - addss xmm7,[rbx+5C]
+GameAssembly.dll.il2cpp+F36413: F3 0F 11 7B 5C        - movss [rbx+5C],xmm7
+GameAssembly.dll.il2cpp+F36418: 75 13                 - jne GameAssembly.dll.il2cpp+F3642D
+GameAssembly.dll.il2cpp+F3641A: 48 8D 0D EF 54 7B 03  - lea rcx,[GameAssembly.dll.data+E7910]
+GameAssembly.dll.il2cpp+F36421: E8 0A 65 05 FF        - call GameAssembly.BrotliDecoderIsFinished+67B0
+GameAssembly.dll.il2cpp+F36426: C6 05 AB 83 9F 03 01  - mov byte ptr [GameAssembly.dll+4D937D8],01
+GameAssembly.dll.il2cpp+F3642D: 48 8B 46 78           - mov rax,[rsi+78]
+GameAssembly.dll.il2cpp+F36431: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+F36434: 0F 84 57 03 00 00     - je GameAssembly.dll.il2cpp+F36791
+}"""
+
+[[cheat]]
+id = "multiply-attack-battle"
+name = "multiply attack (battle)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-03
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(mul_atk,GameAssembly.dll,F3 0F 59 78 70) // should be unique
+alloc(newmem,$200,mul_atk)
+alloc(modif_at,8)
+registersymbol(modif_at)
+label(code)
+label(code1)
+label(code2)
+label(return)
+
+modif_at:
+  dd 00 00 00 00
+
+newmem:
+   cmp [modif_at],0
+   jg code1
+code:
+  mulss xmm7,[rax+70]
+  jmp return
+code1:
+  cmp [rax+10],#1
+  je code2
+  cmp [rax+10],#2
+  je code2
+  cmp [rax+10],#3
+  je code2
+  jmp code
+code2:
+  push rdx
+  mov rdx,[modif_at]
+  mov [rax+70],rdx
+  mulss xmm7,[rax+70]
+  pop rdx
+  jmp return
+mul_atk:
+  jmp newmem
+return:
+registersymbol(mul_atk)
+
+[DISABLE]
+
+mul_atk:
+  db F3 0F 59 78 70
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+F2D94D
+
+GameAssembly.dll.il2cpp+F2D91A: E8 11 F0 05 FF        - call GameAssembly.BrotliDecoderIsFinished+67B0
+GameAssembly.dll.il2cpp+F2D91F: C6 05 C5 0E A0 03 01  - mov byte ptr [GameAssembly.dll+4D937EB],01
+GameAssembly.dll.il2cpp+F2D926: 48 8B 0D E3 DF 7B 03  - mov rcx,[GameAssembly.dll.data+E7910]
+GameAssembly.dll.il2cpp+F2D92D: 83 B9 E0 00 00 00 00  - cmp dword ptr [rcx+000000E0],00
+GameAssembly.dll.il2cpp+F2D934: 75 05                 - jne GameAssembly.dll.il2cpp+F2D93B
+GameAssembly.dll.il2cpp+F2D936: E8 05 2C 08 FF        - call GameAssembly.dll.text+414540
+GameAssembly.dll.il2cpp+F2D93B: 48 8B 43 30           - mov rax,[rbx+30]
+GameAssembly.dll.il2cpp+F2D93F: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+GameAssembly.dll.il2cpp+F2D944: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+F2D947: 0F 84 E9 01 00 00     - je GameAssembly.dll.il2cpp+F2DB36
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+F2D94D: F3 0F 59 78 70        - mulss xmm7,[rax+70]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+F2D952: 48 8B 05 CF F2 A0 03  - mov rax,[GameAssembly.dll+4DA1C28]
+GameAssembly.dll.il2cpp+F2D959: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+F2D95C: 75 1C                 - jne GameAssembly.dll.il2cpp+F2D97A
+GameAssembly.dll.il2cpp+F2D95E: 48 8D 0D 93 36 EA 02  - lea rcx,[GameAssembly.dll.rdata+11CFF8]
+GameAssembly.dll.il2cpp+F2D965: E8 06 D4 00 FF        - call GameAssembly.DllCanUnloadNow+2DF0
+GameAssembly.dll.il2cpp+F2D96A: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+F2D96D: 0F 84 C9 01 00 00     - je GameAssembly.dll.il2cpp+F2DB3C
+GameAssembly.dll.il2cpp+F2D973: 48 89 05 AE F2 A0 03  - mov [GameAssembly.dll+4DA1C28],rax
+GameAssembly.dll.il2cpp+F2D97A: BA 68 00 00 00        - mov edx,00000068
+GameAssembly.dll.il2cpp+F2D97F: 8D 4A F8              - lea ecx,[rdx-08]
+}"""
+
+[[cheat]]
+id = "multiply-by"
+name = "multiply by"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "modif_at"
+hops = []
+
+[[cheat]]
+id = "multiply-crush-battle"
+name = "multiply crush (battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-03
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(mul_crh,GameAssembly.dll,F3 0F 59 78 74) // should be unique
+alloc(newmem,$200,mul_crh)
+alloc(modif_cr,8)
+registersymbol(modif_cr)
+label(code)
+label(code1)
+label(code2)
+label(return)
+
+modif_cr:
+  dd 00 00 00 00
+
+newmem:
+  cmp [modif_cr],0
+   jg code1
+code:
+  mulss xmm7,[rax+74]
+  jmp return
+code1:
+  cmp [rax+10],#1
+  je code2
+  cmp [rax+10],#2
+  je code2
+  cmp [rax+10],#3
+  je code2
+  jmp code
+code2:
+  push r12
+  mov r12,[modif_cr]
+  mov [rax+74],r12
+  mulss xmm7,[rax+74]
+  pop r12
+  jmp return
+mul_crh:
+  jmp newmem
+return:
+registersymbol(mul_crh)
+
+[DISABLE]
+
+mul_crh:
+  db F3 0F 59 78 74
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+F2DBDD
+
+GameAssembly.dll.il2cpp+F2DBAA: E8 81 ED 05 FF        - call GameAssembly.BrotliDecoderIsFinished+67B0
+GameAssembly.dll.il2cpp+F2DBAF: C6 05 36 0C A0 03 01  - mov byte ptr [GameAssembly.dll+4D937EC],01
+GameAssembly.dll.il2cpp+F2DBB6: 48 8B 0D 53 DD 7B 03  - mov rcx,[GameAssembly.dll.data+E7910]
+GameAssembly.dll.il2cpp+F2DBBD: 83 B9 E0 00 00 00 00  - cmp dword ptr [rcx+000000E0],00
+GameAssembly.dll.il2cpp+F2DBC4: 75 05                 - jne GameAssembly.dll.il2cpp+F2DBCB
+GameAssembly.dll.il2cpp+F2DBC6: E8 75 29 08 FF        - call GameAssembly.dll.text+414540
+GameAssembly.dll.il2cpp+F2DBCB: 48 8B 43 30           - mov rax,[rbx+30]
+GameAssembly.dll.il2cpp+F2DBCF: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+GameAssembly.dll.il2cpp+F2DBD4: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+F2DBD7: 0F 84 E9 01 00 00     - je GameAssembly.dll.il2cpp+F2DDC6
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+F2DBDD: F3 0F 59 78 74        - mulss xmm7,[rax+74]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+F2DBE2: 48 8B 05 3F F0 A0 03  - mov rax,[GameAssembly.dll+4DA1C28]
+GameAssembly.dll.il2cpp+F2DBE9: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+F2DBEC: 75 1C                 - jne GameAssembly.dll.il2cpp+F2DC0A
+GameAssembly.dll.il2cpp+F2DBEE: 48 8D 0D 03 34 EA 02  - lea rcx,[GameAssembly.dll.rdata+11CFF8]
+GameAssembly.dll.il2cpp+F2DBF5: E8 76 D1 00 FF        - call GameAssembly.DllCanUnloadNow+2DF0
+GameAssembly.dll.il2cpp+F2DBFA: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+F2DBFD: 0F 84 C9 01 00 00     - je GameAssembly.dll.il2cpp+F2DDCC
+GameAssembly.dll.il2cpp+F2DC03: 48 89 05 1E F0 A0 03  - mov [GameAssembly.dll+4DA1C28],rax
+GameAssembly.dll.il2cpp+F2DC0A: BA 68 00 00 00        - mov edx,00000068
+GameAssembly.dll.il2cpp+F2DC0F: 8D 4A F8              - lea ecx,[rdx-08]
+}"""
+
+[[cheat]]
+id = "multiply-by-2"
+name = "multiply by"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "modif_cr"
+hops = []
+
+[[cheat]]
+id = "get-base-access-camp-to-fill-all-data-2"
+name = "get Base(access camp to fill all data)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-01
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(getbaseinj,GameAssembly.dll,8B B1 B8 00 00 00 48 85 DB) // should be unique
+alloc(newmem,$200,getbaseinj)
+alloc(gbase,8)
+alloc(mony,8)
+registersymbol(mony)
+registersymbol(gbase)
+label(code)
+label(return)
+
+newmem:
+  mov [mony],rcx
+  mov [gbase],rdi
+code:
+  mov esi,[rcx+000000B8]
+  jmp return
+
+getbaseinj:
+  jmp newmem
+  nop
+return:
+registersymbol(getbaseinj)
+
+aobscanmodule(Param,GameAssembly.dll,8B 51 1C 45 33 C0 48 8B CF E8 5E) // should be unique
+alloc(newmem1,$200,Param)
+alloc(pparam,8)
+registersymbol(pparam)
+label(code1)
+label(return1)
+
+newmem1:
+  mov [pparam],rcx
+code1:
+  mov edx,[rcx+1C]
+  xor r8d,r8d
+  jmp return1
+
+Param:
+  jmp newmem1
+  nop
+return1:
+registersymbol(Param)
+
+aobscanmodule(gspir_inj,GameAssembly.dll,48 8B 7B 58 83 B9 E0 00 00 00 00 75 05 E8 DE) // should be unique
+alloc(newmem2,$100,gspir_inj)
+alloc(spir,8)
+registersymbol(spir)
+label(code2)
+label(return2)
+
+newmem2:
+  mov [spir],rbx
+code2:
+  mov rdi,[rbx+58]
+  cmp dword ptr [rcx+000000E0],00
+  jmp return2
+
+gspir_inj:
+  jmp newmem2
+  nop 6
+return2:
+registersymbol(gspir_inj)
+
+[DISABLE]
+
+getbaseinj:
+  db 8B B1 B8 00 00 00
+
+Param:
+  db 8B 51 1C 45 33 C0
+
+gspir_inj:
+  db 48 8B 7B 58 83 B9 E0 00 00 00 00
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+1379183
+
+GameAssembly.dll.il2cpp+1379151: 48 8B 05 D8 E9 37 03  - mov rax,[GameAssembly.dll.data+F3B30]
+GameAssembly.dll.il2cpp+1379158: 39 B0 E0 00 00 00     - cmp [rax+000000E0],esi
+GameAssembly.dll.il2cpp+137915E: 75 0F                 - jne GameAssembly.dll.il2cpp+137916F
+GameAssembly.dll.il2cpp+1379160: 48 8B C8              - mov rcx,rax
+GameAssembly.dll.il2cpp+1379163: E8 D8 73 C3 FE        - call GameAssembly.dll.text+414540
+GameAssembly.dll.il2cpp+1379168: 48 8B 05 C1 E9 37 03  - mov rax,[GameAssembly.dll.data+F3B30]
+GameAssembly.dll.il2cpp+137916F: 48 8B 80 B8 00 00 00  - mov rax,[rax+000000B8]
+GameAssembly.dll.il2cpp+1379176: 48 8B 48 18           - mov rcx,[rax+18]
+GameAssembly.dll.il2cpp+137917A: 48 85 C9              - test rcx,rcx
+GameAssembly.dll.il2cpp+137917D: 0F 84 29 01 00 00     - je GameAssembly.dll.il2cpp+13792AC
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+1379183: 8B B1 B8 00 00 00     - mov esi,[rcx+000000B8]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+1379189: 48 85 DB              - test rbx,rbx
+GameAssembly.dll.il2cpp+137918C: 0F 84 1A 01 00 00     - je GameAssembly.dll.il2cpp+13792AC
+GameAssembly.dll.il2cpp+1379192: 80 3D C1 5F 5B 03 00  - cmp byte ptr [GameAssembly.dll+4D9415A],00
+GameAssembly.dll.il2cpp+1379199: 75 1F                 - jne GameAssembly.dll.il2cpp+13791BA
+GameAssembly.dll.il2cpp+137919B: 48 8D 0D 4E 89 3C 03  - lea rcx,[GameAssembly.dll.data+13DAF0]
+GameAssembly.dll.il2cpp+13791A2: E8 89 37 C1 FE        - call GameAssembly.BrotliDecoderIsFinished+67B0
+GameAssembly.dll.il2cpp+13791A7: 48 8D 0D 12 B2 3C 03  - lea rcx,[GameAssembly.dll.data+1403C0]
+GameAssembly.dll.il2cpp+13791AE: E8 7D 37 C1 FE        - call GameAssembly.BrotliDecoderIsFinished+67B0
+GameAssembly.dll.il2cpp+13791B3: C6 05 A0 5F 5B 03 01  - mov byte ptr [GameAssembly.dll+4D9415A],01
+GameAssembly.dll.il2cpp+13791BA: 48 8B 0D 2F 89 3C 03  - mov rcx,[GameAssembly.dll.data+13DAF0]
+}"""
+
+[[cheat]]
+id = "base-2"
+name = "base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "mony"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-3"
+name = "base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "owned-qmagnus-start-8-max-24"
+name = "owned Qmagnus(start 8 max 24)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 9999
+
+[cheat.locator]
+find = "symbol"
+symbol = "mony"
+hops = [
+    "+0x178",
+    "+0x1a",
+]
+
+[[cheat]]
+id = "gspiritvalue"
+name = "gSpiritvalue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "spir"
+hops = [
+    "+0x20",
+    "+0xe8",
+]
+
+[[cheat]]
+id = "param-base"
+name = "Param base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "id-2"
+name = "ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x10",
+]
+
+[[cheat]]
+id = "lvl"
+name = "lvl"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x40",
+]
+
+[[cheat]]
+id = "exp-7"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x18",
+]
+
+[[cheat]]
+id = "hp-7"
+name = "hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gbase"
+hops = [
+    "+0x168",
+    "+0x10",
+    "+0x20",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "hp-base"
+name = "Hp base"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x44",
+]
+
+[[cheat]]
+id = "guard"
+name = "Guard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x48",
+]
+
+[[cheat]]
+id = "down"
+name = "Down"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "knockdown"
+name = "knockdown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "attack"
+name = "Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x54",
+]
+
+[[cheat]]
+id = "crush"
+name = "Crush"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x58",
+]
+
+[[cheat]]
+id = "normal-def"
+name = "normal def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x60",
+    "+0x20",
+]
+
+[[cheat]]
+id = "fire-def"
+name = "fire def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x60",
+    "+0x24",
+]
+
+[[cheat]]
+id = "ice-def"
+name = "ice def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x60",
+    "+0x28",
+]
+
+[[cheat]]
+id = "thunder-def"
+name = "thunder def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x60",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "light-def"
+name = "light def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x60",
+    "+0x30",
+]
+
+[[cheat]]
+id = "dark-def"
+name = "dark def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x60",
+    "+0x34",
+]
+
+[[cheat]]
+id = "poison-resist"
+name = "poison resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x68",
+    "+0x30",
+]
+
+[[cheat]]
+id = "flame-resist"
+name = "flame resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x68",
+    "+0x20",
+]
+
+[[cheat]]
+id = "freezing-resist"
+name = "freezing resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x68",
+    "+0x24",
+]
+
+[[cheat]]
+id = "shock-resist"
+name = "shock resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x68",
+    "+0x28",
+]
+
+[[cheat]]
+id = "sleep-resist"
+name = "sleep resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x68",
+    "+0x34",
+]
+
+[[cheat]]
+id = "blind-resist"
+name = "blind resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x68",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "attack-rate"
+name = "Attack rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x70",
+]
+
+[[cheat]]
+id = "crush-rate"
+name = "Crush rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x74",
+]
+
+[[cheat]]
+id = "delay-rate"
+name = "Delay rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x10",
+    "+0x78",
+]
+
+[[cheat]]
+id = "type"
+name = "type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x20",
+    "+0x10",
+]
+
+[[cheat]]
+id = "lvl-1-3"
+name = "lvl (1-3)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x20",
+    "+0x14",
+]
+
+[[cheat]]
+id = "time"
+name = "time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x20",
+    "+0x20",
+    "+0x18",
+]
+
+[[cheat]]
+id = "id-3"
+name = "ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x10",
+]
+
+[[cheat]]
+id = "lvl-2"
+name = "lvl"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x40",
+]
+
+[[cheat]]
+id = "exp-8"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x18",
+]
+
+[[cheat]]
+id = "hp-base-2"
+name = "Hp base"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x44",
+]
+
+[[cheat]]
+id = "guard-2"
+name = "Guard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x48",
+]
+
+[[cheat]]
+id = "down-2"
+name = "Down"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "knockdown-2"
+name = "knockdown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "attack-2"
+name = "Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x54",
+]
+
+[[cheat]]
+id = "crush-2"
+name = "Crush"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x58",
+]
+
+[[cheat]]
+id = "normal-def-2"
+name = "normal def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x60",
+    "+0x20",
+]
+
+[[cheat]]
+id = "fire-def-2"
+name = "fire def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x60",
+    "+0x24",
+]
+
+[[cheat]]
+id = "ice-def-2"
+name = "ice def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x60",
+    "+0x28",
+]
+
+[[cheat]]
+id = "thunder-def-2"
+name = "thunder def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x60",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "light-def-2"
+name = "light def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x60",
+    "+0x30",
+]
+
+[[cheat]]
+id = "dark-def-2"
+name = "dark def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x60",
+    "+0x34",
+]
+
+[[cheat]]
+id = "poison-resist-2"
+name = "poison resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x68",
+    "+0x30",
+]
+
+[[cheat]]
+id = "flame-resist-2"
+name = "flame resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x68",
+    "+0x20",
+]
+
+[[cheat]]
+id = "freezing-resist-2"
+name = "freezing resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x68",
+    "+0x24",
+]
+
+[[cheat]]
+id = "shock-resist-2"
+name = "shock resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x68",
+    "+0x28",
+]
+
+[[cheat]]
+id = "sleep-resist-2"
+name = "sleep resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x68",
+    "+0x34",
+]
+
+[[cheat]]
+id = "blind-resist-2"
+name = "blind resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x68",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "attack-rate-2"
+name = "Attack rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x70",
+]
+
+[[cheat]]
+id = "crush-rate-2"
+name = "Crush rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x74",
+]
+
+[[cheat]]
+id = "delay-rate-2"
+name = "Delay rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x10",
+    "+0x78",
+]
+
+[[cheat]]
+id = "type-2"
+name = "type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x20",
+    "+0x10",
+]
+
+[[cheat]]
+id = "lvl-1-3-2"
+name = "lvl (1-3)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x20",
+    "+0x14",
+]
+
+[[cheat]]
+id = "time-2"
+name = "time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x30",
+    "+0x20",
+    "+0x18",
+]
+
+[[cheat]]
+id = "id-4"
+name = "ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x10",
+]
+
+[[cheat]]
+id = "lvl-3"
+name = "lvl"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x40",
+]
+
+[[cheat]]
+id = "exp-9"
+name = "exp"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x18",
+]
+
+[[cheat]]
+id = "hp-base-3"
+name = "Hp base"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x44",
+]
+
+[[cheat]]
+id = "guard-3"
+name = "Guard"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x48",
+]
+
+[[cheat]]
+id = "down-3"
+name = "Down"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x4c",
+]
+
+[[cheat]]
+id = "knockdown-3"
+name = "knockdown"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x50",
+]
+
+[[cheat]]
+id = "attack-3"
+name = "Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x54",
+]
+
+[[cheat]]
+id = "crush-3"
+name = "Crush"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x58",
+]
+
+[[cheat]]
+id = "normal-def-3"
+name = "normal def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x60",
+    "+0x20",
+]
+
+[[cheat]]
+id = "fire-def-3"
+name = "fire def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x60",
+    "+0x24",
+]
+
+[[cheat]]
+id = "ice-def-3"
+name = "ice def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x60",
+    "+0x28",
+]
+
+[[cheat]]
+id = "thunder-def-3"
+name = "thunder def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x60",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "light-def-3"
+name = "light def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x60",
+    "+0x30",
+]
+
+[[cheat]]
+id = "dark-def-3"
+name = "dark def"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x60",
+    "+0x34",
+]
+
+[[cheat]]
+id = "poison-resist-3"
+name = "poison resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x68",
+    "+0x30",
+]
+
+[[cheat]]
+id = "flame-resist-3"
+name = "flame resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x68",
+    "+0x20",
+]
+
+[[cheat]]
+id = "freezing-resist-3"
+name = "freezing resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x68",
+    "+0x24",
+]
+
+[[cheat]]
+id = "shock-resist-3"
+name = "shock resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x68",
+    "+0x28",
+]
+
+[[cheat]]
+id = "sleep-resist-3"
+name = "sleep resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x68",
+    "+0x34",
+]
+
+[[cheat]]
+id = "blind-resist-3"
+name = "blind resist"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x68",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "attack-rate-3"
+name = "Attack rate"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x70",
+]
+
+[[cheat]]
+id = "crush-rate-3"
+name = "Crush rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x74",
+]
+
+[[cheat]]
+id = "delay-rate-3"
+name = "Delay rate"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x10",
+    "+0x78",
+]
+
+[[cheat]]
+id = "type-3"
+name = "type"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x20",
+    "+0x10",
+]
+
+[[cheat]]
+id = "lvl-1-3-3"
+name = "lvl (1-3)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x20",
+    "+0x14",
+]
+
+[[cheat]]
+id = "time-3"
+name = "time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pparam"
+hops = [
+    "+0x10",
+    "+0x28",
+    "+0x20",
+    "+0x18",
+]
+
+[[cheat]]
+id = "edit-quest-card-in-camp-menu"
+name = "Edit quest card in camp menu"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-08
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(selecamag,GameAssembly.dll,41 0F B7 48 10 33 D2 E8 6C) // should be unique
+alloc(newmem,$100,selecamag)
+alloc(camag,8)
+registersymbol(camag)
+label(code)
+label(return)
+
+newmem:
+  mov [camag],r8
+  cmp [r8+10],0
+  jne code
+  mov word ptr [r8+10],#500
+code:
+  movzx ecx,word ptr [r8+10]
+  jmp return
+
+selecamag:
+  jmp newmem
+return:
+registersymbol(selecamag)
+
+[DISABLE]
+
+selecamag:
+  db 41 0F B7 48 10
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+1601B48
+
+GameAssembly.dll+1601B2B: 48 85 C9        - test rcx,rcx
+GameAssembly.dll+1601B2E: 74 47           - je GameAssembly.dll+1601B77
+GameAssembly.dll+1601B30: 48 8B 49 10     - mov rcx,[rcx+10]
+GameAssembly.dll+1601B34: 48 85 C9        - test rcx,rcx
+GameAssembly.dll+1601B37: 74 3E           - je GameAssembly.dll+1601B77
+GameAssembly.dll+1601B39: 3B 59 18        - cmp ebx,[rcx+18]
+GameAssembly.dll+1601B3C: 73 33           - jae GameAssembly.dll+1601B71
+GameAssembly.dll+1601B3E: 4C 8B 44 D9 20  - mov r8,[rcx+rbx*8+20]
+GameAssembly.dll+1601B43: 4D 85 C0        - test r8,r8
+GameAssembly.dll+1601B46: 74 2F           - je GameAssembly.dll+1601B77
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+1601B48: 41 0F B7 48 10  - movzx ecx,word ptr [r8+10]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+1601B4D: 33 D2           - xor edx,edx
+GameAssembly.dll+1601B4F: E8 6C B9 F2 FF  - call LB.PRJ0505.Batenkaitos2.CAMP.QMGetTargetFlag
+GameAssembly.dll+1601B54: 84 C0           - test al,al
+GameAssembly.dll+1601B56: 0F 95 C0        - setne al
+GameAssembly.dll+1601B59: 48 8B 5C 24 30  - mov rbx,[rsp+30]
+GameAssembly.dll+1601B5E: 48 83 C4 20     - add rsp,20
+GameAssembly.dll+1601B62: 5F              - pop rdi
+GameAssembly.dll+1601B63: C3              - ret 
+GameAssembly.dll+1601B64: 48 8B 5C 24 30  - mov rbx,[rsp+30]
+GameAssembly.dll+1601B69: 32 C0           - xor al,al
+}"""
+
+[[cheat]]
+id = "selected-quest-magnus"
+name = "selected quest magnus"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "camag"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "edit-quest-card-in-quick-action"
+name = "Edit quest card in quick action"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-08
+  Author : Alfon Regiantoro
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(seleqma,GameAssembly.dll,0F BF 71 10 8B FE) // should be unique
+alloc(newmem,$100,seleqma)
+alloc(legma,8)
+registersymbol(legma)
+label(code)
+label(return)
+
+newmem:
+  mov [legma],rcx
+  cmp [rcx+10],0
+  jne code
+  mov word ptr [rcx+10],#500
+code:
+  movsx esi,word ptr [rcx+10]
+  mov edi,esi
+  jmp return
+
+seleqma:
+  jmp newmem
+  nop
+return:
+registersymbol(seleqma)
+
+[DISABLE]
+
+seleqma:
+  db 0F BF 71 10 8B FE
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+1587C8A
+
+GameAssembly.dll+1587C59: 4D 85 C0              - test r8,r8
+GameAssembly.dll+1587C5C: 0F 84 6C 02 00 00     - je GameAssembly.dll+1587ECE
+GameAssembly.dll+1587C62: 8B 8B E4 00 00 00     - mov ecx,[rbx+000000E4]
+GameAssembly.dll+1587C68: 8B 83 DC 00 00 00     - mov eax,[rbx+000000DC]
+GameAssembly.dll+1587C6E: 44 8D 0C C8           - lea r9d,[rax+rcx*8]
+GameAssembly.dll+1587C72: 45 3B 48 18           - cmp r9d,[r8+18]
+GameAssembly.dll+1587C76: 0F 83 86 02 00 00     - jae GameAssembly.dll+1587F02
+GameAssembly.dll+1587C7C: 4B 8B 4C C8 20        - mov rcx,[r8+r9*8+20]
+GameAssembly.dll+1587C81: 48 85 C9              - test rcx,rcx
+GameAssembly.dll+1587C84: 0F 84 44 02 00 00     - je GameAssembly.dll+1587ECE
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+1587C8A: 0F BF 71 10           - movsx esi,word ptr [rcx+10]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+1587C8E: 8B FE                 - mov edi,esi
+GameAssembly.dll+1587C90: 81 FE F4 01 00 00     - cmp esi,000001F4
+GameAssembly.dll+1587C96: 74 3B                 - je GameAssembly.dll+1587CD3
+GameAssembly.dll+1587C98: 83 BA E0 00 00 00 00  - cmp dword ptr [rdx+000000E0],00
+GameAssembly.dll+1587C9F: 75 08                 - jne GameAssembly.dll+1587CA9
+GameAssembly.dll+1587CA1: 48 8B CA              - mov rcx,rdx
+GameAssembly.dll+1587CA4: E8 97 D8 E8 FE        - call GameAssembly.dll+415540
+GameAssembly.dll+1587CA9: 33 D2                 - xor edx,edx
+GameAssembly.dll+1587CAB: 0F B7 CE              - movzx ecx,si
+GameAssembly.dll+1587CAE: E8 ED 1B FA FF        - call LB.PRJ0505.Batenkaitos2.CAMP.MGIsDisposable
+}"""
+
+[[cheat]]
+id = "selected-quest-magnus-2"
+name = "selected quest magnus"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "legma"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "id-5"
+name = "id"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 1
+choices = [
+    "1:Weak:Attack",
+    "2:Medium:Attack",
+    "3:Strong:Attack",
+    "4:Weak:Attack:B",
+    "5:Medium:Attack:B",
+    "6:Strong:Attack:B",
+    "7:Mirage:Turn",
+    "8:Pegasus:Jump",
+    "9:Canyon:Wind",
+    "10:Rabbit:Dash",
+    "11:Scension",
+    "12:Heavenfall",
+    "13:Cliffsunder",
+    "14:Ascension",
+    "15:Red:Padma",
+    "16:Icebloom",
+    "17:Transcension",
+    "18:Blast:Tooth",
+    "19:Rime:Blade",
+    "20:The:Godling's:Rapture",
+    "21:Swallowtail",
+    "22:Emerald:Thrush",
+    "23:Sevenstar:Dust",
+    "24:Arabesque",
+    "25:Diamond:Drop",
+    "26:Rising:Condor",
+    "27:Phoenix:Dive",
+    "28:Open:Your:Eyes",
+    "29:Firewheel",
+    "30:Icefan",
+    "31:Fulgadrum",
+    "32:Ghostarrow",
+    "33:Sigil:Cry",
+    "34:Twin:Ice:Auger",
+    "35:Levinsnake's:Rise",
+    "36:Spirilight:Quiver",
+    "37:Wickedwing:Revels",
+    "38:Heavenlapse",
+    "39:Empyreal:Wildfire",
+    "40:Zeniver:Cascade",
+    "41:Lightendrake's:Drop",
+    "42:Fellstar:Gleam",
+    "43:Shadowflame:Engine",
+    "44:Aphelion:Dustwake",
+    "45:Punk:Knife",
+    "46:Longsword",
+    "47:Saber",
+    "48:Freesword",
+    "49:Marvelous:Sword",
+    "50:Arondite",
+    "51:Apocalypse:Sword",
+    "52:Flame:Sword",
+    "53:Flametongue",
+    "54:Sword:of:Thirst",
+    "55:Kusanagi",
+    "56:Efreeti:Saber",
+    "57:Prominence:Sword",
+    "58:Laevateinn:the:Flameking",
+    "59:Ice:Dagger",
+    "60:Crystal:Edge",
+    "61:Aqua:Truth",
+    "62:Sword:of:Tears",
+    "63:Siren:Sword",
+    "64:Frozen:Sword",
+    "65:Flash:Dagger",
+    "66:Thunderfish",
+    "67:Glimmer",
+    "68:Jupiter:Sword",
+    "69:Plasma:Blade",
+    "70:Ray:of:Truth",
+    "71:Apostolos",
+    "72:Ascalon",
+    "73:Murderous:Joker",
+    "74:Ravensbrood",
+    "75:Cutthroat:Knife",
+    "76:Greatsword",
+    "77:Sleepsword",
+    "78:Victory:Sword",
+    "79:Excalibur",
+    "80:Longfire",
+    "81:Fire:Saber",
+    "82:Scorching:Sword",
+    "83:Blaze:Sword",
+    "84:Blazetongue",
+    "85:Flametongue:Rekindled",
+    "86:Desert:Moon",
+    "87:Parched:Sword",
+    "88:Amenohabagiri",
+    "89:Efreeti:Heart",
+    "90:Efreeti:Blade",
+    "91:Fiery:Apocalypse",
+    "92:Sol:Sword",
+    "93:Helios:Sword",
+    "94:Ice:Soldier",
+    "95:Ice:Saber",
+    "96:Crystalsword",
+    "97:Crystal:Saber",
+    "98:Aqua:Brand",
+    "99:Sword:of:Destiny",
+    "100:Mermaid:Sword",
+    "101:Silent:Sword",
+    "102:Icy:Apocalypse",
+    "103:Frozen:Edge",
+    "104:Thundersword",
+    "105:Thunderfish:Rex",
+    "106:Thunder:Edge",
+    "107:Thunderslash",
+    "108:Levinlight",
+    "109:True:Glimmer",
+    "110:Galantyne",
+    "111:Jupiter's:Rage",
+    "112:Gaea:Sword",
+    "113:Thunderous:Apocalypse",
+    "114:Coruscant:Blade",
+    "115:Rem:Truth",
+    "116:El:Truth",
+    "117:Galahad",
+    "118:Apostolos:Duo",
+    "119:Divine:Apocalypse",
+    "120:Dragonbuster",
+    "121:Double:Joker",
+    "122:Murderous:Soul",
+    "123:Dark:Apocalypse",
+    "124:Ravensblood",
+    "125:Wooden:Club",
+    "126:Panther:Bludgeon",
+    "127:Rose:Shill",
+    "128:Classic:Cudgel",
+    "129:Golden:Cudgel",
+    "130:Heat:Club",
+    "131:Drakeshead:Stave",
+    "132:Efreeti:Horn",
+    "133:Crystal:Cudgel",
+    "134:Glacial:Bludgeon",
+    "135:Cold:Queen",
+    "136:Lightning:Club",
+    "137:Luciferous:Stave",
+    "138:Wild:God",
+    "139:Vajra:the:Indestructible",
+    "140:White:Club",
+    "141:Demon:Cudgel",
+    "142:Rosevine",
+    "143:Classic:Impact",
+    "144:Heat:Cudgel",
+    "145:Poison:Heat",
+    "146:Fire:Panther",
+    "147:Drakeslord:Stave",
+    "148:Efreeti:Tusk",
+    "149:Ice:Club",
+    "150:Crystal:Blue",
+    "151:Glacial:Mass",
+    "152:Diamond:Queen",
+    "153:Queen's:Breath",
+    "154:Thunder:Club",
+    "155:Lightning:Strike",
+    "156:Thunder:Panther",
+    "157:Auriferous:Stave",
+    "158:Plasma:Cudgel",
+    "159:Astratheos",
+    "160:Holy:Cudgel",
+    "161:White:Wish",
+    "162:Cerberus:Cudgel",
+    "163:Sorcery:Sophia",
+    "164:Hidden:Sophia",
+    "165:Mars:Sophia",
+    "166:Idios:Pyr",
+    "167:Ice:Roue",
+    "168:Apsu:Sophia",
+    "169:Deluge:the:Seabane",
+    "170:Thunder:Roue",
+    "171:Thor:Sophia",
+    "172:Light:Sophia",
+    "173:Fair:Guardian",
+    "174:Cross:Sophia",
+    "175:Hades:Sophia",
+    "176:Fire:Sophia",
+    "177:Burning:Revelation",
+    "178:Meteor:Sophia",
+    "179:Deuteros:Pyr",
+    "180:Ice:Sophia",
+    "181:Ice:Sense",
+    "182:Apsu:Logos",
+    "183:Thunder:Sense",
+    "184:Thor:Pathos",
+    "185:Holy:Vein",
+    "186:Sophic:Guardian",
+    "187:Cross:Sagesse",
+    "188:Hades:Sagesse",
+    "189:Leather:Vest",
+    "190:Full:Plate",
+    "191:Chain:Mail",
+    "192:Scale:Mail",
+    "193:Battle:Suit",
+    "194:Golden:Armor",
+    "195:Amor:Alma",
+    "196:Flame:Mail",
+    "197:Salamander:Tongue",
+    "198:Snow:Mail",
+    "199:Breath:Jacket",
+    "200:Armor:of:Tonitrus",
+    "201:Saint's:Armor",
+    "202:Evil:Mail",
+    "203:Pow:Vest",
+    "204:Crocodile:Vest",
+    "205:Solid:Plate",
+    "206:Heavy-Duty:Plate",
+    "207:Lucentskin:Mail",
+    "208:Crossbone:Mail",
+    "209:Grand:Armor",
+    "210:Queen:Armor",
+    "211:Divine:Armor",
+    "212:Passio:Alma",
+    "213:Amatrix:Alma",
+    "214:Blaze:Mail",
+    "215:Flame:Armor",
+    "216:Flamelink:Mail",
+    "217:Fiery:Battle:Suit",
+    "218:Salamander:Eyes",
+    "219:Salamander:Scales",
+    "220:Icy:Battle:Suit",
+    "221:Blizzard:Mail",
+    "222:Snowwind:Mail",
+    "223:Levinlink:Mail",
+    "224:Temper:of:Tonitrus",
+    "225:Fires:of:Tonitrus",
+    "226:Ice:of:Tonitrus",
+    "227:Thunder:of:Tonitrus",
+    "228:Light:of:Tonitrus",
+    "229:Shadow:of:Tonitrus",
+    "230:Grandmail:of:Tonitrus",
+    "231:Saint-Knight's:Armor",
+    "232:Saint-Champion's:Armor",
+    "233:Brilliant:Armor",
+    "234:Karma:Mail",
+    "235:Chaos:Mail",
+    "236:Grappler's:Gi",
+    "237:Twelve-Layered:Kimono",
+    "238:Firedrake:Regalia",
+    "239:Heat:Camouflage",
+    "240:Frozen:Suit",
+    "241:Aqua:Camouflage",
+    "242:Heavenbolt:Wrap",
+    "243:Jiraiya's:Robe",
+    "244:Sister's:Habit",
+    "245:Mourning:Dress",
+    "246:Fighter's:Gi",
+    "247:Warrior's:Gi",
+    "248:Fifteen-Layered:Kimono",
+    "249:Aetherdrake:Regalia",
+    "250:Hazyfire:Camouflage",
+    "251:Diamond:Suit",
+    "252:Hazyrain:Camouflage",
+    "253:Heavengale:Wrap",
+    "254:Saizou's:Robe",
+    "255:Mother:Superior's:Habit",
+    "256:Confessional:Clothes",
+    "257:Mournful:Dress",
+    "258:Heat:Robe",
+    "259:Robe:of:Firelight",
+    "260:Pyre:Frock",
+    "261:Nixie:Garb",
+    "262:Sleet:Shawl",
+    "263:Freezing:Gown",
+    "264:Thunder:Robe",
+    "265:Thunderhead:Cloak",
+    "266:Holy:Shroud",
+    "267:Mephistopheles:Cloak",
+    "268:Sublime:Garb",
+    "269:Flame:Robe",
+    "270:Indigo:Flame:Robe",
+    "271:Firedawn:Robe",
+    "272:Firemoon:Robe",
+    "273:Burning:Pyre:Frock",
+    "274:Canonical:Pyre:Frock",
+    "275:Undine:Garb",
+    "276:Snowstorm:Shawl",
+    "277:Jinni's:Frost",
+    "278:Iceberg",
+    "279:Frozen:Gown",
+    "280:Lightning:Robe",
+    "281:Thundergod:Cloak",
+    "282:Whitebolt:Cloak",
+    "283:Blackbolt:Cloak",
+    "284:Holy:Fireshroud",
+    "285:Holy:Lightshroud",
+    "286:Holy:Vigilshroud",
+    "287:Flamistopheles:Cloak",
+    "288:Levistopheles:Cloak",
+    "289:Inferno:Cloak",
+    "290:Sacrosanct:Robes",
+    "291:Garb:of:Atonement",
+    "292:Garb:of:Thorns",
+    "293:Hero:Mask",
+    "294:Power:Helmet",
+    "295:Golden:Helm",
+    "296:Hell-Purged:Casque",
+    "297:Phoenix:Helm",
+    "298:Crystal:Helm",
+    "299:Kappa:Helmet",
+    "300:Electric:Helm",
+    "301:Helm:of:Indra",
+    "302:Angel's:Helm",
+    "303:Skull:Mask",
+    "304:Negative:Hat",
+    "305:Mk.:II:Mask",
+    "306:Heavy-Duty:Helmet",
+    "307:Justice:Helm",
+    "308:Divine:Helm",
+    "309:Golden:Knightshelm",
+    "310:Hell-Baked:Casque",
+    "311:Phoenix:Head",
+    "312:Phoenix:Heart",
+    "313:Glacial:Helm",
+    "314:Kappa:Helmet,:Jr.",
+    "315:Blitz:Helm",
+    "316:Grandhelm:of:Indra",
+    "317:War:Helm:of:Indra",
+    "318:Innocent's:Helm",
+    "319:Foxfire:Cap",
+    "320:Flame:Hood",
+    "321:Scarlet:Crown",
+    "322:Zelos:Kune",
+    "323:Frost:Cap",
+    "324:Aqua:Hood",
+    "325:Crown:of:Bubbles",
+    "326:Quickfreeze:Cap",
+    "327:Thunder:Hat",
+    "328:Indiglow:Cowl",
+    "329:Welkinsire:Cap",
+    "330:Nurse's:Cap",
+    "331:Hymnos:Kune",
+    "332:Trigon:Band",
+    "333:Sparkfire:Cap",
+    "334:Blaze:Hood",
+    "335:Ardor:Kune",
+    "336:Zelos:Kapelo",
+    "337:Icicle:Cap",
+    "338:Marine:Hood",
+    "339:Crown:of:Seaspray",
+    "340:Crown:of:Ice:Pearls",
+    "341:Big:Thunder:Hat",
+    "342:Thunderhead:Cowl",
+    "343:Astral:Cowl",
+    "344:Thunderpeal:Cap",
+    "345:Welkinswrath:Cap",
+    "346:Mary's:Cap",
+    "347:Happiness:Kune",
+    "348:Rock:Kune",
+    "349:Gloam:Band",
+    "350:The:Adversary's:Band",
+    "351:Round:Shield",
+    "352:Buckler",
+    "353:Tower:Shield",
+    "354:Battle:Shield",
+    "355:Platinum:Shield",
+    "356:Versed:Shield",
+    "357:Whitecap:Shield",
+    "358:Thunderer's:Shield",
+    "359:Anubis:Shield",
+    "360:Coin:Shield",
+    "361:Strongshield",
+    "362:Devil:Tower:Shield",
+    "363:Mount:Shield",
+    "364:Valor:Shield",
+    "365:Silver:Shield",
+    "366:Mellow:Shield",
+    "367:Shield:for:Troubled:Waters",
+    "368:Greatcap:Shield",
+    "369:Fulminator's:Shield",
+    "370:Osiris:Shield",
+    "371:low potion",
+    "372:Potion",
+    "373:Middle:Potion",
+    "374:High:Potion",
+    "375:Adhesive:Bandages",
+    "376:Bandages",
+    "377:First:Aid:Kit",
+    "378:Fate's:Cordial",
+    "379:Red:Beans",
+    "380:Blue:Beans",
+    "381:Yellow:Beans",
+    "382:Black:Beans",
+    "383:Green:Beans",
+    "384:Purple:Beans",
+    "385:pink beans",
+    "386:Herb",
+    "387:Herb:Powder",
+    "388:Alarm:Clock",
+    "389:Brawn-Brewed:Tea",
+    "390:Fire-Brewed:Tea",
+    "391:Ice-Brewed:Tea",
+    "392:Lightning-Brewed:Tea",
+    "393:Elbow:Grease:Tea",
+    "394:Brawn:Fruit",
+    "395:Fire:Fruit",
+    "396:Ice:Fruit",
+    "397:Lightning:Fruit",
+    "398:Rainbow:Fruit",
+    "399:Berserker:Drink",
+    "400:Hot:Spring",
+    "401:Cancerite:Booze",
+    "402:Dragon:Claw",
+    "403:Bomb",
+    "404:elixir",
+    "405:book of mana",
+    "406:fate idol",
+    "407:Fate's:Kiss",
+    "408:Chalice:of:Freedom",
+    "409:Catfish:King's:Whiskers",
+    "410:Herb:Flower",
+    "411:White:Night:Beans",
+    "412:Poison:Ashes",
+    "413:Harp:of:Slumber",
+    "414:Hero's:Crest",
+    "415:Emperor's:Crest",
+    "416:The:Beast's:Chains",
+    "417:The:Beast's:Collar",
+    "418:The:Beast's:Shackles",
+    "419:Saber:Dragon:Horn",
+    "420:Pegasus:Feather",
+    "421:Migraine:Mirror",
+    "422:tarot card death",
+    "423:moon shaped earring",
+    "424:Fate:Idol",
+    "425:Fate's:Kiss",
+    "426:cross pendant",
+    "427:hermit's cane",
+    "428:warrior scarf",
+    "429:pegasus anklet",
+    "430:imperial ward",
+    "431:vanishing cloak",
+    "432:crimsom love",
+    "433:azure lotus",
+    "434:citrine arc",
+    "435:ebon slash",
+    "436:true verdure",
+    "437:violet taboo",
+    "438:purest gold",
+    "439:taunt",
+    "440:Will",
+    "441:Force",
+    "442:Escape",
+    "443:Fire:Element",
+    "444:Ice:Element",
+    "445:Thunder:Element",
+    "446:Light:Element",
+    "447:Dark:Element",
+    "448:Flare:Element",
+    "449:Freeze:Element",
+    "450:Plasma:Element",
+    "451:Holy:Element",
+    "452:Shade:Element",
+    "453:Force",
+    "454:Escape",
+    "455:455",
+    "456:456",
+    "457:457",
+    "458:458",
+    "459:459",
+    "460:sedna bridge",
+    "461:Sedna:Mailbox",
+    "462:Sedna:Toadstones:1",
+    "463:Sedna:House:1",
+    "464:Sedna:Flower:Bed",
+    "465:Sedna:Bluefruit:Tree",
+    "466:Sedna:Monument",
+    "467:Sedna:Peach:Tree",
+    "468:sedna beanstalk",
+    "469:Sedna:Fence",
+    "470:Sedna:Weathervane",
+    "471:Sedna:Fern",
+    "472:Sedna:House:2",
+    "473:Sedna:Ebonstone:Sculpture",
+    "474:Sedna:Mill:House",
+    "475:Sedna:Waterwheel",
+    "476:Sedna:Pow:House",
+    "477:Sedna:Windmill",
+    "478:Sedna:Orange:Tree",
+    "479:Sedna:Pier",
+    "480:Sedna:Toadstones:2",
+    "481:Sedna:Odd:Sculpture",
+    "482:Sedna:Main:Gate",
+    "483:Sedna:House:3",
+    "484:Sedna:Well",
+    "485:Sedna:Light",
+    "486:Mountain:Apple:Wine",
+    "487:Magna:Mess-Up",
+    "488:Chronic:Fatigue",
+    "489:Rotting:Mountain:Apple",
+    "490:Fruit:Fit:for:an:Emperor",
+    "491:Meat:Fit:for:an:Emperor",
+    "492:Well-Done:Meat",
+    "493:Juwar's:Testimony",
+    "494:Mallo's:Testimony",
+    "495:Rock:Salt",
+    "496:Diadem:Cloud",
+    "497:Pac-Man",
+    "498:Pac-Land",
+    "499:Pac-Mania",
+    "500:Blank Magnus",
+    "501:pristine water",
+    "502:drinking water",
+    "503:stagnant water",
+    "504:Fireglow:Stone",
+    "505:Blaze",
+    "506:Flame",
+    "507:Mother:Sunshine",
+    "508:Lightning:Shroom",
+    "509:Jolt:Shroom",
+    "510:Spark:Shroom",
+    "511:Treasure:Lowdown",
+    "512:Mother-in-Law's:Secret",
+    "513:yesterdaynews",
+    "514:stone -Adventure:Novel",
+    "515:Boulder",
+    "516:Pow:Milk",
+    "517:Pow:Milk:Yogurt",
+    "518:Pow:Milk:Cheese",
+    "519:Glubberfish:Filet",
+    "520:Rotten:Food",
+    "521:Celestial:Flower:Seed",
+    "522:Celestial:Flower:Bud",
+    "523:Celestial:Flower",
+    "524:Cloud",
+    "525:Salty:Water",
+    "526:Salt",
+    "527:Lava",
+    "528:hot rock",
+    "529:Mountain:Apple",
+    "530:Mountain:Apple:Vinegar",
+    "531:Mountain:Apple:Wine",
+    "532:Magna:Mess-Up",
+    "533:Chronic:Fatigue",
+    "534:Rotting:Mountain:Apple",
+    "535:fruit fit for emperor",
+    "536:meat fit for emperor",
+    "537:Well-Done:Meat",
+    "538:Juwar's:Testimony",
+    "539:Juwar's:Testimony",
+    "540:Juwar's:Testimony",
+    "541:Juwar's:Testimony",
+    "542:nollin's testemony",
+    "543:nollin's testemony",
+    "544:Mallo's:Testimony",
+    "545:Mallo's:Testimony",
+    "546:bein' testemony",
+    "547:Rock:Salt",
+    "548:Diadem:Cloud",
+    "549:Pac-Man",
+    "550:Pac-Land",
+    "551:Pac-Mania",
+    "552:chunk of rubber",
+    "553:Hero's:Pickax",
+    "554:Lava:Lord's:Skull",
+    "555:Sandfeeder cocoon Silk",
+    "556:sparklingsnow",
+    "557:Nameless:Flower",
+    "558:Pressed:Flower",
+    "559:Bloodstained:Crest",
+    "560:Diadem:Royal:Crest",
+    "561:Egg",
+    "562:Boiled:Egg",
+    "563:Machina:Oil",
+    "564:Gold:Beetle:Carapace",
+    "565:gold nugget",
+    "566:Adventure:Novel",
+    "567:Naughty:Novel",
+    "568:Dense:Medical:Tome",
+    "569:Read-to-Death:Book",
+    "570:Chef-Prepared:Meat",
+    "571:Empty:Book",
+    "572:Pow:Meat",
+    "573:Shaved:Ice:of:Love",
+    "574:Portrait:of:Verus",
+    "575:Extreme:Stress",
+    "576:Mound:of:Soot",
+    "577:Soot:Soup",
+    "578:Withered:Branch",
+    "579:Pretty:Stone",
+    "580:Plain:Old:Shaved:Ice",
+    "581:Dark:Powder",
+    "582:travel logs",
+    "583:Basic:Medical:Primer",
+    "584:Heartflask",
+    "585:Heartflask",
+    "586:Heartflask",
+    "587:Heartflask",
+    "588:Heartflask",
+    "589:Heartflask",
+    "590:Heartflask",
+    "591:Heartflask",
+    "592:Paramour's:Secret",
+    "593:593",
+    "594:594",
+    "595:595",
+    "596:596",
+    "597:597",
+    "598:598",
+    "599:599",
+    "600:600",
+    "601:601",
+    "602:602",
+    "603:603",
+    "604:604",
+    "605:605",
+    "606:606",
+    "607:607",
+    "608:608",
+    "609:609",
+    "610:Stinging:Antiseptic",
+    "611:Cottoncap Gauze",
+    "612:Fluella:Cooties",
+    "613:Warm:Cheers",
+    "614:Icy:Jeers",
+    "615:Real-Deal:Mask",
+    "616:Thornflower",
+    "617:Thornflower:Nectar",
+    "618:Fluffy:Pillow",
+    "619:Sandcap:Spores",
+    "620:Love:Syrup",
+    "621:Sandcaps",
+    "622:Machina:Gas",
+    "623:Yesterbean:Variant",
+    "624:Poor:Excuse:for:a:Joke",
+    "625:Phantasmagoria",
+    "626:Cottoncap:Fruit",
+    "627:Machina:Communicator",
+    "628:Heartenbrace",
+    "629:Immigration:Papers",
+    "630:Holoholobird's:Plume",
+    "631:Celestial:Fell-Branch",
+    "632:Fire:Dagroot",
+    "633:Ice:Dagroot",
+    "634:Lightning:Dagroot",
+    "635:Dark:Dagroot",
+    "636:Holy:Dagroot",
+    "637:Black:Dragon's:Horn",
+    "638:Balmsand",
+    "639:Goopy:Machina:Oil",
+    "640:Foul:Air",
+    "641:Fresh:Air",
+    "642:Power:Pellet",
+    "643:Light:Powder",
+    "644:Traditional:KM:Cookie",
+    "645:Original:KM:Cookie",
+    "646:Lotus:Leaf",
+    "647:Photosynth:Lily",
+    "648:Freezing:Rain",
+    "649:Oleflour",
+    "650:Gust:Boulder",
+    "651:Yesterbean",
+    "652:Medic:Kit",
+    "653:Gena's:Pinion",
+    "654:toy sword",
+    "655:Dull:Times",
+    "656:Gold:Beetle:Wallet",
+    "657:Hero:License",
+    "658:Magnetite:Waves",
+    "659:Good:Times",
+    "660:Eau:de:Mouche",
+    "661:Holy:Droplet",
+    "662:Terrible:Song",
+    "663:Sweet:Song",
+    "664:Heartbreaking:Song",
+    "665:Flame:Ice",
+    "666:Coliseum:Dog:Tags",
+    "667:Metal:Device",
+    "668:Bomb:Detonator",
+    "669:Rockfly:Corpse",
+    "670:black leather notepad",
+    "671:scoop note pad",
+    "672:Royal:Mirror",
+    "673:Sagi:Wanted:Poster",
+    "674:Milly:Wanted:Poster",
+    "675:Guillo:Wanted:Poster",
+    "676:Local:Hero:Sagi",
+    "677:Local:Hero:Milly",
+    "678:Local:Hero:Guillo",
+    "679:Woodfellah",
+    "680:Billowsmoke",
+    "681:Holoholo:Fruit",
+    "682:Holoholo:Nectar",
+    "683:Half-Baked:Greythorne",
+    "684:Greythorne:Storybook",
+    "685:Greythorne's:Song",
+    "686:Tub-Time:Greythorne",
+    "687:Floppy:Greythorne",
+    "688:Fluffy:Greythorne",
+    "689:Spring-Lord's:Voice",
+    "690:Rainbow",
+    "691:Primordial:Cactus",
+    "692:Ancient:Mask",
+    "693:Stewed:Mud:Potatoes",
+    "694:Fire:Moss",
+    "695:Potted:Celestial:Flower",
+    "696:Potted:Heartenbrace",
+    "697:Potted:Nameless:Flower",
+    "698:Flowerpot",
+    "699:Celestial Tree",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemptr"
+hops = []
+
+[[cheat]]
+id = "used-to-get-magnus-id-of-unlock-locked-card-camp"
+name = "used to get magnus id of unlock/locked card (camp)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Batenkaitos.exe
+  Version: 
+  Date   : 2024-07-06
+  Author : Alfon Regiantoro
+
+  LB.PRJ0505.Common.TableItemMagnusListView.GetSelectMagnusData
+
+}
+
+[ENABLE]
+
+aobscanmodule(selemagnus,GameAssembly.dll,1A 48 8B 44 C1 20) // should be unique
+alloc(newmem,$100,selemagnus)
+alloc(smagnus,8)
+alloc(soff,8)
+alloc(tesmag,8)
+registersymbol(tesmag)
+registersymbol(smagnus)
+registersymbol(soff)
+label(code)
+label(return)
+
+newmem:
+  mov [smagnus],rcx
+  mov [soff],rax
+  mov [tesmag],rdi
+code:
+  mov rax,[rcx+rax*8+20]
+  jmp return
+
+selemagnus+01:
+  jmp newmem
+return:
+registersymbol(selemagnus)
+
+[DISABLE]
+
+selemagnus+01:
+  db 48 8B 44 C1 20
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll+196D148
+
+GameAssembly.dll+196D129: 48 63 83 C8 00 00 00  - movsxd  rax,dword ptr [rbx+000000C8]
+GameAssembly.dll+196D130: 48 85 D2              - test rdx,rdx
+GameAssembly.dll+196D133: 74 27                 - je GameAssembly.dll+196D15C
+GameAssembly.dll+196D135: 3B 42 18              - cmp eax,[rdx+18]
+GameAssembly.dll+196D138: 73 2E                 - jae GameAssembly.dll+196D168
+GameAssembly.dll+196D13A: 48 8B 4A 10           - mov rcx,[rdx+10]
+GameAssembly.dll+196D13E: 48 85 C9              - test rcx,rcx
+GameAssembly.dll+196D141: 74 19                 - je GameAssembly.dll+196D15C
+GameAssembly.dll+196D143: 3B 41 18              - cmp eax,[rcx+18]
+GameAssembly.dll+196D146: 73 1A                 - jae GameAssembly.dll+196D162
+// ---------- INJECTING HERE ----------
+GameAssembly.dll+196D148: 48 8B 44 C1 20        - mov rax,[rcx+rax*8+20]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll+196D14D: 48 85 C0              - test rax,rax
+GameAssembly.dll+196D150: 74 0A                 - je GameAssembly.dll+196D15C
+GameAssembly.dll+196D152: 48 8B 40 10           - mov rax,[rax+10]
+GameAssembly.dll+196D156: 48 83 C4 20           - add rsp,20
+GameAssembly.dll+196D15A: 5B                    - pop rbx
+GameAssembly.dll+196D15B: C3                    - ret 
+GameAssembly.dll+196D15C: E8 0F 8C A4 FE        - call GameAssembly.mono_get_string_class+DA70
+GameAssembly.dll+196D161: CC                    - int 3 
+GameAssembly.dll+196D162: E8 19 8C A4 FE        - call GameAssembly.mono_get_string_class+DA80
+GameAssembly.dll+196D167: CC                    - int 3 
+}"""
+
+[[cheat]]
+id = "base-4"
+name = "base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "smagnus"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "selected-magnus"
+name = "selected magnus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "smagnus"
+hops = [
+    "+0x10",
+    "+0x10",
+]
+
+[[cheat]]
+id = "state"
+name = "state"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 1
+choices = [
+    "1:Milly card",
+    "128:already in deck",
+    "256:lock",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "smagnus"
+hops = [
+    "+0x10",
+    "+0x12",
+]

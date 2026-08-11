@@ -1,0 +1,311 @@
+[game]
+name = "Slay the Spire 2 HECHO POR MI!"
+exe = "slaythespire2_hehca_por_mi.exe"
+notes = "Converted from a Cheat Engine table by kiromess. Source: https://fearlessrevolution.com/viewtopic.php?t=38644"
+verified = []
+author = "kiromess"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "capturador-player-base-hp-separado-combate-pegar-y-luego-activar-script"
+name = "capturador player base HP SEPARADO (combate: pegar y luego activar script)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(INJECT, 8B 91 84 00 00 00 8B 81 88 00 00 00)
+alloc(newmem,$1000,INJECT)
+
+label(return)
+label(p_jugador)
+label(p_enemigo)
+label(p_mascota)
+label(check_enemigo)
+label(check_mascota)
+
+registersymbol(p_jugador)
+registersymbol(p_enemigo)
+registersymbol(p_mascota)
+registersymbol(INJECT)
+registersymbol(instakill_status)
+
+newmem:
+  push rax
+
+  // 1. ¿ES EL JUGADOR? (Offset 60)
+  cmp qword ptr [rcx+60],0
+  je check_mascota
+  mov [p_jugador],rcx
+  jmp original_code
+
+check_mascota:
+  // 2. ¿ES MASCOTA? (Offset 70)
+  cmp qword ptr [rcx+70],0
+  je check_enemigo
+  mov [p_mascota],rcx
+  jmp original_code
+
+check_enemigo:
+  // 3. ¿ES ENEMIGO?
+  // Mirando tu captura, el offset 58 es el que identifica al Monstruo.
+  // Vamos a comprobar si el offset 58 tiene un puntero (no es cero).
+  cmp qword ptr [rcx+58],0
+  je original_code
+  mov [p_enemigo],rcx
+
+  // AQUÍ EL INTERRUPTOR
+  cmp [instakill_status],1   // ¿Está el ON activado?
+  jne original_code          // Si no es 1, salta al código normal
+  mov [rcx+84],1             // Si es 1, ¡VIDA A 0! (One Shot)
+
+original_code:
+  pop rax
+  mov edx,[rcx+00000084]
+  jmp return
+
+instakill_status:            // Nueva variable para el interruptor
+  dd 0                       // Empieza en OFF (0)
+
+
+
+// Reservas de memoria
+p_jugador:
+  dq 0
+p_enemigo:
+  dq 0
+p_mascota:
+  dq 0
+
+INJECT:
+  jmp newmem
+  db 90
+return:
+
+
+[DISABLE]
+INJECT:
+  db 8B 91 84 00 00 00
+unregistersymbol(*)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "script-captura-player-pbaseenergy"
+name = 'Script Captura Player "pBaseEnergy'
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Buscamos la firma de 11 bytes (la de 7 bytes + la de 4 de abajo)
+// 48 8B 92 98 00 00 00 = mov rdx,[rdx+00000098]
+// 83 7A 60 00 = cmp dword ptr [rdx+60],00
+aobscan(INJECT_ENERGY, 48 8B 92 98 00 00 00 83 7A 60 00)
+alloc(newmem, 2048, INJECT_ENERGY)
+alloc(pBaseEnergy, 8)
+registersymbol(pBaseEnergy)
+registersymbol(INJECT_ENERGY)
+label(return)
+
+newmem:
+  // Ejecutamos la instrucción original
+  db 48 8B 92 98 00 00 00
+  // Capturamos la base de energía
+  mov [pBaseEnergy],rdx
+  jmp return
+
+INJECT_ENERGY:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+INJECT_ENERGY:
+  db 48 8B 92 98 00 00 00
+unregistersymbol(pBaseEnergy)
+unregistersymbol(INJECT_ENERGY)
+dealloc(pBaseEnergy)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "energia-maxima"
+name = "Energia Maxima"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pbaseenergy"
+hops = [
+    "+0x8",
+    "+0xe8",
+]
+
+[[cheat]]
+id = "energia"
+name = "Energia"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pBaseEnergy"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "stars"
+name = "Stars"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pBaseEnergy"
+hops = ["+0x64"]
+
+[[cheat]]
+id = "oro"
+name = "Oro"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pbaseenergy"
+hops = [
+    "+0x8",
+    "+0xe0",
+]
+
+[[cheat]]
+id = "p-jugador-max-hp"
+name = "p_jugador Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_jugador"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "p-jugador-hp"
+name = "p_jugador  HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_jugador"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "p-jugador-armadura"
+name = "p_jugador Armadura"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_jugador"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "p-mascota-max-hp"
+name = "p_mascota Max HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_mascota"
+hops = ["+0x88"]
+
+[[cheat]]
+id = "p-mascota-hp"
+name = "p_mascota HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_mascota"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "p-mascota-armadura"
+name = "p_mascota Armadura"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_mascota"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "p-enemigo-armadura"
+name = "p_enemigo Armadura"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_enemigo"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "p-enemigo-vida"
+name = "p_enemigo Vida"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "p_enemigo"
+hops = ["+0x84"]

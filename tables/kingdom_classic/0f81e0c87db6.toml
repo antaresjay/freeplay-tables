@@ -1,0 +1,99 @@
+[game]
+name = "Kingdom Classic"
+exe = "kingdom_classic.exe"
+notes = "Converted from a Cheat Engine table by Marc. Source: https://fearlessrevolution.com/viewtopic.php?t=17101"
+verified = []
+author = "Marc"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "gold"
+name = "Gold"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 20
+
+[cheat.locator]
+find = "static"
+module = "mono.dll"
+offset = "0x20b574"
+hops = [
+    "+0x10",
+    "+0x2b4",
+    "+0x8",
+    "+0x40",
+    "+0x4c",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "always-enough-gold-in-the-bucket"
+name = "always enough gold in the bucket"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(gold,89 48 3C 83 EC 0C 50) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+  mov ecx,#20
+code:
+  mov [eax+3C],ecx
+  sub esp,0C
+  jmp return
+
+gold:
+  jmp newmem
+  nop
+return:
+registersymbol(gold)
+
+[DISABLE]
+
+gold:
+  db 89 48 3C 83 EC 0C
+
+unregistersymbol(gold)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Wallet:set_coins+20
+
+Wallet:set_coins+3: 83 EC 08        - sub esp,08
+Wallet:set_coins+6: 8B 45 08        - mov eax,[ebp+08]
+Wallet:set_coins+9: 8B 40 28        - mov eax,[eax+28]
+Wallet:set_coins+c: 83 EC 08        - sub esp,08
+Wallet:set_coins+f: FF 75 0C        - push [ebp+0C]
+Wallet:set_coins+12: 50              - push eax
+Wallet:set_coins+13: E8 E0 CD FE FF  - call UnityEngine.Mathf:Min
+Wallet:set_coins+18: 83 C4 10        - add esp,10
+Wallet:set_coins+1b: 8B C8           - mov ecx,eax
+Wallet:set_coins+1d: 8B 45 08        - mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+Wallet:set_coins+20: 89 48 3C        - mov [eax+3C],ecx
+// ---------- DONE INJECTING  ----------
+Wallet:set_coins+23: 83 EC 0C        - sub esp,0C
+Wallet:set_coins+26: 50              - push eax
+Wallet:set_coins+27: E8 1C 81 FE FF  - call Wallet:ShowCoinBag
+Wallet:set_coins+2c: 83 C4 10        - add esp,10
+Wallet:set_coins+2f: C9              - leave 
+Wallet:set_coins+30: C3              - ret 
+06C66AB1: 00 00           - add [eax],al
+06C66AB3: 00 00           - add [eax],al
+06C66AB5: 00 00           - add [eax],al
+06C66AB7: 00 55 8B        - add [ebp-75],dl
+}"""

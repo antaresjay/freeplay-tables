@@ -1,0 +1,1265 @@
+[game]
+name = "Pawarumi"
+exe = "shinkansen_pawarumi_v1000_latest.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=5951"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-base-address-scan-initialization-activate-this-first"
+name = "Player Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(Player_basepointer)
+registersymbol(Player_update_enable)
+registersymbol(Player_set_enable)
+registersymbol(Player_shieldset_enable)
+registersymbol(Player_energyset_enable)
+registersymbol(Player_invincibilityset_enable)
+
+alloc(Player_basepointer, 8)
+alloc(Player_update_enable, 4)
+alloc(Player_set_enable, 4)
+alloc(Player_shieldset_enable, 4)
+alloc(Player_energyset_enable, 4)
+alloc(Player_invincibilityset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(Player_basepointer)
+unregistersymbol(Player_update_enable)
+unregistersymbol(Player_set_enable)
+unregistersymbol(Player_shieldset_enable)
+unregistersymbol(Player_energyset_enable)
+unregistersymbol(Player_invincibilityset_enable)
+
+dealloc(Player_basepointer)
+dealloc(Player_update_enable)
+dealloc(Player_set_enable)
+dealloc(Player_shieldset_enable)
+dealloc(Player_energyset_enable)
+dealloc(Player_invincibilityset_enable)"""
+
+[[cheat]]
+id = "player-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "Player Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(Player_savedAOB)
+label(Player_returnhere)
+label(Player_originalcode)
+label(Player_exit)
+
+label(Player_update_exit)
+label(Player_set_exit)
+label(Player_shieldset_exit)
+label(Player_energyset_exit)
+label(Player_invincibilityset_exit)
+
+registersymbol(Player_savedAOB)
+
+//0D63F8C5 - 66 0F57 C0            - xorpd xmm0,xmm0
+//0D63F8C9 - F2 0F11 85 28FEFFFF   - movsd [rbp-000001D8],xmm0
+// Player:Update+61
+//0D63F8D1 - F3 0F10 86 18020000   - movss xmm0,[rsi+00000218]
+//0D63F8D9 - F3 0F5A C0            - cvtss2sd xmm0,xmm0
+//0D63F8DD - F2 0F11 85 20FEFFFF   - movsd [rbp-000001E0],xmm0
+//0D63F8E5 - 48 83 EC 20           - sub rsp,20
+//0D63F8E9 - 49 BB F0D3AC1000000000 - mov r11,0000000010ACD3F0 : [EC8B4855]
+//0D63F8F3 - 41 FF D3              - call r11d
+aobscan(Player_searchedAOB, F3 0F 10 86 18 02 00 00 F3 0F 5A C0 F2 0F 11 85 20 FE FF FF 48 83 EC 20)
+
+alloc(Player_newmem, 2048, Player_searchedAOB)
+alloc(Player_temp1, 8, Player_searchedAOB)
+alloc(Player_temp2, 8, Player_searchedAOB)
+alloc(Player_temp3, 8, Player_searchedAOB)
+alloc(Player_temp4, 8, Player_searchedAOB)
+alloc(Player_temp5, 8, Player_searchedAOB)
+
+
+Player_newmem:
+mov [Player_temp1], rax
+mov [Player_temp2], rbx
+mov [Player_temp3], rcx
+mov [Player_temp4], rdx
+
+cmp dword ptr [Player_update_enable], #0
+je Player_update_exit
+mov [Player_basepointer], rsi
+Player_update_exit:
+
+cmp dword ptr [Player_set_enable], #0
+je Player_set_exit
+Player_set_exit:
+
+cmp dword ptr [Player_shieldset_enable], #0
+je Player_shieldset_exit
+mov rbx, [rsi+78]
+test rbx, rbx
+je Player_shieldset_exit
+mov [rbx+3c], (float)1
+Player_shieldset_exit:
+
+cmp dword ptr [Player_energyset_enable], #0
+je Player_energyset_exit
+mov rbx, [rsi+80]
+test rbx, rbx
+je Player_energyset_exit
+mov [rbx+3c], (float)1
+Player_energyset_exit:
+
+cmp dword ptr [Player_invincibilityset_enable], #0
+je Player_invincibilityset_exit
+fld [rsi+1a0]
+fstp [rsi+284]
+Player_invincibilityset_exit:
+
+mov rax, [Player_temp1]
+mov rbx, [Player_temp2]
+mov rcx, [Player_temp3]
+mov rdx, [Player_temp4]
+
+
+Player_originalcode:
+db F3 0F 10 86 18 02 00 00
+//movss xmm0,[rsi+00000218]
+
+
+Player_exit:
+jmp Player_returnhere
+
+
+Player_searchedAOB:
+Player_savedAOB:
+jmp Player_newmem
+nop
+nop
+nop
+Player_returnhere:
+
+
+[DISABLE]
+Player_savedAOB:
+db F3 0F 10 86 18 02 00 00
+//movss xmm0,[rsi+00000218]
+
+unregistersymbol(Player_savedAOB)
+
+dealloc(Player_newmem)
+dealloc(Player_temp1)
+dealloc(Player_temp2)
+dealloc(Player_temp3)
+dealloc(Player_temp4)
+dealloc(Player_temp5)"""
+
+[[cheat]]
+id = "shield-set-to-max"
+name = "Shield Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_shieldset_enable"
+hops = []
+
+[[cheat]]
+id = "energy-set-to-max"
+name = "Energy Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_energyset_enable"
+hops = []
+
+[[cheat]]
+id = "invincibility-time-set-to-max"
+name = "Invincibility Time Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_invincibilityset_enable"
+hops = []
+
+[[cheat]]
+id = "player-update-base-address"
+name = "Player Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x0",
+]
+
+[[cheat]]
+id = "animator-type-unityengine-animator-unknown"
+name = "animator (type: UnityEngine.Animator) UNKNOWN"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x18",
+]
+
+[[cheat]]
+id = "timebeforereduce"
+name = "TimeBeforeReduce"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x20",
+]
+
+[[cheat]]
+id = "timebeforeaugment"
+name = "TimeBeforeAugment"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x24",
+]
+
+[[cheat]]
+id = "reducespeed"
+name = "ReduceSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x28",
+]
+
+[[cheat]]
+id = "augmentspeed"
+name = "AugmentSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "highlightthreshold"
+name = "HighlightThreshold"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x30",
+]
+
+[[cheat]]
+id = "highlightifhigher"
+name = "HighlightIfHigher"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x34",
+]
+
+[[cheat]]
+id = "minimumactive"
+name = "MinimumActive"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x38",
+]
+
+[[cheat]]
+id = "life"
+name = "life"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "smoothedlife"
+name = "smoothedLife"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x40",
+]
+
+[[cheat]]
+id = "lastset"
+name = "lastSet"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x78",
+    "+0x44",
+]
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x0",
+]
+
+[[cheat]]
+id = "animator-type-unityengine-animator-unknown-2"
+name = "animator (type: UnityEngine.Animator) UNKNOWN"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x18",
+]
+
+[[cheat]]
+id = "timebeforereduce-2"
+name = "TimeBeforeReduce"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x20",
+]
+
+[[cheat]]
+id = "timebeforeaugment-2"
+name = "TimeBeforeAugment"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x24",
+]
+
+[[cheat]]
+id = "reducespeed-2"
+name = "ReduceSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x28",
+]
+
+[[cheat]]
+id = "augmentspeed-2"
+name = "AugmentSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "highlightthreshold-2"
+name = "HighlightThreshold"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x30",
+]
+
+[[cheat]]
+id = "highlightifhigher-2"
+name = "HighlightIfHigher"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x34",
+]
+
+[[cheat]]
+id = "minimumactive-2"
+name = "MinimumActive"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x38",
+]
+
+[[cheat]]
+id = "life-2"
+name = "life"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x3c",
+]
+
+[[cheat]]
+id = "smoothedlife-2"
+name = "smoothedLife"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x40",
+]
+
+[[cheat]]
+id = "lastset-2"
+name = "lastSet"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = [
+    "+0x80",
+    "+0x44",
+]
+
+[[cheat]]
+id = "movementspeed"
+name = "MovementSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "playspacecylindersmooth"
+name = "PlayspaceCylinderSmooth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "playspacecylinderspeed"
+name = "PlayspaceCylinderSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x19c"]
+
+[[cheat]]
+id = "invincibilitytime"
+name = "InvincibilityTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "freezetimewhenhit"
+name = "FreezeTimeWhenHit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "bulletshieldradius"
+name = "BulletShieldRadius"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "ultiallowed"
+name = "UltiAllowed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "energybonus"
+name = "EnergyBonus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "shieldbonus"
+name = "ShieldBonus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "pointspercombohit"
+name = "PointsPerComboHit"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "highlightdecreasespeed"
+name = "HighlightDecreaseSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1bc"]
+
+[[cheat]]
+id = "highlightaddfactor"
+name = "HighlightAddFactor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1c0"]
+
+[[cheat]]
+id = "escapetime"
+name = "EscapeTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1c4"]
+
+[[cheat]]
+id = "haseverfiredk-backingfield"
+name = "HasEverFiredk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1d8"]
+
+[[cheat]]
+id = "playspacecylindermodek-backingfield"
+name = "PlayspaceCylinderModek__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1e8"]
+
+[[cheat]]
+id = "haspositionlockedk-backingfield"
+name = "HasPositionLockedk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1e9"]
+
+[[cheat]]
+id = "rollsmoothed"
+name = "rollSmoothed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1f8"]
+
+[[cheat]]
+id = "rollsmoothedvel"
+name = "rollSmoothedVel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x1fc"]
+
+[[cheat]]
+id = "waspressedkeys"
+name = "wasPressedKeys"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x200"]
+
+[[cheat]]
+id = "activeweaponindex"
+name = "activeWeaponIndex"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x204"]
+
+[[cheat]]
+id = "lasthittime"
+name = "lastHitTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "lastsuperready"
+name = "lastSuperReady"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x20c"]
+
+[[cheat]]
+id = "showboosttip"
+name = "showBoostTip"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x210"]
+
+[[cheat]]
+id = "showdraintip"
+name = "showDrainTip"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x214"]
+
+[[cheat]]
+id = "energyhighlight"
+name = "energyHighlight"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x218"]
+
+[[cheat]]
+id = "shieldhighlight"
+name = "shieldHighlight"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x21c"]
+
+[[cheat]]
+id = "shieldaudioparam"
+name = "shieldAudioParam"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x220"]
+
+[[cheat]]
+id = "energyaudioparam"
+name = "energyAudioParam"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x224"]
+
+[[cheat]]
+id = "speedaudioparam"
+name = "speedAudioParam"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x228"]
+
+[[cheat]]
+id = "superaudioparam"
+name = "superAudioParam"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x22c"]
+
+[[cheat]]
+id = "ds4intensity"
+name = "DS4Intensity"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x230"]
+
+[[cheat]]
+id = "ds4intensityvel"
+name = "DS4IntensityVel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x234"]
+
+[[cheat]]
+id = "nomiss"
+name = "noMiss"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x248"]
+
+[[cheat]]
+id = "supersunleashed"
+name = "supersUnleashed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x24c"]
+
+[[cheat]]
+id = "cylindersmooth"
+name = "cylinderSmooth"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x268"]
+
+[[cheat]]
+id = "cylindersmoothvel"
+name = "cylinderSmoothVel"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x26c"]
+
+[[cheat]]
+id = "escaping"
+name = "escaping"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "escapeprogress"
+name = "escapeProgress"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x280"]
+
+[[cheat]]
+id = "invincibilitytimeleftk-backingfield"
+name = "InvincibilityTimeLeftk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x284"]
+
+[[cheat]]
+id = "lastactiveweaponindexk-backingfield"
+name = "LastActiveWeaponIndexk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "Player_basepointer"
+hops = ["+0x288"]

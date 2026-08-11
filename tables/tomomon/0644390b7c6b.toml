@@ -1,0 +1,447 @@
+[game]
+name = "Tomomon 托磨们"
+exe = "tomomon.exe"
+notes = "Converted from a Cheat Engine table by FreyaChen. Source: https://fearlessrevolution.com/viewtopic.php?t=39875"
+verified = []
+author = "FreyaChen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "max-money"
+name = "MAX Money"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+7A4990)
+alloc(tomomon_bit_set_value,4,GameAssembly.dll+7A4990)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+registersymbol(tomomon_bit_set_value)
+
+tomomon_bit_set_value:
+dd #99999
+
+newmem:
+
+originalcode:
+// 先执行原本的购买扣钱逻辑
+sub [rbx+00000138],edi
+
+// 再把 bit 改成指定数值
+push rax
+mov eax,[tomomon_bit_set_value]
+mov [rbx+00000138],eax
+pop rax
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+7A4990:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+7A4990:
+db 29 BB 38 01 00 00
+
+unregistersymbol(tomomon_bit_set_value)
+dealloc(tomomon_bit_set_value)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bits"
+name = "bits"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tomomon_bit_set_value"
+hops = []
+
+[[cheat]]
+id = "max-buy-item"
+name = "MAX Buy Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+6C60D2)
+alloc(tomomon_item_buy_multiplier,4,GameAssembly.dll+6C60D2)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+registersymbol(tomomon_item_buy_multiplier)
+
+tomomon_item_buy_multiplier:
+dd #666
+
+newmem:
+
+originalcode:
+// 原逻辑：add edx,r14d
+// 新逻辑：edx = 当前数量 + 购买数量 * 倍率
+push rax
+mov eax,r14d
+imul eax,[tomomon_item_buy_multiplier]
+add edx,eax
+pop rax
+
+// 原逻辑：mov [rsi+00000110],edx
+mov [rsi+00000110],edx
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+6C60D2:
+jmp newmem
+nop 4
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+6C60D2:
+db 41 03 D6 89 96 10 01 00 00
+
+unregistersymbol(tomomon_item_buy_multiplier)
+dealloc(tomomon_item_buy_multiplier)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "magnification"
+name = "magnification"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tomomon_item_buy_multiplier"
+hops = []
+
+[[cheat]]
+id = "zero-decrease-item"
+name = "ZERO Decrease Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+532921)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+
+originalcode:
+// 原逻辑会扣除卖出数量：sub eax,[rbx+00000150]
+// 这里跳过扣除，直接把原 eax 写回数量
+mov [r8+00000110],eax
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+532921:
+jmp newmem
+nop 8
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+532921:
+db 2B 83 50 01 00 00 41 89 80 10 01 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "zero-sell-exhaust"
+name = "ZERO Sell Exhaust"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+532AE6)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+
+originalcode:
+// 原逻辑：
+// je GameAssembly.dll+533201
+// mov [rdx+00000110],r14d
+//
+// 这里直接跳过删除判断和数量写回，避免卖出全部时物品被销毁
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+532AE6:
+jmp newmem
+nop 8
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+532AE6:
+db 0F 84 15 07 00 00 44 89 B2 10 01 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "zero-use-exhaust"
+name = "ZERO Use Exhaust"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+7EB955)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+
+originalcode:
+// 使用物品时通常 eax = 原数量 - 1
+// 写回前加 1，让数量保持不变
+add eax,#1
+mov [rdi+00000110],eax
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+7EB955:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+7EB955:
+db 89 87 10 01 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "max-exp"
+name = "MAX Exp"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+5EC9DA)
+alloc(tomomon_exp_lock_value,4,GameAssembly.dll+5EC9DA)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+registersymbol(tomomon_exp_lock_value)
+
+tomomon_exp_lock_value:
+dd #99999
+
+newmem:
+// 把即将写入的经验值 eax 改成地址栏指定的值
+mov eax,[tomomon_exp_lock_value]
+
+originalcode:
+mov [rdx+0000022C],eax
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+5EC9DA:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+5EC9DA:
+db 89 82 2C 02 00 00
+
+unregistersymbol(tomomon_exp_lock_value)
+dealloc(tomomon_exp_lock_value)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exps"
+name = "exps"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tomomon_exp_lock_value"
+hops = []
+
+[[cheat]]
+id = "zero-injury"
+name = "ZERO Injury"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+6AEA4D)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+// +0BC: 当前两场测试中 player=423, enemy=422
+cmp dword ptr [rdi+000000BC],#423
+jne originalcode
+
+// 我方受伤时恢复最大 HP
+mov eax,[rdi+0000020C]
+
+originalcode:
+mov [rdi+00000204],eax
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+6AEA4D:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+6AEA4D:
+db 89 87 04 02 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "ONE Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+6AEA4D)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+// +0BC: 当前两场测试中 player=423, enemy=422
+cmp dword ptr [rdi+000000BC],#422
+jne originalcode
+
+// 敌方受伤时 HP=0
+xor eax,eax
+
+originalcode:
+mov [rdi+00000204],eax
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+6AEA4D:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+6AEA4D:
+db 89 87 04 02 00 00
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "easy-capture"
+name = "EASY Capture"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+alloc(newmem,2048,GameAssembly.dll+6AEA4D)
+
+label(returnhere)
+label(originalcode)
+label(exit)
+
+newmem:
+// +0BC: player=423, enemy=422
+cmp dword ptr [rdi+000000BC],#422
+jne originalcode
+
+// 敌方受伤后 HP 强制为 1，方便捕捉
+mov eax,#1
+
+originalcode:
+mov [rdi+00000204],eax
+
+exit:
+jmp returnhere
+
+GameAssembly.dll+6AEA4D:
+jmp newmem
+nop
+returnhere:
+
+[DISABLE]
+
+GameAssembly.dll+6AEA4D:
+db 89 87 04 02 00 00
+
+dealloc(newmem)"""

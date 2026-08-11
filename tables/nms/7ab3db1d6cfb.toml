@@ -1,0 +1,573 @@
+[game]
+name = "Super Simple No Man's Sky 2.55 Desolation"
+exe = "nms.exe"
+notes = "Converted from a Cheat Engine table by jgoemat. Source: https://fearlessrevolution.com/viewtopic.php?t=13147"
+verified = []
+author = "jgoemat"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "cheat-full-stack-up-to-5k-when-picking-up-item"
+name = "CHEAT: Full stack (up to 5k) when picking up item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NMS.exe
+  Version: 
+  Date   : 2020-07-19
+}
+
+[ENABLE]
+
+aobscanmodule(CHEAT_FULL_STACK_ON_PICKUP,NMS.exe,8B 40 18 39 86 F8 E4 00 00) // should be unique
+alloc(newmem,$1000,"NMS.exe"+77B89A)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  push rsi
+  cmp [rax+18],#5000
+  jge done // stack is already 5000, skip
+
+  mov esi,[rax+1c]
+  cmp esi,#5000
+  jle @F
+  mov esi,#5000 // max 5000 for stack
+@@:
+  mov [rax+18],esi
+
+done:
+  pop rsi
+
+  mov eax,[rax+18]
+  cmp [rsi+0000E4F8],eax
+  jmp return
+
+CHEAT_FULL_STACK_ON_PICKUP:
+  jmp newmem
+  nop 4
+return:
+registersymbol(CHEAT_FULL_STACK_ON_PICKUP)
+
+[DISABLE]
+
+CHEAT_FULL_STACK_ON_PICKUP:
+  db 8B 40 18 39 86 F8 E4 00 00
+
+unregistersymbol(CHEAT_FULL_STACK_ON_PICKUP)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "NMS.exe"+77B89A
+
+"NMS.exe"+77B866: 48 85 C9              -  test rcx,rcx
+"NMS.exe"+77B869: 0F 84 74 FF FF FF     -  je NMS.exe+77B7E3
+"NMS.exe"+77B86F: 48 8D 96 10 E5 00 00  -  lea rdx,[rsi+0000E510]
+"NMS.exe"+77B876: 83 3A FF              -  cmp dword ptr [rdx],-01
+"NMS.exe"+77B879: 0F 84 64 FF FF FF     -  je NMS.exe+77B7E3
+"NMS.exe"+77B87F: 83 BE 14 E5 00 00 FF  -  cmp dword ptr [rsi+0000E514],-01
+"NMS.exe"+77B886: 0F 84 57 FF FF FF     -  je NMS.exe+77B7E3
+"NMS.exe"+77B88C: E8 6F BD D3 FF        -  call NMS.exe+4B7600
+"NMS.exe"+77B891: 48 85 C0              -  test rax,rax
+"NMS.exe"+77B894: 0F 84 49 FF FF FF     -  je NMS.exe+77B7E3
+// ---------- INJECTING HERE ----------
+"NMS.exe"+77B89A: 8B 40 18              -  mov eax,[rax+18]
+"NMS.exe"+77B89D: 39 86 F8 E4 00 00     -  cmp [rsi+0000E4F8],eax
+// ---------- DONE INJECTING  ----------
+"NMS.exe"+77B8A3: 0F 85 3A FF FF FF     -  jne NMS.exe+77B7E3
+"NMS.exe"+77B8A9: 8B 9E 18 E5 00 00     -  mov ebx,[rsi+0000E518]
+"NMS.exe"+77B8AF: 48 8B CE              -  mov rcx,rsi
+"NMS.exe"+77B8B2: E8 E9 87 F6 FF        -  call NMS.exe+6E40A0
+"NMS.exe"+77B8B7: 3B D8                 -  cmp ebx,eax
+"NMS.exe"+77B8B9: 0F 85 24 FF FF FF     -  jne NMS.exe+77B7E3
+"NMS.exe"+77B8BF: B0 01                 -  mov al,01
+"NMS.exe"+77B8C1: E9 1F FF FF FF        -  jmp NMS.exe+77B7E5
+"NMS.exe"+77B8C6: CC                    -  int 3 
+"NMS.exe"+77B8C7: CC                    -  int 3 
+}"""
+
+[[cheat]]
+id = "cheat-stats-enable-when-looking-at-a-milestones-tab"
+name = "CHEAT: Stats (Enable when looking at a Milestones tab)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NMS.exe
+  Version: 
+
+  Interesting - location where stats are loaded.   An example is for the
+  mercenary guild.   When the 'Milestones' tab is opened for the mercenary
+  guild, this is called each frame for each of the stats.
+
+  NOTE:  This is called at other times too, but SEEMS to be mostly for the stats.
+  If the mercenary guild tab is open, this is called 4 times each frame, in order
+  for the values displayed.
+
+  1) Loads value '71', which seems to be top-left 'Standing' showing me as
+     trade lord with 29 missions to next level which would be an even 100
+  2) Loads value '528' which is missions completed.  Upping this enables you to
+     take on tougher msisions at the mission board
+  3) Loads value '192' which seems to be words learned.  I don't know if changing
+     this might affect translations, but I DOUBT IT
+  4) Loads value '10' which is System Visited
+}
+
+[ENABLE]
+
+aobscanmodule(CHEAT_STATS,NMS.exe,00 8B 00 48 83 C4 28) // should be unique
+alloc(newmem,$1000,"NMS.exe"+47F22D)
+
+label(code)
+label(return)
+label(MyLoop)
+label(FoundEmpty)
+label(Done)
+label(pStats)
+
+newmem:
+
+code:
+  push rbx
+  push rcx
+  push rsi
+
+  mov rsi,pStats
+  mov rcx,0
+
+MyLoop:
+  mov rbx,[rsi+rcx*8]
+  test rbx,rbx
+  jz FoundEmpty
+  cmp rbx,rax
+  je Done // already have this address
+  inc rcx
+  cmp rcx,8
+  jb MyLoop
+  jmp Done // end of space, only storing 8 locations
+
+FoundEmpty:
+  mov [rsi+rcx*8],rax
+  jmp Done
+
+Done:
+  pop rsi
+  pop rcx
+  pop rbx
+
+  // original code
+  mov eax,[rax]
+  add rsp,28
+  jmp return
+
+align 10
+pStats:
+  dq 0 0 0 0 0 0 0 0
+
+CHEAT_STATS+01:
+  jmp newmem
+  nop
+return:
+registersymbol(CHEAT_STATS)
+registersymbol(pStats)
+
+
+[DISABLE]
+
+CHEAT_STATS+01:
+  db 8B 00 48 83 C4 28
+
+unregistersymbol(CHEAT_STATS)
+unregistersymbol(pStats)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "NMS.exe"+47F22D
+
+"NMS.exe"+47F215: 41 5F                 -  pop r15
+"NMS.exe"+47F217: 41 5E                 -  pop r14
+"NMS.exe"+47F219: 41 5D                 -  pop r13
+"NMS.exe"+47F21B: 41 5C                 -  pop r12
+"NMS.exe"+47F21D: 5F                    -  pop rdi
+"NMS.exe"+47F21E: C3                    -  ret 
+"NMS.exe"+47F21F: CC                    -  int 3 
+"NMS.exe"+47F220: 48 83 EC 28           -  sub rsp,28
+"NMS.exe"+47F224: 48 83 C1 18           -  add rcx,18
+"NMS.exe"+47F228: E8 13 28 08 00        -  call NMS.exe+501A40
+// ---------- INJECTING HERE ----------
+"NMS.exe"+47F22D: 8B 00                 -  mov eax,[rax]
+"NMS.exe"+47F22F: 48 83 C4 28           -  add rsp,28
+// ---------- DONE INJECTING  ----------
+"NMS.exe"+47F233: C3                    -  ret 
+"NMS.exe"+47F234: CC                    -  int 3 
+"NMS.exe"+47F235: CC                    -  int 3 
+"NMS.exe"+47F236: CC                    -  int 3 
+"NMS.exe"+47F237: CC                    -  int 3 
+"NMS.exe"+47F238: CC                    -  int 3 
+"NMS.exe"+47F239: CC                    -  int 3 
+"NMS.exe"+47F23A: CC                    -  int 3 
+"NMS.exe"+47F23B: CC                    -  int 3 
+"NMS.exe"+47F23C: CC                    -  int 3 
+}"""
+
+[[cheat]]
+id = "stat-1"
+name = "Stat 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stat-2"
+name = "Stat 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stat-3"
+name = "Stat 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stat-4"
+name = "Stat 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stat-5"
+name = "Stat 5"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stat-6"
+name = "Stat 6"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stat-7"
+name = "Stat 7"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "stat-8"
+name = "Stat 8"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pStats"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "cheat-tech-base-stats"
+name = "CHEAT: Tech Base Stats"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : NMS.exe
+  Version:
+  Date   : 2020-07-20
+
+  The Multitool, Spaceship, and Freighter have some base stats that are
+  accessed by this each frame when the appropriate tab is open.
+
+  To use, open the multitool tab and enable the script, then change to
+  the starship tab, then the freighter tab.
+
+  In order:
+
+  1) Multitool damage
+  2) Multitool mining
+  3) Multitool scan
+
+  4) Ship damage
+  5) Ship shields
+  6) Ship hyperdrive
+
+  7) Hyperdrive
+  8) Fleet Coordination
+}
+
+
+[ENABLE]
+
+aobscanmodule(INJECT_TECH_BASE_STATS,NMS.exe,07 48 89 44 24 20 48 3B C2 74 1F 0F 10 00 0F 11 01 F2 0F 10 48 10) // should be unique
+alloc(newmem,$1000,"NMS.exe"+4932C0)
+
+
+label(code)
+label(return)
+label(pTech)
+label(Done)
+label(MyLoop)
+label(FoundEmpty)
+
+newmem:
+
+code:
+  push rbx
+  push rcx
+  push rsi
+
+  mov rsi,pTech
+  mov rcx,0
+
+MyLoop:
+  mov rbx,[rsi+rcx*8]
+  test rbx,rbx
+  jz FoundEmpty
+  cmp rax,rbx
+  je Done // already have this address
+  inc rcx
+  cmp rcx,8
+  jb MyLoop
+  jmp Done // end of space, only storing 8 locations
+
+FoundEmpty:
+  mov [rsi+rcx*8],rax
+  jmp Done
+
+Done:
+  pop rsi
+  pop rcx
+  pop rbx
+
+  movsd xmm1,[rax+10] // original code
+  jmp return
+
+align 10
+pTech:
+  dq 0 0 0 0 0 0 0 0
+
+
+INJECT_TECH_BASE_STATS+11:
+  jmp newmem
+return:
+registersymbol(INJECT_TECH_BASE_STATS)
+registersymbol(pTech)
+
+[DISABLE]
+
+INJECT_TECH_BASE_STATS+11:
+  db F2 0F 10 48 10
+
+unregistersymbol(INJECT_TECH_BASE_STATS)
+unregistersymbol(pTech)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: "NMS.exe"+4932C0
+
+"NMS.exe"+4932A2: 84 C0                          -  test al,al
+"NMS.exe"+4932A4: 74 4F                          -  je NMS.exe+4932F5
+"NMS.exe"+4932A6: 48 8B 0B                       -  mov rcx,[rbx]
+"NMS.exe"+4932A9: 48 8B 57 08                    -  mov rdx,[rdi+08]
+"NMS.exe"+4932AD: 48 8B 07                       -  mov rax,[rdi] // aob starts at this 07
+"NMS.exe"+4932B0: 48 89 44 24 20                 -  mov [rsp+20],rax
+"NMS.exe"+4932B5: 48 3B C2                       -  cmp rax,rdx
+"NMS.exe"+4932B8: 74 1F                          -  je NMS.exe+4932D9
+"NMS.exe"+4932BA: 0F 10 00                       -  movups xmm0,[rax]
+"NMS.exe"+4932BD: 0F 11 01                       -  movups [rcx],xmm0
+// ---------- INJECTING HERE ----------
+"NMS.exe"+4932C0: F2 0F 10 48 10                 -  movsd xmm1,[rax+10] // aob ends here
+// ---------- DONE INJECTING  ----------
+"NMS.exe"+4932C5: F2 0F 11 49 10                 -  movsd [rcx+10],xmm1
+"NMS.exe"+4932CA: 48 83 C1 18                    -  add rcx,18
+"NMS.exe"+4932CE: 48 83 C0 18                    -  add rax,18
+"NMS.exe"+4932D2: 48 89 44 24 20                 -  mov [rsp+20],rax
+"NMS.exe"+4932D7: EB DC                          -  jmp NMS.exe+4932B5
+"NMS.exe"+4932D9: 48 8B C1                       -  mov rax,rcx
+"NMS.exe"+4932DC: 48 89 4C 24 28                 -  mov [rsp+28],rcx
+"NMS.exe"+4932E1: 48 3B C1                       -  cmp rax,rcx
+"NMS.exe"+4932E4: 74 0B                          -  je NMS.exe+4932F1
+"NMS.exe"+4932E6: 48 83 C0 18                    -  add rax,18
+}"""
+
+[[cheat]]
+id = "ship-damage"
+name = "Ship Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "ship-shields"
+name = "Ship Shields"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "ship-hyperdrive"
+name = "Ship Hyperdrive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "multitool-damage"
+name = "Multitool Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "multitool-mining"
+name = "Multitool Mining"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "multitool-scan"
+name = "Multitool Scan"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "freighter-hyperdrive"
+name = "Freighter Hyperdrive"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]
+
+[[cheat]]
+id = "freighter-fleet-coordination"
+name = "Freighter Fleet Coordination"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pTech"
+hops = ["+0x10"]

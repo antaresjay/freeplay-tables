@@ -1,0 +1,479 @@
+[game]
+name = "Force of Nature"
+exe = "forceofnature.exe"
+notes = "Converted from a Cheat Engine table by jgoemat. Source: https://fearlessrevolution.com/viewtopic.php?t=4160"
+verified = []
+author = "jgoemat"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "dupe-items-hold-shift"
+name = "+ Dupe Items (hold SHIFT)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ForceOfNature.exe
+  Version: 
+  Date   : 2017-07-19
+  Author : Jason
+
+  This seems to save a new value (from [edi+0c]) of the quantity of an item
+  after it gets lowered.  I'm kind of at a loss though, it seems the caller
+  loads edx with the value from the same location (edi == esi?).  Both locations
+  are called for the same inventory offset, maybe at different times?
+}
+
+[ENABLE]
+
+aobscan(INJECT_CRAFTING_ITEMS,89 56 0C 83 7E 04 00 74 13) // should be unique
+alloc(newmem,$1000)
+define(VK_SHIFT,10)
+define(VK_CONTROL,11)
+
+label(code)
+label(skip)
+label(return)
+
+newmem:
+
+code:
+  pushad
+  push VK_SHIFT
+  call GetAsyncKeyState
+  test ax,ax
+  popad
+
+  jns skip
+  cmp edx,[esi+0c]
+  jg skip
+  mov edx,[esi+0c]
+skip:
+  mov [esi+0C],edx
+  cmp dword ptr [esi+04],00      // original code
+  jmp return
+
+INJECT_CRAFTING_ITEMS:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(INJECT_CRAFTING_ITEMS)
+
+[DISABLE]
+
+INJECT_CRAFTING_ITEMS:
+  db 89 56 0C 83 7E 04 00
+
+unregistersymbol(INJECT_CRAFTING_ITEMS)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1BDB6176
+
+""+1BDB615E: C3                    -  ret 
+""+1BDB615F: 00 4C DD D8           -  add [ebp+ebx*8-28],cl
+""+1BDB6163: 1B 00                 -  sbb eax,[eax]
+""+1BDB6165: 00 00                 -  add [eax],al
+""+1BDB6167: 00 68 DD              -  add [eax-23],ch
+""+1BDB616A: D8 1B                 -  fcomp dword ptr [ebx]
+""+1BDB616C: 68 C4 D9 1B 55        -  push 551BD9C4
+""+1BDB6171: 8B EC                 -  mov ebp,esp
+""+1BDB6173: 56                    -  push esi
+""+1BDB6174: 8B F1                 -  mov esi,ecx
+// ---------- INJECTING HERE ----------
+""+1BDB6176: 89 56 0C              -  mov [esi+0C],edx
+""+1BDB6179: 83 7E 04 00           -  cmp dword ptr [esi+04],00
+// ---------- DONE INJECTING  ----------
+""+1BDB617D: 74 13                 -  je 1BDB6192
+""+1BDB617F: 8B 4E 04              -  mov ecx,[esi+04]
+""+1BDB6182: FF 35 68 10 F0 04     -  push [04F01068]
+""+1BDB6188: 8B D6                 -  mov edx,esi
+""+1BDB618A: 8B 41 0C              -  mov eax,[ecx+0C]
+""+1BDB618D: 8B 49 04              -  mov ecx,[ecx+04]
+""+1BDB6190: FF D0                 -  call eax
+""+1BDB6192: 5E                    -  pop esi
+""+1BDB6193: 5D                    -  pop ebp
+""+1BDB6194: C3                    -  ret 
+}"""
+
+[[cheat]]
+id = "health-and-stamina"
+name = "+ Health and Stamina"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ForceOfNature.exe
+  Version: 
+  Date   : 2017-07-19
+  Author : Jason
+
+  Part thataccesses player location each frame?
+
+  Seems like StaminaParent is really player structure.  Only player seems to
+  be accessed here, and the fld may load a location (x or y)?
+
+}
+
+[ENABLE]
+
+globalalloc(globals,$100000)
+
+aobscan(INJECT_PLAYER_POINTER,8B 46 18 D9 40 20 8B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[esi+18]               // original code
+  fld dword ptr [eax+20]         // original code
+
+  mov [globals+1000],esi // Base
+  mov [globals+1004],eax // StaminaParent
+
+  // keep max health and stamina
+  push ecx
+  push ebx
+  mov ebx,[eax+84]
+  mov [eax+88],ebx
+  mov ecx,[eax+1c]
+  mov ebx,[ecx+20]
+  mov [ecx+24],ebx
+  pop ebx
+  pop ecx
+  jmp return
+
+INJECT_PLAYER_POINTER:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT_PLAYER_POINTER)
+
+[DISABLE]
+
+INJECT_PLAYER_POINTER:
+  db 8B 46 18 D9 40 20
+
+unregistersymbol(INJECT_PLAYER_POINTER)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 26A05C80
+
+""+26A05C61: DD 5D E0           -  fstp qword ptr [ebp-20]
+""+26A05C64: DD 45 E0           -  fld qword ptr [ebp-20]
+""+26A05C67: EB 14              -  jmp 26A05C7D
+""+26A05C69: 8B 56 14           -  mov edx,[esi+14]
+""+26A05C6C: 8B C2              -  mov eax,edx
+""+26A05C6E: 8B 48 58           -  mov ecx,[eax+58]
+""+26A05C71: FF 15 E0 17 B8 00  -  call dword ptr [00B817E0]
+""+26A05C77: DD 5D E0           -  fstp qword ptr [ebp-20]
+""+26A05C7A: DD 45 E0           -  fld qword ptr [ebp-20]
+""+26A05C7D: D9 5D F0           -  fstp dword ptr [ebp-10]
+// ---------- INJECTING HERE ----------
+""+26A05C80: 8B 46 18           -  mov eax,[esi+18]
+""+26A05C83: D9 40 20           -  fld dword ptr [eax+20]
+// ---------- DONE INJECTING  ----------
+""+26A05C86: 8B 56 14           -  mov edx,[esi+14]
+""+26A05C89: 8B 42 18           -  mov eax,[edx+18]
+""+26A05C8C: 83 EC 04           -  sub esp,04
+""+26A05C8F: D9 1C 24           -  fstp dword ptr [esp]
+""+26A05C92: FF 70 28           -  push [eax+28]
+""+26A05C95: E8 3E 36 7B FC     -  call 231B92D8
+""+26A05C9A: D9 46 2C           -  fld dword ptr [esi+2C]
+""+26A05C9D: D8 66 30           -  fsub dword ptr [esi+30]
+""+26A05CA0: 83 EC 04           -  sub esp,04
+""+26A05CA3: D9 C9              -  fxch st(1)
+}"""
+
+[[cheat]]
+id = "pplayer"
+name = "pPlayer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "globals"
+hops = []
+
+[[cheat]]
+id = "craft-time-1s"
+name = "+ Craft Time = 1s"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ForceOfNature.exe
+  Version: 
+  Date   : 2017-07-19
+  Author : Jason
+
+  I [THINK] that[ebp+08] is current time (in second, i.e. 4675.80), and that
+  [edi+04] is a set completion time (i.e. 4829.867676).  So I think I should
+  make everything take at most 1 second...
+}
+
+[ENABLE]
+
+aobscan(INJECT_COMPLETE,D9 45 08 D8 67 04 DD) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+  dd (float)1.0 // maximum second to complete
+  dd 0 // will be 1 second after current time?
+
+code:
+  push eax
+  fld dword ptr [ebp+08] // current time
+  fadd dword ptr [newmem]
+  fstp dword ptr [newmem+4]
+  mov eax,[newmem+4]
+  cmp eax,[edi+0c] // completion time
+  jge skip
+  mov [edi+0c],eax // completion time
+skip:
+  pop eax
+  fld dword ptr [ebp+08]
+  fsub dword ptr [edi+04]
+  jmp return
+
+INJECT_COMPLETE:
+  jmp code
+  nop
+return:
+registersymbol(INJECT_COMPLETE)
+
+[DISABLE]
+
+INJECT_COMPLETE:
+  db D9 45 08 D8 67 04
+
+unregistersymbol(INJECT_COMPLETE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 00998DA9
+
+""+998D89: 77 0A           -  ja 00998D95
+""+998D8B: D9 E8           -  fld1 
+""+998D8D: D9 5E 04        -  fstp dword ptr [esi+04]
+""+998D90: E9 B1 00 00 00  -  jmp 00998E46
+""+998D95: 8D 7E 08        -  lea edi,[esi+08]
+""+998D98: 3B 0F           -  cmp ecx,[edi]
+""+998D9A: 80 3F 00        -  cmp byte ptr [edi],00
+""+998D9D: 75 0A           -  jne 00998DA9
+""+998D9F: B9 26 00 00 00  -  mov ecx,00000026
+""+998DA4: E8 D7 39 E4 5E  -  call mscorlib.ni.dll+68C780
+// ---------- INJECTING HERE ----------
+""+998DA9: D9 45 08        -  fld dword ptr [ebp+08]
+""+998DAC: D8 67 04        -  fsub dword ptr [edi+04]
+// ---------- DONE INJECTING  ----------
+""+998DAF: DD 5D F0        -  fstp qword ptr [ebp-10]
+""+998DB2: 8D 7E 10        -  lea edi,[esi+10]
+""+998DB5: 3B 0F           -  cmp ecx,[edi]
+""+998DB7: 80 3F 00        -  cmp byte ptr [edi],00
+""+998DBA: 75 0A           -  jne 00998DC6
+""+998DBC: B9 26 00 00 00  -  mov ecx,00000026
+""+998DC1: E8 BA 39 E4 5E  -  call mscorlib.ni.dll+68C780
+""+998DC6: D9 47 04        -  fld dword ptr [edi+04]
+""+998DC9: 8D 7E 08        -  lea edi,[esi+08]
+""+998DCC: 3B 0F           -  cmp ecx,[edi]
+}"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "+ One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ForceOfNature.exe
+  Version: 
+  Date   : 2017-07-21
+  Author : Jason
+
+  CAlled when taking damage (healing too?  probably not)
+
+  ESI: StaminaParent (with health at 88) - 64
+  ECX - ""
+  Actual StaminaParent: 2EDF073C, ESI and ECX are 2EDF07A0
+}
+
+[ENABLE]
+
+aobscan(INJECT_DAMAGE,D9 46 24 D8 45 0C 83) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(skip)
+label(player)
+label(return)
+
+newmem:
+
+code:
+  push eax
+  mov eax, [globals+1004] // saved player StaminaBase
+  cmp eax,0
+  je skip // player pointer not set, so skip
+  add eax,64
+  cmp eax,esi
+  je player
+
+  // monster, make sure they have at most 1.0 health
+  mov eax,(float)1.0
+  cmp eax,[esi+24]
+  jg skip // already under 1 health
+  mov [esi+24],eax
+  jmp skip
+
+player:
+  // player, if change in health is negative, make it 0
+  cmp [ebp+0c],0
+  jg skip
+  mov [ebp+0c],0 // no damage for player
+
+skip:
+  pop eax
+  fld dword ptr [esi+24]  // original code, esi is StaminaBase+64
+  fadd dword ptr [ebp+0C] // original code, [ebp+0c] is change in health (i.e. -2.5 for 2.5 damage)
+  jmp return
+
+INJECT_DAMAGE:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT_DAMAGE)
+
+[DISABLE]
+
+INJECT_DAMAGE:
+  db D9 46 24 D8 45 0C
+
+unregistersymbol(INJECT_DAMAGE)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 00ACD955
+
+""+ACD93B: 8B D7              -  mov edx,edi
+""+ACD93D: 8B CE              -  mov ecx,esi
+""+ACD93F: 39 09              -  cmp [ecx],ecx
+""+ACD941: E8 8A 1F 45 78     -  call mscorlib.ni.dll+21F8D0
+""+ACD946: E9 AF 00 00 00     -  jmp 00ACD9FA
+""+ACD94B: D9 EE              -  fldz 
+""+ACD94D: DF F1              -  fcomip st(0),st(1)
+""+ACD94F: 7A 6E              -  jp 00ACD9BF
+""+ACD951: 75 6C              -  jne 00ACD9BF
+""+ACD953: DD D8              -  fstp st(0)
+// ---------- INJECTING HERE ----------
+""+ACD955: D9 46 24           -  fld dword ptr [esi+24] // actually StaminaBase - 44?
+""+ACD958: D8 45 0C           -  fadd dword ptr [ebp+0C] // negative number when taking damage
+// ---------- DONE INJECTING  ----------
+""+ACD95B: 83 EC 04           -  sub esp,04
+""+ACD95E: D9 1C 24           -  fstp dword ptr [esp]
+""+ACD961: FF 76 20           -  push [esi+20]
+""+ACD964: E8 27 32 44 78     -  call mscorlib.ni.dll+210B90
+""+ACD969: D9 5E 24           -  fstp dword ptr [esi+24] // store new health
+""+ACD96C: D9 46 24           -  fld dword ptr [esi+24]  // load new health
+""+ACD96F: D9 EE              -  fldz                    // load 0
+""+ACD971: DF F1              -  fcomip st(0),st(1)      // compare 0 with new health
+""+ACD973: DD D8              -  fstp st(0)              // pop 0
+""+ACD975: 7A 20              -  jp 00ACD997             // jump if above?
+}"""
+
+[[cheat]]
+id = "quick-harvest"
+name = "+ Quick Harvest"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : ForceOfNature.exe
+  Version: 
+  Date   : 2017-07-21
+  Author : Jason
+
+  This takes damage
+}
+
+[ENABLE]
+
+aobscan(INJECT_HARVESTING,D9 46 14 D8 65 E8) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [ebp-18],(float)1000.0
+  fld dword ptr [esi+14]
+  fsub dword ptr [ebp-18]
+  jmp return
+
+INJECT_HARVESTING:
+  jmp newmem
+  nop
+return:
+registersymbol(INJECT_HARVESTING)
+
+[DISABLE]
+
+INJECT_HARVESTING:
+  db D9 46 14 D8 65 E8
+
+unregistersymbol(INJECT_HARVESTING)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1838E15D
+
+""+1838E13E: 8D 4D E8              -  lea ecx,[ebp-18]
+""+1838E141: FF 15 48 F2 A5 17     -  call dword ptr [17A5F248]
+""+1838E147: D9 45 E8              -  fld dword ptr [ebp-18]
+""+1838E14A: D9 EE                 -  fldz 
+""+1838E14C: DF F1                 -  fcomip st(0),st(1)
+""+1838E14E: DD D8                 -  fstp st(0)
+""+1838E150: 7A 29                 -  jp 1838E17B
+""+1838E152: 73 27                 -  jae 1838E17B
+""+1838E154: 80 3D 44 73 99 01 00  -  cmp byte ptr [01997344],00
+""+1838E15B: 75 1E                 -  jne 1838E17B
+// ---------- INJECTING HERE ----------
+""+1838E15D: D9 46 14              -  fld dword ptr [esi+14]  // "health" of object (tree for sure)
+""+1838E160: D8 65 E8              -  fsub dword ptr [ebp-18] // damage to do as positive number, i.e. 10.0 for axe
+// ---------- DONE INJECTING  ----------
+""+1838E163: 83 EC 04              -  sub esp,04
+""+1838E166: D9 1C 24              -  fstp dword ptr [esp]
+""+1838E169: 6A 00                 -  push 00
+""+1838E16B: E8 D0 29 E2 60        -  call mscorlib.ni.dll+210B40
+""+1838E170: D9 5E 14              -  fstp dword ptr [esi+14]
+""+1838E173: 8B CE                 -  mov ecx,esi
+""+1838E175: FF 15 DC 0D 9E 17     -  call dword ptr [179E0DDC]
+""+1838E17B: 8D 75 E8              -  lea esi,[ebp-18]
+""+1838E17E: A5                    -  movsd 
+""+1838E17F: A5                    -  movsd 
+}"""

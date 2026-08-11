@@ -1,0 +1,116 @@
+[game]
+name = "Legacy of Kain Defiance Remastered HECHO POR MI!"
+exe = "defiance.exe"
+notes = "Converted from a Cheat Engine table by kiromess. Source: https://fearlessrevolution.com/viewtopic.php?t=38828"
+verified = []
+author = "kiromess"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "energia-no-baja"
+name = "Energia No baja"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(INJECT,defiance.exe,F3 41 0F 11 8A D0 06 00 00 41 80 BA EA 0A 00 00 00 41 B0 FF 48 8B 0F BA AB) // should be unique
+alloc(newmem,$1000,INJECT)
+label(code)
+label(return)
+
+newmem:
+code:
+  // Instrucción original anulada: no se escribe el valor reducido
+  // movss [r10+000006D0],xmm1
+  jmp return
+
+INJECT:
+  jmp newmem
+  nop 4
+return:
+registersymbol(INJECT)
+
+[DISABLE]
+INJECT:
+  db F3 41 0F 11 8A D0 06 00 00
+unregistersymbol(INJECT)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "vida-no-baja"
+name = "Vida no baja"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(INJECT_HP,defiance.exe,F3 0F 11 90 C8 03 00 00) // should be unique
+alloc(newmem_hp,$1000,INJECT_HP)
+label(code_hp)
+label(return_hp)
+
+newmem_hp:
+code_hp:
+  // Instrucción original anulada: no se escribe el valor reducido
+  // movss [rax+000003C8],xmm2
+  jmp return_hp
+
+INJECT_HP:
+  jmp newmem_hp
+  nop 3
+return_hp:
+registersymbol(INJECT_HP)
+
+[DISABLE]
+INJECT_HP:
+  db F3 0F 11 90 C8 03 00 00
+unregistersymbol(INJECT_HP)
+dealloc(newmem_hp)"""
+
+[[cheat]]
+id = "energia-segadora"
+name = "Energia Segadora"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+// Buscamos la dirección exacta: defiance.exe+14931F
+aobscanmodule(HIT_INJECT,defiance.exe,F3 0F 11 89 48 07 00 00 0F B6)
+alloc(newmem,$1000,HIT_INJECT)
+
+label(return)
+label(valor_max)
+
+newmem:
+  // Forzamos que xmm1 (la energía calculada) sea 116.0 antes de guardarla
+  movss xmm1, [valor_max]
+  // Instrucción original que guarda el valor en la memoria
+  movss [rcx+00000748],xmm1
+  jmp return
+
+valor_max:
+  dd (float)116.0
+
+HIT_INJECT:
+  jmp newmem
+  nop 3
+return:
+registersymbol(HIT_INJECT)
+
+[DISABLE]
+HIT_INJECT:
+  // Restauramos los bytes originales
+  db F3 0F 11 89 48 07 00 00 0F B6
+
+unregistersymbol(HIT_INJECT)
+dealloc(newmem)"""

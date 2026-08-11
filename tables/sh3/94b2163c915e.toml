@@ -1,0 +1,5334 @@
+[game]
+name = "Silent Hill 3 PC"
+exe = "sh3.exe"
+notes = "Converted from a Cheat Engine table by Gear2ndGandalf. Source: https://fearlessrevolution.com/viewtopic.php?t=17564"
+verified = []
+author = "Gear2ndGandalf"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "see-through-walls-unknowns-steam006-fix-needed"
+name = "See Through Walls ( unknowns steam006 fix needed )"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "static"
+module = "Silent_Hill_3_PC_Fix.dll"
+offset = "0x2cf78"
+hops = []
+
+[[cheat]]
+id = "ui"
+name = "ui"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-26
+  Author : Gear2
+
+  Fixes all status ui.
+}
+
+[ENABLE]
+
+//---------------------------------------------Fatigue bar fix
+aobscanmodule(fatFix,sh3.exe,B9 24 07 00 00 2B)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  mov ecx,0000077E
+  jmp return
+
+code:
+  //mov ecx,00000724
+  //jmp return
+
+fatFix:
+  jmp newmem
+return:
+registersymbol(fatFix)
+
+//---------------------------------------------Set lineAlpha Opacity
+aobscanmodule(lineAlpha,sh3.exe,89 94 24 90 00 00 00 89 94)
+alloc(newmem2,2048)
+alloc(lineOpac,1)
+
+label(code2)
+label(return2)
+
+lineOpac:
+  db 40
+
+newmem2:
+  mov dl,[lineOpac]
+  mov [esp+00000090],dl
+  jmp return2
+
+code2:
+  //mov [esp+00000090],edx
+  //jmp return2
+
+lineAlpha:
+  jmp newmem2
+  nop 2
+return2:
+registersymbol(lineAlpha)
+registersymbol(lineOpac)
+
+//---------------------------------------------Set bars opacity
+aobscanmodule(barAlpha,sh3.exe,89 44 24 5C 89 44 24 6C)
+alloc(newmem3,2048)
+alloc(barOpac,1)
+
+label(code3)
+label(return3)
+
+barOpac:
+  db 30
+
+newmem3:
+  mov al,[barOpac]
+  mov [esp+5C],al
+  mov [esp+6C],eax
+  jmp return3
+
+code3:
+  //mov [esp+5C],eax
+  //mov [esp+6C],eax
+  //jmp return3
+
+barAlpha:
+  jmp newmem3
+  nop 3
+return3:
+registersymbol(barAlpha)
+registersymbol(barOpac)
+
+//---------------------------------------------Set health opacity
+aobscanmodule(hpAlpha,sh3.exe,89 84 24 8C 00 00 00 89 84)
+alloc(newmem4,2048)
+alloc(hpOpac,1)
+
+label(code4)
+label(return4)
+
+hpOpac:
+  db F
+
+newmem4:
+  mov al,[hpOpac]
+  mov [esp+0000008C],al
+  jmp return4
+
+code4:
+  //mov [esp+0000008C],eax
+  //jmp return4
+
+hpAlpha:
+  jmp newmem4
+  nop 2
+return4:
+registersymbol(hpAlpha)
+registersymbol(hpOpac)
+
+[DISABLE]
+
+fatFix:
+  db B9 24 07 00 00
+
+lineAlpha:
+  db 89 94 24 90 00 00 00
+
+barAlpha:
+  db 89 44 24 5C 89 44 24 6C
+
+hpAlpha:
+  db 89 84 24 8C 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "line-alpha"
+name = "Line Alpha"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "lineOpac"
+hops = []
+
+[[cheat]]
+id = "bar-alpha"
+name = "Bar Alpha"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "barOpac"
+hops = []
+
+[[cheat]]
+id = "hp-alpha"
+name = "HP Alpha"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "hpOpac"
+hops = []
+
+[[cheat]]
+id = "hpregen"
+name = "hpregen"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-06-02
+  Author : Gear2 & ParkourPenguin
+
+  Regen to max hp.
+  When health is at or below 25% of max hp we will use critRegen.
+  Otherwise slowRegen will be used.
+}
+
+[ENABLE]
+
+aobscanmodule(totalHpRegen,sh3.exe,D9 81 74 01 00 00)
+alloc(newmem,2048)
+alloc(critRegen,4)
+alloc(slowRegen,4)
+alloc(timer,4)
+alloc(percentCrit,8)
+
+label(checkDamaged)
+label(checkTimeSinceDamaged)
+label(addHealth)
+label(useCriticalRegen)
+label(decreaseTimer)
+label(code)
+label(return)
+
+critRegen:
+  dd (float)0.005
+
+slowRegen:
+  dd (float)0.0012
+
+timer:
+  dd #1000
+
+percentCrit:
+  dd (float)0.25
+
+newmem:
+  fld dword ptr [00898660]
+  fld dword ptr [00898664]
+  fcomi st,st(1)
+  ja checkDamaged
+  fstp st(0)
+  fstp st(0)
+  jmp code
+
+checkDamaged:
+  cmp byte ptr [0712C663],0
+  je checkTimeSinceDamaged
+  fstp st(0)
+  fstp st(0)
+  mov dword ptr [timer],#1000
+  jmp code
+
+checkTimeSinceDamaged:
+  cmp dword ptr [timer],0
+  jg decreaseTimer
+  fmul dword ptr [percentCrit]
+  fcomip st,st(1)
+  ja useCriticalRegen
+  fld dword ptr [slowRegen]
+
+addHealth:
+  faddp
+  fstp dword ptr [00898660]
+  jmp code
+
+useCriticalRegen:
+  fld dword ptr [critRegen]
+  jmp addHealth
+
+decreaseTimer:
+  fstp st(0)
+  fstp st(0)
+  dec dword ptr[timer]
+
+code:
+  fld dword ptr [ecx+00000174]
+  jmp return
+
+totalHpRegen:
+  jmp newmem
+  nop
+return:
+registersymbol(totalHpRegen)
+registersymbol(critRegen)
+registersymbol(slowRegen)
+registersymbol(timer)
+
+[DISABLE]
+
+totalHpRegen:
+  db D9 81 74 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "critical-health-regeneration"
+name = "Critical Health Regeneration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "critRegen"
+hops = []
+
+[[cheat]]
+id = "normal-health-regeneration"
+name = "Normal Health Regeneration"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "slowRegen"
+hops = []
+
+[[cheat]]
+id = "delayed-when-damaged"
+name = "Delayed When Damaged"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "timer"
+hops = []
+
+[[cheat]]
+id = "ohk"
+name = "ohk"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-03
+  Author : Gear2
+
+  Player can one hit kill enemies.
+}
+
+[ENABLE]
+
+aobscanmodule(oneHitKill,sh3.exe,D8 87 5C 01 00 00 8D)
+alloc(newmem,2048)
+alloc(ohk,4)
+
+label(code)
+label(return)
+
+ohk:
+  dd (float)99999
+
+newmem:
+  fadd dword ptr [ohk]
+  jmp return
+
+code:
+  //fadd dword ptr [edi+0000015C]
+  //jmp return
+
+oneHitKill:
+  jmp newmem
+  nop
+return:
+registersymbol(oneHitKill)
+
+[DISABLE]
+
+oneHitKill:
+  db D8 87 5C 01 00 00
+
+unregistersymbol(oneHitKill)
+dealloc(*)"""
+
+[[cheat]]
+id = "infinite-health"
+name = "infinite health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2024-05-02
+  Author : Gear2
+
+  Swaps incoming damage with player hp limit changed from fsub to fld.
+}
+
+[ENABLE]
+//----------------------------------------------Infinite health
+aobscanmodule(infHP,sh3.exe,D8 A6 5C 01 00 00 52)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  fld dword ptr [esi+184]
+  jmp return
+
+code:
+  //fsub dword ptr [esi+0000015C]
+  //jmp return
+
+infHP:
+  jmp newmem
+  nop
+return:
+registersymbol(infHP)
+
+//-----------------------------------------------No damage
+aobscanmodule(noDmg,sh3.exe,D8 A6 5C 01 00 00 D9)
+alloc(newmem2,2048)
+
+label(code2)
+label(return2)
+
+newmem2:
+  fld dword ptr [esi+184]
+  jmp return2
+
+code2:
+  //fsub dword ptr [esi+0000015C]
+  //jmp return2
+
+noDmg:
+  jmp newmem2
+  nop
+return2:
+registersymbol(noDmg)
+
+[DISABLE]
+
+infHP:
+  db D8 A6 5C 01 00 00
+
+noDmg:
+  db D8 A6 5C 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "noclip"
+name = "noclip"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2024-05-03
+  Author : Gear2
+
+  Player can phase through walls and enemies.
+}
+
+[ENABLE]
+
+//----------------------------------------------------Go through walls and monsters
+aobscanmodule(noClip,sh3.exe,D8 25 E0 EF 68 00 D9 5E 14)
+alloc(newmem,2048)
+alloc(shrinkCollision,4)
+
+label(code)
+label(return)
+
+shrinkCollision:
+  dd (float)100000
+
+newmem:
+  fsub [shrinkCollision]
+  jmp return
+
+code:
+  //fsub dword ptr [sh3.exe+28EFE0]
+  //jmp return
+
+noClip:
+  jmp newmem
+  nop
+return:
+registersymbol(noClip)
+
+//----------------------------------------------------No fall death over ledges
+aobscanmodule(noFallDeath,sh3.exe,0F 8A 14 02 00 00)
+alloc(newmem2,2048)
+
+label(code2)
+label(return2)
+
+newmem2:
+  jmp sh3.exe+CAAF5
+  jmp return2
+
+code2:
+  //jp sh3.exe+CAAF5
+  //jmp return2
+
+noFallDeath:
+  jmp newmem2
+  nop
+return2:
+registersymbol(noFallDeath)
+
+//--------------------------------------No lower altitude in fall death areas
+aobscanmodule(fallFix,sh3.exe,7B 40 D9 01 D8 5C 24 08)
+alloc(newmem3,2048)
+alloc(fallFlag,1)
+
+label(lockAltitude)
+label(code3)
+label(return3)
+
+fallFlag:
+  db 0
+
+newmem3:
+  cmp [fallFlag],0
+  je code3
+
+lockAltitude:
+  jmp sh3.exe+C9211
+  fld dword ptr [ecx]
+  fcomp dword ptr [esp+08]
+  jmp return3
+
+code3:
+  jnp sh3.exe+C9211
+  fld dword ptr [ecx]
+  fcomp dword ptr [esp+08]
+  jmp return3
+
+fallFix:
+  jmp newmem3
+  nop 3
+return3:
+registersymbol(fallFix)
+registersymbol(fallFlag)
+
+//----------------------------------------------Edit player Z coordinates
+aobscanmodule(zEditor,sh3.exe,C3 90 90 90 90 90 A1 00 C1 12 07 8B 10 8B 4C 24 04 89 11 8B 50 04 89 51 04)
+alloc(newmem4,2048)
+alloc(newZ,4)
+
+label(code4)
+label(return4)
+
+newZ:
+  dd (float)0
+
+newmem4:
+  cmp [fallFlag],0
+  je code4
+  push ebx
+  mov ebx,[newZ]
+  mov [eax+04],ebx
+  mov edx,[eax+04]
+  mov [ecx+04],edx
+  pop ebx
+  jmp return4
+
+code4:
+  mov edx,[eax+04]
+  mov [ecx+04],edx
+  jmp return4
+
+zEditor+13:
+  jmp newmem4
+  nop
+return4:
+registersymbol(zEditor)
+registersymbol(newZ)
+
+[DISABLE]
+
+noClip:
+  db D8 25 E0 EF 68 00
+
+noFallDeath:
+  db 0F 8A 14 02 00 00
+
+fallFix:
+  db 7B 40 D9 01 D8 5C 24 08
+
+zEditor+13:
+  db 8B 50 04 89 51 04
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "zfreeze"
+name = "zfreeze"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:On",
+    "0:Off",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "fallFlag"
+hops = []
+
+[[cheat]]
+id = "zcoordinates"
+name = "zcoordinates"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "newZ"
+hops = []
+
+[[cheat]]
+id = "untouchable"
+name = "untouchable"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2024-05-05
+  Author : Gear2
+
+  Player may not be hit by enemies.
+}
+
+[ENABLE]
+
+aobscanmodule(playerHit,sh3.exe,B8 01 00 00 00 C3 90 90 90 90 90 8A)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  mov eax,00000000
+  jmp return
+
+code:
+  //mov eax,00000001
+  //jmp return
+
+playerHit:
+  jmp newmem
+return:
+registersymbol(playerHit)
+
+[DISABLE]
+
+playerHit:
+  db B8 01 00 00 00
+
+unregistersymbol(playerHit)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "wallhack"
+name = "wallhack"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-26
+  Author : Unknowns $ Gear2
+
+  Unknowns see through walls hack.
+  Must have Steam006 fix installed.
+}
+
+[ENABLE]
+
+aobscanmodule(wallHack,Silent_Hill_3_PC_Fix.dll,83 3D 78 CF EF 73 01)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  cmp dword ptr [Silent_Hill_3_PC_Fix.dll+2CF78],00
+  jmp return
+
+code:
+  //cmp dword ptr [Silent_Hill_3_PC_Fix.dll+2CF78],01
+  //jmp return
+
+wallHack:
+  jmp newmem
+  nop 2
+return:
+registersymbol(wallHack)
+
+[DISABLE]
+
+wallHack:
+  db 83 3D 78 CF EF 73 01
+
+unregistersymbol(wallHack)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "movement"
+name = "movement"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2024-05-02
+  Author : Gear2
+
+  Change player traversal speed.
+}
+
+[ENABLE]
+
+//-----------------------------------------------Player travel speed
+aobscanmodule(playerSpeed,sh3.exe,D9 1D 08 C1 12 07)
+alloc(newmem,2048)
+alloc(travelSpeed,4)
+
+label(tooLow)
+label(tooHigh)
+label(code)
+label(return)
+
+travelSpeed:
+  dd (float)0.04
+
+newmem:
+  cmp [travelSpeed],(float)0.02
+  jl tooLow
+  cmp [travelSpeed],(float)0.2
+  jg tooHigh
+  push ecx
+  mov ecx,[travelSpeed]
+  //fst dword ptr [sh3.exe+6D2C108]
+  //fld [travelSpeed]
+  fstp dword ptr [sh3.exe+6D2C108]
+  mov [sh3.exe+6D2C108],ecx
+  pop ecx
+  jmp return
+
+tooLow:
+  mov [travelSpeed],(float)0.02
+  jmp return
+
+tooHigh:
+  mov [travelSpeed],(float)0.2
+  jmp return
+
+code:
+  //fstp dword ptr [sh3.exe+6D2C108]
+  //jmp return
+
+playerSpeed:
+  jmp newmem
+  nop
+return:
+registersymbol(playerSpeed)
+registersymbol(travelSpeed)
+
+//-----------------------------------------------Camera keeps pace with player
+aobscanmodule(quickCam,sh3.exe,D9 1D 08 FC 11 07)
+alloc(newmem2,2048)
+alloc(chaseFlag,1)
+alloc(chaseMod,4)
+
+label(code2)
+label(return2)
+
+chaseFlag:
+  db 1
+
+chaseMod:
+  dd (float)3150000
+
+newmem2:
+  cmp [chaseFlag],0
+  je code2
+  fst dword ptr [sh3.exe+6D1FC08]
+  fld [chaseMod]
+  fstp dword ptr [sh3.exe+6D1FC08]
+  jmp return2
+
+code2:
+  fstp dword ptr [sh3.exe+6D1FC08]
+  jmp return2
+
+quickCam:
+  jmp newmem2
+  nop
+return2:
+registersymbol(quickCam)
+registersymbol(chaseFlag)
+
+[DISABLE]
+
+playerSpeed:
+  db D9 1D 08 C1 12 07
+
+quickCam:
+  db D9 1D 08 FC 11 07
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "decreasemovespeed"
+name = "decreasemovespeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "travelSpeed"
+hops = []
+
+[[cheat]]
+id = "fast-chase-cam"
+name = "Fast Chase Cam"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:On",
+    "0:Off",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "chaseFlag"
+hops = []
+
+[[cheat]]
+id = "autoslide"
+name = "autoslide"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2024-05-08
+  Author : Gear2
+
+  Player will slide forward.
+}
+
+[ENABLE]
+
+aobscanmodule(autoSlide,sh3.exe,D8 86 24 01 00 00 83)
+alloc(newmem,2048)
+alloc(slide,4)
+
+label(tooLow)
+label(tooHigh)
+label(code)
+label(return)
+
+slide:
+  dd (float)0.5
+
+newmem:
+  cmp [slide],(float)0.5
+  jl tooLow
+  cmp [slide],(float)3.5
+  jg tooHigh
+  push ecx
+  mov ecx,[slide]
+  fadd dword ptr [esi+00000124]
+  mov [esi+0000011C],ecx
+  pop ecx
+  jmp return
+
+tooLow:
+  mov [slide],(float)0.5
+  jmp return
+
+tooHigh:
+  mov [slide],(float)3.5
+  jmp return
+
+code:
+  //fadd dword ptr [esi+00000124]
+  //jmp return
+
+autoSlide:
+  jmp newmem
+  nop
+return:
+registersymbol(autoSlide)
+registersymbol(slide)
+
+[DISABLE]
+
+autoSlide:
+  db D8 86 24 01 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "decreaseslide"
+name = "decreaseslide"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "slide"
+hops = []
+
+[[cheat]]
+id = "customcoordinates"
+name = "customcoordinates"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-19
+  Author : Gear2
+
+  Move coordinates on X and Y axis.
+}
+
+[ENABLE]
+
+aobscanmodule(playerX,sh3.exe,D9 18 D9 41 04 D8 40)
+alloc(newmem,2048)
+alloc(trigFlag2,4)
+alloc(plrX,4)
+alloc(plrY,4)
+
+label(customX)
+label(code)
+label(return)
+
+trigFlag2:
+  db 0
+
+newmem:
+  cmp [trigFlag2],0
+  jne customX
+  push edx
+  mov edx,[eax]
+  mov [plrX],edx
+  pop edx
+  fstp dword ptr [eax]
+  fld dword ptr [ecx+04]
+  jmp return
+
+customX:
+  push edx
+  mov edx,[plrX]
+  fstp dword ptr [eax]
+  mov dword ptr [eax],edx
+  pop edx
+  fld dword ptr [ecx+04]
+  jmp return
+
+code:
+  //fstp dword ptr [eax]
+  //fld dword ptr [ecx+04]
+  //jmp return
+
+playerX:
+  jmp newmem
+return:
+registersymbol(trigFlag2)
+registersymbol(playerX)
+registersymbol(plrX)
+
+aobscanmodule(playerY,sh3.exe,D9 58 08 C3 90 90 90 90 90 90 90 90 8B)
+alloc(newmem2,2048)
+
+label(customY)
+label(code2)
+label(return2)
+
+newmem2:
+  cmp [trigFlag2],0
+  jne customY
+  push ebx
+  mov ebx,[eax+08]
+  mov [plrY],ebx
+  pop ebx
+  fstp dword ptr [eax+08]
+  ret
+  nop
+
+customY:
+  push ebx
+  mov ebx,[plrY]
+  fstp dword ptr [eax+08]
+  mov dword ptr [eax+08],ebx
+  pop ebx
+  ret
+  nop
+  jmp return2
+
+code2:
+  //fstp dword ptr [eax+08]
+  //ret
+  //nop
+  //jmp return2
+
+playerY:
+  jmp newmem2
+return2:
+registersymbol(playerY)
+registersymbol(plrY)
+
+[DISABLE]
+
+playerX:
+  db D9 18 D9 41 04
+
+playerY:
+  db D9 58 08 C3 90
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "custom-coordinates"
+name = "Custom Coordinates"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Yes",
+    "0:No",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "trigFlag2"
+hops = []
+
+[[cheat]]
+id = "plusx"
+name = "plusx"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "plrX"
+hops = []
+
+[[cheat]]
+id = "plusy"
+name = "plusy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "plrY"
+hops = []
+
+[[cheat]]
+id = "attackspeed"
+name = "attackspeed"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2024-05-05
+  Author : Gear2 ( helped by parkour penguin )
+
+  Change player attack animation speed.
+
+  Note: Upper speeds are too quick for melee
+  swing/jab animations and will missenemies
+  on contact.
+}
+
+[ENABLE]
+
+//--------------------------------------------------------Attack speed
+aobscanmodule(actionAnimation,sh3.exe,66 89 91 D4 01 00 00)
+alloc(newmem,2048)
+alloc(aaSpeed,4)
+
+label(tooLow)
+label(tooHigh)
+label(code)
+label(return)
+
+aaSpeed:
+  dd #1000
+
+newmem:
+  cmp dword ptr [aaSpeed],#1000
+  jb tooLow
+  cmp dword ptr [aaSpeed],#32000
+  ja tooHigh
+  mov dx,[aaSpeed]
+  mov [ecx+000001D4],dx
+  jmp return
+
+tooLow:
+  mov dword ptr [aaSpeed],#1000
+  jmp return
+
+tooHigh:
+  mov dword ptr [aaSpeed],#32000
+  jmp return
+
+code:
+  //mov [ecx+000001D4],dx
+  //jmp return
+
+actionAnimation:
+  jmp newmem
+  nop 2
+return:
+registersymbol(actionAnimation)
+registersymbol(aaSpeed)
+
+//--------------------------------------------------------Freeze fix
+aobscanmodule(staggerSkip,sh3.exe,0F B6 05 89 C1 12 07 81)
+alloc(newmem2,2048)
+alloc(skipFlag,1)
+
+label(skip)
+label(code2)
+label(return2)
+
+skipFlag:
+  db 1
+
+newmem2:
+  cmp [skipFlag],0
+  je code2
+
+skip:
+  cmp [sh3.exe+6D2C189],1
+  je code2
+  mov [sh3.exe+6D2C189],0
+  movzx eax,byte ptr [sh3.exe+6D2C189]
+  jmp return2
+
+code2:
+  mov [sh3.exe+6D2C189],1
+  movzx eax,byte ptr [sh3.exe+6D2C189]
+  jmp return2
+
+staggerSkip:
+  jmp newmem2
+  nop 2
+return2:
+registersymbol(staggerSkip)
+registersymbol(skipFlag)
+
+//--------------------------------------------------------Fall freeze fix
+aobscanmodule(fallSkip,sh3.exe,80 F9 02 0F 94 C0 C3 90 8A)
+alloc(newmem3,2048)
+
+label(skip2)
+label(code3)
+label(return3)
+
+newmem3:
+  cmp [skipFlag],0
+  je code3
+
+skip2:
+  cmp cl,FF
+  sete al
+  jmp return3
+
+code3:
+  cmp cl,02
+  sete al
+  jmp return3
+
+fallSkip:
+  jmp newmem3
+  nop
+return3:
+registersymbol(fallSkip)
+
+[DISABLE]
+
+actionAnimation:
+  db 66 89 91 D4 01 00 00
+
+staggerSkip:
+  db 0F B6 05 89 C1 12 07
+
+fallSkip:
+  db 80 F9 02 0F 94 C0
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "animation-fixes"
+name = "Animation Fixes"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:On",
+    "0:Off",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "skipFlag"
+hops = []
+
+[[cheat]]
+id = "decreaseattackspeed"
+name = "decreaseattackspeed"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+value = 1000
+choices = [
+    "1000:( melee )",
+    "2000:( melee )",
+    "4000:( melee )",
+    "8000:( melee )",
+    "16000:( rapid fire )",
+    "32000:( rapid fire )",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "aaSpeed"
+hops = []
+
+[[cheat]]
+id = "no-wall-slams"
+name = "No Wall Slams"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:On",
+    "0:Off",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "slamFlag"
+hops = []
+
+[[cheat]]
+id = "quick-grab-recovery"
+name = "Quick Grab Recovery"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:On",
+    "0:Off",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "grabbedFlag"
+hops = []
+
+[[cheat]]
+id = "quick-knock-down-recovery"
+name = "Quick Knock Down Recovery"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:On",
+    "0:Off",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "knockDownFlag"
+hops = []
+
+[[cheat]]
+id = "fatigue-meter"
+name = "Fatigue Meter"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-05
+  Author : Gear2
+
+  Change player fatigue.
+}
+
+[ENABLE]
+
+aobscanmodule(fatigue,sh3.exe,7A 0B C7 05 20 C6 12 07 00 00 00 00 C3 D9 05 20 C6 12 07 D8 1D 24 C6 12 07 DF E0 F6 C4 41 75 0C 8B 0D 24 C6 12 07 89 0D 20 C6 12 07 C3 8B FF)
+alloc(newmem,2048)
+alloc(fMeter,4)
+
+label(code)
+label(return)
+
+fMeter:
+  dd (float)0
+
+newmem:
+  push ecx
+  mov ecx,[fMeter]
+  mov [sh3.exe+6D2C620],ecx
+  pop ecx
+  jmp return
+
+code:
+  //jp sh3.exe+B40CA
+  //mov [sh3.exe+6D2C620],00000000
+  //jmp return
+
+fatigue:
+  jmp newmem
+  nop 7
+return:
+registersymbol(fatigue)
+registersymbol(fMeter)
+
+[DISABLE]
+
+fatigue:
+  db 7A 0B C7 05 20 C6 12 07 00 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "freeze-meter"
+name = "Freeze Meter"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 0
+choices = [
+    "0:Zero",
+    "1401:High",
+    "2000:Full",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMeter"
+hops = []
+
+[[cheat]]
+id = "idle-crouch-unarmed"
+name = "Idle Crouch ( unarmed )"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-13
+  Author : Gear2
+
+  Force crouch animation
+}
+
+[ENABLE]
+
+aobscanmodule(crouch,sh3.exe,C3 90 90 90 90 D9 05 04 C6 12 07)
+alloc(newmem,2048)
+//alloc(cMultiply,4)
+alloc(cValue,4)
+
+//label(tooHigh)
+label(code)
+label(return)
+
+//cMultiply:
+  //dd (float)10
+
+cValue:
+  dd (float)600
+
+newmem:
+  //cmp [sh3.exe+6D2C604],(float)1200
+  //jg tooHigh
+  fld dword ptr [cValue]
+  //fadd dword ptr [cMultiply]
+  fst dword ptr [sh3.exe+6D2C604]
+  jmp return
+
+//tooHigh:
+  //mov dword ptr [sh3.exe+6D2C604],(float)0
+  //jmp return
+
+code:
+  //fld dword ptr [sh3.exe+6D2C604]
+  //jmp return
+
+crouch+5:
+  jmp newmem
+  nop
+return:
+registersymbol(crouch)
+
+aobscanmodule(crouch2,sh3.exe,D8 05 08 C1 12 07 * * * * * * D8 1D 5C 00 69 00)
+alloc(newmem2,2048)
+
+label(code2)
+label(return2)
+
+newmem2:
+  fadd dword ptr [sh3.exe+6D2C108]
+  jmp return2
+
+code2:
+  //fadd dword ptr [sh3.exe+6D2C108]
+  //jmp return2
+
+crouch2:
+  jmp newmem2
+  nop
+return2:
+registersymbol(crouch2)
+
+aobscanmodule(crouch3,sh3.exe,D9 15 04 C6 12 07)
+alloc(newmem3,2048)
+
+label(code3)
+label(return3)
+
+newmem3:
+  fst dword ptr [sh3.exe+6D2C604]
+  jmp return3
+
+code3:
+  //fst dword ptr [sh3.exe+6D2C604]
+  //jmp return3
+
+crouch3:
+  jmp newmem3
+  nop
+return3:
+registersymbol(crouch3)
+
+[DISABLE]
+
+crouch+5:
+  db D9 05 04 C6 12 07
+
+crouch2:
+  db D8 05 08 C1 12 07
+
+crouch3:
+  db D9 15 04 C6 12 07
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "heather-hair-alt-green"
+name = "Heather Hair Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c5204"
+hops = []
+
+[[cheat]]
+id = "heather-hair-alt-green-2"
+name = "Heather Hair Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8cbd84"
+hops = []
+
+[[cheat]]
+id = "heather-hair-alt-green-3"
+name = "Heather Hair Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c21a4"
+hops = []
+
+[[cheat]]
+id = "heather-hair-alt-green-4"
+name = "Heather Hair Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c71f4"
+hops = []
+
+[[cheat]]
+id = "heather-hair-alt-blue"
+name = "Heather Hair Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c5208"
+hops = []
+
+[[cheat]]
+id = "heather-hair-alt-blue-2"
+name = "Heather Hair Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8cbd88"
+hops = []
+
+[[cheat]]
+id = "heather-hair-alt-blue-3"
+name = "Heather Hair Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c21a8"
+hops = []
+
+[[cheat]]
+id = "heather-hair-alt-blue-4"
+name = "Heather Hair Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c71f8"
+hops = []
+
+[[cheat]]
+id = "heather-face-alt-green"
+name = "Heather Face Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x832b04"
+hops = []
+
+[[cheat]]
+id = "heather-face-alt-blue"
+name = "Heather Face Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x832b08"
+hops = []
+
+[[cheat]]
+id = "heather-neck-alt-green"
+name = "Heather Neck Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8aa5f4"
+hops = []
+
+[[cheat]]
+id = "heather-arms-green"
+name = "Heather Arms Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82e574"
+hops = []
+
+[[cheat]]
+id = "heather-arms-green-2"
+name = "Heather Arms Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8300e4"
+hops = []
+
+[[cheat]]
+id = "heather-arms-green-3"
+name = "Heather Arms Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82b674"
+hops = []
+
+[[cheat]]
+id = "heather-arms-blue"
+name = "Heather Arms Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82e578"
+hops = []
+
+[[cheat]]
+id = "heather-arms-blue-2"
+name = "Heather Arms Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8300e8"
+hops = []
+
+[[cheat]]
+id = "heather-arms-blue-3"
+name = "Heather Arms Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82b678"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x899c24"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-2"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x854454"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-3"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x856744"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-4"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x857844"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-5"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8589d4"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-6"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85abc4"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-7"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85cea4"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-8"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85df64"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-9"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85f0f4"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-green-10"
+name = "Heather Hands Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x860244"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x899c28"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-2"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x854458"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-3"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x856748"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-4"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x857848"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-5"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8589d8"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-6"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85abc8"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-7"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85cea8"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-8"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85df68"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-9"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x85f0f8"
+hops = []
+
+[[cheat]]
+id = "heather-hands-alt-blue-10"
+name = "Heather Hands Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x860248"
+hops = []
+
+[[cheat]]
+id = "heather-sleeves-green"
+name = "Heather Sleeves Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x853764"
+hops = []
+
+[[cheat]]
+id = "heather-colar-green"
+name = "Heather Colar Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x825924"
+hops = []
+
+[[cheat]]
+id = "heather-sleeves-blue"
+name = "Heather Sleeves Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x853768"
+hops = []
+
+[[cheat]]
+id = "heather-colar-blue"
+name = "Heather Colar Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x825928"
+hops = []
+
+[[cheat]]
+id = "heather-skirt-alt-green"
+name = "Heather Skirt Alt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b0124"
+hops = []
+
+[[cheat]]
+id = "heather-skirt-alt-blue"
+name = "Heather Skirt Alt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b0128"
+hops = []
+
+[[cheat]]
+id = "torch-source-green"
+name = "Torch Source Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b97b4"
+hops = []
+
+[[cheat]]
+id = "torch-source-blue"
+name = "Torch Source Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b97b8"
+hops = []
+
+[[cheat]]
+id = "princess-hair-green-2"
+name = "Princess Hair Green 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c1f34"
+hops = []
+
+[[cheat]]
+id = "princess-hair-green-3"
+name = "Princess Hair Green 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c83d4"
+hops = []
+
+[[cheat]]
+id = "princess-hair-blue-2"
+name = "Princess Hair Blue 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c1f38"
+hops = []
+
+[[cheat]]
+id = "princess-hair-blue-3"
+name = "Princess Hair Blue 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8c83d8"
+hops = []
+
+[[cheat]]
+id = "princess-eye-green"
+name = "Princess Eye Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8adc44"
+hops = []
+
+[[cheat]]
+id = "princess-eye-blue"
+name = "Princess Eye Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8adc48"
+hops = []
+
+[[cheat]]
+id = "princess-face-green"
+name = "Princess Face Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x83f534"
+hops = []
+
+[[cheat]]
+id = "princess-face-blue"
+name = "Princess Face Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x83f538"
+hops = []
+
+[[cheat]]
+id = "princess-neck-green"
+name = "Princess Neck Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8aa8b4"
+hops = []
+
+[[cheat]]
+id = "princess-neck-blue"
+name = "Princess Neck Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8aa8b8"
+hops = []
+
+[[cheat]]
+id = "princess-arms-green"
+name = "Princess Arms Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82a264"
+hops = []
+
+[[cheat]]
+id = "princess-arms-blue"
+name = "Princess Arms Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82a268"
+hops = []
+
+[[cheat]]
+id = "princess-right-hand-green"
+name = "Princess Right Hand Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8996f4"
+hops = []
+
+[[cheat]]
+id = "princess-right-hand-blue"
+name = "Princess Right Hand Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8996f8"
+hops = []
+
+[[cheat]]
+id = "princess-legs-green"
+name = "Princess Legs Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x825544"
+hops = []
+
+[[cheat]]
+id = "princess-legs-blue"
+name = "Princess Legs Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x825548"
+hops = []
+
+[[cheat]]
+id = "princess-chest-green"
+name = "Princess Chest Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x829194"
+hops = []
+
+[[cheat]]
+id = "princess-chest-blue"
+name = "Princess Chest Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x829198"
+hops = []
+
+[[cheat]]
+id = "princess-band-green"
+name = "Princess Band Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82e564"
+hops = []
+
+[[cheat]]
+id = "princess-band-blue"
+name = "Princess Band Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x82e568"
+hops = []
+
+[[cheat]]
+id = "princess-boot-detail-green"
+name = "Princess Boot Detail Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x847d14"
+hops = []
+
+[[cheat]]
+id = "princess-boot-detail-blue"
+name = "Princess Boot Detail Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x847d18"
+hops = []
+
+[[cheat]]
+id = "princess-cuff-green"
+name = "Princess Cuff Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x84c904"
+hops = []
+
+[[cheat]]
+id = "princess-cuff-blue"
+name = "Princess Cuff Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x84c908"
+hops = []
+
+[[cheat]]
+id = "princess-accessory-green"
+name = "Princess Accessory Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x84e064"
+hops = []
+
+[[cheat]]
+id = "princess-accessory-blue"
+name = "Princess Accessory Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x84e068"
+hops = []
+
+[[cheat]]
+id = "princess-antenna-green"
+name = "Princess Antenna Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8523e4"
+hops = []
+
+[[cheat]]
+id = "princess-antenna-blue"
+name = "Princess Antenna Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8523e8"
+hops = []
+
+[[cheat]]
+id = "princess-heart-green"
+name = "Princess Heart Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8530b4"
+hops = []
+
+[[cheat]]
+id = "princess-heart-blue"
+name = "Princess Heart Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8530b8"
+hops = []
+
+[[cheat]]
+id = "princess-colar-green"
+name = "Princess Colar Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8a8464"
+hops = []
+
+[[cheat]]
+id = "princess-colar-blue"
+name = "Princess Colar Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8a8468"
+hops = []
+
+[[cheat]]
+id = "princess-head-band-green"
+name = "Princess Head Band Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8ae374"
+hops = []
+
+[[cheat]]
+id = "princess-head-band-blue"
+name = "Princess Head Band Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8ae378"
+hops = []
+
+[[cheat]]
+id = "princess-dress-green-2"
+name = "Princess Dress Green 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b2794"
+hops = []
+
+[[cheat]]
+id = "princess-dress-blue-2"
+name = "Princess Dress Blue 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b2798"
+hops = []
+
+[[cheat]]
+id = "princess-belt-green"
+name = "Princess Belt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b5014"
+hops = []
+
+[[cheat]]
+id = "princess-belt-blue"
+name = "Princess Belt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x8b5018"
+hops = []
+
+[[cheat]]
+id = "beam-saber-green"
+name = "Beam Saber Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0xeb6284"
+hops = []
+
+[[cheat]]
+id = "beam-saber-blue"
+name = "Beam Saber Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0xeb6288"
+hops = []
+
+[[cheat]]
+id = "saber-hilt-green"
+name = "Saber Hilt Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0xeb6844"
+hops = []
+
+[[cheat]]
+id = "saber-hilt-blue"
+name = "Saber Hilt Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0xeb6848"
+hops = []
+
+[[cheat]]
+id = "everything-s-colours-may-crash"
+name = "Everything's Colours ( may crash )"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-25
+  Author : Gear2
+
+  Change world coloring.
+  All Character related colors run through too.
+}
+
+[ENABLE]
+//------------------------------------------------Red
+assert("msvcrt.dll"+88E30,8B 44 8E F0 89 44 8F F0)
+define(overRed,"msvcrt.dll"+88E30)
+alloc(newmem,2048)
+alloc(redValue,4)
+
+label(code)
+label(return)
+
+redValue:
+  dd (float)0.7
+
+newmem:
+  cmp [esi+154],0
+  je code
+  mov eax,[redValue]
+  mov [edi+ecx*4-10],eax
+  jmp return
+
+code:
+  mov eax,[esi+ecx*4-10]
+  mov [edi+ecx*4-10],eax
+  jmp return
+
+overRed:
+  jmp newmem
+  nop 3
+return:
+registersymbol(overRed)
+registersymbol(redValue)
+
+//------------------------------------------------Green
+assert("msvcrt.dll"+88E38,8B 44 8E F4 89 44 8F F4)
+define(overGreen,"msvcrt.dll"+88E38)
+alloc(newmem2,2048)
+alloc(greenValue,4)
+
+label(code2)
+label(return2)
+
+greenValue:
+  dd (float)0.8
+
+newmem2:
+  cmp [esi+154],0
+  je code2
+  mov eax,[greenValue]
+  mov [edi+ecx*4-0C],eax
+  jmp return2
+
+code2:
+  mov eax,[esi+ecx*4-0C]
+  mov [edi+ecx*4-0C],eax
+  jmp return2
+
+overGreen:
+  jmp newmem2
+  nop 3
+return2:
+registersymbol(overGreen)
+registersymbol(greenValue)
+
+//------------------------------------------------Blue
+assert("msvcrt.dll"+88E40,8B 44 8E F8 89 44 8F F8)
+define(overBlue,"msvcrt.dll"+88E40)
+alloc(newmem3,2048)
+alloc(blueValue,4)
+
+label(code3)
+label(return3)
+
+blueValue:
+  dd (float)1
+
+newmem3:
+  cmp [esi+154],0
+  je code3
+  mov eax,[blueValue]
+  mov [edi+ecx*4-08],eax
+  jmp return3
+
+code3:
+  mov eax,[esi+ecx*4-08]
+  mov [edi+ecx*4-08],eax
+  jmp return3
+
+overBlue:
+  jmp newmem3
+  nop 3
+return3:
+registersymbol(overBlue)
+registersymbol(blueValue)
+
+[DISABLE]
+
+overRed:
+  db 8B 44 8E F0 89 44 8F F0
+
+overGreen:
+  db 8B 44 8E F4 89 44 8F F4
+
+overBlue:
+  db 8B 44 8E F8 89 44 8F F8
+
+dealloc(*)
+unregistersymbol(*)"""
+
+[[cheat]]
+id = "red"
+name = "Red"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "redValue"
+hops = []
+
+[[cheat]]
+id = "green"
+name = "Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "greenValue"
+hops = []
+
+[[cheat]]
+id = "blue"
+name = "Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "blueValue"
+hops = []
+
+[[cheat]]
+id = "reveal-map-sketches"
+name = "Reveal Map Sketches"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-10
+  Author : Gear2
+
+  Auto complete
+}
+
+[ENABLE]
+
+aobscanmodule(mapCompletion,sh3.exe,8B 14 95 60 D0 15 07 83 E1 1F D3 EA F6 C2 01 74 09 66)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  mov edx,FFFFFFFF
+  jmp return
+
+code:
+  //mov edx,[edx*4+sh3.exe+6D5D060]
+  //jmp return
+
+mapCompletion:
+  jmp newmem
+  nop 2
+return:
+registersymbol(mapCompletion)
+
+[DISABLE]
+
+mapCompletion:
+  db 8B 14 95 60 D0 15 07
+
+unregistersymbol(mapCompletion)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-supplies-ammo"
+name = "infinite supplies & ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-06
+  Author : Gear2
+
+  Max out all supplies and ammo when consuming them.
+}
+
+[ENABLE]
+
+//-----------------------------------------------------Max supplies on usage
+aobscanmodule(maxConsumables,sh3.exe,66 FF 0C 4D 8E CA 12 07)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  mov word ptr [ecx*2+sh3.exe+6D2CA8E],#65535
+  jmp return
+
+code:
+  //dec word ptr [ecx*2+sh3.exe+6D2CA8E]
+  //jmp return
+
+maxConsumables:
+  jmp newmem
+  nop 3
+return:
+registersymbol(maxConsumables)
+
+//-----------------------------------------------------Max supplies on usage 2
+aobscanmodule(supplies,sh3.exe,66 29 34 45 8E CA 12 07)
+alloc(newmem2,2048)
+
+label(code2)
+label(return2)
+
+newmem2:
+  mov si,#65535
+  mov [eax*2+sh3.exe+6D2CA8E],si
+  jmp return2
+
+code2:
+  //sub [eax*2+sh3.exe+6D2CA8E],si
+  //jmp return2
+
+supplies:
+  jmp newmem2
+  nop 3
+return2:
+registersymbol(supplies)
+
+//-----------------------------------------------------Max ammo on reload
+aobscanmodule(loadGuns,sh3.exe,66 89 34 4D 8E CA 12 07)
+alloc(newmem3,2048)
+
+label(code3)
+label(return3)
+
+newmem3:
+  mov si,#65535
+  mov [ecx*2+sh3.exe+6D2CA8E],si
+  jmp return3
+
+code3:
+  //mov [ecx*2+sh3.exe+6D2CA8E],si
+  //jmp return3
+
+loadGuns:
+  jmp newmem3
+  nop 3
+return3:
+registersymbol(loadGuns)
+
+//-----------------------------------------------------Max supplies on pick up
+
+aobscanmodule(maxObtained,sh3.exe,66 89 04 5D A0 CA 12 07)
+alloc(newmem4,2048)
+
+label(code4)
+label(return4)
+
+newmem4:
+  mov ax,#65535
+  mov [ebx*2+sh3.exe+6D2CAA0],ax
+  jmp return4
+
+code4:
+  //mov [ebx*2+sh3.exe+6D2CAA0],ax
+  //jmp return4
+
+maxObtained:
+  jmp newmem4
+  nop 3
+return4:
+registersymbol(maxObtained)
+
+[DISABLE]
+
+maxConsumables:
+  db 66 FF 0C 4D 8E CA 12 07
+
+supplies:
+  db 66 29 34 45 8E CA 12 07
+
+loadGuns:
+  db 66 89 34 4D 8E CA 12 07
+
+maxObtained:
+  db 66 89 04 5D A0 CA 12 07
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "supersaber"
+name = "supersaber"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-09
+  Author : Gear2
+
+  Saber beam length
+}
+
+[ENABLE]
+//----------------------------------------------------Beam distance
+aobscanmodule(beamReach,sh3.exe,89 15 2C C6 12 07)
+alloc(newmem,2048)
+alloc(beamMod,4)
+
+label(code)
+label(return)
+
+beamMod:
+  dd (float)1.5
+
+newmem:
+  mov edx,[beamMod]
+  mov [sh3.exe+6D2C62C],edx
+  jmp return
+
+code:
+  //mov [sh3.exe+6D2C62C],edx
+  //jmp return
+
+beamReach:
+  jmp newmem
+  nop
+return:
+registersymbol(beamReach)
+registersymbol(beamMod)
+
+//----------------------------------------------------Beam animation fix
+aobscanmodule(beamCorrection,sh3.exe,D8 1D 30 C6 12 07)
+alloc(newmem2,2048)
+
+label(code2)
+label(return2)
+
+newmem2:
+  push ecx
+  mov ecx,[beamMod]
+  mov [sh3.exe+6D2C630],ecx
+  fcomp dword ptr [sh3.exe+6D2C630]
+  pop ecx
+  jmp return2
+
+code2:
+  //fcomp dword ptr [sh3.exe+6D2C630]
+  //jmp return2
+
+beamCorrection:
+  jmp newmem2
+  nop
+return2:
+registersymbol(beamCorrection)
+
+//----------------------------------------------------Beam extension rate
+aobscanmodule(beamExtensionRate,sh3.exe,D8 0D 1C 0C 69 00 D8 05 * * * * D9)
+alloc(newmem3,2048)
+alloc(eRateMod,4)
+
+label(code3)
+label(return3)
+
+eRateMod:
+  dd (float)2
+
+newmem3:
+  fmul [eRateMod]
+  jmp return3
+
+code3:
+  //fmul dword ptr [sh3.exe+290C1C]
+  //jmp return3
+
+beamExtensionRate:
+  jmp newmem3
+  nop
+return3:
+registersymbol(beamExtensionRate)
+registersymbol(eRateMod)
+
+//----------------------------------------------------Beam retraction rate
+aobscanmodule(beamRetractionRate,sh3.exe,D8 0D E0 00 69 00 D8 2D)
+alloc(newmem4,2048)
+alloc(rRateMod,4)
+
+label(code4)
+label(return4)
+
+rRateMod:
+  dd (float)0
+
+newmem4:
+  fmul [rRateMod]
+  jmp return4
+
+code4:
+  //fmul dword ptr [sh3.exe+2900E0]
+  //jmp return4
+
+beamRetractionRate:
+  jmp newmem4
+  nop
+return4:
+registersymbol(beamRetractionRate)
+registersymbol(rRateMod)
+
+[DISABLE]
+
+beamReach:
+  db 89 15 2C C6 12 07
+
+beamCorrection:
+  db D8 1D 30 C6 12 07
+
+beamExtensionRate:
+  db D8 0D 1C 0C 69 00
+
+beamRetractionRate:
+  db D8 0D E0 00 69 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "beam-length"
+name = "Beam Length"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "beamMod"
+hops = []
+
+[[cheat]]
+id = "extend-speed"
+name = "Extend Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "eRateMod"
+hops = []
+
+[[cheat]]
+id = "retract-speed"
+name = "Retract Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "rRateMod"
+hops = []
+
+[[cheat]]
+id = "alphaeffects"
+name = "alphaeffects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "colourE"
+hops = []
+
+[[cheat]]
+id = "redeffects"
+name = "redeffects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "colourE"
+hops = []
+
+[[cheat]]
+id = "greeneffects"
+name = "greeneffects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "colourE"
+hops = []
+
+[[cheat]]
+id = "blueeffects"
+name = "blueeffects"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "colourE"
+hops = []
+
+[[cheat]]
+id = "shotgun-mechanics"
+name = "Shotgun Mechanics"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2022-08-02
+  Author : Gear2
+
+  Change the spread of shotgun fire.
+}
+
+[ENABLE]
+
+//-----------------------------------------------------Shotgun bullet spread
+aobscanmodule(shotgunSpread,sh3.exe,D9 5D F8 57 E8 13 56 15 00)
+alloc(newmem,2048)
+alloc(spreadMod,4)
+
+label(tooLow)
+label(tooHigh)
+label(code)
+label(return)
+
+spreadMod:
+  dd (float)3
+
+newmem:
+  cmp [spreadMod],(float)0
+  jl tooLow
+  cmp [spreadMod],(float)10
+  jg tooHigh
+  fst dword ptr [ebp-08]
+  fld [spreadMod]
+  fstp dword ptr [ebp-08]
+  push edi
+  call sh3.exe+20BB60
+  jmp return
+
+tooLow:
+  mov [spreadMod],(float)0
+  jmp return
+
+tooHigh:
+  mov [spreadMod],(float)10
+  jmp return
+
+code:
+  //fstp dword ptr [ebp-08]
+  //push edi
+  //call sh3.exe+20BB60
+  //jmp return
+
+shotgunSpread:
+  jmp newmem
+  nop 4
+return:
+registersymbol(shotgunSpread)
+registersymbol(spreadMod)
+
+//-----------------------------------------------------Shotgun burst fire
+aobscanmodule(shotgunBurst,sh3.exe,80 05 72 83 BA 00 03)
+alloc(newmem2,2048)
+alloc(sBurstMod,1)
+
+label(code2)
+label(return2)
+
+sBurstMod:
+  db 1
+
+newmem2:
+  cmp [sBurstMod],0
+  je code2
+  mov byte ptr [sh3.exe+7A8372],00
+  jmp return2
+
+code2:
+  mov byte ptr [sh3.exe+7A8372],03
+  jmp return2
+
+shotgunBurst:
+  jmp newmem2
+  nop 2
+return2:
+registersymbol(shotgunBurst)
+registersymbol(sBurstMod)
+
+[DISABLE]
+
+shotgunSpread:
+  db D9 5D F8 57 E8 13 56 15 00
+
+shotgunBurst:
+  db 80 05 72 83 BA 00 03
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "bullet-spread"
+name = "Bullet Spread"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "spreadMod"
+hops = []
+
+[[cheat]]
+id = "burst-fire"
+name = "Burst Fire"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Yes",
+    "0:No",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "sBurstMod"
+hops = []
+
+[[cheat]]
+id = "no-smg-recoil"
+name = "No SMG Recoil"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-10
+  Author : Gear2
+
+  Sets smg recoil to zero.
+}
+
+[ENABLE]
+
+//------------------------------------------------SMG horizontal recoil
+aobscanmodule(smgRecoilY,sh3.exe,D9 1D 1C C4 12 07 E8)
+alloc(newmem,2048)
+alloc(smgRecoil,4)
+
+label(code)
+label(return)
+
+smgRecoil:
+  dd (float)0
+
+newmem:
+  fstp [smgRecoil]
+  jmp return
+
+code:
+  //fstp dword ptr [sh3.exe+6D2C41C]
+  //jmp return
+
+smgRecoilY:
+  jmp newmem
+  nop
+return:
+registersymbol(smgRecoilY)
+
+//------------------------------------------------SMG vertical recoil
+aobscanmodule(smgRecoilX,sh3.exe,D9 1D 20 C4 12 07 C7)
+alloc(newmem2,2048)
+
+label(code2)
+label(return2)
+
+newmem2:
+  fstp [smgRecoil]
+  jmp return2
+
+code2:
+  //fstp dword ptr [sh3.exe+6D2C420]
+  //jmp return
+
+smgRecoilX:
+  jmp newmem2
+  nop
+return2:
+registersymbol(smgRecoilX)
+
+[DISABLE]
+
+smgRecoilY:
+  db D9 1D 1C C4 12 07
+
+smgRecoilX:
+  db D9 1D 20 C4 12 07
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "falling-shell-casings"
+name = "Falling Shell Casings"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2022-07-24
+  Author : Gear2
+
+  Rapid fire shell casings
+}
+
+[ENABLE]
+
+aobscanmodule(rfShellCasings,sh3.exe,66 C7 05 F8 C3 12 07 01 00)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  mov word ptr [sh3.exe+6D2C3F8],0000
+  jmp return
+
+code:
+  //mov word ptr [sh3.exe+6D2C3F8],0001
+  //jmp return
+
+rfShellCasings:
+  jmp newmem
+  nop 4
+return:
+registersymbol(rfShellCasings)
+
+[DISABLE]
+
+rfShellCasings:
+  db 66 C7 05 F8 C3 12 07 01 00
+
+unregistersymbol(rfShellCasings)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "decouple-camera"
+name = "Decouple Camera"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-18
+  Author : Gear2
+
+  Freezes the camera.
+}
+
+[ENABLE]
+
+aobscanmodule(decoupleCam,sh3.exe,D9 43 18 D8 63 08 D9 5C 24 18)
+alloc(newmem,2048)
+alloc(remove,4)
+
+label(code)
+label(return)
+
+remove:
+  dd (float)0
+
+newmem:
+  fld dword ptr [remove]
+  fsub dword ptr [ebx+08]
+  jmp return
+
+code:
+  //fld dword ptr [ebx+18]
+  //fsub dword ptr [ebx+08]
+  //jmp return
+
+decoupleCam:
+  jmp newmem
+  nop
+return:
+registersymbol(decoupleCam)
+
+[DISABLE]
+
+decoupleCam:
+  db D9 43 18 D8 63 08
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "customcamera"
+name = "customcamera"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-18
+  Author : Gear2
+
+  Freely move the camera with hotkeys.
+}
+
+[ENABLE]
+
+//---------------------------------------------------X Camera
+aobscanmodule(camX,sh3.exe,D9 1F D9 44 24 24 D8 47)
+alloc(newmem,2048)
+alloc(trigFlag,4)
+alloc(xcMov,4)
+
+label(customX)
+label(code)
+label(return)
+
+trigFlag:
+  db 0
+
+newmem:
+  cmp [trigFlag],0
+  jne customX
+  push eax
+  mov eax,[sh3.exe+6D1A660]
+  mov [xcMov],eax
+  pop eax
+  fstp dword ptr [edi]
+  fld dword ptr [esp+24]
+  jmp return
+
+customX:
+  push ecx
+  mov ecx,[xcMov]
+  fstp dword ptr [edi]
+  mov [edi],ecx
+  pop ecx
+  fld dword ptr [esp+24]
+  jmp return
+
+code:
+  //fstp dword ptr [edi]
+  //fld dword ptr [esp+24]
+  //jmp return
+
+camX:
+  jmp newmem
+  nop
+return:
+registersymbol(camX)
+registersymbol(trigFlag)
+registersymbol(xcMov)
+
+//---------------------------------------------------Z Camera
+aobscanmodule(camZ,sh3.exe,D9 5F 04 D9 44 24 28 D8 47)
+alloc(newmem2,2048)
+alloc(zcMov,4)
+
+label(customZ)
+label(code2)
+label(return2)
+
+newmem2:
+  cmp [trigFlag],0
+  jne customZ
+  push eax
+  mov eax,[sh3.exe+6D1A664]
+  mov [zcMov],eax
+  pop eax
+  fstp dword ptr [edi+04]
+  fld dword ptr [esp+28]
+  jmp return2
+
+customZ:
+  push ecx
+  mov ecx,[zcMov]
+  fstp dword ptr [edi+04]
+  mov [edi+04],ecx
+  pop ecx
+  fld dword ptr [esp+28]
+  jmp return2
+
+code2:
+  //fstp dword ptr [edi+04]
+  //fld dword ptr [esp+28]
+  //jmp return2
+
+camZ:
+  jmp newmem2
+  nop 2
+return2:
+registersymbol(camZ)
+registersymbol(zcMov)
+
+//---------------------------------------------------Y Camera
+aobscanmodule(camY,sh3.exe,D9 5F 08 8B 4F 0C 89 4F 0C 5F)
+alloc(newmem3,2048)
+alloc(ycMov,4)
+
+label(customY)
+label(code3)
+label(return3)
+
+newmem3:
+  cmp [trigFlag],0
+  jne customY
+  push eax
+  mov eax,[sh3.exe+6D1A668]
+  mov [ycMov],eax
+  pop eax
+  fstp dword ptr [edi+08]
+  mov ecx,[edi+0C]
+  jmp return3
+
+customY:
+  push ebx
+  mov ebx,[ycMov]
+  fstp dword ptr [edi+08]
+  mov [edi+08],ebx
+  pop ebx
+  mov ecx,[edi+0C]
+  jmp return3
+
+code3:
+  //fstp dword ptr [edi+08]
+  //mov ecx,[edi+0C]
+  //jmp return3
+
+camY:
+  jmp newmem3
+  nop
+return3:
+registersymbol(camY)
+registersymbol(ycMov)
+
+//---------------------------------------------------Yaw Camera
+aobscanmodule(yawCam,sh3.exe,D9 1F D9 44 24 04)
+alloc(newmem4,2048)
+alloc(yawMov,4)
+
+label(code4)
+label(return4)
+
+newmem4:
+  push ecx
+  mov ecx,[yawMov]
+  fstp dword ptr [edi]
+  mov [edi],ecx
+  pop ecx
+  fld dword ptr [esp+04]
+  jmp return4
+
+code4:
+  //fstp dword ptr [edi]
+  //fld dword ptr [esp+04]
+  //jmp return4
+
+yawCam:
+  jmp newmem4
+  nop
+return4:
+registersymbol(yawCam)
+registersymbol(yawMov)
+
+//---------------------------------------------------Pitch Camera
+aobscanmodule(camPitch,sh3.exe,D9 5F 04 D9 44 24 08 D8 47)
+alloc(newmem5,2048)
+alloc(pitMov,4)
+
+label(code5)
+label(return5)
+
+newmem5:
+  push ecx
+  mov ecx,[pitMov]
+  fstp dword ptr [edi+04]
+  mov [edi+04],ecx
+  pop ecx
+  fld dword ptr [esp+08]
+  jmp return5
+
+code5:
+  //fstp dword ptr [edi+04]
+  //fld dword ptr [esp+08]
+  //jmp return5
+
+camPitch:
+  jmp newmem5
+  nop 2
+return5:
+registersymbol(camPitch)
+registersymbol(pitMov)
+
+[DISABLE]
+
+camX:
+  db D9 1F D9 44 24 24
+
+camZ:
+  db D9 5F 04 D9 44 24 28
+
+camY:
+  db D9 5F 08 8B 4F 0C
+
+yawCam:
+  db D9 1F D9 44 24 04
+
+camPitch:
+  db D9 5F 04 D9 44 24 08
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "customcamera-2"
+name = "customcamera"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Yes",
+    "0:No",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "trigFlag"
+hops = []
+
+[[cheat]]
+id = "xslide"
+name = "xslide+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "xcMov"
+hops = []
+
+[[cheat]]
+id = "xslide-2"
+name = "xslide+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "zcMov"
+hops = []
+
+[[cheat]]
+id = "yslide"
+name = "yslide+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ycMov"
+hops = []
+
+[[cheat]]
+id = "yslide-2"
+name = "yslide+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pitMov"
+hops = []
+
+[[cheat]]
+id = "yawup"
+name = "yawup"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "yawMov"
+hops = []
+
+[[cheat]]
+id = "fieldofview"
+name = "fieldofview"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2024-05-05
+  Author : Gear2
+
+  Change player field of view.
+}
+
+[ENABLE]
+
+aobscanmodule(fieldOfView,sh3.exe,A1 20 C7 12 07)
+alloc(newmem,2048)
+alloc(fov,4)
+
+label(tooLow)
+label(tooHigh)
+label(code)
+label(return)
+
+fov:
+  dd (float)100
+
+newmem:
+  cmp [fov],(float)100
+  jl tooLow
+  cmp [fov],(float)1000
+  jg tooHigh
+  push ecx
+  mov ecx,[fov]
+  mov [sh3.exe+6D2C720],ecx
+  mov eax,[sh3.exe+6D2C720]
+  pop ecx
+  jmp return
+
+tooLow:
+  mov [fov],(float)100
+  jmp return
+
+tooHigh:
+  mov [fov],(float)1000
+  jmp return
+
+code:
+  //mov eax,[sh3.exe+6D2C720]
+  //jmp return
+
+fieldOfView:
+  jmp newmem
+return:
+registersymbol(fieldOfView)
+registersymbol(fov)
+
+[DISABLE]
+
+fieldOfView:
+  db A1 20 C7 12 07
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "decreasefov"
+name = "decreasefov"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fov"
+hops = []
+
+[[cheat]]
+id = "cone-size"
+name = "Cone Size"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "coneMod"
+hops = []
+
+[[cheat]]
+id = "torch-distance-alt"
+name = "Torch Distance Alt"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x448b32"
+hops = []
+
+[[cheat]]
+id = "brightness-not-in-use-has-issues"
+name = "Brightness ( not in use has issues )"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "brightMod"
+hops = []
+
+[[cheat]]
+id = "blue-models-not-in-use-has-issues"
+name = "Blue Models ( not in use has issues )"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "blueMod"
+hops = []
+
+[[cheat]]
+id = "green-models-not-in-use-has-issues"
+name = "Green Models ( not in use has issues )"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "greenMod"
+hops = []
+
+[[cheat]]
+id = "red-models-not-in-use-has-issues"
+name = "Red Models ( not in use has issues )"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "redMod"
+hops = []
+
+[[cheat]]
+id = "model-brightness-not-in-use-has-issues"
+name = "Model Brightness ( not in use has issues )"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "modelMod"
+hops = []
+
+[[cheat]]
+id = "no-flare"
+name = "No Flare"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-26
+  Author : Gear2
+
+  Remove torch flare. Ideal for player screenshots.
+}
+
+[ENABLE]
+
+aobscanmodule(noFlare,sh3.exe,89 50 0C 8B 0D 00 C2 12 07)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  mov edx,0
+  mov [eax+0C],edx
+  mov ecx,[sh3.exe+6D2C200]
+  jmp return
+
+code:
+  //mov [eax+0C],edx
+  //mov ecx,[sh3.exe+6D2C200]
+  //jmp return
+
+noFlare:
+  jmp newmem
+  nop 4
+return:
+registersymbol(noFlare)
+
+[DISABLE]
+
+noFlare:
+  db 89 50 0C 8B 0D 00 C2 12 07
+
+unregistersymbol(noFlare)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "npc-attack"
+name = "NPC Attack"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-02
+  Author : Gear2
+
+  Set NPC attack flag on or off.
+}
+
+[ENABLE]
+
+aobscanmodule(npcAttack,sh3.exe,8A 0D 66 C6 12 07)
+alloc(newmem,2048)
+alloc(attackFlag,1)
+
+label(code)
+label(test)
+label(return)
+
+attackFlag:
+  db 0
+
+newmem:
+  cmp [attackFlag],0
+  jne test
+  mov [sh3.exe+6D2C666],1
+  mov cl,[sh3.exe+6D2C666]
+  jmp return
+
+test:
+  cmp [sh3.exe+6D2C666],1
+  jne code
+  mov [sh3.exe+6D2C666],0
+  jmp return
+
+code:
+  mov cl,[sh3.exe+6D2C666]
+  jmp return
+
+npcAttack:
+  jmp newmem
+  nop
+return:
+registersymbol(npcAttack)
+registersymbol(attackFlag)
+
+[DISABLE]
+
+npcAttack:
+  db 8A 0D 66 C6 12 07
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "flag"
+name = "Flag"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "attackFlag"
+hops = []
+
+[[cheat]]
+id = "sizescaler"
+name = "sizescaler"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-07
+  Author : Gear2
+
+  Change the size of models.
+}
+
+[ENABLE]
+
+//------------------------------------------------------Model width
+aobscanmodule(width,sh3.exe,D9 86 88 00 00 00 D9)
+alloc(newmem,2048)
+alloc(pSize,4)
+alloc(mSize,4)
+
+label(player)
+label(monster)
+label(code)
+label(return)
+
+pSize:
+  dd (float)1
+
+mSize:
+  dd (float)1
+
+newmem:
+  cmp [esi+74],0
+  jne monster
+
+player:
+  push ecx
+  mov ecx,[pSize]
+  mov [esi+00000088],ecx
+  fld dword ptr [esi+00000088]
+  pop ecx
+  jmp return
+
+monster:
+  push ecx
+  mov ecx,[mSize]
+  mov [esi+00000088],ecx
+  fld dword ptr [esi+00000088]
+  pop ecx
+  jmp return
+
+code:
+  //fld dword ptr [esi+00000088]
+  //jmp return
+
+width:
+  jmp newmem
+  nop
+return:
+registersymbol(width)
+registersymbol(pSize)
+registersymbol(mSize)
+
+//------------------------------------------------------Model height
+aobscanmodule(height,sh3.exe,0C D9 86 8C 00 00 00)
+alloc(newmem2,2048)
+
+label(player2)
+label(monster2)
+label(code2)
+label(return2)
+
+newmem2:
+  cmp [esi+74],0
+  jne monster2
+
+player2:
+  push ecx
+  mov ecx,[pSize]
+  mov [esi+0000008C],ecx
+  fld dword ptr [esi+0000008C]
+  pop ecx
+  jmp return2
+
+monster2:
+  push ecx
+  mov ecx,[mSize]
+  mov [esi+0000008C],ecx
+  fld dword ptr [esi+0000008C]
+  pop ecx
+  jmp return2
+
+code2:
+  //fld dword ptr [esi+0000008C]
+  //jmp return2
+
+height+01:
+  jmp newmem2
+  nop
+return2:
+registersymbol(height)
+
+//------------------------------------------------------Model depth
+aobscanmodule(depth,sh3.exe,D9 86 90 00 00 00 D9 C0 D8 4E 40 D9 5E 40 D9 C0 D8 4E 44 D9 5E 44 D9 C0 D8 4E 48 D9 5E 48 D8 4E 4C D9 5E 4C 8B B6 B0 00 00 00)
+alloc(newmem3,2048)
+
+label(player3)
+label(monster3)
+label(code3)
+label(return3)
+
+newmem3:
+  cmp [esi+74],0
+  jne monster3
+
+player3:
+  push ecx
+  mov ecx,[pSize]
+  mov [esi+00000090],ecx
+  fld dword ptr [esi+00000090]
+  pop ecx
+  jmp return3
+
+monster3:
+  push ecx
+  mov ecx,[mSize]
+  mov [esi+00000090],ecx
+  fld dword ptr [esi+00000090]
+  pop ecx
+  jmp return3
+
+code3:
+  //fld dword ptr [esi+00000090]
+  //jmp return3
+
+depth:
+  jmp newmem3
+  nop
+return3:
+registersymbol(depth)
+
+[DISABLE]
+
+width:
+  db D9 86 88 00 00 00
+
+height+01:
+  db D9 86 8C 00 00 00
+
+depth:
+  db D9 86 90 00 00 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "decreaseplayersize"
+name = "decreaseplayersize"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSize"
+hops = []
+
+[[cheat]]
+id = "decreasemonstersize"
+name = "decreasemonstersize"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "mSize"
+hops = []
+
+[[cheat]]
+id = "world-animation"
+name = "World Animation"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-03
+  Author : Gear2
+
+  Change the world animation speed.
+}
+
+[ENABLE]
+
+aobscanmodule(worldAnimSpeed,sh3.exe,D9 05 AC 67 0E 07 C3)
+alloc(newmem,2048)
+alloc(worldSpeed,4)
+
+label(code)
+label(return)
+
+worldSpeed:
+  dd (float)0.035
+
+newmem:
+  push ecx
+  mov ecx,[worldSpeed]
+  fld dword ptr [sh3.exe+6CE67AC]
+  mov [sh3.exe+6CE67AC],ecx
+  pop ecx
+  jmp return
+
+code:
+  //fld dword ptr [sh3.exe+6CE67AC]
+  //jmp return
+
+worldAnimSpeed:
+  jmp newmem
+  nop
+return:
+registersymbol(worldAnimSpeed)
+registersymbol(worldSpeed)
+
+[DISABLE]
+
+worldAnimSpeed:
+  db D9 05 AC 67 0E 07
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "speed"
+name = "Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "worldSpeed"
+hops = []
+
+[[cheat]]
+id = "world-colours-gamma"
+name = "World Colours ( gamma )"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-17
+  Author : Gear2
+
+  Change world colors.
+}
+
+[ENABLE]
+//-----------------------------------------------World color blue
+aobscanmodule(worldBlue,sh3.exe,D9 1D C8 12 6B 00)
+alloc(newmem,2048)
+alloc(wBlue,4)
+
+label(code)
+label(return)
+
+wBlue:
+  dd (float)0.3
+
+newmem:
+  fst dword ptr [sh3.exe+2B12C8]
+  fld [wBlue]
+  fstp dword ptr [sh3.exe+2B12C8]
+  jmp return
+
+code:
+  //fstp dword ptr [sh3.exe+2B12C8]
+  //jmp return
+
+worldBlue:
+  jmp newmem
+  nop
+return:
+registersymbol(worldBlue)
+registersymbol(wBlue)
+
+//-----------------------------------------------World color red
+aobscanmodule(worldRed,sh3.exe,A3 C0 12 6B 00)
+alloc(newmem2,2048)
+alloc(wRed,4)
+
+label(code2)
+label(return2)
+
+wRed:
+  dd (float)2
+
+newmem2:
+  mov eax,[wRed]
+  mov [sh3.exe+2B12C0],eax
+  jmp return2
+
+code2:
+  //mov [sh3.exe+2B12C0],eax
+  //jmp return2
+
+worldRed:
+  jmp newmem2
+return2:
+registersymbol(worldRed)
+registersymbol(wRed)
+
+//-----------------------------------------------World color Green
+aobscanmodule(worldGreen,sh3.exe,89 0D C4 12 6B 00)
+alloc(newmem3,2048)
+alloc(wGreen,4)
+
+label(code3)
+label(return3)
+
+wGreen:
+  dd (float)0.1
+
+newmem3:
+  mov ecx,[wGreen]
+  mov [sh3.exe+2B12C4],ecx
+  jmp return3
+
+code3:
+  //mov [sh3.exe+2B12C4],ecx
+  //jmp return3
+
+worldGreen:
+  jmp newmem3
+  nop
+return3:
+registersymbol(worldGreen)
+registersymbol(wGreen)
+//--------------------------------------------------Red world
+aobscanmodule(worldRed2,sh3.exe,D8 D9 05 C0 12 6B 00)
+alloc(newmem4,2048)
+
+label(code4)
+label(return4)
+
+newmem4:
+  push ebx
+  mov ebx,[wRed]
+  fld dword ptr [sh3.exe+2B12C0]
+  mov dword ptr [sh3.exe+2B12C0],ebx
+  pop ebx
+  jmp return4
+
+code4:
+  //fld dword ptr [sh3.exe+2B12C0]
+  //jmp return
+
+worldRed2+01:
+  jmp newmem4
+  nop
+return4:
+registersymbol(worldRed2)
+registersymbol(wRed)
+
+//--------------------------------------------------Green world
+aobscanmodule(worldGreen2,sh3.exe,2A D9 05 C4 12 6B 00)
+alloc(newmem5,2048)
+
+label(code5)
+label(return5)
+
+newmem5:
+  push ebx
+  mov ebx,[wGreen]
+  fld dword ptr [sh3.exe+2B12C4]
+  mov dword ptr [sh3.exe+2B12C4],ebx
+  pop ebx
+  jmp return5
+
+code5:
+  //fld dword ptr [sh3.exe+2B12C4]
+  //jmp return5
+
+worldGreen2+01:
+  jmp newmem5
+  nop
+return5:
+registersymbol(worldGreen2)
+registersymbol(wGreen)
+
+//--------------------------------------------------Blue world
+aobscanmodule(worldBlue2,sh3.exe,7A 17 D9 05 C8 12 6B 00)
+alloc(newmem6,2048)
+
+label(code6)
+label(return6)
+
+newmem6:
+  push ebx
+  mov ebx,[wBlue]
+  fld dword ptr [sh3.exe+2B12C8]
+  mov dword ptr [sh3.exe+2B12C8],ebx
+  pop ebx
+  jmp return6
+
+code6:
+  //fld dword ptr [sh3.exe+2B12C8]
+  //jmp return6
+
+worldBlue2+02:
+  jmp newmem6
+  nop
+return6:
+registersymbol(worldBlue2)
+registersymbol(wBlue)
+
+[DISABLE]
+
+worldBlue:
+  db D9 1D C8 12 6B 00
+
+worldRed:
+  db A3 C0 12 6B 00
+
+worldGreen:
+  db 89 0D C4 12 6B 00
+
+worldRed2+01:
+  db D9 05 C0 12 6B 00
+
+worldGreen2+01:
+  db D9 05 C4 12 6B 00
+
+worldBlue2+02:
+  db D9 05 C8 12 6B 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "red-2"
+name = "Red"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "wRed"
+hops = []
+
+[[cheat]]
+id = "green-2"
+name = "Green"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "wGreen"
+hops = []
+
+[[cheat]]
+id = "blue-2"
+name = "Blue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "wBlue"
+hops = []
+
+[[cheat]]
+id = "no-preview"
+name = "No Preview"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-23
+  Author : Gear2
+
+  No more main menu trailer. Stop counter.
+}
+
+[ENABLE]
+
+aobscanmodule(noTrailer,sh3.exe,D8 05 B0 67 0E 07)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  //fadd dword ptr [sh3.exe+6CE67B0]
+  jmp return
+
+code:
+  //fadd dword ptr [sh3.exe+6CE67B0]
+  //jmp return
+
+noTrailer:
+  jmp newmem
+  nop
+return:
+registersymbol(noTrailer)
+
+[DISABLE]
+
+noTrailer:
+  db D8 05 B0 67 0E 07
+
+unregistersymbol(noTrailer)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "zero-time"
+name = "Zero Time"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-26
+  Author : Gear2
+
+  Ten Star end results editor.
+}
+
+[ENABLE]
+
+aobscanmodule(clearTime,sh3.exe,D8 06 D9 16 D8 1D C4 28 69 00)
+alloc(newmem,2048)
+alloc(zeroTime,4)
+
+label(code)
+label(return)
+
+newmem:
+  fld dword ptr [zeroTime]
+  fst dword ptr [esi]
+  fcomp dword ptr [sh3.exe+2928C4]
+  jmp return
+
+code:
+  //fadd dword ptr [esi]
+  //fst dword ptr [esi]
+  //fcomp dword ptr [sh3.exe+2928C4]
+  //jmp return
+
+clearTime:
+  jmp newmem
+  nop 5
+return:
+registersymbol(clearTime)
+
+[DISABLE]
+
+clearTime:
+  db D8 06 D9 16 D8 1D C4 28 69 00
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "zero-saves"
+name = "Zero Saves"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2021-08-23
+  Author : steph & Gear2
+
+  Always zero saves when saving game.
+}
+
+[ENABLE]
+
+aobscanmodule(zeroSaves,sh3.exe,66 A3 E4 66 0E 07)
+alloc(newmem,2048)
+
+label(code)
+label(return)
+
+newmem:
+  mov ax,0
+  mov [sh3.exe+6CE66E4],ax
+  jmp return
+
+code:
+  //mov [sh3.exe+6CE66E4],ax
+  //jmp return
+
+zeroSaves:
+  jmp newmem
+  nop
+return:
+registersymbol(zeroSaves)
+
+[DISABLE]
+
+zeroSaves:
+  db 66 A3 E4 66 0E 07
+
+unregistersymbol(zeroSaves)
+dealloc(newmem)"""
+
+[[cheat]]
+id = "item-number-adjust"
+name = "Item Number Adjust"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 1.0
+  Date   : 2024-05-30
+  Author : Gear2
+
+  Change item pickup amount
+}
+
+[ENABLE]
+
+aobscanmodule(itemNumbers,sh3.exe,66 FF 40 10 89 54 24 04)
+alloc(newmem,2048)
+alloc(itemCount,2)
+
+label(code)
+label(return)
+
+itemCount:
+  dw 2
+
+newmem:
+  push cx
+  mov cx,[itemCount]
+  add word ptr [eax+10],cx
+  pop cx
+  mov [esp+04],edx
+  jmp return
+
+code:
+  //inc word ptr [eax+10]
+  //mov [esp+04],edx
+  //jmp return
+
+itemNumbers:
+  jmp newmem
+  nop 3
+return:
+registersymbol(itemNumbers)
+registersymbol(itemCount)
+
+[DISABLE]
+
+itemNumbers:
+  db 66 FF 40 10 89 54 24 04
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "items-collected"
+name = "Items Collected"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "itemCount"
+hops = []
+
+[[cheat]]
+id = "defeated-enemies-adjust"
+name = "Defeated Enemies Adjust"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 2.0
+  Date   : 2021-08-23
+  Authors : steph $ Gear2
+
+  Change shooting count statistics
+}
+
+[ENABLE]
+//------------------------------------------------------------Gun kill count
+aobscanmodule(shootingKills,sh3.exe,66 FF 40 12 EB 09)
+alloc(newmem,2048)
+alloc(sKills,2)
+
+label(code)
+label(return)
+
+sKills:
+  dw 2
+
+newmem:
+  push cx
+  mov cx,[sKills]
+  add word ptr [eax+12],cx
+  pop cx
+  jmp sh3.exe+DC101
+  jmp return
+
+code:
+  //inc word ptr [eax+12]
+  //jmp sh3.exe+DC101
+  //jmp return
+
+shootingKills:
+  jmp newmem
+  nop
+return:
+registersymbol(shootingKills)
+registersymbol(sKills)
+
+//------------------------------------------------------------Melee kill count
+aobscanmodule(fightingKills,sh3.exe,66 FF 40 14 66 81 FE 14 02)
+alloc(newmem2,2048)
+alloc(fKills,2)
+alloc(lifeSteal,4)
+alloc(lsRegen,4)
+
+label(melee)
+label(code2)
+label(return2)
+
+fKills:
+  dw 2
+
+lifeSteal:
+  dd 1
+
+lsRegen:
+  dd (float)5
+
+newmem2:
+  cmp [lifeSteal],0
+  jz melee
+
+heal:
+  cmp [070E66EC],#5
+  jl melee
+  fld dword ptr [00898660]
+  fadd dword ptr [lsRegen]
+  fst dword ptr [00898660]
+  cmp [070E66EC],#13
+  jl melee
+  fld dword ptr [00898660]
+  fadd dword ptr [lsRegen]
+  fst dword ptr [00898660]
+  cmp [070E66EC],#25
+  jl melee
+  fld dword ptr [00898660]
+  fadd dword ptr [lsRegen]
+  fst dword ptr [00898660]
+  cmp [070E66EC],#49
+  jl melee
+  fld dword ptr [00898660]
+  fadd dword ptr [lsRegen]
+  fst dword ptr [00898660]
+
+melee:
+  push cx
+  mov cx,[fKills]
+  add word ptr [eax+14],cx
+  pop cx
+  cmp si,0214
+  jmp return2
+
+code2:
+  //inc word ptr [eax+14]
+  //cmp si,0214
+  //jmp return2
+
+fightingKills:
+  jmp newmem2
+  nop 4
+return2:
+registersymbol(fightingKills)
+registersymbol(fKills)
+registersymbol(lifeSteal)
+registersymbol(lsRegen)
+
+[DISABLE]
+
+shootingKills:
+  db 66 FF 40 12 EB 09
+
+fightingKills:
+  db 66 FF 40 14 66 81 FE 14 02
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "shooting-points-earned-per-kill"
+name = "Shooting Points Earned ( per kill )"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "sKills"
+hops = []
+
+[[cheat]]
+id = "fighting-points-earned-per-kill"
+name = "Fighting Points Earned ( per kill )"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fKills"
+hops = []
+
+[[cheat]]
+id = "life-steal-melee"
+name = "Life Steal ( melee )"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 1
+choices = [
+    "1:On",
+    "0:Off",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "lifeSteal"
+hops = []
+
+[[cheat]]
+id = "life-steal-amount"
+name = "Life Steal ( amount )"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "lsRegen"
+hops = []
+
+[[cheat]]
+id = "never-damaged"
+name = "Never Damaged"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : sh3.exe
+  Version: 
+  Date   : 2024-05-26
+  Author : Gear2
+
+  Gives zero damage taken for end of game results.
+}
+
+[ENABLE]
+
+aobscanmodule(damageScore,sh3.exe,D8 40 28 D9 58 28)
+alloc(newmem,2048)
+alloc(zeroDamage,4)
+
+label(code)
+label(return)
+
+zeroDamage:
+  dd (float)0
+
+newmem:
+  fld dword ptr [zeroDamage]
+  fstp dword ptr [eax+28]
+  jmp return
+
+code:
+  //fadd dword ptr [eax+28]
+  //fstp dword ptr [eax+28]
+  //jmp return
+
+damageScore:
+  jmp newmem
+  nop
+return:
+registersymbol(damageScore)
+
+[DISABLE]
+
+damageScore:
+  db D8 40 28 D9 58 28
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "no-description"
+name = "No description"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "sh3.exe"
+offset = "0x498658"
+hops = []

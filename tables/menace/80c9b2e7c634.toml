@@ -1,0 +1,3097 @@
+[game]
+name = "MENACE"
+exe = "menace.exe"
+notes = "Converted from a Cheat Engine table by eggs. Source: https://fearlessrevolution.com/viewtopic.php?t=38170"
+verified = []
+author = "eggs"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "strategy-screen-options"
+name = "[Strategy Screen Options]"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version:
+  Date   : 2026-02-09
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+
+[ENABLE]
+
+define(injStrategyUpdate,Menace.States.StrategyState.OnUpdate) // should be unique
+alloc(newmem,$1000)
+alloc(strategy_state,8)
+label(injStrategyUpdateBkp)
+label(return)
+
+alloc(bool_refreshBM,8)
+bool_refreshBM:
+  dd 0
+
+alloc(bool_addSquaddie,8)
+bool_addSquaddie:
+  dd 0
+
+newmem:
+  mov [strategy_state],rcx
+  push rbp
+  mov rbp,rsp
+  sub rsp,0x1B0
+
+  // Save General Purpose Registers
+  mov [rsp+0x00], rax
+  mov [rsp+0x08], rbx
+  mov [rsp+0x10], rcx
+  mov [rsp+0x18], rdx
+  mov [rsp+0x20], rsi
+  mov [rsp+0x28], rdi
+  mov [rsp+0x30], r8
+  mov [rsp+0x38], r9
+  mov [rsp+0x40], r10
+  mov [rsp+0x48], r11
+  mov [rsp+0x50], r12
+  mov [rsp+0x58], r13
+  mov [rsp+0x60], r14
+  mov [rsp+0x68], r15
+
+  // Save XMM Registers (Volatile: 0-5 are usually enough, but saving 0-15 is safer)
+  movdqu [rsp+0x70], xmm0
+  movdqu [rsp+0x80], xmm1
+  movdqu [rsp+0x90], xmm2
+  movdqu [rsp+0xA0], xmm3
+  movdqu [rsp+0xB0], xmm4
+  movdqu [rsp+0xC0], xmm5
+  movdqu [rsp+0xD0], xmm6
+  movdqu [rsp+0xE0], xmm7
+  movdqu [rsp+0xF0], xmm8
+  movdqu [rsp+0x100], xmm9
+  movdqu [rsp+0x110], xmm10
+  movdqu [rsp+0x120], xmm11
+  movdqu [rsp+0x130], xmm12
+  movdqu [rsp+0x140], xmm13
+  movdqu [rsp+0x150], xmm14
+  movdqu [rsp+0x160], xmm15
+
+  cmp [bool_refreshBM],1
+  jne check_squaddie
+  mov rax,[strategy_state]
+  mov rcx,[rax+88]    //Menace.StrategyState.BlackMarket
+  test rcx,rcx
+  jz check_squaddie
+  call Menace.Strategy.BlackMarket.FillUp
+
+check_squaddie:
+
+  cmp [bool_addSquaddie],1
+  jne skip_call
+  mov rax,[strategy_state]
+  mov rcx,[rax+68]    //Menace.StrategyState.Squaddies
+  //call Menace.Strategy.Squaddies.AddAlive //very annoyying params
+
+
+skip_call:
+  mov [bool_addSquaddie],0
+  mov [bool_refreshBM],0
+  movdqu xmm0,  [rsp+0x70]
+  movdqu xmm1,  [rsp+0x80]
+  movdqu xmm2,  [rsp+0x90]
+  movdqu xmm3,  [rsp+0xA0]
+  movdqu xmm4,  [rsp+0xB0]
+  movdqu xmm5,  [rsp+0xC0]
+  movdqu xmm6,  [rsp+0xD0]
+  movdqu xmm7,  [rsp+0xE0]
+  movdqu xmm8,  [rsp+0xF0]
+  movdqu xmm9,  [rsp+0x100]
+  movdqu xmm10, [rsp+0x110]
+  movdqu xmm11, [rsp+0x120]
+  movdqu xmm12, [rsp+0x130]
+  movdqu xmm13, [rsp+0x140]
+  movdqu xmm14, [rsp+0x150]
+  movdqu xmm15, [rsp+0x160]
+
+
+  mov rax, [rsp+0x00]
+  mov rbx, [rsp+0x08]
+  mov rcx, [rsp+0x10]
+  mov rdx, [rsp+0x18]
+  mov rsi, [rsp+0x20]
+  mov rdi, [rsp+0x28]
+  mov r8,  [rsp+0x30]
+  mov r9,  [rsp+0x38]
+  mov r10, [rsp+0x40]
+  mov r11, [rsp+0x48]
+  mov r12, [rsp+0x50]
+  mov r13, [rsp+0x58]
+  mov r14, [rsp+0x60]
+  mov r15, [rsp+0x68]
+
+  mov rsp,rbp
+  pop rbp
+
+injStrategyUpdateBkp:
+  readmem(injStrategyUpdate,14)
+  jmp return
+
+injStrategyUpdate:
+  jmp far newmem
+return:
+registersymbol(injStrategyUpdate injStrategyUpdateBkp strategy_state bool_refreshBM bool_addSquaddie)
+
+define(injBM_ItemIsEmpty,BlackMarketItemStack.IsEmpty)
+alloc(newmem2,$1000,injBM_ItemIsEmpty)
+
+label(injBM_ItemIsEmptyBkp)
+label(return2)
+
+newmem2:
+  cmp [bool_refreshBM],1
+  jne injBM_ItemIsEmptyBkp
+  mov rax,1
+  ret
+injBM_ItemIsEmptyBkp:
+  readmem(injBM_ItemIsEmpty,6)
+  jmp return2
+
+injBM_ItemIsEmpty:
+  jmp newmem2
+  nop
+return2:
+registersymbol(injBM_ItemIsEmpty injBM_ItemIsEmptyBkp)
+
+[DISABLE]
+
+injStrategyUpdate:
+  readmem(injStrategyUpdateBkp,14)
+
+injBM_ItemIsEmpty:
+  readmem(injBM_ItemIsEmptyBkp,6)
+  //db 40 53 48 83 EC 20
+
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.States.StrategyState.OnUpdate
+
+GameAssembly.dll.il2cpp+1579E0: 48 8B 05 49 4D 32 03  - mov rax,[GameAssembly.dll.data+DA730]
+GameAssembly.dll.il2cpp+1579E7: 33 D2                 - xor edx,edx
+GameAssembly.dll.il2cpp+1579E9: 48 8B 88 B8 00 00 00  - mov rcx,[rax+000000B8]
+GameAssembly.dll.il2cpp+1579F0: 48 C7 01 00 00 00 00  - mov qword ptr [rcx],00000000
+GameAssembly.dll.il2cpp+1579F7: 48 8B 0D 32 4D 32 03  - mov rcx,[GameAssembly.dll.data+DA730]
+GameAssembly.dll.il2cpp+1579FE: 48 8B 89 B8 00 00 00  - mov rcx,[rcx+000000B8]
+GameAssembly.dll.il2cpp+157A05: 48 83 C4 28           - add rsp,28
+GameAssembly.dll.il2cpp+157A09: E9 62 64 DE FF        - jmp GameAssembly.il2cpp_value_box+20
+GameAssembly.dll.il2cpp+157A0E: CC                    - int 3
+GameAssembly.dll.il2cpp+157A0F: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Menace.States.StrategyState.OnUpdate: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+157A12: 48 83 EC 30           - sub rsp,30
+GameAssembly.dll.il2cpp+157A16: 0F 29 74 24 20        - movaps [rsp+20],xmm6
+GameAssembly.dll.il2cpp+157A1B: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+157A1E: F2 0F 10 71 20        - movsd xmm6,[rcx+20]
+GameAssembly.dll.il2cpp+157A23: 33 C9                 - xor ecx,ecx
+GameAssembly.dll.il2cpp+157A25: E8 76 FF 35 02        - call UnityEngine.Time.get_unscaledDeltaTime
+GameAssembly.dll.il2cpp+157A2A: 0F 57 C9              - xorps xmm1,xmm1
+GameAssembly.dll.il2cpp+157A2D: F3 0F 5A C8           - cvtss2sd xmm1,xmm0
+GameAssembly.dll.il2cpp+157A31: F2 0F 58 CE           - addsd xmm1,xmm6
+GameAssembly.dll.il2cpp+157A35: 0F 28 74 24 20        - movaps xmm6,[rsp+20]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: BlackMarketItemStack.IsEmpty
+
+GameAssembly.dll.il2cpp+7D5FD: 4C 8B 09              - mov r9,[rcx]
+GameAssembly.dll.il2cpp+7D600: 41 B0 01              - mov r8b,01
+GameAssembly.dll.il2cpp+7D603: 49 8B 81 C8 02 00 00  - mov rax,[r9+000002C8]
+GameAssembly.dll.il2cpp+7D60A: 4D 8B 89 D0 02 00 00  - mov r9,[r9+000002D0]
+GameAssembly.dll.il2cpp+7D611: 48 83 C4 28           - add rsp,28
+GameAssembly.dll.il2cpp+7D615: 48 FF E0              - jmp rax
+GameAssembly.dll.il2cpp+7D618: E8 E3 17 EC FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+7D61D: CC                    - int 3
+GameAssembly.dll.il2cpp+7D61E: CC                    - int 3
+GameAssembly.dll.il2cpp+7D61F: CC                    - int 3
+// ---------- INJECTING HERE ----------
+BlackMarketItemStack.IsEmpty: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+7D622: 48 83 EC 20           - sub rsp,20
+GameAssembly.dll.il2cpp+7D626: 80 3D 29 7F 61 03 00  - cmp byte ptr [GameAssembly.dll+3B7F556],00
+GameAssembly.dll.il2cpp+7D62D: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+7D630: 75 13                 - jne GameAssembly.dll.il2cpp+7D645
+GameAssembly.dll.il2cpp+7D632: 48 8D 0D AF C7 42 03  - lea rcx,[GameAssembly.dll.data+106DE8]
+GameAssembly.dll.il2cpp+7D639: E8 32 15 EC FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+7D63E: C6 05 11 7F 61 03 01  - mov byte ptr [GameAssembly.dll+3B7F556],01
+GameAssembly.dll.il2cpp+7D645: 48 8B 43 20           - mov rax,[rbx+20]
+GameAssembly.dll.il2cpp+7D649: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+7D64C: 74 0D                 - je GameAssembly.dll.il2cpp+7D65B
+}"""
+
+[[cheat]]
+id = "new-game-remove-hero-limit-must-select-all-8-heros"
+name = "[NEW GAME]  Remove Hero Limit (Must select all 8 Heros)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanregion(injSelectLeaderCount,Menace.UI.PickInitialLeadersDialog.GetPickedLeaderCount,Menace.UI.PickInitialLeadersDialog.GetPickedLeaderCount+2000,48 8B 5C 24 78) // should be unique
+alloc(newmem,$1000,injSelectLeaderCount)
+alloc(count_dbg,8)
+label(injSelectLeaderCountBkp)
+label(return)
+
+newmem:
+  //mov eax,edi
+  mov [count_dbg],eax
+  cmp eax,#8
+  jne set_to_zero
+  mov eax,#4
+  jmp injSelectLeaderCountBkp
+set_to_zero:
+  mov eax,#0
+
+injSelectLeaderCountBkp:
+  readmem(injSelectLeaderCount,5)
+  jmp return
+
+injSelectLeaderCount:
+  jmp newmem
+return:
+registersymbol(injSelectLeaderCount injSelectLeaderCountBkp count_dbg)
+
+[DISABLE]
+
+injSelectLeaderCount:
+  readmem(injSelectLeaderCountBkp,5)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+2B4650
+
+GameAssembly.dll.il2cpp+2B4628: E8 B3 A8 D5 FF        - call FHierarchyIcons..cctor
+GameAssembly.dll.il2cpp+2B462D: EB 1F                 - jmp GameAssembly.dll.il2cpp+2B464E
+GameAssembly.dll.il2cpp+2B462F: 48 8B 15 2A E8 1E 03  - mov rdx,[GameAssembly.dll.data+100E60]
+GameAssembly.dll.il2cpp+2B4636: 48 8B 4C 24 30        - mov rcx,[rsp+30]
+GameAssembly.dll.il2cpp+2B463B: E8 A0 A8 D5 FF        - call FHierarchyIcons..cctor
+GameAssembly.dll.il2cpp+2B4640: 48 8B 4C 24 28        - mov rcx,[rsp+28]
+GameAssembly.dll.il2cpp+2B4645: 48 85 C9              - test rcx,rcx
+GameAssembly.dll.il2cpp+2B4648: 75 23                 - jne GameAssembly.dll.il2cpp+2B466D
+GameAssembly.dll.il2cpp+2B464A: 8B 7C 24 70           - mov edi,[rsp+70]
+GameAssembly.dll.il2cpp+2B464E: 8B C7                 - mov eax,edi
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+2B4650: 48 8B 5C 24 78        - mov rbx,[rsp+78]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+2B4655: 48 83 C4 60           - add rsp,60
+GameAssembly.dll.il2cpp+2B4659: 5F                    - pop rdi
+GameAssembly.dll.il2cpp+2B465A: C3                    - ret 
+GameAssembly.dll.il2cpp+2B465B: E8 50 A7 C8 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+2B4660: 90                    - nop 
+GameAssembly.dll.il2cpp+2B4661: E8 4A A7 C8 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+2B4666: 90                    - nop 
+GameAssembly.dll.il2cpp+2B4667: E8 44 A7 C8 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+2B466C: 90                    - nop 
+GameAssembly.dll.il2cpp+2B466D: E8 6E 67 C8 FF        - call GameAssembly.dll.text+423DE0
+}"""
+
+[[cheat]]
+id = "free-black-market"
+name = "Free Black Market"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injSumTradeValue,Menace.Items.BaseItem.SumTradeValue)
+alloc(newmem,$1000,injSumTradeValue)
+
+label(injSumTradeValueBkp)
+label(return)
+
+newmem:
+  mov rax,#9999
+  ret
+injSumTradeValueBkp:
+  readmem(injSumTradeValue,5)
+  jmp return
+
+injSumTradeValue:
+  jmp newmem
+return:
+registersymbol(injSumTradeValue injSumTradeValueBkp)
+
+[DISABLE]
+
+injSumTradeValue:
+  //db 48 89 5C 24 10
+  readmem(injSumTradeValueBkp,5)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Items.BaseItem.SumTradeValue
+
+GameAssembly.dll.il2cpp+335A7E: C6 05 9E FC 35 03 01  - mov byte ptr [GameAssembly.dll+3B7F723],01
+GameAssembly.dll.il2cpp+335A85: 48 8B 15 DC 58 16 03  - mov rdx,[GameAssembly.dll.data+F9368]
+GameAssembly.dll.il2cpp+335A8C: 45 33 C0              - xor r8d,r8d
+GameAssembly.dll.il2cpp+335A8F: 48 8B 4B 10           - mov rcx,[rbx+10]
+GameAssembly.dll.il2cpp+335A93: 48 83 C4 20           - add rsp,20
+GameAssembly.dll.il2cpp+335A97: 5B                    - pop rbx
+GameAssembly.dll.il2cpp+335A98: E9 A3 BB 19 01        - jmp System.String.op_Equality
+GameAssembly.dll.il2cpp+335A9D: CC                    - int 3 
+GameAssembly.dll.il2cpp+335A9E: CC                    - int 3 
+GameAssembly.dll.il2cpp+335A9F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Items.BaseItem.SumTradeValue: 48 89 5C 24 10        - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+335AA5: 56                    - push rsi
+GameAssembly.dll.il2cpp+335AA6: 57                    - push rdi
+GameAssembly.dll.il2cpp+335AA7: 41 56                 - push r14
+GameAssembly.dll.il2cpp+335AA9: 48 83 EC 50           - sub rsp,50
+GameAssembly.dll.il2cpp+335AAD: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+GameAssembly.dll.il2cpp+335AB2: 0F 28 F1              - movaps xmm6,xmm1
+GameAssembly.dll.il2cpp+335AB5: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+335AB8: 80 3D 69 FC 35 03 00  - cmp byte ptr [GameAssembly.dll+3B7F728],00
+GameAssembly.dll.il2cpp+335ABF: 75 37                 - jne GameAssembly.dll.il2cpp+335AF8
+GameAssembly.dll.il2cpp+335AC1: 48 8D 0D D0 9A 16 03  - lea rcx,[GameAssembly.dll.data+FD598]
+}"""
+
+[[cheat]]
+id = "inf-black-market-items-to-dupe-sell-item-to-blackmarket-disable-when-not-using"
+name = "Inf. Black Market Items (To Dupe: Sell Item To Blackmarket - Disable When Not Using)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-07
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injBMRemoveItem,Menace.Strategy.BlackMarket.RemoveItem) // should be unique
+alloc(newmem,$1000,injBMRemoveItem)
+
+label(injBMRemoveItemBkp)
+label(return)
+
+newmem:
+  mov al,1
+  ret
+injBMRemoveItemBkp:
+  mov [rsp+18],rbp
+  jmp return
+
+injBMRemoveItem:
+  jmp newmem
+return:
+registersymbol(injBMRemoveItem injBMRemoveItemBkp)
+
+[DISABLE]
+
+injBMRemoveItem:
+  db 48 89 6C 24 18
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Strategy.BlackMarket.RemoveItem
+
+GameAssembly.dll.il2cpp+7F8C6: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8C7: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8C8: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8C9: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8CA: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8CB: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8CC: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8CD: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8CE: CC                    - int 3 
+GameAssembly.dll.il2cpp+7F8CF: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Strategy.BlackMarket.RemoveItem: 48 89 6C 24 18        - mov [rsp+18],rbp
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+7F8D5: 57                    - push rdi
+GameAssembly.dll.il2cpp+7F8D6: 48 83 EC 20           - sub rsp,20
+GameAssembly.dll.il2cpp+7F8DA: 80 3D 31 5C 61 03 00  - cmp byte ptr [GameAssembly.dll+3B7F512],00
+GameAssembly.dll.il2cpp+7F8E1: 48 8B EA              - mov rbp,rdx
+GameAssembly.dll.il2cpp+7F8E4: 48 8B F9              - mov rdi,rcx
+GameAssembly.dll.il2cpp+7F8E7: 75 2B                 - jne GameAssembly.dll.il2cpp+7F914
+GameAssembly.dll.il2cpp+7F8E9: 48 8D 0D 88 2E 42 03  - lea rcx,[GameAssembly.dll.data+FF778]
+GameAssembly.dll.il2cpp+7F8F0: E8 2B F2 EB FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+7F8F5: 48 8D 0D 34 2F 42 03  - lea rcx,[GameAssembly.dll.data+FF830]
+GameAssembly.dll.il2cpp+7F8FC: E8 1F F2 EB FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+}"""
+
+[[cheat]]
+id = "unlimited-mission-loadout"
+name = "Unlimited Mission Loadout"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+aobscanregion(injMissionSupplies,Menace.States.StrategyState.GetMissionSupplies, Menace.States.StrategyState.GetMissionSupplies+2000, 0F 28 C8 8B CB E8) // should be unique
+alloc(newmem,$1000,injMissionSupplies)
+alloc(float_val,8)
+label(injMissionSuppliesBkp)
+label(return)
+
+
+float_val:
+  dd (float)9999.0
+newmem:
+  movss xmm0,[float_val]
+  movss xmm1,[float_val]
+  mov ecx,ebx
+  jmp return
+injMissionSuppliesBkp:
+  readmem(injMissionSupplies,5)
+  //movaps xmm1,xmm0
+  //mov ecx,ebx
+  jmp return
+
+injMissionSupplies:
+  jmp newmem
+return:
+registersymbol(injMissionSupplies injMissionSuppliesBkp)
+
+[DISABLE]
+
+injMissionSupplies:
+  //db 0F 28 C8 8B CB
+  readmem(injMissionSuppliesBkp,5)
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+15760C
+
+GameAssembly.dll.il2cpp+1575E4: 48 8B 46 48              - mov rax,[rsi+48]
+GameAssembly.dll.il2cpp+1575E8: 48 85 C0                 - test rax,rax
+GameAssembly.dll.il2cpp+1575EB: 74 56                    - je GameAssembly.dll.il2cpp+157643
+GameAssembly.dll.il2cpp+1575ED: F3 0F 10 80 80 00 00 00  - movss xmm0,[rax+00000080]
+GameAssembly.dll.il2cpp+1575F5: 33 D2                    - xor edx,edx
+GameAssembly.dll.il2cpp+1575F7: F3 0F 59 47 14           - mulss xmm0,[rdi+14]
+GameAssembly.dll.il2cpp+1575FC: 8B 5F 10                 - mov ebx,[rdi+10]
+GameAssembly.dll.il2cpp+1575FF: F3 0F 11 47 14           - movss [rdi+14],xmm0
+GameAssembly.dll.il2cpp+157604: E8 B7 0A EF FF           - call Menace.Tools.FloatExtensions.Clamped
+GameAssembly.dll.il2cpp+157609: 45 33 C0                 - xor r8d,r8d
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+15760C: 0F 28 C8                 - movaps xmm1,xmm0
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+15760F: 8B CB                    - mov ecx,ebx
+GameAssembly.dll.il2cpp+157611: E8 BA 57 F5 FF           - call Menace.Strategy.OperationResources.op_Multiply
+GameAssembly.dll.il2cpp+157616: 4C 8B 74 24 70           - mov r14,[rsp+70]
+GameAssembly.dll.il2cpp+15761B: 48 8B 6C 24 68           - mov rbp,[rsp+68]
+GameAssembly.dll.il2cpp+157620: 48 83 C4 40              - add rsp,40
+GameAssembly.dll.il2cpp+157624: 5F                       - pop rdi
+GameAssembly.dll.il2cpp+157625: 5E                       - pop rsi
+GameAssembly.dll.il2cpp+157626: 5B                       - pop rbx
+GameAssembly.dll.il2cpp+157627: C3                       - ret 
+GameAssembly.dll.il2cpp+157628: 48 8B 6C 24 68           - mov rbp,[rsp+68]
+}"""
+
+[[cheat]]
+id = "full-item-range"
+name = "Full Item Range"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-11
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+//aobscanmodule(injBlackMarketRarity,GameAssembly.dll,48 8B F0 48 89 44 24 40 33) // should be unique
+aobScanRegion(injBlackMarketRarity,Menace.Strategy.BlackMarket.FillUp,Menace.Strategy.BlackMarket.FillUp+2000,48 8B F0 48 89 44 24 40 33)
+alloc(newmem,$1000,injBlackMarketRarity)
+alloc(custom_x,8)
+alloc(custom_y,8)
+label(code)
+label(return)
+
+custom_x:
+  dd #0
+
+custom_y:
+  dd #9999
+newmem:
+  push r11
+  //rax stores rarity in Vector2Int, meaning lower half is lowboundry upper half is the upper boundry.
+  mov eax,[custom_x]
+  mov r11d,[custom_y]
+  shl r11,20
+  or rax,r11
+  pop r11
+code:
+  mov rsi,rax
+  mov [rsp+40],rax
+  jmp return
+
+injBlackMarketRarity:
+  jmp newmem
+  nop 3
+return:
+registersymbol(injBlackMarketRarity)
+
+[DISABLE]
+
+injBlackMarketRarity:
+  db 48 8B F0 48 89 44 24 40
+
+unregistersymbol(injBlackMarketRarity)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+7EDE3
+
+GameAssembly.dll.il2cpp+7EDB3: E8 08 86 0D 00              - call Menace.States.StrategyState.GetCampaignProgress
+GameAssembly.dll.il2cpp+7EDB8: 0F 28 F0                    - movaps xmm6,xmm0
+GameAssembly.dll.il2cpp+7EDBB: F3 0F 11 84 24 80 01 00 00  - movss [rsp+00000180],xmm0
+GameAssembly.dll.il2cpp+7EDC4: 4D 85 ED                    - test r13,r13
+GameAssembly.dll.il2cpp+7EDC7: 0F 84 D7 07 00 00           - je GameAssembly.dll.il2cpp+7F5A4
+GameAssembly.dll.il2cpp+7EDCD: 45 33 C9                    - xor r9d,r9d
+GameAssembly.dll.il2cpp+7EDD0: F3 0F 10 15 C4 6D 82 02     - movss xmm2,[GameAssembly.dll.rdata+B9C]
+GameAssembly.dll.il2cpp+7EDD8: 0F 28 C8                    - movaps xmm1,xmm0
+GameAssembly.dll.il2cpp+7EDDB: 49 8B CD                    - mov rcx,r13
+GameAssembly.dll.il2cpp+7EDDE: E8 CD D7 FA FF              - call Menace.BlackMarketConfig.GetItemRarityRange
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+7EDE3: 48 8B F0                    - mov rsi,rax
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+7EDE6: 48 89 44 24 40              - mov [rsp+40],rax
+GameAssembly.dll.il2cpp+7EDEB: 33 DB                       - xor ebx,ebx
+GameAssembly.dll.il2cpp+7EDED: 44 8B F3                    - mov r14d,ebx
+GameAssembly.dll.il2cpp+7EDF0: 89 9C 24 88 01 00 00        - mov [rsp+00000188],ebx
+GameAssembly.dll.il2cpp+7EDF7: 49 8B 54 24 10              - mov rdx,[r12+10]
+GameAssembly.dll.il2cpp+7EDFC: 48 85 D2                    - test rdx,rdx
+GameAssembly.dll.il2cpp+7EDFF: 0F 84 9F 07 00 00           - je GameAssembly.dll.il2cpp+7F5A4
+GameAssembly.dll.il2cpp+7EE05: 4C 8B 05 D4 38 42 03        - mov r8,[GameAssembly.dll.data+FF6E0]
+GameAssembly.dll.il2cpp+7EE0C: 48 8D 4C 24 50              - lea rcx,[rsp+50]
+GameAssembly.dll.il2cpp+7EE11: E8 2A 56 74 00              - call GameAssembly.dll.il2cpp+7C4440
+}"""
+
+[[cheat]]
+id = "supply-multiplier-used-when-generating-missions"
+name = "Supply Multiplier (Used when generating Missions)"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategy_state"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "promotion-points"
+name = "Promotion Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategy_state"
+hops = [
+    "+0xc0",
+    "+0x28",
+]
+
+[[cheat]]
+id = "authority"
+name = "Authority"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategy_state"
+hops = [
+    "+0xc0",
+    "+0x5c",
+]
+
+[[cheat]]
+id = "oci-points"
+name = "OCI Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategy_state"
+hops = [
+    "+0xc0",
+    "+0x24",
+]
+
+[[cheat]]
+id = "player-supply-multiplier"
+name = "Player Supply Multiplier"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategy_state"
+hops = [
+    "+0x48",
+    "+0x80",
+]
+
+[[cheat]]
+id = "enemy-army-multiplier"
+name = "Enemy Army Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategy_state"
+hops = [
+    "+0x48",
+    "+0x84",
+]
+
+[[cheat]]
+id = "faction-select-a-faction"
+name = "Faction (Select a Faction)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injGetFacTrust,Menace.Strategy.StoryFaction.GetTrustLevel) // should be unique
+alloc(newmem,$1000,injGetFacTrust)
+alloc(faction_ptr,8)
+label(return)
+label(injGetFacTrustBkp)
+
+newmem:
+  mov [faction_ptr],rcx
+injGetFacTrustBkp:
+  readmem(injGetFacTrust,8)
+  jmp return
+
+injGetFacTrust:
+  jmp newmem
+  nop 3
+return:
+registersymbol(injGetFacTrust injGetFacTrustBkp faction_ptr)
+
+[DISABLE]
+
+injGetFacTrust:
+  readmem(injGetFacTrustBkp,8)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Strategy.StoryFaction.GetTrustLevel
+
+GameAssembly.dll.il2cpp+A873B: 48 8B 5C 24 48        - mov rbx,[rsp+48]
+GameAssembly.dll.il2cpp+A8740: 48 83 C4 30           - add rsp,30
+GameAssembly.dll.il2cpp+A8744: 5F                    - pop rdi
+GameAssembly.dll.il2cpp+A8745: C3                    - ret 
+GameAssembly.dll.il2cpp+A8746: E8 65 66 E9 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+A874B: CC                    - int 3 
+GameAssembly.dll.il2cpp+A874C: CC                    - int 3 
+GameAssembly.dll.il2cpp+A874D: CC                    - int 3 
+GameAssembly.dll.il2cpp+A874E: CC                    - int 3 
+GameAssembly.dll.il2cpp+A874F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Strategy.StoryFaction.GetTrustLevel: 48 83 EC 28           - sub rsp,28
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+A8754: 4C 8B 49 10           - mov r9,[rcx+10]
+GameAssembly.dll.il2cpp+A8758: 44 8B 59 18           - mov r11d,[rcx+18]
+GameAssembly.dll.il2cpp+A875C: 4D 85 C9              - test r9,r9
+GameAssembly.dll.il2cpp+A875F: 74 56                 - je GameAssembly.dll.il2cpp+A87B7
+GameAssembly.dll.il2cpp+A8761: 4D 8B 91 F8 00 00 00  - mov r10,[r9+000000F8]
+GameAssembly.dll.il2cpp+A8768: 33 D2                 - xor edx,edx
+GameAssembly.dll.il2cpp+A876A: 8B CA                 - mov ecx,edx
+GameAssembly.dll.il2cpp+A876C: 8B C2                 - mov eax,edx
+GameAssembly.dll.il2cpp+A876E: 4D 85 D2              - test r10,r10
+GameAssembly.dll.il2cpp+A8771: 74 44                 - je GameAssembly.dll.il2cpp+A87B7
+}"""
+
+[[cheat]]
+id = "trust"
+name = "Trust"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "faction_ptr"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "squadleader-squads-select-leader"
+name = "Squadleader (Squads ->Select Leader)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+define(injUpdateUnitWindow,Menace.UI.Strategy.UnitWindowEquipment.UpdateSquaddiesElements)
+alloc(newmem,$1000,injUpdateUnitWindow)
+alloc(unitwindow_ptr,8)
+label(injUpdateUnitWindowBkp)
+label(return)
+
+newmem:
+  mov [unitwindow_ptr],rcx
+injUpdateUnitWindowBkp:
+  readmem(injUpdateUnitWindow,6)
+  jmp return
+
+injUpdateUnitWindow:
+  jmp newmem
+  nop
+return:
+registersymbol(injUpdateUnitWindow injUpdateUnitWindowBkp unitwindow_ptr)
+
+[DISABLE]
+
+injUpdateUnitWindow:
+  readmem(injUpdateUnitWindowBkp,6)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.UI.Strategy.UnitWindowEquipment.UpdateSquaddiesElements
+
+GameAssembly.dll.il2cpp+331C58: 48 8B CB              - mov rcx,rbx
+GameAssembly.dll.il2cpp+331C5B: 48 8B 5C 24 40        - mov rbx,[rsp+40]
+GameAssembly.dll.il2cpp+331C60: 48 8B 6C 24 48        - mov rbp,[rsp+48]
+GameAssembly.dll.il2cpp+331C65: 48 8B 74 24 50        - mov rsi,[rsp+50]
+GameAssembly.dll.il2cpp+331C6A: 48 8B 7C 24 58        - mov rdi,[rsp+58]
+GameAssembly.dll.il2cpp+331C6F: 48 83 C4 30           - add rsp,30
+GameAssembly.dll.il2cpp+331C73: 41 5E                 - pop r14
+GameAssembly.dll.il2cpp+331C75: E9 B6 E1 FF FF        - jmp Menace.UI.Strategy.UnitWindowEquipment.HideEquipmentAlternatives
+GameAssembly.dll.il2cpp+331C7A: E8 31 D1 C0 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+331C7F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.UI.Strategy.UnitWindowEquipment.UpdateSquaddiesElements: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+331C82: 48 83 EC 70           - sub rsp,70
+GameAssembly.dll.il2cpp+331C86: 80 3D A9 39 36 03 00  - cmp byte ptr [GameAssembly.dll+3B7F636],00
+GameAssembly.dll.il2cpp+331C8D: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+331C90: 75 37                 - jne GameAssembly.dll.il2cpp+331CC9
+GameAssembly.dll.il2cpp+331C92: 48 8D 0D 0F 95 13 03  - lea rcx,[GameAssembly.dll.data+C91A8]
+GameAssembly.dll.il2cpp+331C99: E8 82 CE C0 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+331C9E: 48 8D 0D F3 67 17 03  - lea rcx,[GameAssembly.dll.data+106498]
+GameAssembly.dll.il2cpp+331CA5: E8 76 CE C0 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+331CAA: 48 8D 0D B7 F9 15 03  - lea rcx,[GameAssembly.dll.data+EF668]
+GameAssembly.dll.il2cpp+331CB1: E8 6A CE C0 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+}"""
+
+[[cheat]]
+id = "remove-squadleader-perk-limit"
+name = "Remove Squadleader Perk Limit"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injCanBePromoted,Menace.Strategy.BaseUnitLeader.CanBePromoted)
+alloc(newmem,$1000,injCanBePromoted)
+
+label(code)
+label(return)
+
+newmem:
+  mov al,1
+  ret
+code:
+  push rbx
+  sub rsp,20
+  jmp return
+
+injCanBePromoted:
+  jmp newmem
+  nop
+return:
+registersymbol(injCanBePromoted)
+
+[DISABLE]
+
+injCanBePromoted:
+  db 40 53 48 83 EC 20
+
+unregistersymbol(injCanBePromoted)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Strategy.BaseUnitLeader.CanBePromoted
+
+GameAssembly.dll.il2cpp+C6586: CC                    - int 3 
+GameAssembly.dll.il2cpp+C6587: CC                    - int 3 
+GameAssembly.dll.il2cpp+C6588: CC                    - int 3 
+GameAssembly.dll.il2cpp+C6589: CC                    - int 3 
+GameAssembly.dll.il2cpp+C658A: CC                    - int 3 
+GameAssembly.dll.il2cpp+C658B: CC                    - int 3 
+GameAssembly.dll.il2cpp+C658C: CC                    - int 3 
+GameAssembly.dll.il2cpp+C658D: CC                    - int 3 
+GameAssembly.dll.il2cpp+C658E: CC                    - int 3 
+GameAssembly.dll.il2cpp+C658F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Strategy.BaseUnitLeader.CanBePromoted: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+C6592: 48 83 EC 20           - sub rsp,20
+GameAssembly.dll.il2cpp+C6596: 80 3D 15 E1 5C 03 00  - cmp byte ptr [GameAssembly.dll+3B7E6B2],00
+GameAssembly.dll.il2cpp+C659D: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+C65A0: 75 13                 - jne GameAssembly.dll.il2cpp+C65B5
+GameAssembly.dll.il2cpp+C65A2: 48 8D 0D 97 34 3A 03  - lea rcx,[GameAssembly.dll.data+C7A40]
+GameAssembly.dll.il2cpp+C65A9: E8 72 85 E7 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+C65AE: C6 05 FD E0 5C 03 01  - mov byte ptr [GameAssembly.dll+3B7E6B2],01
+GameAssembly.dll.il2cpp+C65B5: 48 8B 43 48           - mov rax,[rbx+48]
+GameAssembly.dll.il2cpp+C65B9: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+C65BC: 74 0D                 - je GameAssembly.dll.il2cpp+C65CB
+}"""
+
+[[cheat]]
+id = "no-promotion-cost"
+name = "No Promotion Cost"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injPromotionCost,Menace.Strategy.BaseUnitLeader.GetPromotionCost)
+alloc(newmem,$1000,injPromotionCost)
+label(injPromotionCostBkp)
+label(return)
+
+newmem:
+  mov rax,0
+  ret
+injPromotionCostBkp:
+  readmem(injPromotionCost,5)
+  jmp return
+
+injPromotionCost:
+  jmp newmem
+return:
+registersymbol(injPromotionCost injPromotionCostBkp)
+
+[DISABLE]
+
+injPromotionCost:
+  readmem(injPromotionCostBkp,5)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Strategy.BaseUnitLeader.GetPromotionCost
+
+GameAssembly.dll.il2cpp+C766C: 74 09              - je GameAssembly.dll.il2cpp+C7677
+GameAssembly.dll.il2cpp+C766E: 8B 40 18           - mov eax,[rax+18]
+GameAssembly.dll.il2cpp+C7671: 48 83 C4 20        - add rsp,20
+GameAssembly.dll.il2cpp+C7675: 5B                 - pop rbx
+GameAssembly.dll.il2cpp+C7676: C3                 - ret 
+GameAssembly.dll.il2cpp+C7677: E8 34 77 E7 FF     - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+C767C: CC                 - int 3 
+GameAssembly.dll.il2cpp+C767D: CC                 - int 3 
+GameAssembly.dll.il2cpp+C767E: CC                 - int 3 
+GameAssembly.dll.il2cpp+C767F: CC                 - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Strategy.BaseUnitLeader.GetPromotionCost: 48 89 5C 24 08     - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+C7685: 57                 - push rdi
+GameAssembly.dll.il2cpp+C7686: 48 83 EC 20        - sub rsp,20
+GameAssembly.dll.il2cpp+C768A: 33 D2              - xor edx,edx
+GameAssembly.dll.il2cpp+C768C: 48 8B D9           - mov rbx,rcx
+GameAssembly.dll.il2cpp+C768F: E8 4C 00 00 00     - call Menace.Strategy.BaseUnitLeader.GetRankTemplate
+GameAssembly.dll.il2cpp+C7694: 48 85 C0           - test rax,rax
+GameAssembly.dll.il2cpp+C7697: 74 3A              - je GameAssembly.dll.il2cpp+C76D3
+GameAssembly.dll.il2cpp+C7699: 8B B8 90 00 00 00  - mov edi,[rax+00000090]
+GameAssembly.dll.il2cpp+C769F: 48 8B 43 20        - mov rax,[rbx+20]
+GameAssembly.dll.il2cpp+C76A3: 48 85 C0           - test rax,rax
+}"""
+
+[[cheat]]
+id = "super-growth-potential-only-applies-as-long-as-script-is-active"
+name = "Super Growth Potential (Only Applies As Long As Script Is Active)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injGetGrowthPotential,Menace.Strategy.BaseUnitLeader.GetGrowthPotential) // should be unique
+alloc(newmem,$1000,injGetGrowthPotential)
+
+label(injGetGrowthPotentialBkp)
+label(return)
+
+newmem:
+  mov rax,#100
+  ret
+injGetGrowthPotentialBkp:
+  readmem(injGetGrowthPotential,5)
+  jmp return
+
+injGetGrowthPotential:
+  jmp newmem
+return:
+registersymbol(injGetGrowthPotential injGetGrowthPotentialBkp)
+
+[DISABLE]
+
+injGetGrowthPotential:
+  readmem(injGetGrowthPotentialBkp,5)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Strategy.BaseUnitLeader.GetGrowthPotential
+
+GameAssembly.dll.il2cpp+C720C: 48 81 C4 80 00 00 00  - add rsp,00000080
+GameAssembly.dll.il2cpp+C7213: 5B                    - pop rbx
+GameAssembly.dll.il2cpp+C7214: C3                    - ret 
+GameAssembly.dll.il2cpp+C7215: E8 96 7B E7 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+C721A: CC                    - int 3 
+GameAssembly.dll.il2cpp+C721B: CC                    - int 3 
+GameAssembly.dll.il2cpp+C721C: CC                    - int 3 
+GameAssembly.dll.il2cpp+C721D: CC                    - int 3 
+GameAssembly.dll.il2cpp+C721E: CC                    - int 3 
+GameAssembly.dll.il2cpp+C721F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Strategy.BaseUnitLeader.GetGrowthPotential: 48 89 5C 24 10        - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+C7225: 48 89 74 24 18        - mov [rsp+18],rsi
+GameAssembly.dll.il2cpp+C722A: 57                    - push rdi
+GameAssembly.dll.il2cpp+C722B: 48 83 EC 60           - sub rsp,60
+GameAssembly.dll.il2cpp+C722F: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+C7232: 80 3D BB E4 5C 03 00  - cmp byte ptr [GameAssembly.dll+3B7F6F4],00
+GameAssembly.dll.il2cpp+C7239: 75 4F                 - jne GameAssembly.dll.il2cpp+C728A
+GameAssembly.dll.il2cpp+C723B: 48 8D 0D BE 2A 3D 03  - lea rcx,[GameAssembly.dll.data+F6D00]
+GameAssembly.dll.il2cpp+C7242: E8 D9 78 E7 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+C7247: 48 8D 0D 6A 2B 3D 03  - lea rcx,[GameAssembly.dll.data+F6DB8]
+GameAssembly.dll.il2cpp+C724E: E8 CD 78 E7 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+}"""
+
+[[cheat]]
+id = "agility"
+name = "Agility"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x30",
+    "+0x10",
+    "+0x20",
+]
+
+[[cheat]]
+id = "weapon-skill"
+name = "Weapon Skill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x30",
+    "+0x10",
+    "+0x24",
+]
+
+[[cheat]]
+id = "valor"
+name = "Valor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x30",
+    "+0x10",
+    "+0x28",
+]
+
+[[cheat]]
+id = "toughness"
+name = "Toughness"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x30",
+    "+0x10",
+    "+0x2c",
+]
+
+[[cheat]]
+id = "vitality"
+name = "Vitality"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x30",
+    "+0x10",
+    "+0x30",
+]
+
+[[cheat]]
+id = "precision"
+name = "Precision"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x30",
+    "+0x10",
+    "+0x34",
+]
+
+[[cheat]]
+id = "positioning"
+name = "Positioning"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x30",
+    "+0x10",
+    "+0x38",
+]
+
+[[cheat]]
+id = "vision"
+name = "Vision"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0xc4",
+]
+
+[[cheat]]
+id = "detection"
+name = "Detection"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0xcc",
+]
+
+[[cheat]]
+id = "concealment"
+name = "Concealment"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0xd4",
+]
+
+[[cheat]]
+id = "accuracy"
+name = "Accuracy"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0x68",
+]
+
+[[cheat]]
+id = "critical-chance"
+name = "Critical Chance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0x7c",
+]
+
+[[cheat]]
+id = "dmg-taken"
+name = "Dmg Taken"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0xc8",
+]
+
+[[cheat]]
+id = "growth-potential-capped"
+name = "Growth Potential (Capped)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x10",
+    "+0xd0",
+]
+
+[[cheat]]
+id = "promotion-tax"
+name = "Promotion Tax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x10",
+    "+0xd8",
+]
+
+[[cheat]]
+id = "squaddie-tax"
+name = "Squaddie Tax"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x10",
+    "+0xdc",
+]
+
+[[cheat]]
+id = "action-points"
+name = "Action Points"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0x34",
+]
+
+[[cheat]]
+id = "deployment-zone-size-multiplier"
+name = "Deployment Zone Size Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0xf4",
+]
+
+[[cheat]]
+id = "deployment-cost-multiplier"
+name = "Deployment Cost Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = [
+    "+0x68",
+    "+0x28",
+    "+0xfc",
+]
+
+[[cheat]]
+id = "combat-options-move-with-a-unit-to-populate-current-unit"
+name = "[Combat Options] (Move with a unit to populate current Unit)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version:
+  Date   : 2026-02-08
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+
+
+[ENABLE]
+
+define(injSetActionPts,Menace.Tactical.Actor.SetActionPoints) // should be unique
+define(injOnDmgRecieved,Menace.Tactical.Actor.OnDamageReceived)
+define(onTacUpdate,Menace.States.TacticalState.OnUpdate)
+define(injOnCurrentTurn,Menace.States.TacticalState.OnTurnStart)
+alloc(newmem4,$1000,injOnCurrentTurn)
+alloc(current_actor,8)
+alloc(newmem3,$1000,onTacUpdate)
+alloc(tactical_ptr,8)
+alloc(newmem,$1000)
+alloc(cur_actor,8)
+alloc(bool_infAP,8)
+alloc(bool_mult_ap,8)
+alloc(mult_ap_factor,8)
+label(injSetActionPtsBkp)
+label(return)
+alloc(newmem2,$1000,injOnDmgRecieved)
+label(injOnDmgRecievedBkp)
+label(return2)
+alloc(bool_infHp,8)
+alloc(bool_oneHit,8)
+label(onTacUpdateBkp)
+label(return3)
+label(injOnCurrentTurnBkp)
+label(return4)
+bool_infHp:
+ dd 0
+bool_oneHit:
+ dd 0
+bool_infAP:
+ dd 0
+bool_mult_ap:
+ dd 0
+mult_ap_factor:
+ dd (float)0.5
+
+newmem:
+  mov [cur_actor],rcx
+  cmp [bool_infAP],1
+  jne ap_mult
+  //cmp [rcx+Actor.m_FactionID],1 //Check if actor belongs to playerfaction 1=playerfaction (unconfirmed)
+  cmp [rcx+04c],1
+  jne ap_mult
+  mov rdx,#999
+  jmp injSetActionPtsBkp
+ap_mult:
+  //mov [bool_mult_ap],rcx
+  cmp [bool_mult_ap],1
+  jne injSetActionPtsBkp
+
+  cmp [rcx+04c],1
+  jne injSetActionPtsBkp
+
+  // RDX = New AP value being set
+  // [rcx+148] = Current  AP
+  push rax
+  push rbx
+  mov eax,[rcx+148]
+  cmp edx,eax
+  jge apply_mult
+
+  sub eax,edx  // NewAP = OldAP - ((OldAP - NewAP) * factor)
+  cvtsi2ss xmm0,eax
+  mulss xmm0,[mult_ap_factor] // xmm0 = diff * factor
+  cvtss2si eax,xmm0        // rounded diff
+
+  mov ebx,[rcx+148]
+  sub ebx,eax              // adjusted diff
+  mov edx,ebx
+
+apply_mult:
+  pop rbx
+  pop rax
+
+  jmp injSetActionPtsBkp
+injSetActionPtsBkp:
+  readmem(injSetActionPts,15)
+  jmp return
+
+injSetActionPts:
+  jmp far newmem
+  nop
+return:
+registersymbol(injSetActionPts injSetActionPtsBkp cur_actor bool_infAP bool_mult_ap mult_ap_factor)
+
+
+newmem2:
+  cmp [bool_infHp],1
+  jne opt_oneHit
+  cmp [rcx+04c],1 //isPlayerunit
+  jne opt_oneHit
+  //Menance.Tactical.DamageInfo
+  mov [r9+2c],#0 //DamageInfo.Damage
+  mov [r9+34],#0 //DamageInfo.ArmorPenetraion
+  mov [r9+38],#0 //DamageInfo.ArmorDamage
+opt_oneHit:
+  cmp [bool_oneHit],1
+  jne injOnDmgRecievedBkp
+  cmp [rcx+04c],1 //isEnemyUnit
+  je injOnDmgRecievedBkp
+  mov [r9+2c],#99999
+  mov [r9+34],#99999
+  mov [r9+38],#99999
+injOnDmgRecievedBkp:
+  readmem(injOnDmgRecieved,5)
+  jmp return2
+
+injOnDmgRecieved:
+  jmp newmem2
+return2:
+registersymbol(injOnDmgRecieved injOnDmgRecievedBkp bool_infHp bool_oneHit)
+
+
+
+newmem3:
+  mov [tactical_ptr],rcx
+onTacUpdateBkp:
+  readmem(onTacUpdate,8)
+  jmp return3
+
+onTacUpdate:
+  jmp newmem3
+  nop 3
+return3:
+registersymbol(onTacUpdate onTacUpdateBkp tactical_ptr)
+
+
+newmem4:
+  mov [current_actor],rdx
+injOnCurrentTurnBkp:
+  readmem(injOnCurrentTurn,5)
+  jmp return4
+
+injOnCurrentTurn:
+  jmp newmem4
+return4:
+registersymbol(injOnCurrentTurn injOnCurrentTurnBkp current_actor)
+
+[DISABLE]
+
+injSetActionPts:
+  readmem(injSetActionPtsBkp,15)
+
+injOnDmgRecieved:
+  readmem(injOnDmgRecievedBkp,5)
+  //db 40 53 56 41 56
+
+onTacUpdate:
+  readmem(onTacUpdateBkp,8)
+  //db 40 55 57 48 8D 6C 24 B1
+
+injOnCurrentTurn:
+  readmem(injOnCurrentTurnBkp,5)
+  //db 48 89 5C 24 08
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.Actor.SetActionPoints
+
+GameAssembly.dll.il2cpp+FC8DF: 48 83 C4 30           - add rsp,30
+GameAssembly.dll.il2cpp+FC8E3: 5F                    - pop rdi
+GameAssembly.dll.il2cpp+FC8E4: C3                    - ret
+GameAssembly.dll.il2cpp+FC8E5: E8 C6 24 E4 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+FC8EA: CC                    - int 3
+GameAssembly.dll.il2cpp+FC8EB: CC                    - int 3
+GameAssembly.dll.il2cpp+FC8EC: CC                    - int 3
+GameAssembly.dll.il2cpp+FC8ED: CC                    - int 3
+GameAssembly.dll.il2cpp+FC8EE: CC                    - int 3
+GameAssembly.dll.il2cpp+FC8EF: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Menace.Tactical.Actor.SetActionPoints: 48 89 5C 24 10        - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+FC8F5: 48 89 74 24 18        - mov [rsp+18],rsi
+GameAssembly.dll.il2cpp+FC8FA: 57                    - push rdi
+GameAssembly.dll.il2cpp+FC8FB: 48 83 EC 30           - sub rsp,30
+GameAssembly.dll.il2cpp+FC8FF: 80 3D 9B 7E 59 03 00  - cmp byte ptr [GameAssembly.dll+3B7E7A1],00
+GameAssembly.dll.il2cpp+FC906: 8B FA                 - mov edi,edx
+GameAssembly.dll.il2cpp+FC908: 41 0F B6 F0           - movzx esi,r8b
+GameAssembly.dll.il2cpp+FC90C: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+FC90F: 75 13                 - jne GameAssembly.dll.il2cpp+FC924
+GameAssembly.dll.il2cpp+FC911: 48 8D 0D 88 32 35 03  - lea rcx,[GameAssembly.dll.data+ADBA0]
+GameAssembly.dll.il2cpp+FC918: E8 03 22 E4 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+}
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.Actor.OnDamageReceived
+
+GameAssembly.dll.il2cpp+F8042: E8 69 6D E4 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+F8047: CC                    - int 3
+GameAssembly.dll.il2cpp+F8048: CC                    - int 3
+GameAssembly.dll.il2cpp+F8049: CC                    - int 3
+GameAssembly.dll.il2cpp+F804A: CC                    - int 3
+GameAssembly.dll.il2cpp+F804B: CC                    - int 3
+GameAssembly.dll.il2cpp+F804C: CC                    - int 3
+GameAssembly.dll.il2cpp+F804D: CC                    - int 3
+GameAssembly.dll.il2cpp+F804E: CC                    - int 3
+GameAssembly.dll.il2cpp+F804F: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Menace.Tactical.Actor.OnDamageReceived: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+F8052: 56                    - push rsi
+GameAssembly.dll.il2cpp+F8053: 41 56                 - push r14
+GameAssembly.dll.il2cpp+F8055: 41 57                 - push r15
+GameAssembly.dll.il2cpp+F8057: 48 83 EC 68           - sub rsp,68
+GameAssembly.dll.il2cpp+F805B: 80 3D 62 C7 59 03 00  - cmp byte ptr [GameAssembly.dll+3B7E7C4],00
+GameAssembly.dll.il2cpp+F8062: 49 8B D9              - mov rbx,r9
+GameAssembly.dll.il2cpp+F8065: 4D 8B F8              - mov r15,r8
+GameAssembly.dll.il2cpp+F8068: 4C 8B F2              - mov r14,rdx
+GameAssembly.dll.il2cpp+F806B: 48 8B F1              - mov rsi,rcx
+GameAssembly.dll.il2cpp+F806E: 75 37                 - jne GameAssembly.dll.il2cpp+F80A7
+}
+
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.States.TacticalState.OnUpdate
+
+GameAssembly.dll.il2cpp+15F3CB: 48 8B 5C 24 30        - mov rbx,[rsp+30]
+GameAssembly.dll.il2cpp+15F3D0: 48 83 C4 20           - add rsp,20
+GameAssembly.dll.il2cpp+15F3D4: 5F                    - pop rdi
+GameAssembly.dll.il2cpp+15F3D5: C3                    - ret
+GameAssembly.dll.il2cpp+15F3D6: E8 D5 F9 DD FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+15F3DB: CC                    - int 3
+GameAssembly.dll.il2cpp+15F3DC: CC                    - int 3
+GameAssembly.dll.il2cpp+15F3DD: CC                    - int 3
+GameAssembly.dll.il2cpp+15F3DE: CC                    - int 3
+GameAssembly.dll.il2cpp+15F3DF: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Menace.States.TacticalState.OnUpdate: 40 55                 - push rbp
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+15F3E2: 57                    - push rdi
+GameAssembly.dll.il2cpp+15F3E3: 48 8D 6C 24 B1        - lea rbp,[rsp-4F]
+GameAssembly.dll.il2cpp+15F3E8: 48 81 EC C8 00 00 00  - sub rsp,000000C8
+GameAssembly.dll.il2cpp+15F3EF: 80 3D 70 66 53 03 00  - cmp byte ptr [GameAssembly.dll+3B7FA66],00
+GameAssembly.dll.il2cpp+15F3F6: 48 8B F9              - mov rdi,rcx
+GameAssembly.dll.il2cpp+15F3F9: 0F 85 D3 00 00 00     - jne GameAssembly.dll.il2cpp+15F4D2
+GameAssembly.dll.il2cpp+15F3FF: 48 8D 0D B2 A7 31 03  - lea rcx,[GameAssembly.dll.data+D6BB8]
+GameAssembly.dll.il2cpp+15F406: E8 15 F7 DD FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+15F40B: 48 8D 0D 96 49 31 03  - lea rcx,[GameAssembly.dll.data+D0DA8]
+GameAssembly.dll.il2cpp+15F412: E8 09 F7 DD FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+}
+
+
+
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.States.TacticalState.OnTurnStart
+
+GameAssembly.dll.il2cpp+15F386: CC              - int 3
+GameAssembly.dll.il2cpp+15F387: CC              - int 3
+GameAssembly.dll.il2cpp+15F388: CC              - int 3
+GameAssembly.dll.il2cpp+15F389: CC              - int 3
+GameAssembly.dll.il2cpp+15F38A: CC              - int 3
+GameAssembly.dll.il2cpp+15F38B: CC              - int 3
+GameAssembly.dll.il2cpp+15F38C: CC              - int 3
+GameAssembly.dll.il2cpp+15F38D: CC              - int 3
+GameAssembly.dll.il2cpp+15F38E: CC              - int 3
+GameAssembly.dll.il2cpp+15F38F: CC              - int 3
+// ---------- INJECTING HERE ----------
+Menace.States.TacticalState.OnTurnStart: 48 89 5C 24 08  - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+15F395: 57              - push rdi
+GameAssembly.dll.il2cpp+15F396: 48 83 EC 20     - sub rsp,20
+GameAssembly.dll.il2cpp+15F39A: 48 8B DA        - mov rbx,rdx
+GameAssembly.dll.il2cpp+15F39D: 48 8B F9        - mov rdi,rcx
+GameAssembly.dll.il2cpp+15F3A0: 33 D2           - xor edx,edx
+GameAssembly.dll.il2cpp+15F3A2: E8 E9 B5 FF FF  - call Menace.States.TacticalState.CancelCurrentAction
+GameAssembly.dll.il2cpp+15F3A7: 48 85 DB        - test rbx,rbx
+GameAssembly.dll.il2cpp+15F3AA: 74 2A           - je GameAssembly.dll.il2cpp+15F3D6
+GameAssembly.dll.il2cpp+15F3AC: 45 33 C0        - xor r8d,r8d
+GameAssembly.dll.il2cpp+15F3AF: 33 D2           - xor edx,edx
+}"""
+
+[[cheat]]
+id = "inf-ap"
+name = "Inf. AP"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bool_infAP:
+  dd 1
+
+[DISABLE]
+bool_infAP:
+  dd 0"""
+
+[[cheat]]
+id = "ap-usage-multiplier"
+name = "AP Usage Multiplier "
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bool_mult_ap:
+  dd 1
+
+[DISABLE]
+bool_mult_ap:
+  dd 0"""
+
+[[cheat]]
+id = "ap-usage-multiplier-2"
+name = "AP Usage Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "mult_ap_factor"
+hops = []
+
+[[cheat]]
+id = "inf-squad-health"
+name = "Inf. Squad Health"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bool_infHp:
+  dd 1
+
+[DISABLE]
+bool_infHp:
+  dd 0"""
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill "
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+bool_oneHit:
+  dd 1
+
+[DISABLE]
+bool_oneHit:
+  dd 0"""
+
+[[cheat]]
+id = "no-weapons-jam"
+name = "No Weapons Jam"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-17
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-17
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(isUseable,Menace.Tactical.Skills.Effects.JammingHandler.IsUsable) // should be unique
+define(isJammed,Menace.Tactical.Skills.Effects.JammingHandler.IsJammed) // should be unique
+alloc(newmem,$1000,isUseable)
+alloc(newmem2,$1000,isJammed)
+label(isJammedBkp)
+label(return2)
+label(isUseableBkp)
+label(return)
+
+newmem:
+  mov al,1
+  ret
+isUseableBkp:
+  readmem(isUseable,6)
+  jmp return
+
+isUseable:
+  jmp newmem
+  nop
+return:
+registersymbol(isUseable isUseableBkp)
+
+newmem2:
+  mov al,0
+  ret
+isJammedBkp:
+  readmem(isJammed,6)
+  jmp return2
+
+isJammed:
+  jmp newmem2
+  nop
+return2:
+registersymbol(isJammed isJammedBkp)
+
+[DISABLE]
+
+isUseable:
+  readmem(isUseableBkp,6)
+  //db 40 53 48 83 EC 20
+isJammed:
+  readmem(isJammedBkp,6)
+  //db 40 53 48 83 EC 20
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.Skills.Effects.JammingHandler.IsUsable
+
+GameAssembly.dll.il2cpp+21ECB6: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECB7: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECB8: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECB9: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECBA: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECBB: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECBC: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECBD: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECBE: CC                    - int 3 
+GameAssembly.dll.il2cpp+21ECBF: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Tactical.Skills.Effects.JammingHandler.IsUsable: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+21ECC2: 48 83 EC 20           - sub rsp,20
+GameAssembly.dll.il2cpp+21ECC6: 80 3D 2F BA 47 03 00  - cmp byte ptr [GameAssembly.dll+3B856FC],00
+GameAssembly.dll.il2cpp+21ECCD: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+21ECD0: 75 13                 - jne GameAssembly.dll.il2cpp+21ECE5
+GameAssembly.dll.il2cpp+21ECD2: 48 8D 0D 07 AE 26 03  - lea rcx,[GameAssembly.dll.data+E1AE0]
+GameAssembly.dll.il2cpp+21ECD9: E8 02 F7 D1 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+21ECDE: C6 05 17 BA 47 03 01  - mov byte ptr [GameAssembly.dll+3B856FC],01
+GameAssembly.dll.il2cpp+21ECE5: 48 8B 05 F4 AD 26 03  - mov rax,[GameAssembly.dll.data+E1AE0]
+GameAssembly.dll.il2cpp+21ECEC: 48 8B 90 B8 00 00 00  - mov rdx,[rax+000000B8]
+GameAssembly.dll.il2cpp+21ECF3: 48 8B 02              - mov rax,[rdx]
+}
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.Skills.Effects.JammingHandler.IsJammed
+
+GameAssembly.dll.il2cpp+21EC44: 48 8B 41 10           - mov rax,[rcx+10]
+GameAssembly.dll.il2cpp+21EC48: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+21EC4B: 74 0B                 - je GameAssembly.dll.il2cpp+21EC58
+GameAssembly.dll.il2cpp+21EC4D: 8B 80 A8 00 00 00     - mov eax,[rax+000000A8]
+GameAssembly.dll.il2cpp+21EC53: 48 83 C4 28           - add rsp,28
+GameAssembly.dll.il2cpp+21EC57: C3                    - ret 
+GameAssembly.dll.il2cpp+21EC58: E8 13 FA D1 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+21EC5D: CC                    - int 3 
+GameAssembly.dll.il2cpp+21EC5E: CC                    - int 3 
+GameAssembly.dll.il2cpp+21EC5F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Tactical.Skills.Effects.JammingHandler.IsJammed: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+21EC62: 48 83 EC 20           - sub rsp,20
+GameAssembly.dll.il2cpp+21EC66: 80 3D 8F BA 47 03 00  - cmp byte ptr [GameAssembly.dll+3B856FC],00
+GameAssembly.dll.il2cpp+21EC6D: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+21EC70: 75 13                 - jne GameAssembly.dll.il2cpp+21EC85
+GameAssembly.dll.il2cpp+21EC72: 48 8D 0D 67 AE 26 03  - lea rcx,[GameAssembly.dll.data+E1AE0]
+GameAssembly.dll.il2cpp+21EC79: E8 62 F7 D1 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+21EC7E: C6 05 77 BA 47 03 01  - mov byte ptr [GameAssembly.dll+3B856FC],01
+GameAssembly.dll.il2cpp+21EC85: 48 8B 05 54 AE 26 03  - mov rax,[GameAssembly.dll.data+E1AE0]
+GameAssembly.dll.il2cpp+21EC8C: 48 8B 90 B8 00 00 00  - mov rdx,[rax+000000B8]
+GameAssembly.dll.il2cpp+21EC93: 48 8B 02              - mov rax,[rdx]
+}"""
+
+[[cheat]]
+id = "inf-skill-range-no-min-range"
+name = "Inf. Skill Range / No Min. Range"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-07
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+
+
+[ENABLE]
+
+aobscanregion(injSkillIsInRange,Menace.Tactical.Skills.Skill.IsInRange,Menace.Tactical.Skills.Skill.IsInRange+2000,3B 91 B4 00 00 00) // should be unique
+aobscanregion(injSkillIsInRange2,Menace.Tactical.Skills.Skill.IsInRange,Menace.Tactical.Skills.Skill.IsInRange+2000,48 8B C4 48 89 58 08) // should be unique
+alloc(newmem,$1000,injSkillIsInRange)
+alloc(newmem2,$1000,injSkillIsInRange2)
+label(injSkillIsInRangeBkp)
+label(return)
+label(injSkillIsInRange2Bkp)
+label(return2)
+newmem:
+  mov rax,[current_actor]
+  test rax,rax
+  jz injSkillIsInRangeBkp
+  cmp [rax+04c],1 //Actor.FactionID
+  jne injSkillIsInRangeBkp
+pl_rangecheck:
+  mov rax,1
+  ret
+injSkillIsInRangeBkp:
+  readmem(injSkillIsInRange,6)
+  jmp return
+
+injSkillIsInRange:
+  jmp newmem
+  nop
+return:
+registersymbol(injSkillIsInRange injSkillIsInRangeBkp)
+
+newmem2:
+  mov rax,[current_actor]
+  test rax,rax
+  jz injSkillIsInRange2Bkp
+  cmp [rax+04c],1 //Actor.FactionID
+  jne injSkillIsInRange2Bkp
+pl_rangecheck2:
+  mov rax,1
+  ret
+injSkillIsInRange2Bkp:
+  readmem(injSkillIsInRange2,7)
+  jmp return2
+
+injSkillIsInRange2:
+  jmp newmem2
+  nop 2
+return2:
+registersymbol(injSkillIsInRange2 injSkillIsInRange2Bkp)
+
+[DISABLE]
+
+injSkillIsInRange:
+  readmem(injSkillIsInRangeBkp,6)
+  //db 3B 91 B4 00 00 00
+
+injSkillIsInRange2:
+  readmem(injSkillIsInRange2Bkp,7)
+  //db 48 8B C4 48 89 58 08
+
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.Skills.Skill.IsInRange
+
+GameAssembly.dll.il2cpp+1F4006: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F4007: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F4008: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F4009: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F400A: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F400B: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F400C: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F400D: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F400E: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F400F: CC                 - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Tactical.Skills.Skill.IsInRange: 3B 91 B4 00 00 00  - cmp edx,[rcx+000000B4]
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+1F4016: 7D 03              - jnl GameAssembly.dll.il2cpp+1F401B
+GameAssembly.dll.il2cpp+1F4018: 32 C0              - xor al,al
+GameAssembly.dll.il2cpp+1F401A: C3                 - ret 
+GameAssembly.dll.il2cpp+1F401B: 8B 89 BC 00 00 00  - mov ecx,[rcx+000000BC]
+GameAssembly.dll.il2cpp+1F4021: 41 03 C8           - add ecx,r8d
+GameAssembly.dll.il2cpp+1F4024: 3B D1              - cmp edx,ecx
+GameAssembly.dll.il2cpp+1F4026: 0F 9E C0           - setle al
+GameAssembly.dll.il2cpp+1F4029: C3                 - ret 
+GameAssembly.dll.il2cpp+1F402A: CC                 - int 3 
+GameAssembly.dll.il2cpp+1F402B: CC                 - int 3 
+}
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.Skills.Skill.IsInRange
+
+GameAssembly.dll.il2cpp+1F4021: 41 03 C8     - add ecx,r8d
+GameAssembly.dll.il2cpp+1F4024: 3B D1        - cmp edx,ecx
+GameAssembly.dll.il2cpp+1F4026: 0F 9E C0     - setle al
+GameAssembly.dll.il2cpp+1F4029: C3           - ret 
+GameAssembly.dll.il2cpp+1F402A: CC           - int 3 
+GameAssembly.dll.il2cpp+1F402B: CC           - int 3 
+GameAssembly.dll.il2cpp+1F402C: CC           - int 3 
+GameAssembly.dll.il2cpp+1F402D: CC           - int 3 
+GameAssembly.dll.il2cpp+1F402E: CC           - int 3 
+GameAssembly.dll.il2cpp+1F402F: CC           - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Tactical.Skills.Skill.IsInRange: 48 8B C4     - mov rax,rsp
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+1F4033: 48 89 58 08  - mov [rax+08],rbx
+GameAssembly.dll.il2cpp+1F4037: 48 89 68 10  - mov [rax+10],rbp
+GameAssembly.dll.il2cpp+1F403B: 48 89 70 18  - mov [rax+18],rsi
+GameAssembly.dll.il2cpp+1F403F: 48 89 78 20  - mov [rax+20],rdi
+GameAssembly.dll.il2cpp+1F4043: 41 56        - push r14
+GameAssembly.dll.il2cpp+1F4045: 48 83 EC 70  - sub rsp,70
+GameAssembly.dll.il2cpp+1F4049: 0F 29 70 E8  - movaps [rax-18],xmm6
+GameAssembly.dll.il2cpp+1F404D: 49 8B F0     - mov rsi,r8
+GameAssembly.dll.il2cpp+1F4050: 0F 29 78 D8  - movaps [rax-28],xmm7
+GameAssembly.dll.il2cpp+1F4054: 48 8B EA     - mov rbp,rdx
+}"""
+
+[[cheat]]
+id = "see-all-enemy-locations-fow-stays-you-will-see-their-healthbars"
+name = "See All Enemy Locations (FoW stays, you will see their healthbars)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injSetVisible,Menace.Tactical.Actor.SetVisibility) // should be unique
+alloc(newmem,$1000,injSetVisible)
+
+label(injSetVisibleBkp)
+label(return)
+
+newmem:
+  mov rdx,1  //enum Menace.Tactical.Visibility
+injSetVisibleBkp:
+  readmem(injSetVisible,5)
+  jmp return
+
+injSetVisible:
+  jmp newmem
+return:
+registersymbol(injSetVisible injSetVisibleBkp)
+
+[DISABLE]
+
+injSetVisible:
+  readmem(injSetVisibleBkp,5)
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.Actor.SetVisibility
+
+GameAssembly.dll.il2cpp+FDB66: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB67: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB68: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB69: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB6A: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB6B: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB6C: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB6D: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB6E: CC                    - int 3 
+GameAssembly.dll.il2cpp+FDB6F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Tactical.Actor.SetVisibility: 48 89 5C 24 08        - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+FDB75: 48 89 74 24 18        - mov [rsp+18],rsi
+GameAssembly.dll.il2cpp+FDB7A: 57                    - push rdi
+GameAssembly.dll.il2cpp+FDB7B: 48 83 EC 70           - sub rsp,70
+GameAssembly.dll.il2cpp+FDB7F: 0F 29 74 24 60        - movaps [rsp+60],xmm6
+GameAssembly.dll.il2cpp+FDB84: 8B F2                 - mov esi,edx
+GameAssembly.dll.il2cpp+FDB86: 48 8B F9              - mov rdi,rcx
+GameAssembly.dll.il2cpp+FDB89: 80 3D 0D 6C 59 03 00  - cmp byte ptr [GameAssembly.dll+3B7E79D],00
+GameAssembly.dll.il2cpp+FDB90: 75 5B                 - jne GameAssembly.dll.il2cpp+FDBED
+GameAssembly.dll.il2cpp+FDB92: 48 8D 0D D7 AF 37 03  - lea rcx,[GameAssembly.dll.data+D6B70]
+GameAssembly.dll.il2cpp+FDB99: E8 82 0F E4 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+}"""
+
+[[cheat]]
+id = "100-loot-drop-chance-from-defeated-enemies"
+name = "100% Loot Drop Chance From Defeated Enemies"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-07
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injLootDropChance,Menace.Tactical.EntityLootEntry.GetDropChance) // should be unique
+alloc(newmem,$1000,injLootDropChance)
+
+label(injLootDropChanceBkp)
+label(return)
+
+newmem:
+  mov rax,#999
+  ret
+injLootDropChanceBkp:
+  readmem(injLootDropChance,8)
+  jmp return
+
+injLootDropChance:
+  jmp newmem
+  nop 3
+return:
+registersymbol(injLootDropChance injLootDropChanceBkp)
+
+[DISABLE]
+
+injLootDropChance:
+  readmem(injLootDropChanceBkp,8)
+  //db 48 83 EC 28 80 79 1C 00
+
+unregistersymbol(injLootDropChance)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Tactical.EntityLootEntry.GetDropChance
+
+GameAssembly.dll.il2cpp+121752: E8 49 D6 E1 FF        - call GameAssembly.il2cpp_method_get_class+90
+GameAssembly.dll.il2cpp+121757: CC                    - int 3 
+GameAssembly.dll.il2cpp+121758: CC                    - int 3 
+GameAssembly.dll.il2cpp+121759: CC                    - int 3 
+GameAssembly.dll.il2cpp+12175A: CC                    - int 3 
+GameAssembly.dll.il2cpp+12175B: CC                    - int 3 
+GameAssembly.dll.il2cpp+12175C: CC                    - int 3 
+GameAssembly.dll.il2cpp+12175D: CC                    - int 3 
+GameAssembly.dll.il2cpp+12175E: CC                    - int 3 
+GameAssembly.dll.il2cpp+12175F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Tactical.EntityLootEntry.GetDropChance: 48 83 EC 28           - sub rsp,28
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+121764: 80 79 1C 00           - cmp byte ptr [rcx+1C],00
+GameAssembly.dll.il2cpp+121768: 75 3D                 - jne GameAssembly.dll.il2cpp+1217A7
+GameAssembly.dll.il2cpp+12176A: 80 3D 0D 3B 57 03 00  - cmp byte ptr [GameAssembly.dll+3B7F27E],00
+GameAssembly.dll.il2cpp+121771: 75 13                 - jne GameAssembly.dll.il2cpp+121786
+GameAssembly.dll.il2cpp+121773: 48 8D 0D 66 BC 35 03  - lea rcx,[GameAssembly.dll.data+DA3E0]
+GameAssembly.dll.il2cpp+12177A: E8 A1 D3 E1 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+12177F: C6 05 F8 3A 57 03 01  - mov byte ptr [GameAssembly.dll+3B7F27E],01
+GameAssembly.dll.il2cpp+121786: 48 8B 05 53 BC 35 03  - mov rax,[GameAssembly.dll.data+DA3E0]
+GameAssembly.dll.il2cpp+12178D: 48 8B 88 B8 00 00 00  - mov rcx,[rax+000000B8]
+GameAssembly.dll.il2cpp+121794: 48 8B 01              - mov rax,[rcx]
+}"""
+
+[[cheat]]
+id = "stat-gain-multiplier"
+name = "Stat Gain Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-11
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injTryIncrease,Menace.Strategy.UnitLeaderAttributes.TryIncrease) // should be unique
+alloc(newmem,$1000,injTryIncrease)
+alloc(stat_multiplier,8)
+label(injTryIncreaseBkp)
+label(return)
+
+stat_multiplier:
+  dd (float)3.0
+
+newmem:
+  mulss xmm2, [stat_multiplier]
+injTryIncreaseBkp:
+  readmem(injTryIncrease,8)
+  jmp return
+
+injTryIncrease:
+  jmp newmem
+  nop 3
+return:
+registersymbol(injTryIncrease injTryIncreaseBkp stat_multiplier)
+
+[DISABLE]
+
+injTryIncrease:
+  readmem(injTryIncreaseBkp,8)
+  //db 48 83 EC 28 4C 8B 41 10
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Strategy.UnitLeaderAttributes.TryIncrease
+
+GameAssembly.dll.il2cpp+DAEA6: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEA7: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEA8: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEA9: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEAA: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEAB: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEAC: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEAD: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEAE: CC                       - int 3 
+GameAssembly.dll.il2cpp+DAEAF: CC                       - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Strategy.UnitLeaderAttributes.TryIncrease: 48 83 EC 28              - sub rsp,28
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+DAEB4: 4C 8B 41 10              - mov r8,[rcx+10]
+GameAssembly.dll.il2cpp+DAEB8: 4D 85 C0                 - test r8,r8
+GameAssembly.dll.il2cpp+DAEBB: 74 5D                    - je GameAssembly.dll.il2cpp+DAF1A
+GameAssembly.dll.il2cpp+DAEBD: 41 3B 50 18              - cmp edx,[r8+18]
+GameAssembly.dll.il2cpp+DAEC1: 73 5D                    - jae GameAssembly.dll.il2cpp+DAF20
+GameAssembly.dll.il2cpp+DAEC3: F3 0F 10 0D AD AE 7C 02  - movss xmm1,[GameAssembly.dll.rdata+D78]
+GameAssembly.dll.il2cpp+DAECB: 48 63 C2                 - movsxd  rax,edx
+GameAssembly.dll.il2cpp+DAECE: F3 41 0F 10 44 80 20     - movss xmm0,[r8+rax*4+20]
+GameAssembly.dll.il2cpp+DAED5: 0F 2F C1                 - comiss xmm0,xmm1
+GameAssembly.dll.il2cpp+DAED8: 73 39                    - jae GameAssembly.dll.il2cpp+DAF13
+}"""
+
+[[cheat]]
+id = "passive-stat-gain-multiplier"
+name = "Passive Stat Gain Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "stat_multiplier"
+hops = []
+
+[[cheat]]
+id = "hitpoints"
+name = "Hitpoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "max-hitpoints"
+name = "Max Hitpoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x58"]
+
+[[cheat]]
+id = "armor"
+name = "Armor"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x5c"]
+
+[[cheat]]
+id = "max-armor"
+name = "Max. Armor"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x60"]
+
+[[cheat]]
+id = "supression"
+name = "Supression"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x15c"]
+
+[[cheat]]
+id = "morale"
+name = "Morale"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x160"]
+
+[[cheat]]
+id = "is-dying"
+name = "Is Dying"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x16a"]
+
+[[cheat]]
+id = "has-acted"
+name = "Has Acted"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x171"]
+
+[[cheat]]
+id = "attacked-this-round"
+name = "Attacked This Round"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "actionpoints"
+name = "Actionpoints"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = ["+0x148"]
+
+[[cheat]]
+id = "devmode-built-in-cheats-are-stripped"
+name = "DevMode (Built-In Cheats are Stripped)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-11
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+define(injEnableDevMode,Menace.DevSettings.GetBool) // should be unique
+alloc(newmem,$1000,injEnableDevMode)
+
+label(injEnableDevModeBkp)
+label(return)
+
+newmem:
+  mov al,1
+  ret
+injEnableDevModeBkp:
+  readmem(injEnableDevMode,6)
+  jmp return
+
+injEnableDevMode:
+  jmp newmem
+  nop
+return:
+registersymbol(injEnableDevMode injEnableDevModeBkp)
+
+[DISABLE]
+
+injEnableDevMode:
+  readmem(injEnableDevModeBkp,6)
+  //db 40 53 48 83 EC 20
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.DevSettings.GetBool
+
+GameAssembly.dll.il2cpp+2F737: 75 05                 - jne GameAssembly.dll.il2cpp+2F73E
+GameAssembly.dll.il2cpp+2F739: E8 52 F7 F0 FF        - call GameAssembly.il2cpp_runtime_class_init
+GameAssembly.dll.il2cpp+2F73E: 33 D2                 - xor edx,edx
+GameAssembly.dll.il2cpp+2F740: 48 8B CB              - mov rcx,rbx
+GameAssembly.dll.il2cpp+2F743: 48 83 C4 20           - add rsp,20
+GameAssembly.dll.il2cpp+2F747: 5B                    - pop rbx
+GameAssembly.dll.il2cpp+2F748: E9 03 E9 47 02        - jmp UnityEngine.Object.Destroy
+GameAssembly.dll.il2cpp+2F74D: CC                    - int 3 
+GameAssembly.dll.il2cpp+2F74E: CC                    - int 3 
+GameAssembly.dll.il2cpp+2F74F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.DevSettings.GetBool: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+2F752: 48 83 EC 20           - sub rsp,20
+GameAssembly.dll.il2cpp+2F756: 80 3D FB 5A 66 03 00  - cmp byte ptr [GameAssembly.dll+3B7F258],00
+GameAssembly.dll.il2cpp+2F75D: 48 63 D9              - movsxd  rbx,ecx
+GameAssembly.dll.il2cpp+2F760: 75 13                 - jne GameAssembly.dll.il2cpp+2F775
+GameAssembly.dll.il2cpp+2F762: 48 8D 0D 4F EE 44 03  - lea rcx,[GameAssembly.dll.data+DB5B8]
+GameAssembly.dll.il2cpp+2F769: E8 02 F4 F0 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+2F76E: C6 05 E3 5A 66 03 01  - mov byte ptr [GameAssembly.dll+3B7F258],01
+GameAssembly.dll.il2cpp+2F775: 48 8B 05 3C EE 44 03  - mov rax,[GameAssembly.dll.data+DB5B8]
+GameAssembly.dll.il2cpp+2F77C: 83 B8 E4 00 00 00 00  - cmp dword ptr [rax+000000E4],00
+GameAssembly.dll.il2cpp+2F783: 75 0F                 - jne GameAssembly.dll.il2cpp+2F794
+}"""
+
+[[cheat]]
+id = "skill-ptr"
+name = "skill_ptr"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "skill_ptr"
+hops = []
+
+[[cheat]]
+id = "unitwindow-ptr"
+name = "unitwindow_ptr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "unitwindow_ptr"
+hops = []
+
+[[cheat]]
+id = "squad-ptr"
+name = "squad_ptr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "squad_ptr"
+hops = []
+
+[[cheat]]
+id = "bool-refreshbm"
+name = "bool_refreshBM"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "bool_refreshBM"
+hops = []
+
+[[cheat]]
+id = "cur-actor"
+name = "cur_actor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "cur_actor"
+hops = []
+
+[[cheat]]
+id = "strategy-state"
+name = "strategy_state"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "strategy_state"
+hops = []
+
+[[cheat]]
+id = "squad-ptr-2"
+name = "squad_ptr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "squad_ptr"
+hops = []
+
+[[cheat]]
+id = "tactical-ptr"
+name = "tactical_ptr"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "tactical_ptr"
+hops = []
+
+[[cheat]]
+id = "old-free-black-market-items-still-requires-items-to-trade-activate-before-going-to-blackmarket"
+name = "old_ Free Black Market Items (Still requires Items to Trade, Activate before going to Blackmarket)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+define(injItemVal,Menace.Items.BaseItem.GetTradeValue) // should be unique
+alloc(newmem,$1000,injItemVal)
+
+label(code)
+label(return)
+
+newmem:
+  cmp [rcx+020],0 //m_blackmarketstacktype
+  jne zeroval
+  mov rax,#9999
+  ret
+zeroval:
+  mov rax,1
+  ret
+code:
+  movss [rsp+10],xmm1
+  jmp return
+
+injItemVal:
+  jmp newmem
+  nop
+return:
+registersymbol(injItemVal)
+
+[DISABLE]
+
+injItemVal:
+  db F3 0F 11 4C 24 10
+
+unregistersymbol(injItemVal)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.Items.BaseItem.GetTradeValue
+
+GameAssembly.dll.il2cpp+3358E5: 0F 28 74 24 40        - movaps xmm6,[rsp+40]
+GameAssembly.dll.il2cpp+3358EA: 48 83 C4 50           - add rsp,50
+GameAssembly.dll.il2cpp+3358EE: 41 5F                 - pop r15
+GameAssembly.dll.il2cpp+3358F0: 41 5E                 - pop r14
+GameAssembly.dll.il2cpp+3358F2: 5F                    - pop rdi
+GameAssembly.dll.il2cpp+3358F3: C3                    - ret 
+GameAssembly.dll.il2cpp+3358F4: E8 B7 94 C0 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+3358F9: CC                    - int 3 
+GameAssembly.dll.il2cpp+3358FA: E8 B1 94 C0 FF        - call GameAssembly.il2cpp_method_get_class+A0
+GameAssembly.dll.il2cpp+3358FF: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.Items.BaseItem.GetTradeValue: F3 0F 11 4C 24 10     - movss [rsp+10],xmm1
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+335906: 53                    - push rbx
+GameAssembly.dll.il2cpp+335907: 48 83 EC 20           - sub rsp,20
+GameAssembly.dll.il2cpp+33590B: 80 3D 13 FE 35 03 00  - cmp byte ptr [GameAssembly.dll+3B7F725],00
+GameAssembly.dll.il2cpp+335912: 48 8B D9              - mov rbx,rcx
+GameAssembly.dll.il2cpp+335915: 75 13                 - jne GameAssembly.dll.il2cpp+33592A
+GameAssembly.dll.il2cpp+335917: 48 8D 0D 12 A2 11 03  - lea rcx,[GameAssembly.dll.data+ADB30]
+GameAssembly.dll.il2cpp+33591E: E8 FD 91 C0 FF        - call GameAssembly.il2cpp_get_exception_argument_null+3D0
+GameAssembly.dll.il2cpp+335923: C6 05 FB FD 35 03 01  - mov byte ptr [GameAssembly.dll+3B7F725],01
+GameAssembly.dll.il2cpp+33592A: 48 8B 4B 18           - mov rcx,[rbx+18]
+GameAssembly.dll.il2cpp+33592E: 48 89 7C 24 30        - mov [rsp+30],rdi
+}"""
+
+[[cheat]]
+id = "old-unlimited-mission-loadout-6-2"
+name = "old_ Unlimited Mission Loadout (6.2)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-06
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+
+
+aobscanmodule(injAdjustMissionCosts,GameAssembly.dll,0F 28 C8 E8 D6 0A EF FF) // should be unique
+alloc(newmem,$1000,injAdjustMissionCosts)
+alloc(float_val,8)
+label(code)
+label(return)
+
+float_val:
+  dd (float)9999.0
+newmem:
+
+code:
+  movss xmm0,[float_val]
+  movss xmm1,[float_val]
+  call Menace.Tools.FloatExtensions.AddMult
+  jmp return
+
+injAdjustMissionCosts:
+  jmp newmem
+  nop 3
+return:
+registersymbol(injAdjustMissionCosts)
+
+[DISABLE]
+
+injAdjustMissionCosts:
+  db 0F 28 C8 E8 D6 0A EF FF
+
+unregistersymbol(injAdjustMissionCosts)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+157472
+
+GameAssembly.dll.il2cpp+157441: 0F 86 16 01 00 00           - jbe GameAssembly.dll.il2cpp+15755D
+GameAssembly.dll.il2cpp+157447: 48 85 C9                    - test rcx,rcx
+GameAssembly.dll.il2cpp+15744A: 0F 84 13 01 00 00           - je GameAssembly.dll.il2cpp+157563
+GameAssembly.dll.il2cpp+157450: 44 8B 48 34                 - mov r9d,[rax+34]
+GameAssembly.dll.il2cpp+157454: BA 01 00 00 00              - mov edx,00000001
+GameAssembly.dll.il2cpp+157459: 44 8B 40 30                 - mov r8d,[rax+30]
+GameAssembly.dll.il2cpp+15745D: 48 C7 44 24 20 00 00 00 00  - mov qword ptr [rsp+20],00000000
+GameAssembly.dll.il2cpp+157466: E8 C5 84 F2 FF              - call Menace.Strategy.CampaignProgressConfig.GetCampaignProgress
+GameAssembly.dll.il2cpp+15746B: 45 33 C0                    - xor r8d,r8d
+GameAssembly.dll.il2cpp+15746E: 48 8D 4F 14                 - lea rcx,[rdi+14]
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+157472: 0F 28 C8                    - movaps xmm1,xmm0
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+157475: E8 D6 0A EF FF              - call Menace.Tools.FloatExtensions.AddMult
+GameAssembly.dll.il2cpp+15747A: 48 8B 55 38                 - mov rdx,[rbp+38]
+GameAssembly.dll.il2cpp+15747E: 48 85 D2                    - test rdx,rdx
+GameAssembly.dll.il2cpp+157481: 0F 84 DC 00 00 00           - je GameAssembly.dll.il2cpp+157563
+GameAssembly.dll.il2cpp+157487: 44 8B 43 20                 - mov r8d,[rbx+20]
+GameAssembly.dll.il2cpp+15748B: 48 8D 4C 24 30              - lea rcx,[rsp+30]
+GameAssembly.dll.il2cpp+157490: 45 33 C9                    - xor r9d,r9d
+GameAssembly.dll.il2cpp+157493: E8 38 4E F5 FF              - call Menace.Strategy.OperationDurationTemplate.GetLayerConfig
+GameAssembly.dll.il2cpp+157498: 45 33 C0                    - xor r8d,r8d
+GameAssembly.dll.il2cpp+15749B: 48 8D 4C 24 60              - lea rcx,[rsp+60]
+}"""
+
+[[cheat]]
+id = "old-black-market-better-item-rarity-only-applies-when-bm-refreshes-at-the-end-of-an-operation"
+name = "old_ Black Market Better Item Rarity (Only Applies When BM Refreshes At The End Of An Operation)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-07
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+
+[ENABLE]
+
+define(injGetItemRarityRange,Menace.BlackMarketConfig.GetItemRarityRange)//Changing Rarity When Filling up the BM
+define(convRarityToWeight,Menace.BlackMarketConfig.ConvertItemRarityToPickWeight)//Lower weight for more BM Items
+alloc(newmem,$1000,injGetItemRarityRange)
+alloc(float_val,8)
+label(injGetItemRarityRangeBkp)
+label(return)
+alloc(newmem2,$1000,convRarityToWeight)
+label(convRarityToWeightBkp)
+label(return2)
+
+float_val:
+  dd (float)9999.0
+newmem:
+  movss xmm0,[float_val] //campaign progress
+  movss xmm1,[float_val] //rarity mult
+injGetItemRarityRangeBkp:
+  readmem(injGetItemRarityRange,5)
+  jmp return
+
+injGetItemRarityRange:
+  jmp newmem
+return:
+registersymbol(injGetItemRarityRange injGetItemRarityRangeBkp)
+
+
+newmem2:
+  //mov rax,1  //ret a low weight
+  //ret
+convRarityToWeightBkp:
+  readmem(convRarityToWeight,11)
+  jmp return2
+
+convRarityToWeight:
+  jmp newmem2
+  nop 6
+return2:
+registersymbol(convRarityToWeight convRarityToWeightBkp)
+
+[DISABLE]
+
+injGetItemRarityRange:
+  readmem(injGetItemRarityRangeBkp,5)
+  //db 48 89 5C 24 10
+
+convRarityToWeight:
+  readmem(convRarityToWeightBkp,11)
+  //db 48 83 EC 28 48 8B 81 C8 00 00 00
+
+
+unregistersymbol(*)
+dealloc(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Menace.BlackMarketConfig.GetItemRarityRange
+
+GameAssembly.dll.il2cpp+2C5A6: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5A7: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5A8: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5A9: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5AA: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5AB: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5AC: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5AD: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5AE: CC                    - int 3
+GameAssembly.dll.il2cpp+2C5AF: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Menace.BlackMarketConfig.GetItemRarityRange: 48 89 5C 24 10        - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+2C5B5: 57                    - push rdi
+GameAssembly.dll.il2cpp+2C5B6: 48 83 EC 50           - sub rsp,50
+GameAssembly.dll.il2cpp+2C5BA: 48 8B 81 B8 00 00 00  - mov rax,[rcx+000000B8]
+GameAssembly.dll.il2cpp+2C5C1: 48 8B F9              - mov rdi,rcx
+GameAssembly.dll.il2cpp+2C5C4: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+GameAssembly.dll.il2cpp+2C5C9: 0F 29 7C 24 30        - movaps [rsp+30],xmm7
+GameAssembly.dll.il2cpp+2C5CE: 0F 28 FA              - movaps xmm7,xmm2
+GameAssembly.dll.il2cpp+2C5D1: 44 0F 29 44 24 20     - movaps [rsp+20],xmm8
+GameAssembly.dll.il2cpp+2C5D7: 44 0F 28 C1           - movaps xmm8,xmm1
+GameAssembly.dll.il2cpp+2C5DB: 48 85 C0              - test rax,rax
+}
+
+
+// ORIGINAL CODE - INJECTION POINT: Menace.BlackMarketConfig.ConvertItemRarityToPickWeight
+{
+Menace.Tools.BitOperations.UnsetBit: 0F B6 C1              - movzx eax,cl
+GameAssembly.dll.il2cpp+2C563: 83 E2 1F              - and edx,1F
+GameAssembly.dll.il2cpp+2C566: 0F B3 D0              - btr eax,edx
+GameAssembly.dll.il2cpp+2C569: C3                    - ret 
+GameAssembly.dll.il2cpp+2C56A: CC                    - int 3 
+GameAssembly.dll.il2cpp+2C56B: CC                    - int 3 
+GameAssembly.dll.il2cpp+2C56C: CC                    - int 3 
+GameAssembly.dll.il2cpp+2C56D: CC                    - int 3 
+GameAssembly.dll.il2cpp+2C56E: CC                    - int 3 
+GameAssembly.dll.il2cpp+2C56F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Menace.BlackMarketConfig.ConvertItemRarityToPickWeight: 48 83 EC 28           - sub rsp,28
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+2C574: 48 8B 81 C8 00 00 00  - mov rax,[rcx+000000C8]
+GameAssembly.dll.il2cpp+2C57B: 48 85 C0              - test rax,rax
+GameAssembly.dll.il2cpp+2C57E: 74 1C                 - je GameAssembly.dll.il2cpp+2C59C
+GameAssembly.dll.il2cpp+2C580: 48 8B 48 10           - mov rcx,[rax+10]
+GameAssembly.dll.il2cpp+2C584: 48 85 C9              - test rcx,rcx
+GameAssembly.dll.il2cpp+2C587: 74 13                 - je GameAssembly.dll.il2cpp+2C59C
+GameAssembly.dll.il2cpp+2C589: 45 33 C0              - xor r8d,r8d
+GameAssembly.dll.il2cpp+2C58C: E8 BF 6B 41 02        - call UnityEngine.AnimationCurve.Evaluate
+GameAssembly.dll.il2cpp+2C591: 33 D2                 - xor edx,edx
+GameAssembly.dll.il2cpp+2C593: 48 83 C4 28           - add rsp,28
+}"""
+
+[[cheat]]
+id = "bm-stack-weight"
+name = "BM Stack Weight"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-11
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+aobscanmodule(injRarity,GameAssembly.dll,49 8B CC E8 4E E1 FA FF) // should be unique
+alloc(newmem,$1000,injRarity)
+alloc(weightmult,8)
+label(code)
+label(return)
+
+weightmult:
+  dd (float)10.0
+newmem:
+  mulss xmm1, [weightmult]
+code:
+  mov rcx,r12
+  call Menace.BlackMarketConfig.ConvertItemRarityToPickWeight
+  jmp return
+
+injRarity:
+  jmp newmem
+  nop 3
+return:
+registersymbol(injRarity)
+
+[DISABLE]
+
+injRarity:
+  db 49 8B CC E8 4E E1 FA FF
+
+unregistersymbol(injRarity)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+7E41A
+
+GameAssembly.dll.il2cpp+7E3F3: 8B D0                       - mov edx,eax
+GameAssembly.dll.il2cpp+7E3F5: 48 8B CE                    - mov rcx,rsi
+GameAssembly.dll.il2cpp+7E3F8: 41 FF D2                    - call r10
+GameAssembly.dll.il2cpp+7E3FB: 84 C0                       - test al,al
+GameAssembly.dll.il2cpp+7E3FD: 0F 84 9A FE FF FF           - je GameAssembly.dll.il2cpp+7E29D
+GameAssembly.dll.il2cpp+7E403: 4D 85 E4                    - test r12,r12
+GameAssembly.dll.il2cpp+7E406: 0F 84 7B 05 00 00           - je GameAssembly.dll.il2cpp+7E987
+GameAssembly.dll.il2cpp+7E40C: 66 0F 6E 8E A0 00 00 00     - movd xmm1,[rsi+000000A0]
+GameAssembly.dll.il2cpp+7E414: 0F 5B C9                    - cvtdq2ps xmm1,xmm1
+GameAssembly.dll.il2cpp+7E417: 45 33 C0                    - xor r8d,r8d
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+7E41A: 49 8B CC                    - mov rcx,r12
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+7E41D: E8 4E E1 FA FF              - call Menace.BlackMarketConfig.ConvertItemRarityToPickWeight
+GameAssembly.dll.il2cpp+7E422: 44 8B E0                    - mov r12d,eax
+GameAssembly.dll.il2cpp+7E425: 44 8B BE A0 00 00 00        - mov r15d,[rsi+000000A0]
+GameAssembly.dll.il2cpp+7E42C: 48 8B 0D 3D 29 42 03        - mov rcx,[GameAssembly.dll.data+FDD70]
+GameAssembly.dll.il2cpp+7E433: E8 78 09 EC FF              - call GameAssembly.il2cpp_method_get_class+50
+GameAssembly.dll.il2cpp+7E438: 4C 8B F0                    - mov r14,rax
+GameAssembly.dll.il2cpp+7E43B: 48 C7 44 24 20 00 00 00 00  - mov qword ptr [rsp+20],00000000
+GameAssembly.dll.il2cpp+7E444: 45 8B CC                    - mov r9d,r12d
+GameAssembly.dll.il2cpp+7E447: 45 8B C7                    - mov r8d,r15d
+GameAssembly.dll.il2cpp+7E44A: 48 8B D6                    - mov rdx,rsi
+}"""
+
+[[cheat]]
+id = "simple-patterntool"
+name = "Simple_PatternTool"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Menace.exe
+  Version: 
+  Date   : 2026-02-17
+  Author : kunde
+
+  This script does blah blah blah
+}
+
+[ENABLE]
+
+//48 8B D6 E8 ? ? ? ? 66 44 0F 6E E0 45 0F 5B E4 F3 44 0F 59 E6
+
+aobscanmodule(INJECT,GameAssembly.dll, E8 ? ? ? ? 48 85 FF 0F 84 ? ? ? ? 3B 47 18 0F 83 ? ? ? ? 48 98 48 8D 4C 24 ? 45 33 C0 F3 0F 10 44 87 ? F3 0F 5E C6 F3 0F 5D F8 0F 28 CF)
+registersymbol(INJECT)
+
+[DISABLE]
+
+
+unregistersymbol(INJECT)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: GameAssembly.dll.il2cpp+1EF4BD
+
+GameAssembly.dll.il2cpp+1EF489: F3 0F 59 83 70 01 00 00     - mulss xmm0,[rbx+00000170]
+GameAssembly.dll.il2cpp+1EF491: F3 0F 2C C0                 - cvttss2si eax,xmm0
+GameAssembly.dll.il2cpp+1EF495: 41 2B 85 74 01 00 00        - sub eax,[r13+00000174]
+GameAssembly.dll.il2cpp+1EF49C: 44 03 F8                    - add r15d,eax
+GameAssembly.dll.il2cpp+1EF49F: B8 01 00 00 00              - mov eax,00000001
+GameAssembly.dll.il2cpp+1EF4A4: 41 83 FF 01                 - cmp r15d,01
+GameAssembly.dll.il2cpp+1EF4A8: 44 0F 4C F8                 - cmovl r15d,eax
+GameAssembly.dll.il2cpp+1EF4AC: F3 41 0F 10 8D 8C 00 00 00  - movss xmm1,[r13+0000008C]
+GameAssembly.dll.il2cpp+1EF4B5: 48 8D 4C 24 40              - lea rcx,[rsp+40]
+GameAssembly.dll.il2cpp+1EF4BA: 45 33 C0                    - xor r8d,r8d
+// ---------- INJECTING HERE ----------
+GameAssembly.dll.il2cpp+1EF4BD: E8 FE 8C E5 FF              - call Menace.Tools.FloatExtensions.AddMult
+// ---------- DONE INJECTING  ----------
+GameAssembly.dll.il2cpp+1EF4C2: F3 41 0F 10 85 88 00 00 00  - movss xmm0,[r13+00000088]
+GameAssembly.dll.il2cpp+1EF4CB: 33 D2                       - xor edx,edx
+GameAssembly.dll.il2cpp+1EF4CD: F3 0F 5C 83 14 01 00 00     - subss xmm0,[rbx+00000114]
+GameAssembly.dll.il2cpp+1EF4D5: E8 06 8D E5 FF              - call Menace.Tools.FloatExtensions.Clamped
+GameAssembly.dll.il2cpp+1EF4DA: 80 BC 24 70 01 00 00 00     - cmp byte ptr [rsp+00000170],00
+GameAssembly.dll.il2cpp+1EF4E2: 0F 28 F0                    - movaps xmm6,xmm0
+GameAssembly.dll.il2cpp+1EF4E5: 0F 84 BE 00 00 00           - je GameAssembly.dll.il2cpp+1EF5A9
+GameAssembly.dll.il2cpp+1EF4EB: 48 8B 4F 10                 - mov rcx,[rdi+10]
+GameAssembly.dll.il2cpp+1EF4EF: 48 85 C9                    - test rcx,rcx
+GameAssembly.dll.il2cpp+1EF4F2: 0F 84 88 04 00 00           - je GameAssembly.dll.il2cpp+1EF980
+}"""
+
+[[cheat]]
+id = "inject"
+name = "INJECT"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "INJECT"
+hops = []

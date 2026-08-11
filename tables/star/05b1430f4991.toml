@@ -1,0 +1,512 @@
+[game]
+name = "Distant Star: Revenant Fleet"
+exe = "star.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3066"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "readme-double-click-script"
+name = "<---------- README ----------> (double-click <script> -->)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{==============================================================================
+ = R E A D M E
+ ==============================================================================
+
+ Cheat table written by jgoemat for Steam version as of 2015-04-11.
+
+ Activate the "Global Script" and it will expand to show you other scripts.
+ Since Distant Star: Revenant Fleet is a mono game, you will need to wait until
+ you start at least one mission to activate most of the scripts.  Enable the
+ cheats that you want and relax.
+
+ CHEATs:
+   Credits - 1,000,000 credits
+   Fuel - 1,000 fuel
+   Full Shields - Player ships always have full shields
+   Full Armor - Player ships always have full armor
+   Full Energy - Player ships always have full energy
+  *Player Fast - Player ships are much faster
+   Player No Cooldown - Attachments have a VERY short cooldown
+  *Player Long Range Sonar - See enemies anywhere on the map
+   Enemy No Shields - Keeps enemy shields down
+   Enemy Low Armor - Lets enemies have a max of 1 bar of health
+   Enemy No Energy - Keeps enemies from having energy
+  *Enemy Slow - Brings them to a crawl
+   Enemy No Fire - Keeps them from firing most weapons
+   Enemy No Ability - Keeps them from using most abilities
+  *Enemy Short Range Sonar - SHOULD make them not see you, probably doesn't work
+
+
+  NOTES:
+    Marked cheats affect values so they cannot be undone until you jump
+    Player Fast can cause problems with obstacles sometimes
+    Enemy Short Range Sonar doesn't seem to have an effect
+    Player Long Range Sonar - Shows you ships, but fixes size of displayed area
+      on the minimap to be smaller or else it would extend past the minimap and
+      block part of the screen.  If you disable the Minimap script you can see
+      it, that is all that script does.
+
+}
+
+[ENABLE]
+[DISABLE]"""
+
+[[cheat]]
+id = "script-minimap-updateplayershipssightradius"
+name = "SCRIPT: Minimap:UpdatePlayerShipsSightRadius()"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Distant Star.exe
+  Version: 
+  Date   : 2015-04-11
+  Author : jgoemat
+
+  Minimap:UpdatePlayerShipsSightRadius+2b4
+
+  This fixes the minimap sprite when we extend a ship's vision so it doesn't
+  go too far outside the minimap, but we can still see enemy ships.
+}
+
+[ENABLE]
+
+aobscan(sonar_fix_inject,8B 87 88 00 00 00 D9 40 64) // should be unique
+alloc(newmem,$1000)
+
+label(sonar_fix_code)
+label(sonar_fix_skip)
+label(sonar_fix_return)
+
+newmem:
+  dd (float)0.1
+
+sonar_fix_code:
+  mov eax,[edi+00000088] // original code
+  fld dword ptr [eax+64] // original code
+  cmp [eax+64],(float)500
+  jl sonar_fix_skip
+  fld dword ptr [newmem]
+  fmulp st(1),st(0)
+sonar_fix_skip:
+  jmp sonar_fix_return
+
+sonar_fix_inject:
+  jmp sonar_fix_code
+  nop
+  nop
+  nop
+  nop
+sonar_fix_return:
+registersymbol(sonar_fix_inject)
+
+[DISABLE]
+
+sonar_fix_inject:
+  db 8B 87 88 00 00 00 D9 40 64
+
+unregistersymbol(sonar_fix_inject)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 10A4FEE4
+
+10A4FEC2: 89 04 24           -  mov [esp],eax
+10A4FEC5: 8B 45 94           -  mov eax,[ebp-6C]
+10A4FEC8: 89 44 24 04        -  mov [esp+04],eax
+10A4FECC: 8B 45 98           -  mov eax,[ebp-68]
+10A4FECF: 89 44 24 08        -  mov [esp+08],eax
+10A4FED3: 53                 -  push ebx
+10A4FED4: E8 BF F9 FF FF     -  call Minimap:ValidPos
+10A4FED9: 83 C4 10           -  add esp,10
+10A4FEDC: 85 C0              -  test eax,eax
+10A4FEDE: 0F 84 D2 01 00 00  -  je Minimap:UpdatePlayerShipsSightRadius+486
+// ---------- INJECTING HERE ----------
+10A4FEE4: 8B 87 88 00 00 00  -  mov eax,[edi+00000088]
+10A4FEEA: D9 40 64           -  fld dword ptr [eax+64]
+// ---------- DONE INJECTING  ----------
+10A4FEED: D9 05 80 1D A5 0E  -  fld dword ptr [0EA51D80]
+10A4FEF3: DE C9              -  fmulp st(1),st(0)
+10A4FEF5: D9 5D CC           -  fstp dword ptr [ebp-34]
+10A4FEF8: 8B 05 F8 B7 02 05  -  mov eax,[0502B7F8]
+10A4FEFE: D9 40 64           -  fld dword ptr [eax+64]
+10A4FF01: 8B 05 F8 B7 02 05  -  mov eax,[0502B7F8]
+10A4FF07: D9 40 68           -  fld dword ptr [eax+68]
+10A4FF0A: 83 EC 08           -  sub esp,08
+10A4FF0D: 83 EC 04           -  sub esp,04
+}"""
+
+[[cheat]]
+id = "script-currentgame-get-credits"
+name = "SCRIPT: CurrentGame:get_Credits()"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Distant Star.exe
+  Version: 
+  Date   : 2015-04-11
+  Author : jgoemat
+
+  CurrentGame:get_Credits+9
+
+  Here we get the pointer to the CurrentGame class instance and we can add
+  credits and fuel.
+}
+
+[ENABLE]
+
+aobscan(cdu_inject,8B 80 9C 00 00 00 C9) // CurrentGame:get_Credits+9
+alloc(newmem,$1000)
+
+label(cdu_code)
+label(cdu_skip_credits)
+label(cdu_skip_fuel)
+label(cdu_return)
+
+newmem:
+
+cdu_code:
+  pushad
+  mov ecx,eax
+  mov [pCurrentGame],ecx
+  cmp dword ptr [cheatCredits],1
+  jne cdu_skip_credits
+  mov eax,#1000000
+  mov [ecx+9c],eax
+cdu_skip_credits:
+  cmp dword ptr [cheatFuel],1
+  jne cdu_skip_fuel
+  mov eax,#1000
+  mov [ecx+98],eax
+cdu_skip_fuel:
+  popad
+  mov eax,[eax+0000009C] // original code
+  jmp cdu_return
+
+cdu_inject:
+  jmp cdu_code
+  nop
+cdu_return:
+registersymbol(cdu_inject)
+
+[DISABLE]
+
+cdu_inject:
+  db 8B 80 9C 00 00 00
+
+unregistersymbol(cdu_inject)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 10A315A1
+// CurrentGame:get_Credits+9
+10A3158E: EB 00                 -  jmp <Module>:runtime_invoke_int__this__+a8
+10A31590: C9                    -  leave
+10A31591: C3                    -  ret
+10A31592: 00 00                 -  add [eax],al
+10A31594: 00 00                 -  add [eax],al
+10A31596: 00 00                 -  add [eax],al
+10A31598: 55                    -  push ebp
+10A31599: 8B EC                 -  mov ebp,esp
+10A3159B: 83 EC 08              -  sub esp,08
+10A3159E: 8B 45 08              -  mov eax,[ebp+08]
+// ---------- INJECTING HERE ----------
+10A315A1: 8B 80 9C 00 00 00     -  mov eax,[eax+0000009C] // CurrentGame:get_Credits+9
+// ---------- DONE INJECTING  ----------
+10A315A7: C9                    -  leave
+10A315A8: C3                    -  ret
+10A315A9: 00 00                 -  add [eax],al
+10A315AB: 00 00                 -  add [eax],al
+10A315AD: 00 00                 -  add [eax],al
+10A315AF: 00 55 8B              -  add [ebp-75],dl
+10A315B2: EC                    -  in al,dx
+10A315B3: 83 EC 08              -  sub esp,08
+10A315B6: 8B 45 08              -  mov eax,[ebp+08]
+10A315B9: 8B 80 8C 00 00 00     -  mov eax,[eax+0000008C]
+}"""
+
+[[cheat]]
+id = "credits"
+name = "Credits"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatCredits)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "fuel"
+name = "Fuel"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatFuel)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "full-shields"
+name = "Full Shields"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatFullShields)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "full-armor"
+name = "Full Armor"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatFullArmor)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "full-energy"
+name = "Full Energy"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatFullEnergy)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "player-fast"
+name = "Player Fast"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatPlayerFast)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "player-fast-fire"
+name = "Player Fast Fire"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatPlayerFastFire)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "player-no-cooldown"
+name = "Player No Cooldown"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatPlayerNoCooldown)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "player-long-range-sonar"
+name = "Player Long Range Sonar"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatPlayerSonar)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "enemy-no-shields"
+name = "Enemy No Shields"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatEnemyNoShields)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "enemy-low-armor"
+name = "Enemy Low Armor"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatEnemyLowArmor)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "enemy-no-energy"
+name = "Enemy No Energy"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatEnemyNoEnergy)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "enemy-slow"
+name = "Enemy Slow"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatEnemySlow)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "enemy-no-fire"
+name = "Enemy No Fire"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatEnemyNoFire)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "enemy-no-ability"
+name = "Enemy No Ability"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatEnemyNoAbility)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""
+
+[[cheat]]
+id = "enemy-short-range-sonar"
+name = "Enemy Short Range Sonar"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(cheat,cheatEnemySonar)
+
+[ENABLE]
+cheat:
+  dd 1
+[DISABLE]
+cheat:
+  dd 0"""

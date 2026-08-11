@@ -1,0 +1,384 @@
+[game]
+name = "Dedenden table (aobscan, hardcodable)"
+exe = "dedenden.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=4007"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "allow-alt-enter-to-toggle-fullscreenmode"
+name = "Allow alt+enter to toggle fullscreenmode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(FullscreenPatch,EB 2E A1 ** ** ** ** 03 05 ** ** ** ** 83 F8 60 75 1E)
+registersymbol(FullscreenPatch)
+
+FullscreenPatch:
+nop
+nop
+ 
+ 
+[DISABLE]
+unregistersymbol(FullscreenPatch)
+FullscreenPatch:
+db eb 2e        //jmp dedenden.exe+95643"""
+
+[[cheat]]
+id = "unlimited-ammo"
+name = "Unlimited ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(AmmoPatch,83 * * * * * 00 0F 8E 62 01)
+registersymbol(AmmoPatch)
+
+AmmoPatch:
+db 8d 15 //replace cmp dword [xxxxxx],yy with lea edx,[xxxxxx]
+AmmoPatch+2+4:       //skip the xxxxxx which is ASLR'ed
+push dword [edx+4]  //push max ammo (?)
+pop dword [edx]     //override ammo with max ammo
+nop                 //edx is corrupted here but it doesn't matter
+nop
+ 
+ 
+[DISABLE]
+unregistersymbol(AmmoPatch)
+
+AmmoPatch:
+db 83 3d//cmp dword ptr [dedenden.exe+719AAC],0
+AmmoPatch+2+4:
+db 0  //the ",0" above
+db 0F 8E 62 01 00 00 //jng dedenden.exe+9D634"""
+
+[[cheat]]
+id = "faster-mining-no-popup"
+name = 'Faster mining (no " ! " popup)'
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(MiningPatch,C6 01 01 8B 45 DC)
+registersymbol(MiningPatch)
+
+MiningPatch:
+nop
+nop
+nop
+
+ 
+ 
+[DISABLE]
+unregistersymbol(MiningPatch)
+
+MiningPatch:
+mov byte ptr [ecx],01"""
+
+[[cheat]]
+id = "godmode"
+name = "Godmode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(GodPatch,83 7A 70 00 7F 0C A1 ** ** ** ** C7 40 70 00 00 00 00)
+registersymbol(GodPatch)
+label(GodPatch_AfterRelocatableCode)
+
+GodPatch:
+push dword [edx+6c]
+jmp short GodPatch_AfterRelocatableCode
+//there should be a MOV EAX,DWORD PTR DS:[xxxxxxx] here
+GodPatch+b:
+GodPatch_AfterRelocatableCode:
+pop dword [edx+70]
+nop
+nop
+nop
+nop
+
+[DISABLE]
+unregistersymbol(GodPatch)
+
+GodPatch:
+cmp dword ptr [edx+70],00
+db 7F 0C  //jg dedenden.exe+54826
+//there should be a MOV EAX,DWORD PTR DS:[xxxxxxx] here
+GodPatch+b:
+MOV DWORD [EAX+70],0"""
+
+[[cheat]]
+id = "saki-the-trader-always-appears"
+name = "Saki (the trader) always appears"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(SakiPatch1,83 F8 01 75 09 83 3D * * * * FF 74 10)
+aobscan(SakiPatch2,83 FA 01 0F 85 0F 01 00 00 83 3D * * * * FF)
+//aobscan(SakiPatch3,89 55 AC 83 7D AC FF 74 02) //only makes companions disappear after reaching a checkpoint
+
+registersymbol(SakiPatch1)
+registersymbol(SakiPatch2)
+//registersymbol(SakiPatch3)
+
+SakiPatch1:
+db eb 1c     //jmp dedenden.exe+A7A10
+nop
+
+SakiPatch2:
+db eb 14     //jmp dedenden.exe+B59CE
+nop
+
+//SakiPatch3+7:
+//db eb 02     //jmp dedenden.exe+B5817
+
+
+[DISABLE]
+unregistersymbol(SakiPatch1)
+unregistersymbol(SakiPatch2)
+//unregistersymbol(SakiPatch3)
+
+SakiPatch1:
+cmp eax,1
+
+SakiPatch2:
+cmp edx,1
+
+//SakiPatch3+7:
+//db 74 02     //je dedenden.exe+B5817"""
+
+[[cheat]]
+id = "camera-y-position"
+name = "Camera Y position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x14ccdc"
+hops = []
+
+[[cheat]]
+id = "camera-x-position"
+name = "Camera X position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x14ccd8"
+hops = []
+
+[[cheat]]
+id = "player-x-position"
+name = "Player X position"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x15085c"
+hops = ["+0x30"]
+
+[[cheat]]
+id = "player-y-position"
+name = "Player Y position"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x15085c"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "trader-x-position"
+name = "Trader X position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x620f48"
+hops = []
+
+[[cheat]]
+id = "trader-y-position"
+name = "Trader Y position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x620f4c"
+hops = []
+
+[[cheat]]
+id = "trader-x-position-2"
+name = "Trader X position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x8118e8"
+hops = []
+
+[[cheat]]
+id = "trader-y-position-2"
+name = "Trader Y position"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x8118ec"
+hops = []
+
+[[cheat]]
+id = "set-me-to-1-to-restart-work-on-some-maps"
+name = "Set me to 1 to restart...work on some maps"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x719a88"
+hops = []
+
+[[cheat]]
+id = "ammo"
+name = "Ammo"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x719aac"
+hops = []
+
+[[cheat]]
+id = "hp"
+name = "Hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x15085c"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "invincibility-timer"
+name = "Invincibility timer"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x15085c"
+hops = ["+0xac"]
+
+[[cheat]]
+id = "ismining"
+name = "IsMining"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "dedenden.exe"
+offset = "0x82c1c0"
+hops = []
+
+[[cheat]]
+id = "use-plaintext-saves-incompatible-with-encrypted-saves"
+name = "Use plaintext saves (incompatible with encrypted saves)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscan(SavePatch,33 45 F8 8B 4D F4 8B 55 08)
+registersymbol(SavePatch)
+
+SavePatch:
+nop
+nop
+nop
+
+[DISABLE]
+unregistersymbol(SavePatch)
+SavePatch:
+XOR EAX,DWORD [EBP-8]"""

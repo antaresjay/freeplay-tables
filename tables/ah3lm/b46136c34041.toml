@@ -1,0 +1,520 @@
+[game]
+name = "Arcana Heart 3 LOVE MAX!!!!!"
+exe = "ah3lm.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2399"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-initialization-activate-this-first"
+name = "Battle Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(battlestats_basepointer)
+registersymbol(battlestats_enemy_basepointer)
+registersymbol(battlestats_update_enable)
+registersymbol(battlestats_set_enable)
+registersymbol(battlestats_healthset_enable)
+registersymbol(battlestats_arcanaset_enable)
+registersymbol(battlestats_forceset_enable)
+registersymbol(battlestats_specialset_enable)
+registersymbol(battlestats_enemyset_enable)
+
+alloc(battlestats_basepointer, 4)
+alloc(battlestats_enemy_basepointer, 4)
+alloc(battlestats_update_enable, 4)
+alloc(battlestats_set_enable, 4)
+alloc(battlestats_healthset_enable, 4)
+alloc(battlestats_arcanaset_enable, 4)
+alloc(battlestats_forceset_enable, 4)
+alloc(battlestats_specialset_enable, 4)
+alloc(battlestats_enemyset_enable, 4)
+
+
+[DISABLE]
+unregistersymbol(battlestats_basepointer)
+unregistersymbol(battlestats_enemy_basepointer)
+unregistersymbol(battlestats_update_enable)
+unregistersymbol(battlestats_set_enable)
+unregistersymbol(battlestats_healthset_enable)
+unregistersymbol(battlestats_arcanaset_enable)
+unregistersymbol(battlestats_forceset_enable)
+unregistersymbol(battlestats_specialset_enable)
+unregistersymbol(battlestats_enemyset_enable)
+
+dealloc(battlestats_basepointer)
+dealloc(battlestats_enemy_basepointer)
+dealloc(battlestats_update_enable)
+dealloc(battlestats_set_enable)
+dealloc(battlestats_healthset_enable)
+dealloc(battlestats_arcanaset_enable)
+dealloc(battlestats_forceset_enable)
+dealloc(battlestats_specialset_enable)
+dealloc(battlestats_enemyset_enable)"""
+
+[[cheat]]
+id = "battle-stats-base-address-scan-to-update-battle"
+name = "Battle Stats Base Address Scan (To Update: Battle)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(battlestats_savedAOB)
+label(battlestats_returnhere)
+label(battlestats_originalcode)
+label(battlestats_exit)
+
+label(battlestats_update_exit)
+label(battlestats_set_exit)
+label(battlestats_healthset_exit)
+label(battlestats_arcanaset_exit)
+label(battlestats_forceset_exit)
+label(battlestats_specialset_exit)
+label(battlestats_enemyset_entry)
+label(battlestats_enemyupdate_exit)
+label(battlestats_enemyset_exit)
+
+registersymbol(battlestats_savedAOB)
+
+//AH3LM.exe+9D0EE - F6 C1 01              - test cl,01
+//AH3LM.exe+9D0F1 - 75 26                 - jne AH3LM.exe+9D119
+//AH3LM.exe+9D0F3 - 8B 88 683B0000        - mov ecx,[eax+00003B68]
+//AH3LM.exe+9D0F9 - 8B 80 6C3B0000        - mov eax,[eax+00003B6C]
+//AH3LM.exe+9D0FF - 33 DB                 - xor ebx,ebx
+//AH3LM.exe+9D101 - 85 C9                 - test ecx,ecx
+aobscan(battlestats_searchedAOB, 8B 88 68 3B 00 00 8B 80 6C 3B 00 00)
+
+alloc(battlestats_newmem, 2048)
+
+
+battlestats_newmem:
+cmp dword ptr [eax+3b58], #0
+jne battlestats_enemyset_entry
+
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_update_exit
+mov [battlestats_basepointer], eax
+battlestats_update_exit:
+
+cmp dword ptr [battlestats_set_enable], #0
+je battlestats_set_exit
+battlestats_set_exit:
+
+cmp dword ptr [battlestats_healthset_enable], #0
+je battlestats_healthset_exit
+mov ecx, [eax+3b6c]
+mov [eax+3b68], ecx
+battlestats_healthset_exit:
+
+cmp dword ptr [battlestats_arcanaset_enable], #0
+je battlestats_arcanaset_exit
+mov [eax+35e0], #51000
+mov [eax+35e4], #51000
+battlestats_arcanaset_exit:
+
+cmp dword ptr [battlestats_forceset_enable], #0
+je battlestats_forceset_exit
+mov [eax+35e8], #10000
+battlestats_forceset_exit:
+
+cmp dword ptr [battlestats_specialset_enable], #0
+je battlestats_specialset_exit
+mov [eax+3bb0], #10000
+battlestats_specialset_exit:
+
+jmp battlestats_enemyset_exit
+
+battlestats_enemyset_entry:
+cmp dword ptr [battlestats_update_enable], #0
+je battlestats_enemyupdate_exit
+mov [battlestats_enemy_basepointer], eax
+battlestats_enemyupdate_exit:
+
+cmp dword ptr [battlestats_enemyset_enable], #0
+je battlestats_enemyset_exit
+mov [eax+35e0], #0
+mov [eax+35e4], #0
+mov [eax+35e8], #0
+mov [eax+3bb0], #0
+cmp dword ptr [eax+3b68], #5
+jl battlestats_enemyset_exit
+mov [eax+3b68], #1
+battlestats_enemyset_exit:
+
+
+battlestats_originalcode:
+db 8B 88 68 3B 00 00
+//mov ecx,[eax+00003B68]
+
+
+battlestats_exit:
+jmp battlestats_returnhere
+
+
+battlestats_searchedAOB:
+battlestats_savedAOB:
+jmp battlestats_newmem
+nop
+battlestats_returnhere:
+
+
+[DISABLE]
+battlestats_savedAOB:
+db 8B 88 68 3B 00 00
+//mov ecx,[eax+00003B68]
+
+unregistersymbol(battlestats_savedAOB)
+
+dealloc(battlestats_newmem)"""
+
+[[cheat]]
+id = "set-health-to-max"
+name = "Set Health to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "set-arcana-gauge-to-max"
+name = "Set Arcana Gauge to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_arcanaset_enable"
+hops = []
+
+[[cheat]]
+id = "set-force-gauge-to-max"
+name = "Set Force Gauge to Max?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_forceset_enable"
+hops = []
+
+[[cheat]]
+id = "set-special-gauge-to-massive"
+name = "Set Special Gauge to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_specialset_enable"
+hops = []
+
+[[cheat]]
+id = "set-enemy-to-weak"
+name = "Set Enemy to Weak?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemyset_enable"
+hops = []
+
+[[cheat]]
+id = "battle-stats-update-base-address"
+name = "Battle Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "arcana-gauge"
+name = "Arcana Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x35e0"]
+
+[[cheat]]
+id = "arcana-gauge-residual"
+name = "Arcana Gauge Residual"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x35e4"]
+
+[[cheat]]
+id = "force-gauge"
+name = "Force Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x35e8"]
+
+[[cheat]]
+id = "player-0-player"
+name = "Player (0 = Player)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x3b58"]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x3b68"]
+
+[[cheat]]
+id = "max-health"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x3b6c"]
+
+[[cheat]]
+id = "special-gauge"
+name = "Special Gauge"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_basepointer"
+hops = ["+0x3bb0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "arcana-gauge-2"
+name = "Arcana Gauge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x35e0"]
+
+[[cheat]]
+id = "arcana-gauge-maximum-usable"
+name = "Arcana Gauge Maximum Usable"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x35e4"]
+
+[[cheat]]
+id = "force-gauge-2"
+name = "Force Gauge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x35e8"]
+
+[[cheat]]
+id = "player-0-player-2"
+name = "Player (0 = Player)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x3b58"]
+
+[[cheat]]
+id = "health-2"
+name = "Health"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x3b68"]
+
+[[cheat]]
+id = "max-health-2"
+name = "Max Health"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x3b6c"]
+
+[[cheat]]
+id = "special-gauge-2"
+name = "Special Gauge"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "battlestats_enemy_basepointer"
+hops = ["+0x3bb0"]

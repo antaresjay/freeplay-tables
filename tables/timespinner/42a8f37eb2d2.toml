@@ -1,0 +1,866 @@
+[game]
+name = "Timespinner"
+exe = "timespinner.exe"
+notes = "Converted from a Cheat Engine table by VKX. Source: https://fearlessrevolution.com/viewtopic.php?t=7958"
+verified = []
+author = "VKX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "inf-health"
+name = "Inf Health"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Timespinner.exe
+  Version: 
+  Date   : 2018-09-21
+  Author : VKX
+
+  This script changes the players current health to max when hit or healed.
+}
+
+[ENABLE]
+
+aobscan(set_HP,89 91 6C 02 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(notPlayer)
+label(return)
+
+newmem:
+
+code:
+  cmp word ptr [ecx+00000309], 1  //isPlayable
+  jne notPlayer
+  mov edx,[ecx+00000270]
+  mov esi,edx
+notPlayer:
+  mov [ecx+0000026C],edx
+  jmp return
+
+set_HP:
+  jmp newmem
+  nop
+return:
+registersymbol(set_HP)
+
+[DISABLE]
+
+set_HP:
+  db 89 91 6C 02 00 00
+
+unregistersymbol(set_HP)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1C895BA7
+
+""+1C895B8D: 00 00                 -  add [eax],al
+""+1C895B8F: 00 A8 3E 8A 1C 00     -  add [eax+001C8A3E],ch
+""+1C895B95: 00 00                 -  add [eax],al
+""+1C895B97: 00 A0 3E 8A 1C C0     -  add [eax-3FE375C2],ah
+""+1C895B9D: 54                    -  push esp
+""+1C895B9E: A5                    -  movsd 
+""+1C895B9F: 08 56 8B              -  or [esi-75],dl
+""+1C895BA2: B1 6C                 -  mov cl,6C
+""+1C895BA4: 02 00                 -  add al,[eax]
+""+1C895BA6: 00 89 91 6C 02        - db 00 89 91 6C 02  // SHORTENED TO HIT INJECTION FROM:  add [ecx+00026C91],cl
+// ---------- INJECTING HERE ----------
+""+1C895BAB: 00 00                 -  add [eax],al
+// ---------- DONE INJECTING  ----------
+""+1C895BAD: 8B 91 6C 02 00 00     -  mov edx,[ecx+0000026C]
+""+1C895BB3: 8B 81 70 02 00 00     -  mov eax,[ecx+00000270]
+""+1C895BB9: 3B D0                 -  cmp edx,eax
+""+1C895BBB: 7E 06                 -  jle 1C895BC3
+""+1C895BBD: 89 81 6C 02 00 00     -  mov [ecx+0000026C],eax
+""+1C895BC3: 0F BF 81 A8 02 00 00  -  movsx eax,word ptr [ecx+000002A8]
+""+1C895BCA: 2B B1 6C 02 00 00     -  sub esi,[ecx+0000026C]
+""+1C895BD0: 0F BF F6              -  movsx esi,si
+""+1C895BD3: 2B C6                 -  sub eax,esi
+""+1C895BD5: 0F BF C0              -  movsx eax,ax
+}"""
+
+[[cheat]]
+id = "inf-aura"
+name = "Inf Aura"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Timespinner.exe
+  Version: 
+  Date   : 2018-09-21
+  Author : VKX
+
+  This script changes the players current aura to max when aura is used.
+}
+
+[ENABLE]
+
+aobscan(set_MPup,D9 5E 2C D9 46 2C) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  fstp st(0)
+  fld dword ptr [esi+30]
+  fstp dword ptr [esi+2C]
+  fld dword ptr [esi+2C]
+  jmp return
+
+set_MPup:
+  jmp newmem
+  nop
+return:
+registersymbol(set_MPup)
+
+[DISABLE]
+
+set_MPup:
+  db D9 5E 2C D9 46 2C
+
+unregistersymbol(set_MPup)
+dealloc(newmem)
+
+
+{
+// ORIGINAL CODE - INJECTION POINT: 041D7032
+
+""+41D700E: 80 B9 A6 03 00 00 00  -  cmp byte ptr [ecx+000003A6],00
+""+41D7015: 74 08                 -  je 041D701F
+""+41D7017: D9 05 A8 71 1D 04     -  fld dword ptr [041D71A8]
+""+41D701D: DE C1                 -  faddp 
+""+41D701F: 80 B9 A7 03 00 00 00  -  cmp byte ptr [ecx+000003A7],00
+""+41D7026: 74 04                 -  je 041D702C
+""+41D7028: D9 E8                 -  fld1 
+""+41D702A: DE C1                 -  faddp 
+""+41D702C: D8 4D 08              -  fmul dword ptr [ebp+08]
+""+41D702F: D8 46 2C              -  fadd dword ptr [esi+2C]
+// ---------- INJECTING HERE ----------
+""+41D7032: D9 5E 2C              -  fstp dword ptr [esi+2C]
+""+41D7035: D9 46 2C              -  fld dword ptr [esi+2C]
+// ---------- DONE INJECTING  ----------
+""+41D7038: D9 46 30              -  fld dword ptr [esi+30]
+""+41D703B: DF F1                 -  fcomip st(0),st(1)
+""+41D703D: DD D8                 -  fstp st(0)
+""+41D703F: 7A 08                 -  jp 041D7049
+""+41D7041: 73 06                 -  jae 041D7049
+""+41D7043: D9 46 30              -  fld dword ptr [esi+30]
+""+41D7046: D9 5E 2C              -  fstp dword ptr [esi+2C]
+""+41D7049: C6 46 45 00           -  mov byte ptr [esi+45],00
+""+41D704D: 80 7E 44 00           -  cmp byte ptr [esi+44],00
+""+41D7051: 74 43                 -  je 041D7096
+}"""
+
+[[cheat]]
+id = "inf-sand"
+name = "Inf Sand"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Timespinner.exe
+  Version: 
+  Date   : 2018-09-21
+  Author : VKX
+
+  This script reduces sand cost to zero. It (mostly) ignores the CHAOS status
+  effect.
+}
+
+[ENABLE]
+
+aobscan(set_MP,D9 9E 7C 02 00 00 D9 86 7C 02 00 00 D9) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  fstp st(0)
+  jmp return
+
+set_MP:
+  jmp newmem
+  nop
+return:
+registersymbol(set_MP)
+
+[DISABLE]
+
+set_MP:
+  db D9 9E 7C 02 00 00
+
+unregistersymbol(set_MP)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 1C871E7C
+
+""+1C871E4D: D9 9E 74 03 00 00              -  fstp dword ptr [esi+00000374]
+""+1C871E53: 80 BE AF 02 00 00 00           -  cmp byte ptr [esi+000002AF],00
+""+1C871E5A: 74 5F                          -  je 1C871EBB
+""+1C871E5C: D9 05 78 1F 87 1C              -  fld dword ptr [1C871F78]
+""+1C871E62: 80 BE A8 03 00 00 00           -  cmp byte ptr [esi+000003A8],00
+""+1C871E69: 74 08                          -  je 1C871E73
+""+1C871E6B: D9 05 7C 1F 87 1C              -  fld dword ptr [1C871F7C]
+""+1C871E71: DE C9                          -  fmulp st(1),st(0)
+""+1C871E73: D8 4D 08                       -  fmul dword ptr [ebp+08]
+""+1C871E76: D8 AE 7C 02 00 00              -  fsubr dword ptr [esi+0000027C]
+// ---------- INJECTING HERE ----------
+""+1C871E7C: D9 9E 7C 02 00 00              -  fstp dword ptr [esi+0000027C]
+// ---------- DONE INJECTING  ----------
+""+1C871E82: D9 86 7C 02 00 00              -  fld dword ptr [esi+0000027C]
+""+1C871E88: D9 EE                          -  fldz 
+""+1C871E8A: DF F1                          -  fcomip st(0),st(1)
+""+1C871E8C: DD D8                          -  fstp st(0)
+""+1C871E8E: 7A 2B                          -  jp 1C871EBB
+""+1C871E90: 72 29                          -  jb 1C871EBB
+""+1C871E92: C6 86 AF 02 00 00 00           -  mov byte ptr [esi+000002AF],00
+""+1C871E99: 8B CE                          -  mov ecx,esi
+""+1C871E9B: 33 D2                          -  xor edx,edx
+""+1C871E9D: E8 A6 3C 02 00                 -  call 1C895B48
+}"""
+
+[[cheat]]
+id = "inf-double-jump"
+name = "Inf Double Jump"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Timespinner.exe
+  Version: 
+  Date   : 2018-09-21
+  Author : VKX
+
+  This script sets the doublejump flag to zero, enabling infinite jumps.
+}
+
+[ENABLE]
+
+aobscan(doJump,C6 86 AD 02 00 00 01 8B) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+
+  jmp return
+
+doJump:
+  jmp newmem
+  nop
+  nop
+return:
+registersymbol(doJump)
+
+[DISABLE]
+
+doJump:
+  db C6 86 AD 02 00 00 01
+
+unregistersymbol(doJump)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 041DB99E
+
+""+41DB983: 85 C9                 -  test ecx,ecx
+""+41DB985: 75 2D                 -  jne 041DB9B4
+""+41DB987: 80 BE DB 00 00 00 00  -  cmp byte ptr [esi+000000DB],00
+""+41DB98E: 75 24                 -  jne 041DB9B4
+""+41DB990: 8B CE                 -  mov ecx,esi
+""+41DB992: 8B 01                 -  mov eax,[ecx]
+""+41DB994: 8B 40 2C              -  mov eax,[eax+2C]
+""+41DB997: FF 50 0C              -  call dword ptr [eax+0C]
+""+41DB99A: 85 C0                 -  test eax,eax
+""+41DB99C: 75 16                 -  jne 041DB9B4
+// ---------- INJECTING HERE ----------
+""+41DB99E: C6 86 AD 02 00 00 01  -  mov byte ptr [esi+000002AD],01
+// ---------- DONE INJECTING  ----------
+""+41DB9A5: 8B CE                 -  mov ecx,esi
+""+41DB9A7: BA 04 00 00 00        -  mov edx,00000004
+""+41DB9AC: 8B 01                 -  mov eax,[ecx]
+""+41DB9AE: 8B 40 38              -  mov eax,[eax+38]
+""+41DB9B1: FF 50 04              -  call dword ptr [eax+04]
+""+41DB9B4: D9 45 08              -  fld dword ptr [ebp+08]
+""+41DB9B7: D8 46 70              -  fadd dword ptr [esi+70]
+""+41DB9BA: D9 5E 70              -  fstp dword ptr [esi+70]
+""+41DB9BD: D9 46 70              -  fld dword ptr [esi+70]
+""+41DB9C0: D9 C0                 -  fld st(0)
+}"""
+
+[[cheat]]
+id = "inf-consumables-alchemy-to-enable-use-a-consumable-item"
+name = "Inf Consumables & Alchemy (To enable: Use a consumable item)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Timespinner.exe
+  Version: 
+  Date   : 2018-09-26
+  Author : VKX
+
+  This script hooks the item count code and prevents subtraction.
+}
+
+[ENABLE]
+
+aobscan(itemCount,8B 42 20 2B 45 08) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov eax,[edx+20]
+  jmp return
+
+itemCount:
+  jmp newmem
+  nop
+return:
+registersymbol(itemCount)
+
+[DISABLE]
+
+itemCount:
+  db 8B 42 20 2B 45 08
+
+unregistersymbol(itemCount)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 014736D7
+
+""+14736BC: 38 01                 -  cmp [ecx],al
+""+14736BE: 8B D7                 -  mov edx,edi
+""+14736C0: E8 CB B8 B0 6F        -  call mscorlib.ni.dll+3BEF90
+""+14736C5: 85 C0                 -  test eax,eax
+""+14736C7: 7C 29                 -  jl 014736F2
+""+14736C9: 8B 4E 04              -  mov ecx,[esi+04]
+""+14736CC: 8B D7                 -  mov edx,edi
+""+14736CE: 39 09                 -  cmp [ecx],ecx
+""+14736D0: E8 4B E3 B8 6F        -  call mscorlib.ni.dll+441A20
+""+14736D5: 8B D0                 -  mov edx,eax
+// ---------- INJECTING HERE ----------
+""+14736D7: 8B 42 20              -  mov eax,[edx+20]
+""+14736DA: 2B 45 08              -  sub eax,[ebp+08]
+// ---------- DONE INJECTING  ----------
+""+14736DD: 89 42 20              -  mov [edx+20],eax
+""+14736E0: 83 7A 20 00           -  cmp dword ptr [edx+20],00
+""+14736E4: 7F 0C                 -  jg 014736F2
+""+14736E6: 8B 4E 04              -  mov ecx,[esi+04]
+""+14736E9: 8B D7                 -  mov edx,edi
+""+14736EB: 39 09                 -  cmp [ecx],ecx
+""+14736ED: E8 2E E6 B8 6F        -  call mscorlib.ni.dll+441D20
+""+14736F2: 5E                    -  pop esi
+""+14736F3: 5F                    -  pop edi
+""+14736F4: 5D                    -  pop ebp
+}"""
+
+[[cheat]]
+id = "player-variables-to-update-move-main-character"
+name = "Player Variables (To update: Move main character)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Timespinner.exe
+  Version: 
+  Date   : 2018-09-21
+  Author : VKX
+
+  This script hooks the movement routine of the main character to find the
+  character variable struct.
+
+  The address can change during gameplay. Move the main character to update.
+
+}
+
+[ENABLE]
+
+aobscan(LunaisUpdate,55 8B EC 57 56 53 83 EC 14 8B F1 80 BE B0) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+registersymbol(LunaisObj_basepointer)
+alloc(LunaisObj_basepointer,$4)
+
+registersymbol(abilityDuration)
+alloc(abilityDuration,$4)
+
+newmem:
+
+code:
+  mov [LunaisObj_basepointer],ecx
+  mov ecx,[ecx+$033C]
+  mov ecx,[ecx+$000C]
+  mov ecx,[ecx+$0004]
+  mov [abilityDuration],ecx
+  mov ecx,[LunaisObj_basepointer]
+  push ebp
+  mov ebp,esp
+  push edi
+  push esi
+  jmp return
+
+LunaisUpdate:
+  jmp newmem
+return:
+registersymbol(LunaisUpdate)
+
+[DISABLE]
+
+LunaisUpdate:
+  db 55 8B EC 57 56
+
+unregistersymbol(LunaisUpdate)
+dealloc(newmem)
+
+dealloc(LunaisObj_basepointer)
+unregistersymbol(LunaisObj_basepointer)
+
+dealloc(abilityDuration)
+unregistersymbol(abilityDuration)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 041D51B8
+
+""+41D519B: 5D                             -  pop ebp
+""+41D519C: C2 04 00                       -  ret 0004
+""+41D519F: C7 45 EC 00 00 00 00           -  mov [ebp-14],00000000
+""+41D51A6: EB EE                          -  jmp 041D5196
+""+41D51A8: EC                             -  in al,dx
+""+41D51A9: B7 1B                          -  mov bh,1B
+""+41D51AB: 04 00                          -  add al,00
+""+41D51AD: 00 00                          -  add [eax],al
+""+41D51AF: 00 B4 B7 1B 04 DC 45           -  add [edi+esi*4+45DC041B],dh
+""+41D51B6: 21 04 55 8B EC                 - db 21 04 55 8B EC  // SHORTENED TO HIT INJECTION FROM:  and [edx*2+5657EC8B],eax
+// ---------- INJECTING HERE ----------
+""+41D51BB: 57                             -  push edi
+""+41D51BC: 56                             -  push esi
+// ---------- DONE INJECTING  ----------
+""+41D51BD: 53                             -  push ebx
+""+41D51BE: 83 EC 14                       -  sub esp,14
+""+41D51C1: 8B F1                          -  mov esi,ecx
+""+41D51C3: 80 BE B0 02 00 00 00           -  cmp byte ptr [esi+000002B0],00
+""+41D51CA: 74 2E                          -  je 041D51FA
+""+41D51CC: D9 45 08                       -  fld dword ptr [ebp+08]
+""+41D51CF: D8 AE 6C 03 00 00              -  fsubr dword ptr [esi+0000036C]
+""+41D51D5: D9 9E 6C 03 00 00              -  fstp dword ptr [esi+0000036C]
+""+41D51DB: D9 86 6C 03 00 00              -  fld dword ptr [esi+0000036C]
+""+41D51E1: D9 EE                          -  fldz 
+}"""
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = []
+
+[[cheat]]
+id = "x-pos"
+name = "x pos"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x14"]
+
+[[cheat]]
+id = "y-pos"
+name = "y pos"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 91010432
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x18"]
+
+[[cheat]]
+id = "max-hp"
+name = "max hp"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "max-aura"
+name = "max aura"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = [
+    "+0x33c",
+    "+0x30",
+]
+
+[[cheat]]
+id = "aura-ability-charge-duration"
+name = "aura ability charge duration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 76
+
+[cheat.locator]
+find = "symbol"
+symbol = "abilityDuration"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "max-sand"
+name = "max sand"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 999999
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x274"]
+
+[[cheat]]
+id = "god-mode"
+name = "god mode"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x2b5"]
+
+[[cheat]]
+id = "can-doublejump"
+name = "can doublejump"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x30b"]
+
+[[cheat]]
+id = "can-dash"
+name = "can dash"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x39c"]
+
+[[cheat]]
+id = "can-stop-time"
+name = "can stop time"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x39d"]
+
+[[cheat]]
+id = "can-switch-orb-sets"
+name = "can switch orb sets"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x39e"]
+
+[[cheat]]
+id = "can-swim"
+name = "can swim"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:False",
+    "1:True",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "LunaisObj_basepointer"
+hops = ["+0x3a7"]
+
+[[cheat]]
+id = "savegame-pointer-to-enable-collect-money-entropy"
+name = "Savegame Pointer (To enable: Collect money/entropy)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Timespinner.exe
+  Version: 
+  Date   : 2018-09-21
+  Author : VKX
+
+  This script finds the gamesave struct to find the money pointer.
+  Collect some money/entropy to update.
+}
+
+[ENABLE]
+
+aobscan(findMoney,03 C2 89 41 44) // should be unique
+alloc(newmem,$1000)
+
+registersymbol(gameSave)
+alloc(gameSave,$4)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov [gameSave],ecx
+  add eax,edx
+  mov [ecx+44],eax
+  jmp return
+
+findMoney:
+  jmp newmem
+return:
+registersymbol(findMoney)
+
+[DISABLE]
+
+findMoney:
+  db 03 C2 89 41 44
+
+unregistersymbol(findMoney)
+dealloc(newmem)
+
+unregistersymbol(gameSave)
+dealloc(gameSave,$4)
+
+{
+// ORIGINAL CODE - INJECTION POINT: 0110CCF5
+
+""+110CCD2: C2 04 00              -  ret 0004
+""+110CCD5: 83 FA 04              -  cmp edx,04
+""+110CCD8: 75 20                 -  jne 0110CCFA
+""+110CCDA: 8B 46 04              -  mov eax,[esi+04]
+""+110CCDD: 8B 88 D4 00 00 00     -  mov ecx,[eax+000000D4]
+""+110CCE3: 8B 41 44              -  mov eax,[ecx+44]
+""+110CCE6: D9 45 08              -  fld dword ptr [ebp+08]
+""+110CCE9: DD 5D EC              -  fstp qword ptr [ebp-14]
+""+110CCEC: F2 0F 10 45 EC        -  movsd xmm0,[ebp-14]
+""+110CCF1: F2 0F 2C D0           -  cvttsd2si edx,xmm0
+// ---------- INJECTING HERE ----------
+""+110CCF5: 03 C2                 -  add eax,edx
+""+110CCF7: 89 41 44              -  mov [ecx+44],eax
+// ---------- DONE INJECTING  ----------
+""+110CCFA: 8D 65 F8              -  lea esp,[ebp-08]
+""+110CCFD: 5E                    -  pop esi
+""+110CCFE: 5F                    -  pop edi
+""+110CCFF: 5D                    -  pop ebp
+""+110CD00: C2 04 00              -  ret 0004
+""+110CD03: 00 00                 -  add [eax],al
+""+110CD05: 00 00                 -  add [eax],al
+""+110CD07: 00 31                 -  add [ecx],dh
+""+110CD09: CC                    -  int 3 
+""+110CD0A: 10 01                 -  adc [ecx],al
+}"""
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "gameSave"
+hops = []
+
+[[cheat]]
+id = "money-entropy-to-update-collect-money-entropy"
+name = "Money/Entropy (To update: Collect money/entropy)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gameSave"
+hops = ["+0x44"]
+
+[[cheat]]
+id = "base-willpower"
+name = "base willpower"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gameSave"
+hops = [
+    "+0x8",
+    "+0x30",
+]
+
+[[cheat]]
+id = "base-fortitude"
+name = "base fortitude"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gameSave"
+hops = [
+    "+0x8",
+    "+0x34",
+]
+
+[[cheat]]
+id = "base-luck"
+name = "base luck"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "gameSave"
+hops = [
+    "+0x8",
+    "+0x38",
+]

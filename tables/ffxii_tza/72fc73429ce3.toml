@@ -1,0 +1,1307 @@
+[game]
+name = "Final Fantasy XII The Zodiac Age"
+exe = "ffxii_tza.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=5945"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "damage-modifier-script-god-mode-one-hit-kill-etc"
+name = "Damage Modifier Script (God Mode, One Hit Kill, etc)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(DamageModAOB,FFXII_TZA.exe,49 8B C8 44 8B F2 E8 ?? ?? ?? ?? 48 8B CE 48 8B E8)
+registersymbol(DamageModAOB)
+alloc(newmem,4096,DamageModAOB)
+
+///
+label(originalcode)
+label(return)
+label(GodMode)
+registersymbol(GodMode)
+label(OneHitKill)
+registersymbol(OneHitKill)
+label(EnemyDamageMultiplier)
+registersymbol(EnemyDamageMultiplier)
+label(HeroDamageMultiplier)
+registersymbol(HeroDamageMultiplier)
+label(EnemyHealingMultiplier)
+registersymbol(EnemyHealingMultiplier)
+label(HeroHealingMultiplier)
+registersymbol(HeroHealingMultiplier)
+label(HeroCannotDie)
+registersymbol(HeroCannotDie)
+
+///
+newmem:
+  cmp byte ptr [rsi+54],FF
+  je EnemyHit
+HeroHit:
+  cmp edx,0
+  jl HeroDamageHit
+  jg HeroHealingHit
+  jmp originalcode
+HeroDamageHit:
+  cmp [HeroDamageMultiplier],(float)0.0
+  je CheckGodMode
+  neg rdx
+  push rdx
+  fild dword ptr [rsp]
+  fmul dword ptr [HeroDamageMultiplier]
+  fistp dword ptr [rsp]
+  pop rdx
+  neg rdx
+CheckGodMode:
+  cmp [GodMode],1
+  jne CheckHeroCannotDie
+  xor rdx,rdx
+  jmp originalcode
+CheckHeroCannotDie:
+  cmp [HeroCannotDie],1
+  jne originalcode
+  push rax
+  movzx eax,[rsi+48]
+  neg rdx
+  cmp edx,eax
+  jl @F
+  xor rdx,rdx
+@@:
+  neg rdx
+  pop rax
+  jmp originalcode
+HeroHealingHit:
+  cmp [HeroHealingMultiplier],(float)0.0
+  je originalcode
+  push rdx
+  fild dword ptr [rsp]
+  fmul dword ptr [HeroHealingMultiplier]
+  fistp dword ptr [rsp]
+  pop rdx
+  jmp originalcode
+EnemyHit:
+  cmp edx,0
+  jl EnemyDamageHit
+  jg EnemyHealingHit
+  jmp CheckOneHitKill
+EnemyDamageHit:
+  cmp [EnemyDamageMultiplier],(float)0.0
+  je CheckOneHitKill
+  neg rdx
+  push rdx
+  fild dword ptr [rsp]
+  fmul dword ptr [EnemyDamageMultiplier]
+  fistp dword ptr [rsp]
+  pop rdx
+  neg rdx
+CheckOneHitKill:
+  cmp [OneHitKill],1
+  jne originalcode
+  mov rdx,#999999
+  neg rdx
+  jmp originalcode
+EnemyHealingHit:
+  cmp [EnemyHealingMultiplier],(float)0.0
+  je originalcode
+  push rdx
+  fild dword ptr [rsp]
+  fmul dword ptr [EnemyHealingMultiplier]
+  fistp dword ptr [rsp]
+  pop rdx
+  
+originalcode:
+  mov [rsp+10],edx
+  mov rcx,r8
+  mov r14d,edx
+  jmp return
+
+GodMode:
+dq 1
+OneHitKill:
+dq 0
+EnemyDamageMultiplier:
+dq (float)0.0
+HeroDamageMultiplier:
+dq (float)0.5
+EnemyHealingMultiplier:
+dq (float)0.0
+HeroHealingMultiplier:
+dq (float)2.0
+HeroCannotDie:
+dq 1
+
+DamageModAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+DamageModAOB:
+  db 49 8B C8 44 8B F2
+
+unregistersymbol(GodMode)
+unregistersymbol(OneHitKill)
+unregistersymbol(EnemyDamageMultiplier)
+unregistersymbol(HeroDamageMultiplier)
+unregistersymbol(HeroCannotDie)
+unregistersymbol(DamageModAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "enemy-damage-multiplier-set-to-zero-off-otherwise-multiplier"
+name = "Enemy Damage Multiplier (Set to Zero = Off; Otherwise multiplier)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EnemyDamageMultiplier"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "OneHitKill"
+hops = []
+
+[[cheat]]
+id = "enemy-healing-multiplier-set-to-zero-off-otherwise-multiplier-e-g-0-5-is-half-healing"
+name = "Enemy Healing Multiplier (Set to Zero = Off; Otherwise multiplier, e.g. 0.5 is half healing)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EnemyHealingMultiplier"
+hops = []
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "GodMode"
+hops = []
+
+[[cheat]]
+id = "hero-cannot-die-lose-hp-unless-the-hit-will-kill-you-if-on"
+name = "Hero Cannot Die (Lose HP Unless The Hit Will Kill You If On)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroCannotDie"
+hops = []
+
+[[cheat]]
+id = "hero-damage-multiplier-set-to-zero-off-otherwise-multiplier-e-g-0-5-is-half-damage"
+name = "Hero Damage Multiplier (Set to Zero = Off; Otherwise multiplier, e.g. 0.5 is half damage)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroDamageMultiplier"
+hops = []
+
+[[cheat]]
+id = "hero-healing-multiplier-set-to-zero-off-otherwise-multiplier"
+name = "Hero Healing Multiplier (Set to Zero = Off; Otherwise multiplier)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "HeroHealingMultiplier"
+hops = []
+
+[[cheat]]
+id = "infinite-mp"
+name = "Infinite MP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(InfMPAOB,0F BF 5E 4C 42 8D 04 23 85 C0 78 2C) // should be unique
+registersymbol(InfMPAOB)
+alloc(newmem,1024,InfMPAOB)
+
+
+newmem:
+  cmp byte ptr [rsi+54],FF
+  je originalcode
+  test r12d,r12d
+  jge originalcode  
+  xor r12,r12
+  
+originalcode:
+  movsx ebx,word ptr [rsi+4C]
+  lea eax,[rbx+r12]
+  jmp return
+ 
+InfMPAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+InfMPAOB:
+  db 0F BF 5E 4C 42 8D 04 23
+
+unregistersymbol(InfMPAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "always-ct-0-for-allies"
+name = "Always CT = 0 (For Allies)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(CTZeroAOB,F6 40 7E 20 74 6E 4D 85 C0) // should be unique
+registersymbol(CTZeroAOB)
+alloc(newmem,1024,CTZeroAOB)
+
+aobscan(CTZeroReturnAOB,48 8B 87 98 06 00 00 F6 40 6E 40) // should be unique
+registersymbol(CTZeroReturnAOB)
+
+newmem:
+  cmp byte ptr [rax+54],FF
+  je CTZeroReturnAOB
+  jmp return  
+ 
+CTZeroAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+CTZeroAOB:
+  db F6 40 7E 20 74 6E
+
+unregistersymbol(CTZeroAOB)
+unregistersymbol(CTZeroReturnAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "infinite-item-usage-set-minimum-amt-on-use-obtain"
+name = "Infinite Item Usage/Set Minimum Amt On Use/Obtain"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(InfItemUsageAOB,66 41 33 C8 66 23 CD 66 41 33 C9) // should be unique
+registersymbol(InfItemUsageAOB)
+alloc(newmem,1024,InfItemUsageAOB)
+
+label(MinItemAmt)
+registersymbol(MinItemAmt)
+
+newmem:
+  cmp r8w,[MinItemAmt]
+  jge @F
+  mov r8w,[MinItemAmt]
+@@:
+  cmp r8w,r9w
+  jg originalcode
+  mov r8w,r9w
+  jmp originalcode
+  
+originalcode:
+  xor cx,r8w
+  and cx,bp
+  jmp return
+
+MinItemAmt:
+dq #10
+  
+InfItemUsageAOB:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+InfItemUsageAOB:
+  db 66 41 33 C8 66 23 CD
+
+unregistersymbol(InfItemUsageAOB)
+unregistersymbol(MinItemAmt)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "minimum-item-amount-set-to-zero-for-no-effect"
+name = "Minimum Item Amount (Set To Zero For No Effect)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinItemAmt"
+hops = []
+
+[[cheat]]
+id = "status-effect-allies"
+name = "Status Effect (Allies)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(StatusEffectAOB,41 8B 40 64 41 0B 40 3C 89 03 B8 01 00 00 00) // should be unique
+registersymbol(StatusEffectAOB)
+alloc(newmem,2048,StatusEffectAOB)
+
+label(StatusEffectToGive)
+registersymbol(StatusEffectToGive)
+label(AllowOtherStatus)
+registersymbol(AllowOtherStatus)
+
+newmem:
+  cmp byte ptr [r8+54],FF
+  je originalcode
+  mov eax,[StatusEffectToGive]
+  cmp [AllowOtherStatus],1
+  jne @F
+  or [r8+64],eax
+  or [r8+3C],eax
+  jmp originalcode
+@@:
+  mov [r8+64],eax
+  mov [r8+3C],eax
+  
+originalcode:
+  mov eax,[r8+64]
+  or eax,[r8+3C]
+  jmp return
+
+AllowOtherStatus:
+dq 0
+StatusEffectToGive:
+dd 577C0000
+  
+StatusEffectAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+StatusEffectAOB:
+  db 41 8B 40 64 41 0B 40 3C
+
+unregistersymbol(StatusEffectAOB)
+unregistersymbol(StatusEffectToGive)
+unregistersymbol(AllowOtherStatus)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "allow-other-status-negative-and-missing-status"
+name = "Allow Other Status (Negative and Missing Status)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "AllowOtherStatus"
+hops = []
+
+[[cheat]]
+id = "infinite-license-points-set-minimum-amount-when-using-lp"
+name = "Infinite License Points/Set Minimum Amount When Using LP"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscan(InfLicenseAOB,8B 97 90 01 00 00 F7 D9 01 CA 79 04) // should be unique
+registersymbol(InfLicenseAOB)
+alloc(newmem,1024,InfLicenseAOB)
+
+label(MinLicensePoints)
+registersymbol(MinLicensePoints)
+
+newmem:
+  xor ecx,ecx
+  mov edx,[rdi+00000190]
+  cmp edx,[MinLicensePoints]
+  jge return
+  mov edx,[MinLicensePoints]
+  jmp return
+
+MinLicensePoints:
+dq #100
+  
+InfLicenseAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+InfLicenseAOB:
+  db 8B 97 90 01 00 00 F7 D9
+
+unregistersymbol(InfLicenseAOB)
+unregistersymbol(MinLicensePoints)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "minimum-license-points-set-to-zero-for-no-effect"
+name = "Minimum License Points (Set To Zero For No Effect)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinLicensePoints"
+hops = []
+
+[[cheat]]
+id = "exp-multiplier"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(EXPMultAOB,FFXII_TZA.exe,8B 8F 8C 01 00 00 B8 ?? ?? ?? ?? 03 CB 3B C8) // should be unique
+alloc(newmem,1024,EXPMultAOB)
+registersymbol(EXPMultAOB)
+
+///
+label(return)
+label(originalcode)
+label(EXPMult)
+registersymbol(EXPMult)
+
+newmem:
+  imul ebx,[EXPMult]
+  
+originalcode:
+  mov ecx,[rdi+0000018C]
+  jmp return
+ 
+EXPMult:
+dd #5
+    
+EXPMultAOB:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+EXPMultAOB:
+  db 8B 8F 8C 01 00 00
+  
+unregistersymbol(EXPMult)
+unregistersymbol(EXPMultAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "exp-multiplier-2"
+name = "EXP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "EXPMult"
+hops = []
+
+[[cheat]]
+id = "lp-multiplier"
+name = "LP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(LPMultAOB,FFXII_TZA.exe,44 8B 87 90 01 00 00 B8 9F 86 01 00 44 03 C6 8B D6) // should be unique
+alloc(newmem,1024,LPMultAOB)
+registersymbol(LPMultAOB)
+
+///
+label(return)
+label(originalcode)
+label(LPMult)
+registersymbol(LPMult)
+
+newmem:
+  imul esi,[LPMult]
+  
+originalcode:
+  mov r8d,[rdi+00000190]
+  jmp return
+ 
+LPMult:
+dd #5
+    
+LPMultAOB:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+LPMultAOB:
+  db 44 8B 87 90 01 00 00
+  
+unregistersymbol(LPMult)
+unregistersymbol(LPMultAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "lp-multiplier-2"
+name = "LP Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "LPMult"
+hops = []
+
+[[cheat]]
+id = "bestiary-multiplier"
+name = "Bestiary Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(BestiaryMultAOB,FFXII_TZA.exe,FF C3 B8 FE 00 00 00 39 C3 0F 47 D8 FE C3) // should be unique
+alloc(newmem,1024,BestiaryMultAOB)
+registersymbol(BestiaryMultAOB)
+
+///
+label(return)
+label(BestiaryMult)
+registersymbol(BestiaryMult)
+
+newmem:
+  cmova ebx,eax
+  cmp bl,FE
+  je AddOne
+  add bl,[BestiaryMult]
+  jmp return
+AddOne:
+  inc bl
+  jmp return
+ 
+BestiaryMult:
+dd #5
+    
+BestiaryMultAOB+9:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+BestiaryMultAOB+9:
+  db 0F 47 D8 FE C3
+  
+unregistersymbol(BestiaryMult)
+unregistersymbol(BestiaryMultAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "bestiary-multiplier-2"
+name = "Bestiary Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "BestiaryMult"
+hops = []
+
+[[cheat]]
+id = "minimum-chain-count"
+name = "Minimum Chain Count"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ChainCountAOB,FFXII_TZA.exe,8B D3 8B 0D ?? ?? ?? ?? 85 C0 74 02 FF C1)
+registersymbol(ChainCountAOB)
+alloc(newmem,1024,ChainCountAOB)\t\t  
+\t\t  
+///
+label(MinimumChainCount)
+registersymbol(MinimumChainCount)
+
+///
+newmem:
+  cmp ecx,[MinimumChainCount]
+  jge originalcode
+  mov ecx,[MinimumChainCount]
+  mov [ChainCountPtr],ecx
+  
+originalcode:
+  test eax,eax
+  je return
+  inc ecx
+  jmp return
+  
+MinimumChainCount:
+dd #100
+
+ChainCountAOB+8:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+ChainCountAOB+8:
+  db 85 C0 74 02 FF C1
+
+unregistersymbol(MinimumChainCount)
+unregistersymbol(ChainCountAOB)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "minimum-chain-count-2"
+name = "Minimum Chain Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "MinimumChainCount"
+hops = []
+
+[[cheat]]
+id = "set-chain-level-to-3"
+name = "Set Chain Level To 3"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(SetChainLevelAOB,FFXII_TZA.exe,4C 63 1D 6B 3F FA 01 41 83 FB 03) // should be unique
+aobscanmodule(SetChainLevelAOB,FFXII_TZA.exe,41 39 C1 7D 22 41 FF C3) // should be unique
+registersymbol(SetChainLevelAOB)
+alloc(newmem,1024,SetChainLevelAOB)
+
+newmem:
+  cmp r9d,eax
+  jnl NoIncrease
+  movsxd r11,dword ptr [ChainLevelPtr]
+  mov r11d,02
+  mov [ChainLevelPtr],r11d
+  jmp return
+NoIncrease:
+  movsxd r11,dword ptr [ChainLevelPtr]
+  mov r11d,03
+  mov [ChainLevelPtr],r11d
+  jmp SetChainLevelAOB+27
+ 
+SetChainLevelAOB:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+SetChainLevelAOB:
+  db 41 39 C1 7D 22 41 FF C3
+
+unregistersymbol(SetChainLevelAOB)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "monsters-drop-all-items-plus-monograph-and-canopic-jar-item"
+name = "Monsters Drop All Items Plus Monograph and Canopic Jar Item"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(MonsterDropAOB,FFXII_TZA.exe,85 C0 75 09 E8 ?? ?? ?? ?? 39 F8 75 16) // should be unique
+registersymbol(MonsterDropAOB)
+
+aobscanmodule(MonsterDropAOB2,FFXII_TZA.exe,85 C0 74 10 41 0F B7 47 4A 66 89 43 28) // should be unique
+registersymbol(MonsterDropAOB2)
+
+aobscanmodule(MonsterDropAOB3,FFXII_TZA.exe,85 C0 74 10 41 0F B7 47 4E 66 89 43 30) // should be unique
+registersymbol(MonsterDropAOB3)
+
+MonsterDropAOB+2:
+  db EB
+
+MonsterDropAOB2+2:
+  db 90 90
+
+MonsterDropAOB3+2:
+  db 90 90
+  
+[DISABLE]
+
+MonsterDropAOB+2:
+  db 75
+
+MonsterDropAOB2+2:
+  db 74 10
+
+MonsterDropAOB3+2:
+  db 74 10
+
+unregistersymbol(MonsterDropAOB)
+unregistersymbol(MonsterDropAOB2)
+unregistersymbol(MonsterDropAOB3)"""
+
+[[cheat]]
+id = "steal-all-items-and-100-steal"
+name = "Steal All Items And 100% Steal"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(StealItemsAOB1,FFXII_TZA.exe,F6 46 1C 02 0F 84 F0 00 00 00 E8) // should be unique
+registersymbol(StealItemsAOB1)
+
+aobscanmodule(StealItemsAOB2,FFXII_TZA.exe,44 2B C1 41 83 F8 06 72 0A) // should be unique
+registersymbol(StealItemsAOB2)
+
+aobscanmodule(StealItemsAOB3,FFXII_TZA.exe,44 2B C1 41 83 F8 1E 72 09) // should be unique
+registersymbol(StealItemsAOB3)
+
+aobscanmodule(StealItemsAOB4,FFXII_TZA.exe,44 2B C1 41 83 F8 50 72 09) // should be unique
+registersymbol(StealItemsAOB4)
+ 
+StealItemsAOB1+4:
+  db 90 90 90 90 90 90
+  
+StealItemsAOB2+6:
+  db 65
+
+StealItemsAOB3+6:
+  db 65
+
+StealItemsAOB4+6:
+  db 65
+  
+[DISABLE]
+
+StealItemsAOB1+4:
+  db 0F 84 F0 00 00 00
+  
+StealItemsAOB2+6:
+  db 06
+
+StealItemsAOB3+6:
+  db 1E
+
+StealItemsAOB4+6:
+  db 50
+  
+unregistersymbol(StealItemsAOB1)
+unregistersymbol(StealItemsAOB2)
+unregistersymbol(StealItemsAOB3)
+unregistersymbol(StealItemsAOB4)"""
+
+[[cheat]]
+id = "treasure-chest-always-yield-certain-item-you-choose-rarity"
+name = "Treasure Chest Always Yield Certain Item (You Choose Rarity)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(TreasureChestAOB,FFXII_TZA.exe,C7 07 00 00 00 00 66 89 47 04) // should be unique
+registersymbol(TreasureChestAOB)
+alloc(newmem,2048,TreasureChestAOB)
+
+aobscanmodule(TreasureChestAOB2,FFXII_TZA.exe,0F B6 4B 0B 41 39 C8 73 6E E8) // should be unique
+registersymbol(TreasureChestAOB2)
+
+aobscanmodule(TreasureChestAOB3,FFXII_TZA.exe,C7 07 02 00 00 00 48 8B 5C 24 30 48 8B 74 24 38) // should be unique
+registersymbol(TreasureChestAOB3)
+
+label(ItemRarity)
+registersymbol(ItemRarity)
+label(TreasureChestPtr)
+registersymbol(TreasureChestPtr)
+label(OverrideTCItemID)
+registersymbol(OverrideTCItemID)
+
+newmem:
+  mov [TreasureChestPtr],rbx
+  cmp word ptr [OverrideTCItemID],FFFF
+  je DoItemRarity
+  movzx eax,word ptr [OverrideTCItemID]
+  jmp originalcode
+DoItemRarity:
+  cmp [ItemRarity],0
+  je CommonItem
+  cmp [ItemRarity],1
+  je RareItem
+  cmp [ItemRarity],2
+  je DiamondArmletCommon
+  cmp [ItemRarity],3
+  je DiamondArmletRare
+  jmp originalcode
+CommonItem:
+  movzx eax,word ptr [rbx+0C]
+  jmp originalcode
+RareItem:
+  movzx eax,word ptr [rbx+0E]
+  jmp originalcode
+DiamondArmletCommon:
+  movzx eax,word ptr [rbx+10]
+  jmp originalcode
+DiamondArmletRare:
+  movzx eax,word ptr [rbx+12]
+  jmp originalcode
+  
+originalcode:
+  db C7 07 00 00 00 00 66 89 47 04
+  jmp return
+
+ItemRarity:
+dq 3
+TreasureChestPtr:
+dq 0
+OverrideTCItemID:
+dq FFFF
+  
+TreasureChestAOB:
+  jmp newmem
+  nop
+  nop
+  nop
+  nop
+  nop
+  return:
+
+TreasureChestAOB2+7:
+  db EB
+  
+[DISABLE]
+
+TreasureChestAOB:
+  db C7 07 00 00 00 00 66 89 47 04
+
+TreasureChestAOB2+7:
+  db 73
+
+unregistersymbol(TreasureChestAOB)
+unregistersymbol(TreasureChestAOB2)
+unregistersymbol(TreasureChestAOB3)
+unregistersymbol(ItemRarity)
+unregistersymbol(TreasureChestPtr)
+unregistersymbol(OverrideTCItemID)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "item-rarity-item-type-to-drop"
+name = "Item Rarity (Item Type To Drop)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No Diamond Armlet Common Item",
+    "1:No Diamond Armlet Rare Item",
+    "2:Diamond Armlet Common Item",
+    "3:Diamond Armlet Rare Item",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemRarity"
+hops = []
+
+[[cheat]]
+id = "override-treasure-chest-item-id"
+name = "Override Treasure Chest Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideTCItemID"
+hops = []
+
+[[cheat]]
+id = "treasure-chest-always-appear"
+name = "Treasure Chest Always Appear"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(TCAppearAOB,FFXII_TZA.exe,85 C0 75 07 C7 46 04 FF FF FF FF 8B 4E 04 85 C9) // should be unique
+registersymbol(TCAppearAOB)
+ 
+TCAppearAOB+2:
+  db EB
+  
+[DISABLE]
+
+TCAppearAOB+2:
+  db 75
+
+unregistersymbol(TCAppearAOB)"""
+
+[[cheat]]
+id = "override-shop-item-buy-item-you-want"
+name = "Override Shop Item (Buy Item You Want)"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(ShopItemAOB,FFXII_TZA.exe,8B 58 10 0F B7 48 08 0F BA F3 1F) // should be unique
+registersymbol(ShopItemAOB)
+alloc(newmem,1024,ShopItemAOB)
+
+label(OverrideItemID)
+registersymbol(OverrideItemID)
+
+newmem:
+  mov ebx,[rax+10]
+  movzx ecx,word ptr [rax+08]
+  mov cx,[OverrideItemID]
+  cmp cx,-1
+  jne return
+  movzx ecx,word ptr [rax+08]
+  jmp return
+
+OverrideItemID:
+dw -1
+  
+ShopItemAOB:
+  jmp newmem
+  nop
+  nop
+  return:
+  
+[DISABLE]
+
+ShopItemAOB:
+  db 8B 58 10 0F B7 48 08
+
+unregistersymbol(ShopItemAOB)
+unregistersymbol(OverrideItemID)
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "override-item-id"
+name = "Override Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "OverrideItemID"
+hops = []
+
+[[cheat]]
+id = "bestiary"
+name = "Bestiary"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ItemQtyPtr"
+hops = ["+0x4d5c"]
+
+[[cheat]]
+id = "gil"
+name = "Gil"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "GilPtr"
+hops = ["+0x8"]
+
+[[cheat]]
+id = "chain-level"
+name = "Chain Level"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ChainLevelPtr"
+hops = []
+
+[[cheat]]
+id = "chain-count"
+name = "Chain Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "ChainCountPtr"
+hops = []
+
+[[cheat]]
+id = "prng-number-values-go-up-to-624-decimal"
+name = "PRNG Number (Values Go Up to 624 decimal)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "PRNGPtr"
+hops = []
+
+[[cheat]]
+id = "job-1"
+name = "Job 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:White Mage",
+    "1:Uhlan",
+    "2:Machinist",
+    "3:Red Battlemage",
+    "4:Knight",
+    "5:Monk",
+    "6:Time Battlemage",
+    "7:Foebreaker",
+    "8:Archer",
+    "9:Blackmage",
+    "10:Bushi",
+    "11:Shikari",
+    "255:Not Selected",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedCharPtr"
+hops = ["+0x1c3"]
+
+[[cheat]]
+id = "current-job-selected"
+name = "Current Job Selected"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:White Mage",
+    "1:Uhlan",
+    "2:Machinist",
+    "3:Red Battlemage",
+    "4:Knight",
+    "5:Monk",
+    "6:Time Battlemage",
+    "7:Foebreaker",
+    "8:Archer",
+    "9:Blackmage",
+    "10:Bushi",
+    "11:Shikari",
+    "255:Not Selected",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedCharPtr"
+hops = ["+0x1c5"]
+
+[[cheat]]
+id = "job-2"
+name = "Job 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:White Mage",
+    "1:Uhlan",
+    "2:Machinist",
+    "3:Red Battlemage",
+    "4:Knight",
+    "5:Monk",
+    "6:Time Battlemage",
+    "7:Foebreaker",
+    "8:Archer",
+    "9:Blackmage",
+    "10:Bushi",
+    "11:Shikari",
+    "255:Not Selected",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelectedCharPtr"
+hops = ["+0x1c4"]

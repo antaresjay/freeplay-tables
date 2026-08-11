@@ -1,0 +1,1259 @@
+[game]
+name = "Civilization V [BNW, Vox Populi]"
+exe = "civilizationv_dx11.exe"
+notes = "Converted from a Cheat Engine table by DrummerIX. Source: https://fearlessrevolution.com/viewtopic.php?t=28673"
+verified = []
+author = "DrummerIX"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "activate-trainer-2-player-unit-options-unlimited-movement-can-always-fight"
+name = "Activate Trainer 2 (Player Unit Options) (Unlimited Movement, Can Always Fight)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+{ This code gets called when moving a unit }
+//aobscanmodule(PlayerUnitOptionsAOB1,"CvGameCore_Expansion2.dll",8B 4E 40 F7 DF 03 CF 51) // should be unique
+aobscanmodule(PlayerUnitOptionsAOB1,"CvGameCore_Expansion2.dll",8B 4F 44 F7 DB 03 CB 51) // should be unique
+registersymbol(PlayerUnitOptionsAOB1)
+alloc(newmem,1024,PlayerUnitOptionsAOB1)
+
+/// { This code gets called when selecting a unit }
+//aobscanmodule(PlayerUnitOptionsAOB2,"CvGameCore_Expansion2.dll",8B 49 40 89 48 20 C7 45 FC FF FF FF) // should be unique
+//aobscanmodule(PlayerUnitOptionsAOB2,"CvGameCore_Expansion2.dll",8B 49 44 89 48 24 C7 45 FC FF FF FF) // should be unique
+aobscanmodule(PlayerUnitOptionsAOB2,"CvGameCore_Expansion2.dll",83 7E 44 00 0F 8E 4C 01 00 00 8B 8E 3C 04 00 00) // should be unique
+registersymbol(PlayerUnitOptionsAOB2)
+alloc(newmem2,1024,PlayerUnitOptionsAOB2)
+
+/// { This code gets called when attacking a unit }
+//aobscanmodule(PlayerUnitOptionsAOB3,"CvGameCore_Expansion2.dll",FF 87 64 03 00 00 56 C6 87 90 00 00 00 01) // should be unique
+//aobscanmodule(PlayerUnitOptionsAOB3,"CvGameCore_Expansion2.dll",FF 87 A4 03 00 00 56 C6 87 C0 00 00 00 01) // should be unique
+aobscanmodule(PlayerUnitOptionsAOB3,"CvGameCore_Expansion2.dll",FF 83 94 03 00 00 51 C6 83 C0 00 00 00 01) // should be unique
+registersymbol(PlayerUnitOptionsAOB3)
+alloc(newmem3,1024,PlayerUnitOptionsAOB3)
+
+/// { This code gets called when selecting a unit (points to EXP of unit) }
+aobscanmodule(PlayerUnitOptionsAOB4,"CvGameCore_Expansion2.dll",8B BF A0 00 00 00 B8 * * * * F7 EF) // should be unique
+registersymbol(PlayerUnitOptionsAOB4)
+alloc(newmem4,1024,PlayerUnitOptionsAOB4)
+
+/// { This code gets called when selecting a unit (points to movement of unit) }
+aobscanmodule(PlayerUnitOptionsAOB5,"CvGameCore_Expansion2.dll",8B 7F 44 89 7D 08 C7 45 FC 00 00 00 00 8D 45 08) // should be unique
+registersymbol(PlayerUnitOptionsAOB5)
+alloc(newmem5,1024,PlayerUnitOptionsAOB5)
+
+/// { This code gets called when selecting a unit (points to movement of unit) }
+aobscanmodule(PlayerUnitOptionsAOB6,"CvGameCore_Expansion2.dll",83 7B 44 00 7F 0A 33 C0 5F 5E 5B) // should be unique
+registersymbol(PlayerUnitOptionsAOB6)
+alloc(newmem6,1024,PlayerUnitOptionsAOB6)
+
+///
+label(return)
+label(bUnlimitedMovement)
+registersymbol(bUnlimitedMovement)
+label(bCanAlwaysFight)
+registersymbol(bCanAlwaysFight)
+
+///
+label(return2)
+label(SelUnitPtr)
+registersymbol(SelUnitPtr)
+
+///
+label(return3)
+
+///
+label(return4)
+label(SelUnitPtr2)
+registersymbol(SelUnitPtr2)
+
+///
+label(return5)
+
+///
+label(return6)
+
+///
+newmem:
+  { Check if Unit is Player }
+  cmp dword ptr [edi+28],0
+  jne originalcode
+CheckUnlimitedMovement:
+  cmp [bUnlimitedMovement],1
+  jne originalcode
+  { Check if this is the player's selected unit to make automated explore not be infinite movement when this is on }
+  cmp edi,[SelUnitPtr]
+  jne originalcode
+  mov ecx,#120 // 120 is 2 movement points
+  cmp [edi+44],ecx
+  jge SkipSettingMovement
+  mov [edi+44],ecx
+SkipSettingMovement:
+  xor ebx,ebx
+  mov [ebp-0C],ebx
+  jmp originalcode
+    
+originalcode:
+  mov ecx,[edi+44]
+  neg ebx
+  jmp return
+
+bUnlimitedMovement:
+dq 0
+bCanAlwaysFight:
+dq 0
+
+newmem2:
+  { Check if Unit is Player }
+  cmp dword ptr [esi+28],0
+  jne originalcode2
+  { Save Selected Unit Pointer }
+  mov [SelUnitPtr],esi
+CheckUnlimitedMovement2:
+  cmp [bUnlimitedMovement],1
+  jne CheckCanAlwaysFight2
+  mov [EAXSave2],eax
+  mov eax,#120 // 120 is 2 movement points
+  cmp [esi+44],eax
+  jge SkipSettingMovement2
+  mov [esi+44],eax
+SkipSettingMovement2:
+  mov eax,[EAXSave2]
+  jmp CheckCanAlwaysFight2
+CheckCanAlwaysFight2:
+  cmp [bCanAlwaysFight],1
+  jne originalcode2
+  mov [EAXSave2],eax
+  xor eax,eax
+  mov [esi+00000394],eax
+  { We also need to make sure we have movement for attacks }
+  mov eax,#120
+  cmp [esi+44],eax
+  jge SkipSettingMovement21
+  mov [esi+44],eax
+SkipSettingMovement21:
+  mov eax,[EAXSave2]
+  jmp originalcode2
+
+originalcode2:
+  cmp dword ptr [esi+44],00
+  jng FirstJNG
+  jmp return2
+FirstJNG:
+  jmp PlayerUnitOptionsAOB2+156
+
+EAXSave2:
+dq 0
+SelUnitPtr:
+dq 0
+
+newmem3:
+  { Check if Unit Is Player }
+  cmp dword ptr [ebx+28],0
+  jne originalcode3
+CheckCanAlwaysFight3:
+  cmp [bCanAlwaysFight],1
+  jne originalcode3
+  { Check if this is the player's selected unit to make automated explore not be infinite movement when this is on }
+  cmp ebx,[SelUnitPtr]
+  jne originalcode3
+  mov [EAXSave3],eax
+  xor eax,eax
+  mov [ebx+00000394],eax
+  { We also need to make sure we have movement for attacks }
+  mov eax,#120
+  cmp [ebx+44],eax
+  jge SkipSettingMovement3
+  mov [ebx+44],eax
+SkipSettingMovement3:
+  mov eax,[EAXSave3]
+  jmp return3
+
+originalcode3:
+  inc [ebx+00000394]
+  jmp return3
+
+EAXSave3:
+dq 0
+
+newmem4:
+  mov [SelUnitPtr2],edi
+  { Check if Unit Is Player }
+  cmp dword ptr [edi+28],0
+  jne originalcode4
+CheckUnlimitedMovement4:
+  cmp [bUnlimitedMovement],1
+  jne CheckCanAlwaysFight4
+  mov [EAXSave4],eax
+  mov eax,#120 // 120 is 2 movement points
+  cmp [edi+44],eax
+  jge SkipSettingMovement4
+  mov [edi+44],eax
+SkipSettingMovement4:
+  mov eax,[EAXSave4]
+  jmp CheckCanAlwaysFight4
+CheckCanAlwaysFight4:
+  cmp [bCanAlwaysFight],1
+  jne originalcode4
+  { Check if this is the player's selected unit to make automated explore not be infinite movement when this is on }
+  cmp edi,[SelUnitPtr]
+  jne originalcode4
+  mov [EAXSave4],eax
+  xor eax,eax
+  mov [edi+00000394],eax
+  { We also need to make sure we have movement for attacks }
+  mov eax,#120
+  cmp [edi+44],eax
+  jge MyCleanUp4
+  mov [edi+44],eax
+MyCleanUp4:
+  mov eax,[EAXSave4]  
+  jmp originalcode4
+  
+originalcode4:
+  mov edi,[edi+000000A0]
+  jmp return4
+
+EAXSave4:
+dq 0
+SelUnitPtr2:
+dq 0
+
+newmem5:
+  mov [SelUnitPtr2],edi
+  { Check if Unit Is Player }
+  cmp dword ptr [edi+28],0
+  jne originalcode5
+CheckUnlimitedMovement5:
+  cmp [bUnlimitedMovement],1
+  jne CheckCanAlwaysFight5
+  mov [EAXSave5],eax
+  mov eax,#120 // 120 is 2 movement points
+  cmp [edi+44],eax
+  jge SkipSettingMovement5
+  mov [edi+44],eax
+SkipSettingMovement5:
+  mov eax,[EAXSave5]
+  jmp CheckCanAlwaysFight5
+CheckCanAlwaysFight5:
+  cmp [bCanAlwaysFight],1
+  jne originalcode5
+  { Check if this is the player's selected unit to make automated explore not be infinite movement when this is on }
+  cmp edi,[SelUnitPtr]
+  jne originalcode5
+  mov [EAXSave5],eax
+  xor eax,eax
+  mov [edi+00000394],eax
+  { We also need to make sure we have movement for attacks }
+  mov eax,#120
+  cmp [edi+44],eax
+  jge MyCleanUp5
+  mov [edi+44],eax
+MyCleanUp5:
+  mov eax,[EAXSave5]  
+  jmp originalcode5
+  
+originalcode5:
+  mov edi,[edi+44]
+  mov [ebp+08],edi
+  jmp return5
+
+EAXSave5:
+dq 0
+
+newmem6:
+  mov [SelUnitPtr2],ebx
+  { Check if Unit Is Player }
+  cmp dword ptr [ebx+28],0
+  jne originalcode6
+CheckUnlimitedMovement6:
+  cmp [bUnlimitedMovement],1
+  jne CheckCanAlwaysFight6
+  mov [EAXSave6],eax
+  mov eax,#120 // 120 is 2 movement points
+  cmp [ebx+44],eax
+  jge SkipSettingMovement6
+  mov [ebx+44],eax
+SkipSettingMovement6:
+  mov eax,[EAXSave6]
+  jmp CheckCanAlwaysFight6
+CheckCanAlwaysFight6:
+  cmp [bCanAlwaysFight],1
+  jne originalcode6
+  { Check if this is the player's selected unit to make automated explore not be infinite movement when this is on }
+  cmp ebx,[SelUnitPtr]
+  jne originalcode6
+  mov [EAXSave6],eax
+  xor eax,eax
+  mov [ebx+00000394],eax
+  { We also need to make sure we have movement for attacks }
+  mov eax,#120
+  cmp [ebx+44],eax
+  jge MyCleanUp6
+  mov [ebx+44],eax
+MyCleanUp6:
+  mov eax,[EAXSave6]  
+  jmp originalcode6
+  
+originalcode6:
+  cmp dword ptr [ebx+44],00
+  jg PlayerUnitOptionsAOB6+A
+  xor eax,eax
+  pop edi
+  pop esi
+  pop ebx
+  jmp return6
+
+EAXSave6:
+dq 0
+        
+///
+PlayerUnitOptionsAOB1:
+  jmp newmem
+  return:
+
+///
+PlayerUnitOptionsAOB2:
+  jmp newmem2
+  nop
+  nop
+  nop
+  nop
+  nop
+  return2:
+
+///
+PlayerUnitOptionsAOB3:
+  jmp newmem3
+  nop
+  return3:
+
+///
+PlayerUnitOptionsAOB4:
+  jmp newmem4
+  nop
+  return4:
+
+///
+PlayerUnitOptionsAOB5:
+  jmp newmem5
+  nop
+  return5:
+
+///
+PlayerUnitOptionsAOB6+6:
+  jmp newmem6
+  return6:
+  
+[DISABLE]
+
+///
+PlayerUnitOptionsAOB1:
+ db 8B 4F 44 F7 DB 03 CB 51
+
+unregistersymbol(PlayerUnitOptionsAOB1)
+unregistersymbol(bUnlimitedMovement)
+unregistersymbol(bCanAlwaysFight)
+
+///
+PlayerUnitOptionsAOB2:
+  db 83 7E 44 00 0F 8E 4C 01 00 00
+
+unregistersymbol(PlayerUnitOptionsAOB2)
+unregistersymbol(SelUnitPtr)
+
+PlayerUnitOptionsAOB3:
+  db FF 83 94 03 00 00 51 C6 83 C0 00 00 00 01
+
+unregistersymbol(PlayerUnitOptionsAOB3)
+
+///
+PlayerUnitOptionsAOB4:
+  db 8B BF A0 00 00 00
+
+unregistersymbol(PlayerUnitOptionsAOB4)
+unregistersymbol(SelUnitPtr2)
+
+///
+PlayerUnitOptionsAOB5:
+  db 8B 7F 44 89 7D 08
+
+unregistersymbol(PlayerUnitOptionsAOB5)
+
+///
+PlayerUnitOptionsAOB6+6:
+  db 33 C0 5F 5E 5B
+
+unregistersymbol(PlayerUnitOptionsAOB6)
+  
+dealloc(newmem)
+dealloc(newmem2)
+dealloc(newmem3)
+dealloc(newmem4)
+dealloc(newmem5)
+dealloc(newmem6)"""
+
+[[cheat]]
+id = "use-minimum-money-amount"
+name = "Use Minimum Money Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bDoMinimumMoneyAmount"
+hops = []
+
+[[cheat]]
+id = "minimum-money-amount"
+name = "Minimum Money Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMoneyMinimumAmount"
+hops = []
+
+[[cheat]]
+id = "minimum-money-per-turn-amount"
+name = "Minimum Money Per Turn Amount"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMoneyPerTurnMinimumAmount"
+hops = []
+
+[[cheat]]
+id = "money-multiplier"
+name = "Money Multiplier"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMoneyMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-player-faith-options-multiplier-minimum-faith-etc"
+name = "Enable Player Faith Options (Multiplier / Minimum Faith, etc)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+{ This code executes on start of turn to add faith to player total }
+//aobscanmodule(PlayerFaithOptionsAOB1,"CvGameCore_Expansion2.dll",8B 43 64 03 C6 50 8B CB E8 ?? ?? ?? ?? 8B 4B 28 83 F9 FF) // should be unique
+aobscanmodule(PlayerFaithOptionsAOB1,"CvGameCore_Expansion2.dll",8B 43 68 03 C6 50 8B CB E8 ?? ?? ?? ?? 8B 4B 28 83 F9 FF) // should be unique
+registersymbol(PlayerFaithOptionsAOB1)
+alloc(newmem,1024,PlayerFaithOptionsAOB1)
+
+{ This is the code before the addition of faith that we want to skip since we add even if faith is zero }
+aobscanmodule(PlayerFaithOptionsAOB2,"CvGameCore_Expansion2.dll",8B F0 85 F6 7E 31 8D 95 60 FF FF FF 52 6A 15) // should be unique
+registersymbol(PlayerFaithOptionsAOB2)
+
+///
+label(return)
+label(iFaithMinimumAmount)
+registersymbol(iFaithMinimumAmount)
+label(bDoMinimumFaithAmount)
+registersymbol(bDoMinimumFaithAmount)
+label(fFaithMultiplier)
+registersymbol(fFaithMultiplier)
+label(iFaithPerTurnMinimumAmount)
+registersymbol(iFaithPerTurnMinimumAmount)
+
+///
+newmem:
+  cmp dword ptr [ebx+28],0
+  jne originalcode
+  {So, we have determined this is for human player character }
+  { First, Save Some Pointers }
+  mov [PlayerPtr],ebx
+  { First, we check for minimum faith amount }
+  cmp [bDoMinimumFaithAmount],1
+  jne SkipDoMinimumFaithAmount
+  mov eax,[iFaithMinimumAmount]
+  cmp [ebx+68],eax
+  jge SkipDoMinimumFaithAmount
+  mov [ebx+68],eax
+  mov [ebx+6C],eax
+SkipDoMinimumFaithAmount:
+  {Next, we check for minimum faith per turn amount }
+  mov eax,[iFaithPerTurnMinimumAmount]
+  cmp esi,eax
+  jle DoMinFaithPerTurn
+  jmp DoFaithMultiplier
+DoMinFaithPerTurn:
+  mov esi,eax
+  jmp DoFaithMultiplier
+DoFaithMultiplier:
+  push esi
+  fild dword ptr [esp]
+  fmul dword ptr [fFaithMultiplier]
+  fistp dword ptr [esp]
+  pop esi
+  jmp originalcode
+    
+originalcode:
+  mov eax,[ebx+68]
+  add eax,esi
+  jmp return
+  
+bDoMinimumFaithAmount:
+dq 0
+iFaithMinimumAmount:
+dq #1000
+fFaithMultiplier:
+dq (float)10.0
+iFaithPerTurnMinimumAmount:
+dq #2
+  
+///
+PlayerFaithOptionsAOB1:
+  jmp newmem
+  return:
+
+///
+PlayerFaithOptionsAOB2+4:
+  db 90 90
+  
+[DISABLE]
+
+///
+PlayerFaithOptionsAOB1:
+ db 8B 43 68 03 C6
+
+unregistersymbol(PlayerFaithOptionsAOB1)
+unregistersymbol(iFaithMinimumAmount)
+unregistersymbol(bDoMinimumFaithAmount)
+unregistersymbol(fFaithMultiplier)
+unregistersymbol(iFaithPerTurnMinimumAmount)
+
+PlayerFaithOptionsAOB2+4:
+  db 7E 31
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "use-minimum-faith-amount"
+name = "Use Minimum Faith Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bDoMinimumFaithAmount"
+hops = []
+
+[[cheat]]
+id = "minimum-faith-amount"
+name = "Minimum Faith Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iFaithMinimumAmount"
+hops = []
+
+[[cheat]]
+id = "faith-per-turn-minimum-amount"
+name = "Faith Per Turn Minimum Amount"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iFaithPerTurnMinimumAmount"
+hops = []
+
+[[cheat]]
+id = "faith-multiplier"
+name = "Faith Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fFaithMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-player-research-options-multiplier"
+name = "Enable Player Research Options (Multiplier)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+{ This code executes on start of turn to add science to player research total }
+aobscanmodule(PlayerResearchOptionsAOB1,"CvGameCore_Expansion2.dll",8B 55 0C 03 C2 50 51 8B CE) // should be unique
+registersymbol(PlayerResearchOptionsAOB1)
+alloc(newmem,1024,PlayerResearchOptionsAOB1)
+
+///
+label(return)
+label(fResearchMultiplier)
+registersymbol(fResearchMultiplier)
+
+///
+newmem:
+  mov edx,[esi+20]
+  test edx,edx
+  je originalcode
+  cmp dword ptr [edx+04],0
+  jne originalcode
+  {So, we have determined this is for human player character }
+DoResearchMultiplier:
+  mov edx,[ebp+0C]
+  push edx
+  fild dword ptr [esp]
+  fmul dword ptr [fResearchMultiplier]
+  fistp dword ptr [esp]
+  pop edx
+  mov [ebp+0C],edx
+  jmp originalcode
+    
+originalcode:
+  mov edx,[ebp+0C]
+  add eax,edx
+  jmp return
+  
+fResearchMultiplier:
+dq (float)1.75
+  
+///
+PlayerResearchOptionsAOB1:
+  jmp newmem
+  return:
+  
+[DISABLE]
+
+///
+PlayerResearchOptionsAOB1:
+ db 8B 55 0C 03 C2
+
+unregistersymbol(PlayerResearchOptionsAOB1)
+unregistersymbol(fResearchMultiplier)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "research-multiplier"
+name = "Research Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fResearchMultiplier"
+hops = []
+
+[[cheat]]
+id = "enable-damage-modifier-god-mode-one-hit-kill"
+name = "Enable Damage Modifier (God Mode, One Hit Kill)"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+//aobscanmodule(PlayerGodModeAOB1,"CvGameCore_Expansion2.dll",8B 7D 0C 8B 5D 08 8B 45 14 8B 4B 3C) // should be unique
+//aobscanmodule(PlayerGodModeAOB1,"CvGameCore_Expansion2.dll",8B 7D 0C 8B 5D 08 8B 45 14 8B 4B 40) // should be unique
+aobscanmodule(PlayerGodModeAOB1,"CvGameCore_Expansion2.dll",8B 5D 08 8B 45 14 89 45 94 8B 83 C0 03 00 00) // should be unique
+registersymbol(PlayerGodModeAOB1)
+alloc(newmem,1024,PlayerGodModeAOB1)
+
+///
+label(return)
+label(bGodMode)
+registersymbol(bGodMode)
+label(bOneHitKill)
+registersymbol(bOneHitKill)
+
+///
+newmem:
+  { Check if Defender is Player }
+  mov ebx,[ebp+08]
+  cmp dword ptr [ebx+28],0
+  je CheckGodMode
+  { Check if Attacker is Player }
+  mov ebx,[esp+0C]
+  test ebx,ebx
+  je originalcode
+  cmp dword ptr [ebx+28],0
+  je CheckOneHitKill
+  jmp originalcode
+CheckOneHitKill:
+  cmp [bOneHitKill],1
+  jne originalcode
+  mov ebx,#100
+  mov [ebp+0C],ebx
+  jmp originalcode
+CheckGodMode:
+  cmp [bGodMode],1
+  jne originalcode
+  mov ebx,#100
+  neg ebx
+  mov [ebp+0C],ebx
+  jmp originalcode
+    
+originalcode:
+  mov ebx,[ebp+08]
+  mov eax,[ebp+14]
+  jmp return
+
+bGodMode:
+dq 1
+bOneHitKill:
+dq 0
+    
+///
+PlayerGodModeAOB1:
+  jmp newmem
+  nop
+  return:
+  
+[DISABLE]
+
+///
+PlayerGodModeAOB1:
+ db 8B 5D 08 8B 45 14
+
+unregistersymbol(PlayerGodModeAOB1)
+unregistersymbol(bGodMode)
+unregistersymbol(bOneHitKill)
+  
+dealloc(newmem)"""
+
+[[cheat]]
+id = "god-mode"
+name = "God Mode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bGodMode"
+hops = []
+
+[[cheat]]
+id = "one-hit-kill"
+name = "One Hit Kill"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Off",
+    "1:On",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "bOneHitKill"
+hops = []
+
+[[cheat]]
+id = "minimum-city-production"
+name = "Minimum City Production"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "iMinimumCityProduction"
+hops = []
+
+[[cheat]]
+id = "city-production-multiplier"
+name = "City Production Multiplier"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fCityProductionMultiplier"
+hops = []
+
+[[cheat]]
+id = "base-addr"
+name = "Base addr."
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = []
+
+[[cheat]]
+id = "x-pos"
+name = "X-Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x34"]
+
+[[cheat]]
+id = "y-pos"
+name = "Y-Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x38"]
+
+[[cheat]]
+id = "current-damage"
+name = "Current Damage"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x40"]
+
+[[cheat]]
+id = "lv"
+name = "LV"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "xp"
+name = "XP"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "medic-heal-this-unit-and-adjacent-units-1-0-5-10"
+name = "Medic Heal This Unit and Adjacent Units #1 (0/5/10)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "medic-heal-this-unit-and-adjacent-units-2-0-5-10"
+name = "Medic Heal This Unit and Adjacent Units #2 (0/5/10)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "survivalism-heal-outside-friendly-territory-1-0-5-10"
+name = "Survivalism Heal Outside Friendly Territory #1 (0/5/10)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "survivalism-heal-outside-friendly-territory-2-0-5-10"
+name = "Survivalism Heal Outside Friendly Territory #2 (0/5/10)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x184"]
+
+[[cheat]]
+id = "survivalism-combat-strength-while-defending"
+name = "Survivalism% Combat Strength While Defending"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1c8"]
+
+[[cheat]]
+id = "trailblazer-combat-strength-outside-friendly-territory"
+name = "Trailblazer% Combat Strength Outside Friendly Territory"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x3cc"]
+
+[[cheat]]
+id = "scouting-visibility-range"
+name = "Scouting Visibility Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "scouting-extra-movement"
+name = "Scouting Extra Movement"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x13c"]
+
+[[cheat]]
+id = "accuracy-barrage-logistics-ranged-combat-strength"
+name = "Accuracy/Barrage/Logistics% Ranged Combat Strength"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1b4"]
+
+[[cheat]]
+id = "barrage-ranged-combat-strength-attacking-units-above-50-hp"
+name = "Barrage% Ranged Combat Strength Attacking Units Above 50% HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x204"]
+
+[[cheat]]
+id = "accuracy-ranged-combat-strength-attacking-units-below-50-hp"
+name = "Accuracy% Ranged Combat Strength Attacking Units Below 50% HP"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "drill-shock-combat-strength"
+name = "Drill/Shock% Combat Strength"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1d0"]
+
+[[cheat]]
+id = "drill-siege-combat-strength-attacking-cities"
+name = "Drill/Siege% Combat Strength Attacking Cities"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1d4"]
+
+[[cheat]]
+id = "field-combat-strength-attacking-units-in-open-terrain"
+name = "Field% Combat Strength Attacking Units In Open Terrain"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1e8"]
+
+[[cheat]]
+id = "shock-flanking-bonus"
+name = "Shock% Flanking Bonus"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x214"]
+
+[[cheat]]
+id = "cover"
+name = "Cover %+"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x1dc"]
+
+[[cheat]]
+id = "range"
+name = "Range"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = [
+    "+0x43c",
+    "+0x12c",
+]
+
+[[cheat]]
+id = "amphibious"
+name = "Amphibious"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "amphibious-2"
+name = "Amphibious #2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0xcc"]
+
+[[cheat]]
+id = "brute-force-combat-strength-vs-barbarians"
+name = "Brute Force% Combat Strength VS Barbarians"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x308"]
+
+[[cheat]]
+id = "blitz-0-1-change-number-of-attacks-per-turn-also"
+name = 'Blitz  (0/1) / change "Number of Attacks Per Turn" also'
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x370"]
+
+[[cheat]]
+id = "number-of-attacks-per-turn"
+name = "Number of Attacks Per Turn"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "SelUnitPtr2"
+hops = ["+0x390"]

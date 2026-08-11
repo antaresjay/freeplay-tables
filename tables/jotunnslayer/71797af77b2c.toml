@@ -1,0 +1,142 @@
+[game]
+name = "Jotstunnslayer: Hordes of Hel"
+exe = "jotunnslayer.exe"
+notes = "Converted from a Cheat Engine table by Send. Source: https://fearlessrevolution.com/viewtopic.php?t=35376"
+verified = []
+author = "Send"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "get-player"
+name = "→ Get Player"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(GetNetPlayerController,GameAssembly.dll,48 * * 48 * * 0F * * 4C * * * * * * 48 * * * * * * 41 * * F3 * * * * F3)
+alloc(newmemGetNetPlayerController,$100,GetNetPlayerController)
+alloc(GetNPC,8,GetNetPlayerController)
+label(codeGetNetPlayerController returnGetNetPlayerController)
+
+newmemGetNetPlayerController:
+mov [GetNPC],rdi
+
+codeGetNetPlayerController:
+mov rdx,[rdi]
+mov rcx,rdi
+jmp returnGetNetPlayerController
+
+GetNPC:
+dw
+
+GetNetPlayerController+0:  
+jmp newmemGetNetPlayerController
+nop 1
+returnGetNetPlayerController:
+registersymbol(GetNetPlayerController GetNPC)
+
+
+
+[DISABLE]
+
+GetNetPlayerController+0:
+db 48 8B 17 48 8B CF
+unregistersymbol(GetNetPlayerController GetNPC)
+dealloc(newmemGetNetPlayerController GetNPC)"""
+
+[[cheat]]
+id = "attack-speed-multiplier"
+name = "→ Attack Speed Multiplier"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(AttackSpeedMultiplier,GameAssembly.dll,C7 87 90 0E 00 00 00 00 80 3F)
+alloc(newmem,$1000,AttackSpeedMultiplier)
+registersymbol(AtkSpeed)
+label(code return AtkSpeed)
+
+newmem:
+
+code:
+  movss xmm15,[AtkSpeed]
+  movss [rdi+00000E90],xmm15
+  jmp return
+
+AtkSpeed:
+dd (float)10
+
+AttackSpeedMultiplier:
+  jmp newmem
+  nop 5
+return:
+registersymbol(AttackSpeedMultiplier)
+
+[DISABLE]
+
+AttackSpeedMultiplier:
+  db C7 87 90 0E 00 00 00 00 80 3F
+
+unregistersymbol(*)
+dealloc(*)"""
+
+[[cheat]]
+id = "set-attack-speed-multiplier"
+name = "Set Attack Speed Multiplier"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "AtkSpeed"
+hops = []
+
+[[cheat]]
+id = "infinite-shield"
+name = "Infinite Shield"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+
+aobscanmodule(Shield,GameAssembly.dll,F3 0F 10 80 A4 02 00 00 E8)
+alloc(newmem,$1000,Shield)
+
+label(code)
+label(return)
+
+newmem:
+mov [rax+2A4],(float)10000
+code:
+  movss xmm0,[rax+000002A4]
+  jmp return
+
+Shield:
+  jmp newmem
+  nop 3
+return:
+registersymbol(Shield)
+
+[DISABLE]
+
+Shield:
+  db F3 0F 10 80 A4 02 00 00
+
+unregistersymbol(Shield)
+dealloc(newmem)"""

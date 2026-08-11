@@ -1,0 +1,367 @@
+[game]
+name = "Dying Light - Teleporter"
+exe = "dyinglightteleport.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=3315"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "teleport"
+name = "TELEPORT"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(_TeleportCode,engine_x64_rwdi.dll,F3 0F 58 83 C4 00 00 00 48)
+aobscanmodule(_GetWaypointCoord,gamedll_x64_rwdi.dll,F3 0F 10 83 38 08 00 00 F3)
+alloc(teleportmem,$1000,engine_x64_rwdi.dll)
+alloc(newmem,$1000,gamedll_x64_rwdi.dll)
+registersymbol(z_coord)
+registersymbol(x_coord)
+registersymbol(y_coord)
+registersymbol(z_coord_undo)
+registersymbol(x_coord_undo)
+registersymbol(y_coord_undo)
+registersymbol(s_enable)
+registersymbol(l_enable)
+registersymbol(u_enable)
+Registersymbol(_TeleportCode)
+Registersymbol(_GetWayPointCoord_X)
+Registersymbol(_GetWayPointCoord_Y)
+Registersymbol(_GetWayPointCoord_Z)
+registersymbol(_GetWaypointCoord)
+Registersymbol(_WriteWayPointCoordsToPlayerLocation)
+
+alloc(s_enable,4)
+alloc(l_enable,4)
+alloc(u_enable,4)
+alloc(z_coord,4)
+alloc(x_coord,4)
+alloc(y_coord,4)
+alloc(z_coord_undo,4)
+alloc(x_coord_undo,4)
+alloc(y_coord_undo,4)
+alloc(_GetWayPointCoord_X,4)
+alloc(_GetWayPointCoord_Y,4)
+alloc(_GetWayPointCoord_Z,4)
+alloc(_WriteWayPointCoordsToPlayerLocation,4)
+
+label(returnteleport)
+label(originalcodeteleport)
+label(exitteleport)
+label(save_coord)
+label(load_coord)
+label(undo_coord)
+label(returnhere)
+label(originalcode)
+label(exit)
+label(WriteWayPointCoordsToPlayerLocation)
+
+newmem: //this is allocated memory, you have read,write,execute access
+movss xmm12,[rbx+00000838]
+movss [_GetWayPointCoord_X],xmm12
+movss xmm12,[rbx+0000083C]
+movss [_GetWayPointCoord_Y],xmm12
+movss xmm12,[rbx+00000840]
+movss [_GetWayPointCoord_Z],xmm12
+
+originalcode:
+movss xmm0,[rbx+00000838]
+exit:
+jmp returnhere
+
+
+
+teleportmem:
+cmp [s_enable],1
+je save_coord
+cmp [l_enable],1
+je load_coord
+cmp [u_enable],1
+je undo_coord
+cmp [_WriteWayPointCoordsToPlayerLocation],1
+je WriteWayPointCoordsToPlayerLocation
+jmp originalcodeteleport
+
+save_coord:
+mov [s_enable],0
+cmp r9,0
+jne originalcodeteleport
+movss xmm12,[rbx+BC] // Save Value of X-Coordinate into xmm12
+movss [x_coord],xmm12// Load Value of xmm12 into x_coord
+movss xmm12,[rbx+C0] // Save Value of Z-Coordinate into xmm12
+movss [z_coord],xmm12// Load Value of xmm12 into z_coord
+movss xmm12,[rbx+C4] // Save Value of Y-Coordinate into xmm12
+movss [y_coord],xmm12// Load Value of xmm12 into y_coord
+jmp originalcodeteleport
+
+load_coord:
+mov [l_enable],0
+cmp [z_coord],0
+je originalcodeteleport
+cmp r9,0
+jne originalcodeteleport
+// Save current Player position again for UNDO TELEPORT
+movss xmm12,[rbx+BC] // Save Value of X-Coordinate into xmm12
+movss [x_coord_undo],xmm12// Load Value of xmm12 into x_coord_undo
+movss xmm12,[rbx+C0] // Save Value of Z-Coordinate into xmm12
+movss [z_coord_undo],xmm12// Load Value of xmm12 into z_coord_undo
+movss xmm12,[rbx+C4] // Save Value of Y-Coordinate into xmm12
+movss [y_coord_undo],xmm12// Load Value of xmm12 into y_coord_undo
+
+// Load last saved Player Position
+movss xmm12,[x_coord]
+movss [rbx+BC],xmm12
+movss xmm12,[z_coord]
+movss [rbx+C0],xmm12
+movss xmm12,[y_coord]
+movss [rbx+C4],xmm12
+jmp originalcodeteleport
+
+
+undo_coord:
+mov [l_enable],0
+mov [s_enable],0
+mov [u_enable],0
+cmp [z_coord_undo],0
+je originalcodeteleport
+cmp r9,0
+jne originalcodeteleport
+// Do undo teleportation here
+movss xmm12,[x_coord_undo]
+movss [rbx+BC],xmm12
+movss xmm12,[z_coord_undo]
+movss [rbx+C0],xmm12
+movss xmm12,[y_coord_undo]
+movss [rbx+C4],xmm12
+jmp originalcodeteleport
+
+
+///////////////TELEPORT TO WAYPOiNT//////////////
+WriteWayPointCoordsToPlayerLocation:
+mov byte ptr [_WriteWayPointCoordsToPlayerLocation],0
+cmp r9,0
+jne originalcodeteleport
+// Save current Player position again for UNDO TELEPORT
+movss xmm12,[rbx+BC] // Save Value of X-Coordinate into xmm12
+movss [x_coord_undo],xmm12// Load Value of xmm12 into x_coord_undo
+movss xmm12,[rbx+C0] // Save Value of Z-Coordinate into xmm12
+movss [z_coord_undo],xmm12// Load Value of xmm12 into z_coord_undo
+movss xmm12,[rbx+C4] // Save Value of Y-Coordinate into xmm12
+movss [y_coord_undo],xmm12// Load Value of xmm12 into y_coord_undo
+
+// Do Waypoint Teleportation here
+movss xmm11,[_GetWayPointCoord_X]
+movss [rbx+BC],xmm11
+movss xmm11,[_GetWayPointCoord_Y]
+movss [rbx+C0],xmm11
+movss xmm11,[_GetWayPointCoord_Z]
+movss [rbx+C4],xmm11
+
+//Fix teleporting into ground (adds +3.0 to our Up/Down Axis on Teleport)
+fld [rbx+C0]
+fld1
+faddp
+fld1
+faddp
+fld1
+faddp
+fstp [rbx+C0]
+jmp originalcodeteleport
+
+
+
+originalcodeteleport:
+addss xmm0,[rbx+000000C4]
+
+exitteleport:
+jmp returnteleport
+
+
+_TeleportCode:
+jmp teleportmem
+nop
+nop
+nop
+returnteleport:
+
+_GetWaypointCoord:
+jmp newmem
+nop
+nop
+nop
+returnhere:
+
+
+x_coord:
+dd 0
+z_coord:
+dd 0
+y_coord:
+dd 0
+s_enable:
+dd 0
+l_enable:
+dd 0
+x_coord_undo:
+dd 0
+z_coord_undo:
+dd 0
+y_coord_undo:
+dd 0
+u_enable:
+dd 0
+
+
+[DISABLE]
+Unregistersymbol(z_coord)
+Unregistersymbol(x_coord)
+Unregistersymbol(y_coord)
+Unregistersymbol(z_coord_undo)
+Unregistersymbol(x_coord_undo)
+Unregistersymbol(y_coord_undo)
+Unregistersymbol(s_enable)
+Unregistersymbol(l_enable)
+Unregistersymbol(u_enable)
+Unregistersymbol(_TeleportCode)
+Unregistersymbol(_GetWayPointCoord_X)
+Unregistersymbol(_GetWayPointCoord_Y)
+Unregistersymbol(_GetWayPointCoord_Z)
+Unregistersymbol(_GetWaypointCoord)
+Unregistersymbol(_WriteWayPointCoordsToPlayerLocation)
+
+dealloc(z_coord)
+dealloc(x_coord)
+dealloc(y_coord)
+dealloc(z_coord_undo)
+dealloc(x_coord_undo)
+dealloc(y_coord_undo)
+dealloc(s_enable)
+dealloc(l_enable)
+dealloc(u_enable)
+dealloc(teleportmem)
+dealloc(_GetWayPointCoord_X)
+dealloc(_GetWayPointCoord_Y)
+dealloc(_GetWayPointCoord_Z)
+dealloc(newmem)
+dealloc(_WriteWayPointCoordsToPlayerLocation)
+
+
+_TeleportCode:
+addss xmm0,[rbx+000000C4]
+
+_GetWaypointCoord:
+movss xmm0,[rbx+00000838]"""
+
+[[cheat]]
+id = "waypoint-coord-x"
+name = "Waypoint Coord X"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = -9.967407227
+
+[cheat.locator]
+find = "symbol"
+symbol = "_GetWayPointCoord_X"
+hops = []
+
+[[cheat]]
+id = "waypoint-coord-y"
+name = "Waypoint Coord Y"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 98.71616364
+
+[cheat.locator]
+find = "symbol"
+symbol = "_GetWayPointCoord_Y"
+hops = []
+
+[[cheat]]
+id = "waypoint-coord-z"
+name = "Waypoint Coord Z"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 425.9197388
+
+[cheat.locator]
+find = "symbol"
+symbol = "_GetWayPointCoord_Z"
+hops = []
+
+[[cheat]]
+id = "save-position"
+name = "SAVE POSiTiON"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "s_enable"
+hops = []
+
+[[cheat]]
+id = "load-position"
+name = "LOAD POSiTiON"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "l_enable"
+hops = []
+
+[[cheat]]
+id = "undo-teleport"
+name = "UNDO TELEPORT"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "u_enable"
+hops = []
+
+[[cheat]]
+id = "teleport-to-waypoint"
+name = "TELEPORT TO WAYPOiNT"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+
+[cheat.locator]
+find = "symbol"
+symbol = "_WriteWayPointCoordsToPlayerLocation"
+hops = []

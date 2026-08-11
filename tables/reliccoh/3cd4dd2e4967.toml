@@ -1,0 +1,355 @@
+[game]
+name = "Company Of Heroes, TOV and OF"
+exe = "reliccoh.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2708"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "decrease-game-speed"
+name = "Decrease Game Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "LuaConfig.dll"
+offset = "0x328f8"
+hops = [
+    "+0x1c",
+    "+0x72c",
+    "+0x0",
+    "+0x0",
+    "+0x28",
+]
+
+[[cheat]]
+id = "add-commander-point"
+name = "Add Commander Point"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "WW2Mod.dll"
+offset = "0x5d4480"
+hops = [
+    "+0x0",
+    "+0x220",
+]
+
+[[cheat]]
+id = "freeze-resource-and-support"
+name = "Freeze Resource and Support"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(MonResource,2048)
+
+//=========================================
+// Declaration section
+label(_BackMR)
+label(_ExitMR)
+label(_MonR0)
+label(_MonR1)
+label(_MonFarm)
+label(pPlayer)
+label(fMinRes)
+
+registersymbol(pPlayer)
+registersymbol(fMinRes)
+
+//=========================================
+// Hacking Points
+"RelicCOH.exe"+4C1644:
+ jmp MonResource
+ nop
+_BackMR:
+
+//=========================================
+MonResource:
+ push eax
+
+ mov ecx,[ecx+0000083c]       // Get ptr to player  (Original code)
+ or ecx,ecx                   // Null?
+ jz _ExitMR                   // Jump if true
+
+ mov [pPlayer],ecx            // Save ptr for debugging
+
+ //cmp dword ptr [iEnableMR],0
+ //je _ExitMR                   // Jump if feature is disabled
+
+ mov eax,[fMinRes]            // Get minimum resource value
+
+ cmp eax,[ecx+00000214]       // Manpower >= minimum ?
+ jle _MonR0                   // Jump if true
+ mov [ecx+00000214],eax       // Update Manpower
+
+_MonR0:
+ cmp eax,[ecx+00000218]       // Munitions >= minimum?
+ jle _MonR1                   // Jump if true
+ mov [ecx+00000218],eax       // Update Munitions
+
+_MonR1:
+ cmp eax,[ecx+0000021c]       // Fuel >= minimum ?
+ jle _MonFarm                 // Jump if true
+ mov [ecx+0000021c],eax       // Update Fuel
+
+ _MonFarm:
+ mov [ecx+0000049c],00000000  // Farm set to 0
+
+_ExitMR:
+ pop eax
+ jmp _BackMR                  // Back to main code
+
+//=========================================
+// Variables
+pPlayer:
+ dd 0
+fMinRes:
+ dd (float)5000.0
+
+//=========================================
+// Original Codes
+[DISABLE]
+"RelicCOH.exe"+4C1644:
+ mov ecx,[ecx+0000083C]
+
+dealloc(MonResource)
+unregistersymbol(pPlayer)
+unregistersymbol(fMinRes)"""
+
+[[cheat]]
+id = "player-pointer-debug-purpose-do-not-change"
+name = "Player Pointer(Debug Purpose DO NOT CHANGE)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = []
+
+[[cheat]]
+id = "minimun-resource"
+name = "Minimun Resource"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "fMinRes"
+hops = []
+
+[[cheat]]
+id = "max-zoom-80"
+name = "Max Zoom 80"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "static"
+module = "RelicCOH.exe"
+offset = "0x717640"
+hops = ["+0x380"]
+
+[[cheat]]
+id = "partial-map-hack"
+name = "Partial Map Hack"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(maphack,2048) //2kb should be enough
+//=========================================
+// Declaration section
+label(rmaphack)
+
+//=========================================
+// Hacking Points
+"WW2Mod.dll"+2225A8:
+nop
+nop
+
+"WW2Mod.dll"+2198AF:
+jmp maphack
+nop
+nop
+rmaphack:
+
+maphack: //this is allocated memory, you have read,write,execute access
+//=========================================
+or [ecx+eax*4],0000003B
+mov edx,[ecx+eax*4]
+mov [esp+0C],edx
+jmp rmaphack
+
+[DISABLE]
+"WW2Mod.dll"+2225A8: //Always crash when i hook there
+and [ecx],ebp
+
+"WW2Mod.dll"+2198AF: //MapHack2
+mov edx,[ecx+eax*4]
+mov [esp+0C],edx
+//Alt: db 8B 14 81 89 54 24 0C
+
+
+dealloc(maphack)"""
+
+[[cheat]]
+id = "fast-building-construction-work-for-ai"
+name = "Fast Building Construction(Work For AI)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(fastbuild,2048) //2kb should be enough
+label(rfastbuild)
+label(ofastbuild)
+
+fastbuild: //this is allocated memory, you have read,write,execute access
+cmp dword ptr [eax+14],01
+jle ofastbuild
+mov [eax+14],01
+ofastbuild:
+cmp dword ptr [eax+14],00 //original
+je WW2Mod.dll+15971F      //original
+jmp rfastbuild
+
+
+"WW2Mod.dll"+1596DD:
+jmp fastbuild
+nop
+rfastbuild:
+
+[DISABLE]
+"WW2Mod.dll"+1596DD:
+cmp dword ptr [eax+14],00
+je WW2Mod.dll+15971F
+
+dealloc(fastbuild)
+//Alt: db 83 78 14 00 74 3C"""
+
+[[cheat]]
+id = "instant-cooldown"
+name = "Instant Cooldown"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(cooldown,2048) //2kb should be enough
+label(rcooldown)
+label(ocooldown)
+label(xcooldown)
+
+cooldown: //this is allocated memory, you have read,write,execute access
+mov eax,00000000
+
+ocooldown:
+//add eax,FF
+mov [ebp+000000D4],eax
+
+xcooldown:
+jmp rcooldown
+
+"WW2Mod.dll"+27D3D8:
+jmp cooldown
+nop
+nop
+nop
+nop
+rcooldown:
+
+[DISABLE]
+dealloc(cooldown)
+
+"WW2Mod.dll"+27D3D8:
+add eax,FF
+mov [ebp+000000D4],eax"""
+
+[[cheat]]
+id = "build-fast-unit-player-only"
+name = "Build Fast Unit (Player Only)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+alloc(fastunit,2048) //2kb should be enough
+label(rfastunit)
+label(ofastunit)
+label(fFUMin)
+registersymbol(fFUMin)
+
+//=========================================
+// Hacking Points
+"WW2Mod.dll"+B5A36:
+jmp fastunit
+nop
+rfastunit:
+
+//=========================================
+fastunit: //this is allocated memory, you have read,write,execute access
+fld dword ptr [eax+2C] //original
+push eax
+fcomp [fFUMin]
+fstsw ax
+fwait
+sahf
+pop eax
+jb ofastunit
+jz ofastunit
+mov dword ptr [eax+2C],fFUMin
+
+ofastunit:
+fld dword ptr [eax+2C] //original
+fstp dword ptr [esi+2C]//original
+jmp rfastunit
+
+//=========================================
+// Variables
+fFUMin:
+ dd (float)1
+
+//=========================================
+// Original Codes
+[DISABLE]
+"WW2Mod.dll"+B5A36:
+fld dword ptr [eax+2C]
+fstp dword ptr [esi+2C]
+//Alt: db D9 40 2C D9 5E 2C
+
+dealloc(fastunit)
+unregistersymbol(fFUMin)"""

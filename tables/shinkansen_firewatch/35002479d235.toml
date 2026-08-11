@@ -1,0 +1,1769 @@
+[game]
+name = "Firewatch"
+exe = "shinkansen_firewatch.exe"
+notes = "Converted from a Cheat Engine table by STN. Source: https://fearlessrevolution.com/viewtopic.php?t=2100"
+verified = []
+author = "STN"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "vgplayercontroller-base-address-scan-initialization-activate-this-first"
+name = "vgPlayerController Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(vgPlayerController_basepointer)
+registersymbol(vgPlayerController_update_enable)
+registersymbol(vgPlayerController_set_enable)
+registersymbol(vgPlayerController_walkspeedset_enable)
+registersymbol(vgPlayerController_walkspeedset_value)
+registersymbol(vgPlayerController_jogspeedset_enable)
+registersymbol(vgPlayerController_jogspeedset_value)
+registersymbol(vgPlayerController_cameraset_enable)
+
+alloc(vgPlayerController_basepointer, 8)
+alloc(vgPlayerController_update_enable, 4)
+alloc(vgPlayerController_set_enable, 4)
+alloc(vgPlayerController_walkspeedset_enable, 4)
+alloc(vgPlayerController_walkspeedset_value, 4)
+alloc(vgPlayerController_jogspeedset_enable, 4)
+alloc(vgPlayerController_jogspeedset_value, 4)
+alloc(vgPlayerController_cameraset_enable, 4)
+
+vgPlayerController_walkspeedset_value:
+dd (float)10
+
+vgPlayerController_jogspeedset_value:
+dd (float)10
+
+
+[DISABLE]
+unregistersymbol(vgPlayerController_basepointer)
+unregistersymbol(vgPlayerController_update_enable)
+unregistersymbol(vgPlayerController_set_enable)
+unregistersymbol(vgPlayerController_walkspeedset_enable)
+unregistersymbol(vgPlayerController_walkspeedset_value)
+unregistersymbol(vgPlayerController_jogspeedset_enable)
+unregistersymbol(vgPlayerController_jogspeedset_value)
+unregistersymbol(vgPlayerController_cameraset_enable)
+
+dealloc(vgPlayerController_basepointer)
+dealloc(vgPlayerController_update_enable)
+dealloc(vgPlayerController_set_enable)
+dealloc(vgPlayerController_walkspeedset_enable)
+dealloc(vgPlayerController_walkspeedset_value)
+dealloc(vgPlayerController_jogspeedset_enable)
+dealloc(vgPlayerController_jogspeedset_value)
+dealloc(vgPlayerController_cameraset_enable)"""
+
+[[cheat]]
+id = "vgplayercontroller-base-address-scan-to-activate-play-level-to-update-play-level"
+name = "vgPlayerController Base Address Scan (To Activate: Play Level, To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(vgPlayerController_savedAOB)
+label(vgPlayerController_returnhere)
+label(vgPlayerController_originalcode)
+label(vgPlayerController_exit)
+
+label(vgPlayerController_update_exit)
+label(vgPlayerController_set_exit)
+label(vgPlayerController_walkspeedset_exit)
+label(vgPlayerController_jogspeedset_exit)
+label(vgPlayerController_cameraset_exit)
+
+registersymbol(vgPlayerController_savedAOB)
+
+//15FB8B65 - 48 83 EC 18           - sub rsp,18
+//15FB8B69 - 48 8B F1              - mov rsi,rcx
+// vgPlayerController:Update+c
+//15FB8B6C - 0FB6 86 89010000      - movzx eax,byte ptr [rsi+00000189]
+//15FB8B73 - 85 C0                 - test eax,eax
+//15FB8B75 - 74 31                 - je 15FB8BA8
+//15FB8B77 - 48 8B 04 25 280F3105  - mov rax,[05310F28] : [0D6CD780]
+//15FB8B7F - 48 8B 96 90000000     - mov rdx,[rsi+00000090]
+aobscan(vgPlayerController_searchedAOB, 0F B6 86 89 01 00 00 85 C0 74 31)
+
+alloc(vgPlayerController_newmem, 2048, vgPlayerController_searchedAOB)
+alloc(vgPlayerController_temp1, 8, vgPlayerController_searchedAOB)
+alloc(vgPlayerController_default_walkSpeed, 4, vgPlayerController_searchedAOB)
+alloc(vgPlayerController_default_walkBackwardSpeed, 4, vgPlayerController_searchedAOB)
+alloc(vgPlayerController_default_strafeSpeed, 4, vgPlayerController_searchedAOB)
+alloc(vgPlayerController_default_jogSpeed, 4, vgPlayerController_searchedAOB)
+alloc(vgPlayerController_default_jogBackwardSpeed, 4, vgPlayerController_searchedAOB)
+alloc(vgPlayerController_default_jogStrafeSpeed, 4, vgPlayerController_searchedAOB)
+
+vgPlayerController_default_walkSpeed:
+dd (float)3
+
+vgPlayerController_default_walkBackwardSpeed:
+dd (float)2
+
+vgPlayerController_default_strafeSpeed:
+dd (float)3
+
+vgPlayerController_default_jogSpeed:
+dd (float)6
+
+vgPlayerController_default_jogBackwardSpeed:
+dd (float)4
+
+vgPlayerController_default_jogStrafeSpeed:
+dd (float)6
+
+vgPlayerController_newmem:
+mov [vgPlayerController_temp1], rbx
+
+cmp dword ptr [vgPlayerController_update_enable], #0
+je vgPlayerController_update_exit
+mov [vgPlayerController_basepointer], rsi
+vgPlayerController_update_exit:
+
+cmp dword ptr [vgPlayerController_set_enable], #0
+je vgPlayerController_set_exit
+vgPlayerController_set_exit:
+
+cmp dword ptr [vgPlayerController_walkspeedset_enable], #0
+je vgPlayerController_walkspeedset_exit
+cmp dword ptr [rsi+88], #0
+je vgPlayerController_walkspeedset_exit
+mov rbx, [rsi+88]
+fld [vgPlayerController_default_walkSpeed]
+fmul [vgPlayerController_walkspeedset_value]
+fstp [rbx+138]
+fld [vgPlayerController_default_walkBackwardSpeed]
+fmul [vgPlayerController_walkspeedset_value]
+fstp [rbx+13c]
+fld [vgPlayerController_default_strafeSpeed]
+fmul [vgPlayerController_walkspeedset_value]
+fstp [rbx+140]
+vgPlayerController_walkspeedset_exit:
+
+cmp dword ptr [vgPlayerController_jogspeedset_enable], #0
+je vgPlayerController_jogspeedset_exit
+cmp dword ptr [rsi+88], #0
+je vgPlayerController_jogspeedset_exit
+mov rbx, [rsi+88]
+fld [vgPlayerController_default_jogSpeed]
+fmul [vgPlayerController_jogspeedset_value]
+fstp [rbx+144]
+fld [vgPlayerController_default_jogBackwardSpeed]
+fmul [vgPlayerController_jogspeedset_value]
+fstp [rbx+148]
+fld [vgPlayerController_default_jogStrafeSpeed]
+fmul [vgPlayerController_jogspeedset_value]
+fstp [rbx+14c]
+vgPlayerController_jogspeedset_exit:
+
+cmp dword ptr [vgPlayerController_cameraset_enable], #0
+je vgPlayerController_cameraset_exit
+mov [rsi+19c], #999
+vgPlayerController_cameraset_exit:
+
+mov rbx, [vgPlayerController_temp1]
+
+
+vgPlayerController_originalcode:
+db 0F B6 86 89 01 00 00
+//movzx eax,byte ptr [rsi+00000189]
+
+
+vgPlayerController_exit:
+jmp vgPlayerController_returnhere
+
+
+vgPlayerController_searchedAOB:
+vgPlayerController_savedAOB:
+jmp vgPlayerController_newmem
+nop
+nop
+vgPlayerController_returnhere:
+
+
+[DISABLE]
+vgPlayerController_savedAOB:
+db 0F B6 86 89 01 00 00
+//movzx eax,byte ptr [rsi+00000189]
+
+unregistersymbol(vgPlayerController_savedAOB)
+
+dealloc(vgPlayerController_newmem)
+dealloc(vgPlayerController_temp1)"""
+
+[[cheat]]
+id = "walk-speed-set-to-walk-speed-multiplier-value-faster"
+name = "Walk Speed Set to Walk Speed Multiplier Value Faster?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_walkspeedset_enable"
+hops = []
+
+[[cheat]]
+id = "walk-speed-multiplier-value"
+name = "Walk Speed Multiplier Value"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_walkspeedset_value"
+hops = []
+
+[[cheat]]
+id = "jog-speed-set-to-jog-speed-multiplier-value-faster"
+name = "Jog Speed Set to Jog Speed Multiplier Value Faster?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_jogspeedset_enable"
+hops = []
+
+[[cheat]]
+id = "jog-speed-multiplier-value"
+name = "Jog Speed Multiplier Value"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_jogspeedset_value"
+hops = []
+
+[[cheat]]
+id = "camera-shots-set-to-massive"
+name = "Camera Shots Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_cameraset_enable"
+hops = []
+
+[[cheat]]
+id = "vgplayercontroller-update-base-address"
+name = "vgPlayerController Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x0",
+]
+
+[[cheat]]
+id = "walkspeed"
+name = "walkSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x138",
+]
+
+[[cheat]]
+id = "walkbackwardspeed"
+name = "walkBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x13c",
+]
+
+[[cheat]]
+id = "strafespeed"
+name = "strafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x140",
+]
+
+[[cheat]]
+id = "jogspeed"
+name = "jogSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x144",
+]
+
+[[cheat]]
+id = "jogbackwardspeed"
+name = "jogBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x148",
+]
+
+[[cheat]]
+id = "jogstrafespeed"
+name = "jogStrafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x14c",
+]
+
+[[cheat]]
+id = "currentwalkspeed"
+name = "currentWalkSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x150",
+]
+
+[[cheat]]
+id = "currentwalkbackwardspeed"
+name = "currentWalkBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x154",
+]
+
+[[cheat]]
+id = "currentwalkstrafespeed"
+name = "currentWalkStrafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x158",
+]
+
+[[cheat]]
+id = "maxwalkspeed"
+name = "maxWalkSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x15c",
+]
+
+[[cheat]]
+id = "maxwalkbackwardspeed"
+name = "maxWalkBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x160",
+]
+
+[[cheat]]
+id = "maxwalkstrafespeed"
+name = "maxWalkStrafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x164",
+]
+
+[[cheat]]
+id = "currentjogspeed"
+name = "currentJogSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x168",
+]
+
+[[cheat]]
+id = "currentjogbackwardspeed"
+name = "currentJogBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x16c",
+]
+
+[[cheat]]
+id = "currentjogstrafespeed"
+name = "currentJogStrafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x170",
+]
+
+[[cheat]]
+id = "maxjogspeed"
+name = "maxJogSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x174",
+]
+
+[[cheat]]
+id = "maxjogbackwardspeed"
+name = "maxJogBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x178",
+]
+
+[[cheat]]
+id = "maxjogstrafespeed"
+name = "maxJogStrafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x17c",
+]
+
+[[cheat]]
+id = "currentspeed"
+name = "currentSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x180",
+]
+
+[[cheat]]
+id = "currentbackwardspeed"
+name = "currentBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x184",
+]
+
+[[cheat]]
+id = "currentstrafespeed"
+name = "currentStrafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x188",
+]
+
+[[cheat]]
+id = "maxspeed"
+name = "maxSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x18c",
+]
+
+[[cheat]]
+id = "maxbackwardspeed"
+name = "maxBackwardSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x190",
+]
+
+[[cheat]]
+id = "maxstrafespeed"
+name = "maxStrafeSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x194",
+]
+
+[[cheat]]
+id = "basemaxjogspeedscalar"
+name = "baseMaxJogSpeedScalar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x198",
+]
+
+[[cheat]]
+id = "timetomaxjogspeed"
+name = "timeToMaxJogSpeed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x19c",
+]
+
+[[cheat]]
+id = "currentmaxspeedscalar"
+name = "currentMaxSpeedScalar"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1a0",
+]
+
+[[cheat]]
+id = "minwallfollowscalar"
+name = "minWallFollowScalar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1a4",
+]
+
+[[cheat]]
+id = "playerrotationspeed"
+name = "playerRotationSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1a8",
+]
+
+[[cheat]]
+id = "largestallowedyawdelta"
+name = "largestAllowedYawDelta"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1ac",
+]
+
+[[cheat]]
+id = "currentplayerrotationspeed"
+name = "currentPlayerRotationSpeed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1b0",
+]
+
+[[cheat]]
+id = "playerrotationspringconstant"
+name = "playerRotationSpringConstant"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1b4",
+]
+
+[[cheat]]
+id = "playerrotationdamping"
+name = "playerRotationDamping"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1b8",
+]
+
+[[cheat]]
+id = "duplicateskinwidth"
+name = "duplicateSkinWidth"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1bc",
+]
+
+[[cheat]]
+id = "cliffcheckdistance"
+name = "cliffCheckDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1c0",
+]
+
+[[cheat]]
+id = "cliffstopspeedthreshold"
+name = "cliffStopSpeedThreshold"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1c4",
+]
+
+[[cheat]]
+id = "cliffstopanglethreshold"
+name = "cliffStopAngleThreshold"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1c8",
+]
+
+[[cheat]]
+id = "maxcliffstopdistance"
+name = "maxCliffStopDistance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1cc",
+]
+
+[[cheat]]
+id = "gravity"
+name = "gravity"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1d0",
+]
+
+[[cheat]]
+id = "effectivepushforce"
+name = "effectivePushForce"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1d4",
+]
+
+[[cheat]]
+id = "mass"
+name = "mass"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1d8",
+]
+
+[[cheat]]
+id = "floattime"
+name = "floatTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1dc",
+]
+
+[[cheat]]
+id = "timetofall"
+name = "timeToFall"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1e0",
+]
+
+[[cheat]]
+id = "isfalling"
+name = "isFalling"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1e4",
+]
+
+[[cheat]]
+id = "acceleration"
+name = "acceleration"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1e8",
+]
+
+[[cheat]]
+id = "aircontrolscalar"
+name = "airControlScalar"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1ec",
+]
+
+[[cheat]]
+id = "damping"
+name = "damping"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1f0",
+]
+
+[[cheat]]
+id = "wallfriction"
+name = "wallFriction"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1f4",
+]
+
+[[cheat]]
+id = "wallbounce"
+name = "wallBounce"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x1f8",
+]
+
+[[cheat]]
+id = "calculatedslopefactor"
+name = "calculatedSlopeFactor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x208",
+]
+
+[[cheat]]
+id = "currentgroundsmoothingoffset"
+name = "currentGroundSmoothingOffset"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x230",
+]
+
+[[cheat]]
+id = "ongroundk-backingfield"
+name = "onGroundk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x27c",
+]
+
+[[cheat]]
+id = "hasheadcollisionk-backingfield"
+name = "hasHeadCollisionk__BackingField"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = [
+    "+0x88",
+    "+0x27d",
+]
+
+[[cheat]]
+id = "forwardinput"
+name = "forwardInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x168"]
+
+[[cheat]]
+id = "strafeinput"
+name = "strafeInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x16c"]
+
+[[cheat]]
+id = "isaltuse"
+name = "isAltUse"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x170"]
+
+[[cheat]]
+id = "hastriggered"
+name = "hasTriggered"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x171"]
+
+[[cheat]]
+id = "walkstickinput"
+name = "walkStickInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x174"]
+
+[[cheat]]
+id = "jogstickinput"
+name = "jogStickInput"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x178"]
+
+[[cheat]]
+id = "jogstopwindow"
+name = "jogStopWindow"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x17c"]
+
+[[cheat]]
+id = "jogtimeoutremaining"
+name = "jogTimeOutRemaining"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x180"]
+
+[[cheat]]
+id = "minimuminputforjog"
+name = "minimumInputForJog"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x184"]
+
+[[cheat]]
+id = "isjogging"
+name = "isJogging"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x188"]
+
+[[cheat]]
+id = "pushcamerainputcontext"
+name = "pushCameraInputContext"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x189"]
+
+[[cheat]]
+id = "popcamerainputcontext"
+name = "popCameraInputContext"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x18a"]
+
+[[cheat]]
+id = "cameraactive"
+name = "cameraActive"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x18b"]
+
+[[cheat]]
+id = "cliffstoptimeout"
+name = "cliffStopTimeout"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x18c"]
+
+[[cheat]]
+id = "lastcliffstoptime"
+name = "lastCliffStopTime"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x190"]
+
+[[cheat]]
+id = "pccontrolsactive"
+name = "PCControlsActive"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x194"]
+
+[[cheat]]
+id = "iscrouched"
+name = "isCrouched"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x195"]
+
+[[cheat]]
+id = "isleaning"
+name = "isLeaning"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x196"]
+
+[[cheat]]
+id = "picturestaken"
+name = "picturesTaken"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x198"]
+
+[[cheat]]
+id = "picturesinfilmroll"
+name = "picturesInFilmRoll"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x19c"]
+
+[[cheat]]
+id = "takephotodesired"
+name = "takePhotoDesired"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1a0"]
+
+[[cheat]]
+id = "cantakepicture"
+name = "canTakePicture"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1a1"]
+
+[[cheat]]
+id = "ispaused"
+name = "isPaused"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1a2"]
+
+[[cheat]]
+id = "pausedfromlostfocus"
+name = "pausedFromLostFocus"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1a3"]
+
+[[cheat]]
+id = "zoomed"
+name = "zoomed"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1a4"]
+
+[[cheat]]
+id = "stickthresholdforcontrol"
+name = "stickThresholdForControl"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1a8"]
+
+[[cheat]]
+id = "backpackmaterialindex"
+name = "backpackMaterialIndex"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1ac"]
+
+[[cheat]]
+id = "hidebackpack"
+name = "hideBackpack"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1b0"]
+
+[[cheat]]
+id = "isspawningk-backingfield"
+name = "isSpawningk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1b1"]
+
+[[cheat]]
+id = "playerspawnedk-backingfield"
+name = "playerSpawnedk__BackingField"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "vgPlayerController_basepointer"
+hops = ["+0x1b2"]

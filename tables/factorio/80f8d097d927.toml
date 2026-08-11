@@ -1,0 +1,5360 @@
+[game]
+name = "Factorio + Space Age DLC"
+exe = "factorio.exe"
+notes = "Converted from a Cheat Engine table by Bloodybone. Source: https://fearlessrevolution.com/viewtopic.php?t=9406"
+verified = []
+author = "Bloodybone"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "inf-health-onehitkill"
+name = "Inf Health/OneHitKill"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.EntityWithHealth::setHealthRatio)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,address)
+
+label(return)
+label(end)
+label(end_2)
+label(player)
+label(string_1)
+label(string_2)
+label(setHealth_data)
+registersymbol(setHealth_data)
+
+newmem:
+mov [rsp+08],rbx
+
+sub rsp,38
+mov rbx,rcx
+movups [rsp+20],xmm1
+mov rcx,[rcx+48] // <T>Prototype
+test rcx,rcx
+jz end
+lea rcx,[rcx+8]
+call Factorio.String.GetString
+test rax,rax
+jz end
+mov rcx,rax
+lea rdx,[string_1]
+call ntdll.strcmp
+test eax,eax
+jz player
+
+mov rcx,rbx
+call Factorio.Entity::getForceData
+test rax,rax
+jz end
+lea rcx,[rax+10]
+call Factorio.String.GetString
+mov rcx,rax
+lea rdx,[string_2]
+call ntdll.strcmp
+jnz end
+
+// Enemy
+
+cmp [setHealth_data+4],1
+jne end
+  xorps xmm1,xmm1
+  jmp end_2
+
+player:
+  cmp [setHealth_data],1
+  jne end
+  mov ecx,3F800000
+  movd xmm1,ecx
+  jmp end_2
+
+end:
+movups xmm1,[rsp+20]
+end_2:
+mov rcx,rbx
+add rsp,38
+jmp return
+
+align 4 CC
+
+setHealth_data:
+dd 0 // Player Godmode
+dd 0 // OHK Enemies
+
+string_1:
+db 'character',0
+string_2:
+db 'enemy',0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db 48 89 5C 24 08
+
+dealloc(newmem)
+unregistersymbol(setHealth_data)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.EntityWithHealth::setHealthRatio
+
+Factorio.exe+3B6D86: CC                       - int 3
+Factorio.exe+3B6D87: CC                       - int 3
+Factorio.exe+3B6D88: CC                       - int 3
+Factorio.exe+3B6D89: CC                       - int 3
+Factorio.exe+3B6D8A: CC                       - int 3
+Factorio.exe+3B6D8B: CC                       - int 3
+Factorio.exe+3B6D8C: CC                       - int 3
+Factorio.exe+3B6D8D: CC                       - int 3
+Factorio.exe+3B6D8E: CC                       - int 3
+Factorio.exe+3B6D8F: CC                       - int 3
+// ---------- INJECTING HERE ----------
+Factorio.EntityWithHealth::setHealthRatio: 48 89 5C 24 08           - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.EntityWithHealth::setHealthRatio+5: 57                       - push rdi
+Factorio.EntityWithHealth::setHealthRatio+6: 48 81 EC F0 00 00 00     - sub rsp,Factorio.dtor_list_head+C0
+Factorio.EntityWithHealth::setHealthRatio+D: 0F 57 C0                 - xorps xmm0,xmm0
+Factorio.EntityWithHealth::setHealthRatio+10: F3 0F 5F C8              - maxss xmm1,xmm0
+Factorio.EntityWithHealth::setHealthRatio+14: F3 0F 10 91 88 00 00 00  - movss xmm2,[rcx+Factorio.dtor_list_head+58]
+Factorio.EntityWithHealth::setHealthRatio+1C: F3 0F 10 05 38 F1 9A 01  - movss xmm0,[Factorio.exe+1D65EEC]
+Factorio.EntityWithHealth::setHealthRatio+24: 0F 2E D0                 - ucomiss xmm2,xmm0
+Factorio.EntityWithHealth::setHealthRatio+27: 7A 1F                    - jp Factorio.EntityWithHealth::setHealthRatio+48
+Factorio.EntityWithHealth::setHealthRatio+29: 75 1D                    - jne Factorio.EntityWithHealth::setHealthRatio+48
+Factorio.EntityWithHealth::setHealthRatio+2B: F3 0F 5D C8              - minss xmm1,xmm0
+}"""
+
+[[cheat]]
+id = "infinite-health"
+name = "Infinite Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:DISABLED",
+    "1:ENABLED",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "setHealth_data"
+hops = []
+
+[[cheat]]
+id = "onehitkill-enemies"
+name = "OneHitKill Enemies"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:DISABLED",
+    "1:ENABLED",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "setHealth_data"
+hops = []
+
+[[cheat]]
+id = "achievements-are-allowed"
+name = "Achievements are allowed"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.AchievementStats::allowed)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.AchievementStats::allowed)
+
+label(code)
+label(return)
+
+newmem:
+cmp byte ptr [rcx+0A],0
+jne code
+mov eax,1
+ret
+
+code:
+  mov [rsp+08],rbx
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.AchievementStats::allowed
+
+Factorio.AchievementStats::replaceResult+7F: E9 BC FE FF FF     - jmp Factorio.AchievementStats::addToAchievementsByID
+Factorio.AchievementStats::replaceResult+84: 48 83 C4 20        - add rsp,20
+Factorio.AchievementStats::replaceResult+88: 5B                 - pop rbx
+Factorio.AchievementStats::replaceResult+89: C3                 - ret
+Factorio.AchievementStats::replaceResult+8A: CC                 - int 3
+Factorio.exe+193ADB: CC                 - int 3
+Factorio.exe+193ADC: CC                 - int 3
+Factorio.exe+193ADD: CC                 - int 3
+Factorio.exe+193ADE: CC                 - int 3
+Factorio.exe+193ADF: CC                 - int 3
+// ---------- INJECTING HERE ----------
+Factorio.AchievementStats::allowed: 48 89 5C 24 08     - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.AchievementStats::allowed+5: 48 89 6C 24 10     - mov [rsp+10],rbp
+Factorio.AchievementStats::allowed+A: 48 89 74 24 18     - mov [rsp+18],rsi
+Factorio.AchievementStats::allowed+F: 57                 - push rdi
+Factorio.AchievementStats::allowed+10: 48 83 EC 20        - sub rsp,20
+Factorio.AchievementStats::allowed+14: 80 79 0A 00        - cmp byte ptr [rcx+0A],00
+Factorio.AchievementStats::allowed+18: 41 0F B6 F1        - movzx esi,r9b
+Factorio.AchievementStats::allowed+1C: 41 0F B6 E8        - movzx ebp,r8b
+Factorio.AchievementStats::allowed+20: 0F B6 DA           - movzx ebx,dl
+Factorio.AchievementStats::allowed+23: 48 8B F9           - mov rdi,rcx
+Factorio.AchievementStats::allowed+26: 0F 85 AA 00 00 00  - jne Factorio.AchievementStats::allowed+D6
+}"""
+
+[[cheat]]
+id = "steam-achievements-are-allowed"
+name = "Steam Achievements are allowed"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Achievement::onGainedLocal)
+define(bytes,48 89 5C 24 08)
+
+define(address2,Factorio.Achievement::onGainedGlobal)
+define(bytes2,48 89 5C 24 10)
+
+[ENABLE]
+assert(address,bytes)
+assert(address2,bytes2)
+
+alloc(newmem,$1000,Factorio.exe)
+
+label(return)
+label(return2)
+label(fromLocal)
+label(fromGlobal)
+label(start)
+label(unlockachievement_hook.end)
+label(unlockachievement_hook.data)
+label(unlockachievement_hook.gotname)
+
+newmem:
+fromLocal:
+mov [rsp+10],0
+jmp short start
+
+fromGlobal:
+mov [rsp+10],1
+
+start:
+// Save Registers
+push rcx
+push rdx
+push r8
+push r9
+push r10
+push r11
+push rbx
+mov rbx,rcx // Factorio.Achievement
+sub rsp,20
+cmp [unlockachievement_hook.data],0
+jne short @f
+// Get SteamUserStats Interface
+call steam_api64.SteamClient
+test rax,rax
+je short unlockachievement_hook.end
+mov rcx,rax // SteamClient
+mov rax,[rcx] // VTable
+mov edx,1 // hSteamUser
+mov r8d,1 // hSteamPipe
+mov r9,unlockachievement_hook.data+8 // Interface Version
+call [rax+68] // GetISteamUserStats
+mov [unlockachievement_hook.data],rax
+test rax,rax
+je short unlockachievement_hook.end
+mov rcx,rax
+mov rax,[rcx] // VTable
+call [rax] // RequestCurrentStats
+@@:
+// Get Achievement Name
+mov rbx,[rbx+8] // Factorio.AchievementPrototype
+lea rcx,[rbx+8] // Achievement Name
+call Factorio.String.GetString
+mov rdx,rax
+unlockachievement_hook.gotname:
+mov rcx,[unlockachievement_hook.data] // ISteamUserStats
+mov rax,[rcx] // VTable
+call [rax+38] // SetAchievement
+mov rcx,[unlockachievement_hook.data] // ISteamUserStats
+mov rax,[rcx] // VTable
+call [rax+50] // StoreStats
+
+unlockachievement_hook.end:
+add rsp,20
+pop rbx
+pop r11
+pop r10
+pop r9
+pop r8
+pop rdx
+pop rcx
+cmp [rsp+10],0
+jne short @f
+// Local OG Code
+mov [rsp+08],rbx
+jmp return
+@@:
+// Global OG Code
+mov [rsp+10],rbx
+jmp return2
+
+align 10 CC
+
+unlockachievement_hook.data:
+dq 0 // SteamUserStats Interface
+db 'STEAMUSERSTATS_INTERFACE_VERSION011',0 // Interface Version
+
+address:
+  jmp fromLocal
+return:
+
+address2:
+  jmp fromGlobal
+return2:
+
+[DISABLE]
+
+address:
+  db bytes
+
+address2:
+  db bytes2
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Achievement::onGainedLocal
+
+"Factorio.exe"+25DB6: C3                       -  ret 
+"Factorio.exe"+25DB7: CC                       -  int 3 
+"Factorio.exe"+25DB8: CC                       -  int 3 
+"Factorio.exe"+25DB9: CC                       -  int 3 
+"Factorio.exe"+25DBA: CC                       -  int 3 
+"Factorio.exe"+25DBB: CC                       -  int 3 
+"Factorio.exe"+25DBC: CC                       -  int 3 
+"Factorio.exe"+25DBD: CC                       -  int 3 
+"Factorio.exe"+25DBE: CC                       -  int 3 
+"Factorio.exe"+25DBF: CC                       -  int 3 
+// ---------- INJECTING HERE ----------
+"Factorio.exe"+25DC0: 48 89 5C 24 08           -  mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+"Factorio.exe"+25DC5: 48 89 6C 24 10           -  mov [rsp+10],rbp
+"Factorio.exe"+25DCA: 48 89 74 24 20           -  mov [rsp+20],rsi
+"Factorio.exe"+25DCF: 57                       -  push rdi
+"Factorio.exe"+25DD0: 48 83 EC 20              -  sub rsp,20
+"Factorio.exe"+25DD4: 48 8B 3D DD 19 67 01     -  mov rdi,[Factorio.exe+16977B8]
+"Factorio.exe"+25DDB: 49 8B E8                 -  mov rbp,r8
+"Factorio.exe"+25DDE: 48 8B DA                 -  mov rbx,rdx
+"Factorio.exe"+25DE1: 48 8B F1                 -  mov rsi,rcx
+"Factorio.exe"+25DE4: 48 85 FF                 -  test rdi,rdi
+"Factorio.exe"+25DE7: 74 31                    -  je Factorio.exe+25E1A
+}"""
+
+[[cheat]]
+id = "get-pointers"
+name = "Get Pointers"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Player::getUsernameWithTag)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,address)
+
+label(code)
+label(return)
+label(pPlayer)
+registersymbol(pPlayer)
+
+newmem:
+mov [pPlayer],rcx
+
+code:
+  mov [rsp+08],rbx
+  jmp return
+
+align 4 CC
+
+pPlayer:
+dq 0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db 48 89 5C 24 08
+
+dealloc(newmem)
+unregistersymbol(pPlayer)"""
+
+[[cheat]]
+id = "player-base"
+name = "Player Base"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = []
+
+[[cheat]]
+id = "player-zoom"
+name = "Player Zoom"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x618"]
+
+[[cheat]]
+id = "alt-mode-bool"
+name = "Alt-Mode_Bool"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = [
+    "+0x4c8",
+    "+0x3",
+]
+
+[[cheat]]
+id = "cheat-mode-active-read-only"
+name = "Cheat Mode Active (Read Only)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x3db"]
+
+[[cheat]]
+id = "is-admin-read-only"
+name = "Is Admin (Read Only)"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x3d9"]
+
+[[cheat]]
+id = "character-base"
+name = "Character Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = [
+    "+0x618",
+    "+0x188",
+]
+
+[[cheat]]
+id = "charactercontroller-base"
+name = "CharacterController Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = ["+0x618"]
+
+[[cheat]]
+id = "gameview-base"
+name = "GameView Base"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pPlayer"
+hops = [
+    "+0x20",
+    "+0x4a0",
+    "+0x1f0",
+]
+
+[[cheat]]
+id = "get-character"
+name = "Get Character"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Character::updateHeartBeat)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,address)
+
+label(code)
+label(return)
+label(pCharacter)
+registersymbol(pCharacter)
+
+newmem:
+mov [pCharacter],rcx
+
+code:
+  mov [rsp+08],rbx
+  jmp return
+
+align 4 CC
+
+pCharacter:
+  dq 0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+unregistersymbol(pCharacter)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Character::updateHeartBeat
+
+Factorio.exe+368026: CC                    - int 3
+Factorio.exe+368027: CC                    - int 3
+Factorio.exe+368028: CC                    - int 3
+Factorio.exe+368029: CC                    - int 3
+Factorio.exe+36802A: CC                    - int 3
+Factorio.exe+36802B: CC                    - int 3
+Factorio.exe+36802C: CC                    - int 3
+Factorio.exe+36802D: CC                    - int 3
+Factorio.exe+36802E: CC                    - int 3
+Factorio.exe+36802F: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Factorio.Character::updateHeartBeat: 48 89 5C 24 08        - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.Character::updateHeartBeat+5: 57                    - push rdi
+Factorio.Character::updateHeartBeat+6: 48 83 EC 50           - sub rsp,50
+Factorio.Character::updateHeartBeat+A: 48 8B F9              - mov rdi,rcx
+Factorio.Character::updateHeartBeat+D: 48 8B 81 80 00 00 00  - mov rax,[rcx+Factorio.dtor_list_head+50]
+Factorio.Character::updateHeartBeat+14: 48 8B 88 98 04 00 00  - mov rcx,[rax+00000498]
+Factorio.Character::updateHeartBeat+1B: 48 85 C9              - test rcx,rcx
+Factorio.Character::updateHeartBeat+1E: 0F 84 81 01 00 00     - je Factorio.Character::updateHeartBeat+1A5
+Factorio.Character::updateHeartBeat+24: 48 8B 87 58 07 00 00  - mov rax,[rdi+00000758]
+Factorio.Character::updateHeartBeat+2B: 48 85 C0              - test rax,rax
+Factorio.Character::updateHeartBeat+2E: 74 06                 - je Factorio.Character::updateHeartBeat+36
+}"""
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = []
+
+[[cheat]]
+id = "entityselector-base-address"
+name = "EntitySelector Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x5c8"]
+
+[[cheat]]
+id = "player-base-address"
+name = "Player Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = [
+    "+0x758",
+    "+0x28",
+]
+
+[[cheat]]
+id = "x-pos"
+name = "X-Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x50"]
+
+[[cheat]]
+id = "y-pos"
+name = "Y-Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x54"]
+
+[[cheat]]
+id = "movement-speed"
+name = "Movement Speed"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x208"]
+
+[[cheat]]
+id = "mining-speed-modifier"
+name = "Mining Speed Modifier"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x1e0"]
+
+[[cheat]]
+id = "inventory-bonus"
+name = "Inventory Bonus"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x2f0"]
+
+[[cheat]]
+id = "crafting-speed"
+name = "Crafting Speed"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x1b8"]
+
+[[cheat]]
+id = "added-resource-reach-distance"
+name = "Added Resource reach distance"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x290"]
+
+[[cheat]]
+id = "added-reach-distance"
+name = "Added Reach distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x270"]
+
+[[cheat]]
+id = "added-loot-pickup-distance"
+name = "Added Loot pickup distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x2d0"]
+
+[[cheat]]
+id = "added-item-pickup-distance"
+name = "Added Item pickup distance"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x2b0"]
+
+[[cheat]]
+id = "added-item-drop-distance"
+name = "Added Item drop distance"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x250"]
+
+[[cheat]]
+id = "added-build-distance"
+name = "Added Build distance"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pCharacter"
+hops = ["+0x230"]
+
+[[cheat]]
+id = "get-daytime"
+name = "Get DayTime"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.DayTime::getDarkness)
+define(bytes,F2 0F 10 59 28)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,address)
+
+label(code)
+label(return)
+label(pDayTime)
+registersymbol(pDayTime)
+
+newmem:
+mov [pDayTime],rcx
+
+code:
+  movsd xmm3,[rcx+28]
+  jmp return
+
+align 4 CC
+
+pDayTime:
+dq 0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db F2 0F 10 59 28
+
+dealloc(newmem)
+unregistersymbol(pDayTime)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.DayTime::getDarkness
+
+Factorio.ConnectedTileSearch::computePatchRenderData+296: CC              - int 3
+Factorio.exe+AB88C7: CC              - int 3
+Factorio.exe+AB88C8: CC              - int 3
+Factorio.exe+AB88C9: CC              - int 3
+Factorio.exe+AB88CA: CC              - int 3
+Factorio.exe+AB88CB: CC              - int 3
+Factorio.exe+AB88CC: CC              - int 3
+Factorio.exe+AB88CD: CC              - int 3
+Factorio.exe+AB88CE: CC              - int 3
+Factorio.exe+AB88CF: CC              - int 3
+// ---------- INJECTING HERE ----------
+Factorio.DayTime::getDarkness: F2 0F 10 59 28  - movsd xmm3,[rcx+28]
+// ---------- DONE INJECTING  ----------
+Factorio.DayTime::getDarkness+5: F2 0F 10 21     - movsd xmm4,[rcx]
+Factorio.DayTime::getDarkness+9: 66 0F 2F E3     - comisd xmm4,xmm3
+Factorio.DayTime::getDarkness+D: 77 6C           - ja Factorio.DayTime::getDarkness+7B
+Factorio.DayTime::getDarkness+F: F2 0F 10 41 10  - movsd xmm0,[rcx+10]
+Factorio.DayTime::getDarkness+14: 66 0F 2F C3     - comisd xmm0,xmm3
+Factorio.DayTime::getDarkness+18: 76 27           - jna Factorio.DayTime::getDarkness+41
+Factorio.DayTime::getDarkness+1A: 0F 28 D0        - movaps xmm2,xmm0
+Factorio.DayTime::getDarkness+1D: F2 0F 5C C4     - subsd xmm0,xmm4
+Factorio.DayTime::getDarkness+21: F2 0F 5C D3     - subsd xmm2,xmm3
+Factorio.DayTime::getDarkness+25: F2 0F 5E D0     - divsd xmm2,xmm0
+}"""
+
+[[cheat]]
+id = "factorio-daytime"
+name = "Factorio.DayTime"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "pDayTime"
+hops = []
+
+[[cheat]]
+id = "current-time"
+name = "Current Time"
+category = "game"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pDayTime"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "update-inventory-size-set-own"
+name = "Update Inventory Size/Set Own"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Controller::update)
+define(bytes,40 53 48 81 EC D0 00 00 00)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,address)
+
+label(code)
+label(return)
+label(updateinv_data)
+registersymbol(updateinv_data)
+
+newmem:
+push rbx
+sub rsp,D0
+
+cmp [updateinv_data],1
+jne short code
+
+  and [updateinv_data],0
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+
+  test rcx,rcx
+  je short @f
+
+    sub rsp,28
+    call Factorio.Controller::updateInventorySize
+    add rsp,28
+
+  @@:
+
+  pop r11
+  pop r10
+  pop r9
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+
+code:
+  jmp return
+
+align 4 CC
+
+updateinv_data:
+dd 0
+
+address:
+  jmp newmem
+  nop 4
+return:
+
+[DISABLE]
+
+address:
+  db 40 53 48 81 EC D0 00 00 00
+
+dealloc(newmem)
+unregistersymbol(updateinv_data)"""
+
+[[cheat]]
+id = "update"
+name = "Update"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "updateinv_data"
+hops = []
+
+[[cheat]]
+id = "change-inventory-size"
+name = "Change Inventory Size"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(setinventorysize,Factorio.exe,F2 0F 2C C6 0F 28 74 24 20 48 83 C4 38 C3 CC) // should be unique
+alloc(newmem,$1000,setinventorysize)
+
+label(code)
+label(return)
+label(inventorysize_data)
+registersymbol(inventorysize_data)
+
+newmem:
+add eax,[inventorysize_data]
+
+cmp [inventorysize_data+8],1
+jne short @f
+  mov eax,[inventorysize_data+4]
+@@:
+
+code:
+  add rsp,38
+  ret
+  jmp return
+
+align 4 CC
+
+inventorysize_data:
+dd 0,0,0
+
+setinventorysize+09:
+  jmp newmem
+return:
+registersymbol(setinventorysize)
+
+[DISABLE]
+
+setinventorysize+09:
+  db 48 83 C4 38 C3
+
+unregistersymbol(setinventorysize)
+dealloc(newmem)
+
+unregistersymbol(inventorysize_data)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Character::getCalculatedInventorySize+9E
+
+Factorio.Character::getCalculatedInventorySize+72: E8 89 1D 6D 00           - call Factorio.Armor::getInventorySizeBonus
+Factorio.Character::getCalculatedInventorySize+77: 0F B7 C8                 - movzx ecx,ax
+Factorio.Character::getCalculatedInventorySize+7A: 66 0F 6E D1              - movd xmm2,ecx
+Factorio.Character::getCalculatedInventorySize+7E: F3 0F E6 D2              - cvtdq2pd xmm2,xmm2
+Factorio.Character::getCalculatedInventorySize+82: F2 0F 58 F2              - addsd xmm6,xmm2
+Factorio.Character::getCalculatedInventorySize+86: 0F 57 C0                 - xorps xmm0,xmm0
+Factorio.Character::getCalculatedInventorySize+89: F2 0F 5F F0              - maxsd xmm6,xmm0
+Factorio.Character::getCalculatedInventorySize+8D: F2 0F 5D 35 B3 3D A1 01  - minsd xmm6,[Factorio.exe+1D65A58]
+Factorio.Character::getCalculatedInventorySize+95: F2 0F 2C C6              - cvttsd2si eax,xmm6
+Factorio.Character::getCalculatedInventorySize+99: 0F 28 74 24 20           - movaps xmm6,[rsp+20]
+// ---------- INJECTING HERE ----------
+Factorio.Character::getCalculatedInventorySize+9E: 48 83 C4 38              - add rsp,38
+// ---------- DONE INJECTING  ----------
+Factorio.Character::getCalculatedInventorySize+A2: C3                       - ret
+Factorio.Character::getCalculatedInventorySize+A3: CC                       - int 3
+Factorio.exe+351CB4: CC                       - int 3
+Factorio.exe+351CB5: CC                       - int 3
+Factorio.exe+351CB6: CC                       - int 3
+Factorio.exe+351CB7: CC                       - int 3
+Factorio.exe+351CB8: CC                       - int 3
+Factorio.exe+351CB9: CC                       - int 3
+Factorio.exe+351CBA: CC                       - int 3
+Factorio.exe+351CBB: CC                       - int 3
+}"""
+
+[[cheat]]
+id = "added-inventory-size"
+name = "Added Inventory Size"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorysize_data"
+hops = []
+
+[[cheat]]
+id = "inventory-size-to-set"
+name = "Inventory Size to set"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorysize_data"
+hops = []
+
+[[cheat]]
+id = "set-inventory-size-flag"
+name = "Set Inventory Size Flag"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "inventorysize_data"
+hops = []
+
+[[cheat]]
+id = "get-cursor-stack"
+name = "Get Cursor Stack"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.CharacterController::getCursorStack+7)
+define(bytes,48 05 D8 04 00 00)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,address)
+
+label(code)
+label(return)
+label(character.cursor_data)
+registersymbol(character.cursor_data)
+
+newmem:
+
+code:
+  add rax,000004D8
+  mov [character.cursor_data],rax
+  mov rcx,Factorio.PrototypeList<ItemPrototype>::indexToPrototype
+  mov rcx,[rcx]
+  movzx edx,word ptr [rax+4]
+  mov rcx,[rcx+rdx*8]
+  mov [character.cursor_data+8],rcx
+  test rcx,rcx
+  jnz short @f
+    mov [character.cursor_data+10],rcx
+    mov [character.cursor_data+18],rcx
+    jmp return
+  @@:
+  push rax
+  mov rdx,rcx
+  lea rcx,[rcx+8]
+  call Factorio.String.GetString
+  mov [character.cursor_data+10],rax
+  lea rcx,[rdx+68]
+  call Factorio.String.GetString
+  mov [character.cursor_data+18],rax
+  pop rax
+  jmp return
+
+align 4 CC
+
+character.cursor_data:
+dq 0
+dq 0 // Item Prototype
+dq 0 // Item Name
+dq 0 // Name
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+unregistersymbol(character.cursor_data)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.CharacterController::getCursorStack
+
+Factorio.CharacterController::getCraftingTimeSpent+16: C3                    - ret
+Factorio.CharacterController::getCraftingTimeSpent+17: CC                    - int 3
+Factorio.exe+2775A8: CC                    - int 3
+Factorio.exe+2775A9: CC                    - int 3
+Factorio.exe+2775AA: CC                    - int 3
+Factorio.exe+2775AB: CC                    - int 3
+Factorio.exe+2775AC: CC                    - int 3
+Factorio.exe+2775AD: CC                    - int 3
+Factorio.exe+2775AE: CC                    - int 3
+Factorio.exe+2775AF: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Factorio.CharacterController::getCursorStack: 48 8B 81 88 01 00 00  - mov rax,[rcx+Factorio.ssprintf_buffer+48]
+// ---------- DONE INJECTING  ----------
+Factorio.CharacterController::getCursorStack+7: 48 05 D8 04 00 00     - add rax,000004D8
+Factorio.CharacterController::getCursorStack+D: C3                    - ret
+Factorio.exe+2775BE: CC                    - int 3
+Factorio.exe+2775BF: CC                    - int 3
+Factorio.CharacterController::getRawCursorStack: 4C 8B 89 88 01 00 00  - mov r9,[rcx+Factorio.ssprintf_buffer+48]
+Factorio.CharacterController::getRawCursorStack+7: 49 8B 81 E0 04 00 00  - mov rax,[r9+000004E0]
+Factorio.CharacterController::getRawCursorStack+E: 45 8B 81 D8 04 00 00  - mov r8d,[r9+000004D8]
+Factorio.CharacterController::getRawCursorStack+15: 41 8B 89 F8 04 00 00  - mov ecx,[r9+000004F8]
+Factorio.CharacterController::getRawCursorStack+1C: 48 89 02              - mov [rdx],rax
+Factorio.CharacterController::getRawCursorStack+1F: 44 89 42 08           - mov [rdx+08],r8d
+}"""
+
+[[cheat]]
+id = "bypass-cursor-modification-check"
+name = "Bypass Cursor Modification Check"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(cursor_mod_bypass,Factorio.exe,74 * 48 3B C1 75 * 48)
+cursor_mod_bypass+5:
+  db EB
+registersymbol(cursor_mod_bypass)
+
+[DISABLE]
+
+cursor_mod_bypass+5:
+  db 75
+
+unregistersymbol(cursor_mod_bypass)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Character::update+A5
+
+Factorio.Character::update+81: 48 8B 81 F8 01 00 00  - mov rax,[rcx+Factorio.ssprintf_buffer+A8]
+Factorio.Character::update+88: 48 85 C0              - test rax,rax
+Factorio.Character::update+8B: 75 15                 - jne Factorio.Character::update+A2
+Factorio.Character::update+8D: 48 8B 81 E0 01 00 00  - mov rax,[rcx+Factorio.ssprintf_buffer+90]
+Factorio.Character::update+94: 48 85 C0              - test rax,rax
+Factorio.Character::update+97: 74 44                 - je Factorio.Character::update+DD
+Factorio.Character::update+99: 48 8B 40 30           - mov rax,[rax+30]
+Factorio.Character::update+9D: 48 85 C0              - test rax,rax
+Factorio.Character::update+A0: 74 3B                 - je Factorio.Character::update+DD
+Factorio.Character::update+A2: 48 3B C2              - cmp rax,rdx
+// ---------- INJECTING HERE ----------
+Factorio.Character::update+A5: 75 36                 - jne Factorio.Character::update+DD
+// ---------- DONE INJECTING  ----------
+Factorio.Character::update+A7: 48 8D 9F E0 03 00 00  - lea rbx,[rdi+000003E0]
+Factorio.Character::update+AE: 0F B6 4B 06           - movzx ecx,byte ptr [rbx+06]
+Factorio.Character::update+B2: 0F B7 43 04           - movzx eax,word ptr [rbx+04]
+Factorio.Character::update+B6: 66 39 87 F8 03 00 00  - cmp [rdi+000003F8],ax
+Factorio.Character::update+BD: 0F 85 63 0B 00 00     - jne Factorio.Character::update+C26
+Factorio.Character::update+C3: 38 8F FA 03 00 00     - cmp [rdi+000003FA],cl
+Factorio.Character::update+C9: 0F 85 57 0B 00 00     - jne Factorio.Character::update+C26
+Factorio.Character::update+CF: 8B 03                 - mov eax,[rbx]
+Factorio.Character::update+D1: 39 87 FC 03 00 00     - cmp [rdi+000003FC],eax
+Factorio.Character::update+D7: 0F 85 49 0B 00 00     - jne Factorio.Character::update+C26
+}"""
+
+[[cheat]]
+id = "inf-build-distance"
+name = "Inf Build Distance"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.CharacterController::canBuildDistanceCheck)
+define(bytes,48 89 5C)
+
+define(address2,Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck)
+define(bytes2,40 53 48)
+
+[ENABLE]
+assert(address,bytes)
+
+assert(address2,bytes2)
+
+address:
+  db 0C 01 C3
+
+address2:
+  db 0C 01 C3
+
+[DISABLE]
+
+address:
+  db bytes
+
+address2:
+  db bytes2
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.CharacterController::canBuildDistanceCheck
+
+Factorio.CharacterController::getExternalInventoryPostTransferNotifiable+7: 33 D2                 - xor edx,edx
+Factorio.CharacterController::getExternalInventoryPostTransferNotifiable+9: 48 8B 88 70 06 00 00  - mov rcx,[rax+00000670]
+Factorio.CharacterController::getExternalInventoryPostTransferNotifiable+10: 48 85 C9              - test rcx,rcx
+Factorio.CharacterController::getExternalInventoryPostTransferNotifiable+13: 48 8D 41 38           - lea rax,[rcx+38]
+Factorio.CharacterController::getExternalInventoryPostTransferNotifiable+17: 48 0F 44 C2           - cmove rax,rdx
+Factorio.CharacterController::getExternalInventoryPostTransferNotifiable+1B: C3                    - ret 
+Factorio.CharacterController::getExternalInventoryPostTransferNotifiable+1C: CC                    - int 3 
+Factorio.exe+25C70D: CC                    - int 3 
+Factorio.exe+25C70E: CC                    - int 3 
+Factorio.exe+25C70F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.CharacterController::canBuildDistanceCheck: 48 89 5C 24 10        - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.CharacterController::canBuildDistanceCheck+5: 57                    - push rdi
+Factorio.CharacterController::canBuildDistanceCheck+6: 48 83 EC 30           - sub rsp,30
+Factorio.CharacterController::canBuildDistanceCheck+A: 48 8B 99 88 01 00 00  - mov rbx,[rcx+Factorio.ssprintf_buffer+38]
+Factorio.CharacterController::canBuildDistanceCheck+11: 48 8B FA              - mov rdi,rdx
+Factorio.CharacterController::canBuildDistanceCheck+14: 0F 29 74 24 20        - movaps [rsp+20],xmm6
+Factorio.CharacterController::canBuildDistanceCheck+19: 0F 28 F2              - movaps xmm6,xmm2
+Factorio.CharacterController::canBuildDistanceCheck+1C: 4D 85 C9              - test r9,r9
+Factorio.CharacterController::canBuildDistanceCheck+1F: 74 2A                 - je Factorio.CharacterController::canBuildDistanceCheck+4B
+Factorio.CharacterController::canBuildDistanceCheck+21: 41 8B 91 58 05 00 00  - mov edx,[r9+00000558]
+Factorio.CharacterController::canBuildDistanceCheck+28: 49 8B C9              - mov rcx,r9
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck
+
+Factorio.exe+6E5DD: CC              - int 3
+Factorio.exe+6E5DE: CC              - int 3
+Factorio.exe+6E5DF: CC              - int 3
+Factorio.CharacterBasedGameStateAdapter::canReachEntity: 48 8B 49 08     - mov rcx,[rcx+08]
+Factorio.CharacterBasedGameStateAdapter::canReachEntity+4: 45 33 C0        - xor r8d,r8d
+Factorio.CharacterBasedGameStateAdapter::canReachEntity+7: E9 74 A4 2D 00  - jmp Factorio.Character::canReachEntity
+Factorio.exe+6E5EC: CC              - int 3
+Factorio.exe+6E5ED: CC              - int 3
+Factorio.exe+6E5EE: CC              - int 3
+Factorio.exe+6E5EF: CC              - int 3
+// ---------- INJECTING HERE ----------
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck: 40 53           - push rbx
+// ---------- DONE INJECTING  ----------
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+2: 48 83 EC 30     - sub rsp,30
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+6: 48 8B 59 08     - mov rbx,[rcx+08]
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+A: 4C 8B C2        - mov r8,rdx
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+D: 0F 29 74 24 20  - movaps [rsp+20],xmm6
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+12: 48 8D 54 24 40  - lea rdx,[rsp+40]
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+17: 49 8B C8        - mov rcx,r8
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+1A: 0F 28 F2        - movaps xmm6,xmm2
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+1D: 48 8B 43 50     - mov rax,[rbx+50]
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+21: 48 89 44 24 40  - mov [rsp+40],rax
+Factorio.CharacterBasedGameStateAdapter::canBuildDistanceCheck+26: E8 B5 85 E0 00  - call Factorio.BoundingBox::distanceFromPoint
+}"""
+
+[[cheat]]
+id = "noclip"
+name = "Noclip"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Character::checkCollisionDependingOnLatencyHidingMode)
+define(bytes,48 89 5C)
+
+[ENABLE]
+assert(address,bytes)
+
+address:
+  db 31 C0 C3
+
+[DISABLE]
+
+address:
+  db bytes"""
+
+[[cheat]]
+id = "toogle-admin-cheatmode"
+name = "Toogle Admin/CheatMode"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Player::getUsernameWithTag+5)
+define(bytes,57 48 83 EC 40)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.Player::getUsernameWithTag+6)
+
+label(code)
+label(return)
+label(setcheatmode_end)
+label(setadmin)
+label(setadmin_end)
+label(setplayer_data)
+registersymbol(setplayer_data)
+
+newmem:
+push rdi
+sub rsp,40
+mov dil,[rcx+3DB]
+mov [setplayer_data+8],dil
+
+cmp [setplayer_data],1
+jne short setadmin
+
+  and [setplayer_data],0
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+
+  test rcx,rcx
+  je short setcheatmode_end
+
+    xor rdx,rdx
+    mov al,[rcx+3DB]
+    test al,al
+    je short @f
+      mov dl,0
+    @@:
+    jne short @f
+      mov dl,1
+    @@:
+
+    sub rsp,28
+    call Factorio.Player::setCheatMode
+    add rsp,28
+
+  setcheatmode_end:
+  pop r11
+  pop r10
+  pop r9
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+
+setadmin:
+mov dil,[rcx+3D9]
+mov [setplayer_data+9],dil
+
+cmp [setplayer_data+4],1
+jne short code
+
+  and [setplayer_data+4],0
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+
+  test rcx,rcx
+  je short setadmin_end
+
+    xor rdx,rdx
+    mov al,[rcx+3D9]
+    test al,al
+    je short @f
+      mov dl,0
+    @@:
+    jne short @f
+      mov dl,1
+    @@:
+
+    sub rsp,28
+    call Factorio.Player::setAdmin
+    add rsp,28
+
+  setadmin_end:
+  pop r11
+  pop r10
+  pop r9
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+
+code:
+  jmp return
+
+setplayer_data:
+dd 0,0
+db 0,0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)"""
+
+[[cheat]]
+id = "togglecheatmode"
+name = "ToggleCheatMode"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "setplayer_data"
+hops = []
+
+[[cheat]]
+id = "currentcheatmodevalue"
+name = "CurrentCheatModeValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "setplayer_data"
+hops = []
+
+[[cheat]]
+id = "toggle-admin"
+name = "Toggle Admin"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "setplayer_data"
+hops = []
+
+[[cheat]]
+id = "currentadminvalue"
+name = "CurrentAdminValue"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "setplayer_data"
+hops = []
+
+[[cheat]]
+id = "inf-zoom"
+name = "Inf Zoom"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Zoomer::getZoomRange)
+define(bytes,48 89 5C 24 10)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.Zoomer::getZoomRange)
+
+label(code)
+label(return)
+label(infZoomData)
+
+newmem:
+test rdx,rdx
+jz code
+movups xmm0,[infZoomData]
+movups [rdx],xmm0
+mov rax,rdx
+ret
+
+code:
+  mov [rsp+10],rbx
+  jmp return
+
+align 10 CC
+
+infZoomData:
+dq 0 // ZoomOut Max(Min)
+dq (double)+inf // ZoomIn Max
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Zoomer::getZoomRange
+
+Factorio.exe+6BDDA6: CC                    - int 3
+Factorio.exe+6BDDA7: CC                    - int 3
+Factorio.exe+6BDDA8: CC                    - int 3
+Factorio.exe+6BDDA9: CC                    - int 3
+Factorio.exe+6BDDAA: CC                    - int 3
+Factorio.exe+6BDDAB: CC                    - int 3
+Factorio.exe+6BDDAC: CC                    - int 3
+Factorio.exe+6BDDAD: CC                    - int 3
+Factorio.exe+6BDDAE: CC                    - int 3
+Factorio.exe+6BDDAF: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Factorio.Zoomer::getZoomRange: 48 89 5C 24 10        - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.Zoomer::getZoomRange+5: 55                    - push rbp
+Factorio.Zoomer::getZoomRange+6: 56                    - push rsi
+Factorio.Zoomer::getZoomRange+7: 57                    - push rdi
+Factorio.Zoomer::getZoomRange+8: 48 8B EC              - mov rbp,rsp
+Factorio.Zoomer::getZoomRange+B: 48 83 EC 60           - sub rsp,60
+Factorio.Zoomer::getZoomRange+F: 48 8B D9              - mov rbx,rcx
+Factorio.Zoomer::getZoomRange+12: 49 8B F0              - mov rsi,r8
+Factorio.Zoomer::getZoomRange+15: 48 8B 89 98 01 00 00  - mov rcx,[rcx+Factorio.ssprintf_buffer+58]
+Factorio.Zoomer::getZoomRange+1C: 48 8B FA              - mov rdi,rdx
+Factorio.Zoomer::getZoomRange+1F: 48 85 C9              - test rcx,rcx
+}"""
+
+[[cheat]]
+id = "no-map-zoomout"
+name = "No Map Zoomout"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Zoomer::getFurthestGameViewZoom)
+define(bytes,48 89 5C 24 10)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.Zoomer::getFurthestGameViewZoom)
+
+label(code)
+label(return)
+
+newmem:
+test rdx,rdx
+jz code
+mov qword ptr [rdx],1
+mov byte ptr [rdx+8],1
+mov rax,rdx
+ret
+
+code:
+  mov [rsp+10],rbx
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [rsp+10],rbx
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Zoomer::getFurthestGameViewZoom
+
+Factorio.exe+6BDF46: CC                    - int 3
+Factorio.exe+6BDF47: CC                    - int 3
+Factorio.exe+6BDF48: CC                    - int 3
+Factorio.exe+6BDF49: CC                    - int 3
+Factorio.exe+6BDF4A: CC                    - int 3
+Factorio.exe+6BDF4B: CC                    - int 3
+Factorio.exe+6BDF4C: CC                    - int 3
+Factorio.exe+6BDF4D: CC                    - int 3
+Factorio.exe+6BDF4E: CC                    - int 3
+Factorio.exe+6BDF4F: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Factorio.Zoomer::getFurthestGameViewZoom: 48 89 5C 24 10        - mov [rsp+10],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.Zoomer::getFurthestGameViewZoom+5: 48 89 7C 24 20        - mov [rsp+20],rdi
+Factorio.Zoomer::getFurthestGameViewZoom+A: 55                    - push rbp
+Factorio.Zoomer::getFurthestGameViewZoom+B: 48 8B EC              - mov rbp,rsp
+Factorio.Zoomer::getFurthestGameViewZoom+E: 48 83 EC 60           - sub rsp,60
+Factorio.Zoomer::getFurthestGameViewZoom+12: 48 8B D9              - mov rbx,rcx
+Factorio.Zoomer::getFurthestGameViewZoom+15: 48 8B FA              - mov rdi,rdx
+Factorio.Zoomer::getFurthestGameViewZoom+18: 48 8B 89 58 01 00 00  - mov rcx,[rcx+Factorio.ssprintf_buffer+18]
+Factorio.Zoomer::getFurthestGameViewZoom+1F: 48 85 C9              - test rcx,rcx
+Factorio.Zoomer::getFurthestGameViewZoom+22: 0F 84 CD 01 00 00     - je Factorio.Zoomer::getFurthestGameViewZoom+1F5
+Factorio.Zoomer::getFurthestGameViewZoom+28: 48 8B 01              - mov rax,[rcx]
+}"""
+
+[[cheat]]
+id = "teleport-to-cursor"
+name = "Teleport to Cursor"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Player::getUsernameWithTag+A)
+define(bytes,48 8B DA 48 8B F9)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.Player::getUsernameWithTag)
+
+label(code)
+label(return)
+label(telecursor_data)
+label(telecursor_end)
+registersymbol(telecursor_data)
+
+newmem:
+cmp [telecursor_data],1
+jne code
+
+  and [telecursor_data],0
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+  push rbx
+  push rbp
+  mov rbp,rsp
+  and spl,F0
+  sub rsp,20
+
+  test rcx,rcx
+  je telecursor_end
+
+    mov rbx,rcx // Factorio.Player
+
+    lea rdx,[telecursor_data+4] // rdx = Container for Returned Position
+
+    call Factorio.Player::getCursorMapPosition
+
+    test rbx,rbx
+    je telecursor_end
+    mov rcx,rbx
+    call Factorio.Player::getCharacter
+    test rax,rax
+    jz telecursor_end
+    mov rcx,rax
+    mov rdx,[telecursor_data+4]
+    mov r8,0
+    xor r9d,r9d
+    call Factorio.Entity::teleport
+
+  telecursor_end:
+  mov rsp,rbp
+  pop rbp
+  pop rbx
+  pop r11
+  pop r10
+  pop r9
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+
+code:
+  mov rbx,rdx
+  mov rdi,rcx
+  jmp return
+
+align 4 CC
+
+telecursor_data:
+dd 0,0,0
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+unregistersymbol(telecursor_data)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Player::getUsernameWithTag+F
+
+Factorio.exe+BBF2AD: CC                       - int 3
+Factorio.exe+BBF2AE: CC                       - int 3
+Factorio.exe+BBF2AF: CC                       - int 3
+Factorio.Player::getUsernameWithTag: E9 4B 0D 3F FF           - jmp 7FF7D1990000
+Factorio.Player::getUsernameWithTag+5: 90                       - nop
+Factorio.Player::getUsernameWithTag+6: E9 45 0D 40 FF           - jmp 7FF7D19A0000
+Factorio.Player::getUsernameWithTag+B: 90                       - nop
+Factorio.Player::getUsernameWithTag+C: 90                       - nop
+Factorio.Player::getUsernameWithTag+D: 90                       - nop
+Factorio.Player::getUsernameWithTag+E: 90                       - nop
+// ---------- INJECTING HERE ----------
+Factorio.Player::getUsernameWithTag+F: 48 89 9C 24 80 00 00 00  - mov [rsp+Factorio.dtor_list_head+30],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.Player::getUsernameWithTag+17: 48 8B 05 D2 3D F7 00     - mov rax,[Factorio.__security_cookie]
+Factorio.Player::getUsernameWithTag+1E: 48 33 C4                 - xor rax,rsp
+Factorio.Player::getUsernameWithTag+21: 48 89 44 24 50           - mov [rsp+50],rax
+Factorio.Player::getUsernameWithTag+26: 48 8B DA                 - mov rbx,rdx
+Factorio.Player::getUsernameWithTag+29: 48 8B F9                 - mov rdi,rcx
+Factorio.Player::getUsernameWithTag+2C: 48 89 54 24 28           - mov [rsp+28],rdx
+Factorio.Player::getUsernameWithTag+31: 48 8D 91 B0 01 00 00     - lea rdx,[rcx+Factorio.ssprintf_buffer+60]
+Factorio.Player::getUsernameWithTag+38: 48 83 B9 00 02 00 00 00  - cmp qword ptr [rcx+Factorio.ssprintf_buffer+B0],00
+Factorio.Player::getUsernameWithTag+40: 75 0A                    - jne Factorio.Player::getUsernameWithTag+4C
+Factorio.Player::getUsernameWithTag+42: 48 8B CB                 - mov rcx,rbx
+}"""
+
+[[cheat]]
+id = "teleport-flag"
+name = "Teleport Flag"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Do Nothing",
+    "1:Teleport",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "telecursor_data"
+hops = []
+
+[[cheat]]
+id = "teleport-activation"
+name = "Teleport Activation"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.MainLoop::mainLoopStep)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.MainLoop::mainLoopStep)
+
+label(return)
+label(tele_end)
+label(tele_data)
+registersymbol(tele_data)
+
+newmem:
+mov [rsp+08],rbx
+
+cmp [tele_data],0
+je return
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+
+  sub rsp,20
+
+  // Get Character
+  call Factorio.Global.GetCharacter
+  mov rcx,rax
+  cmp [tele_data],1
+  jne @f
+    call Factorio.Entity.GetPositionPointer
+    mov rax,[rax]
+    mov [tele_data+4],rax
+  @@:
+  cmp [tele_data],2
+  jne tele_end
+    //mov rcx,rax
+    mov rdx,[tele_data+4]
+    xor r8,r8
+    xor r9,r9
+    test rcx,rcx
+    je tele_end
+      call Factorio.Entity::teleport
+
+tele_end:
+and [tele_data],0
+
+add rsp,20
+
+pop r11
+pop r10
+pop r9
+pop r8
+pop rdx
+pop rcx
+pop rax
+jmp return
+
+tele_data:
+dd 0,0,0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+
+unregistersymbol(tele_data)"""
+
+[[cheat]]
+id = "teleport-flag-2"
+name = "Teleport Flag"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Do Nothing",
+    "1:Save Location",
+    "2:Teleport",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "tele_data"
+hops = []
+
+[[cheat]]
+id = "saved-x"
+name = "Saved X"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tele_data"
+hops = []
+
+[[cheat]]
+id = "saved-y"
+name = "Saved Y"
+category = "movement"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "tele_data"
+hops = []
+
+[[cheat]]
+id = "reveal-all-recipes"
+name = "Reveal All Recipes"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(revealrecipes_aob_1,Factorio.exe,80 7C C8 0A 00 74 * 48 8B)
+aobscanmodule(revealrecipes_aob_2,Factorio.exe,41 80 78 0A 00 74 09)
+aobscanmodule(revealrecipes_aob_3,Factorio.exe,74 * 80 7B 0A 00 74)
+
+revealrecipes_aob_1:
+  db 80 7C C8 0A FF
+
+registersymbol(revealrecipes_aob_1)
+
+revealrecipes_aob_2:
+  db 41 80 78 0A FF
+registersymbol(revealrecipes_aob_2)
+
+revealrecipes_aob_3+2:
+  db 80 7B 0A FF
+
+registersymbol(revealrecipes_aob_3)
+
+[DISABLE]
+
+revealrecipes_aob_1:
+  db 80 7C C8 0A 00
+
+unregistersymbol(revealrecipes_aob_1)
+
+revealrecipes_aob_2:
+  db 41 80 78 0A 00
+
+unregistersymbol(revealrecipes_aob_2)
+
+revealrecipes_aob_3+2:
+  db 80 7B 0A 00
+
+unregistersymbol(revealrecipes_aob_3)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+30
+
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+8: 44 0F B7 0A           - movzx r9d,word ptr [rdx]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+C: 49 8B 40 20           - mov rax,[r8+20]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+10: 41 0F B6 50 2A        - movzx edx,byte ptr [r8+2A]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+15: 48 8B 88 D0 03 00 00  - mov rcx,[rax+000003D0]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+1C: 48 8B 04 D1           - mov rax,[rcx+rdx*8]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+20: 48 8B 48 48           - mov rcx,[rax+48]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+24: 48 8B 01              - mov rax,[rcx]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+27: 41 8B C9              - mov ecx,r9d
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+2A: 48 03 C9              - add rcx,rcx
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+2D: 48 8B 00              - mov rax,[rax]
+// ---------- INJECTING HERE ----------
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+30: 80 7C C8 0A 00        - cmp byte ptr [rax+rcx*8+0A],00
+// ---------- DONE INJECTING  ----------
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+35: 74 26                 - je "Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call"+5D
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+37: 48 8B 05 CA E5 E5 00  - mov rax,[Factorio.PrototypeList<RecipePrototype>::indexToPrototype]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+3E: 4A 8B 0C C8           - mov rcx,[rax+r9*8]
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+42: 80 B9 98 01 00 00 00  - cmp byte ptr [rcx+Factorio.ssprintf_buffer+48],00
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+49: 75 12                 - jne "Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call"+5D
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+4B: 80 B9 28 02 00 00 00  - cmp byte ptr [rcx+Factorio.ssprintf_buffer+D8],00
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+52: 75 09                 - jne "Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call"+5D
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+54: 80 B9 9A 01 00 00 00  - cmp byte ptr [rcx+Factorio.ssprintf_buffer+4A],00
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+5B: 74 2E                 - je "Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call"+8B
+Factorio.std::_Func_impl_no_alloc<`CraftingGui::CraftingGui'::`1'::<lambda_118_>,bool,ID<RecipePrototype,unsigned short> >::_Do_call+5D: 49 8B 48 38           - mov rcx,[r8+38]
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.RecipeSlot::RecipeSlot+1A2
+
+Factorio.RecipeSlot::RecipeSlot+176: 44 8B C3              - mov r8d,ebx
+Factorio.RecipeSlot::RecipeSlot+179: 48 8B 0D 98 41 AD 01  - mov rcx,[Factorio.PrototypeList<RecipePrototype>::indexToPrototype]
+Factorio.RecipeSlot::RecipeSlot+180: 48 8B 14 D9           - mov rdx,[rcx+rbx*8]
+Factorio.RecipeSlot::RecipeSlot+184: 4C 8B 0D ED 92 DB 01  - mov r9,[Factorio.global]
+Factorio.RecipeSlot::RecipeSlot+18B: 80 BA 98 01 00 00 00  - cmp byte ptr [rdx+Factorio.ssprintf_buffer+48],00
+Factorio.RecipeSlot::RecipeSlot+192: 75 1E                 - jne Factorio.RecipeSlot::RecipeSlot+1B2
+Factorio.RecipeSlot::RecipeSlot+194: 48 8B 40 48           - mov rax,[rax+48]
+Factorio.RecipeSlot::RecipeSlot+198: 48 8B 08              - mov rcx,[rax]
+Factorio.RecipeSlot::RecipeSlot+19B: 49 C1 E0 04           - shl r8,04
+Factorio.RecipeSlot::RecipeSlot+19F: 4C 03 01              - add r8,[rcx]
+// ---------- INJECTING HERE ----------
+Factorio.RecipeSlot::RecipeSlot+1A2: 41 80 78 0A 00        - cmp byte ptr [r8+0A],00
+// ---------- DONE INJECTING  ----------
+Factorio.RecipeSlot::RecipeSlot+1A7: 74 09                 - je Factorio.RecipeSlot::RecipeSlot+1B2
+Factorio.RecipeSlot::RecipeSlot+1A9: C6 86 E2 04 00 00 00  - mov byte ptr [rsi+000004E2],00
+Factorio.RecipeSlot::RecipeSlot+1B0: EB 1C                 - jmp Factorio.RecipeSlot::RecipeSlot+1CE
+Factorio.RecipeSlot::RecipeSlot+1B2: C6 86 E2 04 00 00 01  - mov byte ptr [rsi+000004E2],01
+Factorio.RecipeSlot::RecipeSlot+1B9: 49 8B 81 D8 00 00 00  - mov rax,[r9+Factorio.dtor_list_head+A8]
+Factorio.RecipeSlot::RecipeSlot+1C0: 0F 10 80 CC 06 00 00  - movups xmm0,[rax+000006CC]
+Factorio.RecipeSlot::RecipeSlot+1C7: 0F 11 86 E0 02 00 00  - movups [rsi+Factorio.ssprintf_buffer+190],xmm0
+Factorio.RecipeSlot::RecipeSlot+1CE: 49 8B 81 D8 00 00 00  - mov rax,[r9+Factorio.dtor_list_head+A8]
+Factorio.RecipeSlot::RecipeSlot+1D5: 0F 10 80 BC 06 00 00  - movups xmm0,[rax+000006BC]
+Factorio.RecipeSlot::RecipeSlot+1DC: 0F 11 86 F0 02 00 00  - movups [rsi+Factorio.ssprintf_buffer+1A0],xmm0
+}
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.CraftingGui::updateCounts+271
+
+Factorio.CraftingGui::updateCounts+24B: 48 89 44 24 40     - mov [rsp+40],rax
+Factorio.CraftingGui::updateCounts+250: 48 8B 06           - mov rax,[rsi]
+Factorio.CraftingGui::updateCounts+253: 48 8B CE           - mov rcx,rsi
+Factorio.CraftingGui::updateCounts+256: FF 90 50 01 00 00  - call qword ptr [rax+Factorio.ssprintf_buffer+10]
+Factorio.CraftingGui::updateCounts+25C: 48 8B 48 48        - mov rcx,[rax+48]
+Factorio.CraftingGui::updateCounts+260: 48 8B 59 08        - mov rbx,[rcx+08]
+Factorio.CraftingGui::updateCounts+264: 48 83 C3 10        - add rbx,10
+Factorio.CraftingGui::updateCounts+268: 4C 8B 79 10        - mov r15,[rcx+10]
+Factorio.CraftingGui::updateCounts+26C: 49 3B DF           - cmp rbx,r15
+Factorio.CraftingGui::updateCounts+26F: 74 74              - je Factorio.CraftingGui::updateCounts+2E5
+// ---------- INJECTING HERE ----------
+Factorio.CraftingGui::updateCounts+271: 80 7B 0A 00        - cmp byte ptr [rbx+0A],00
+// ---------- DONE INJECTING  ----------
+Factorio.CraftingGui::updateCounts+275: 74 26              - je Factorio.CraftingGui::updateCounts+29D
+Factorio.CraftingGui::updateCounts+277: 48 8B 06           - mov rax,[rsi]
+Factorio.CraftingGui::updateCounts+27A: 41 B9 01 00 00 00  - mov r9d,00000001
+Factorio.CraftingGui::updateCounts+280: 4C 8B 03           - mov r8,[rbx]
+Factorio.CraftingGui::updateCounts+283: 48 8D 55 B7        - lea rdx,[rbp-49]
+Factorio.CraftingGui::updateCounts+287: 48 8B CE           - mov rcx,rsi
+Factorio.CraftingGui::updateCounts+28A: FF 90 C8 06 00 00  - call qword ptr [rax+000006C8]
+Factorio.CraftingGui::updateCounts+290: 83 CF 01           - or edi,01
+Factorio.CraftingGui::updateCounts+293: 83 38 00           - cmp dword ptr [rax],00
+Factorio.CraftingGui::updateCounts+296: 75 05              - jne Factorio.CraftingGui::updateCounts+29D
+}"""
+
+[[cheat]]
+id = "change-surface-activate-me-first"
+name = "Change Surface Activate Me First"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.MainLoop::mainLoopStep+5)
+define(bytes,48 89 74 24 10)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.MainLoop::mainLoopStep+5)
+
+label(code)
+label(return)
+label(surface.getall)
+label(surface.getcount)
+label(getcharactercontroller)
+label(surface.find)
+label(surface.find_loop)
+label(surface.find_error)
+label(surface.find_end)
+label(changesurface_data)
+label(changesurface_end)
+registersymbol(changesurface_data)
+
+newmem:
+cmp [changesurface_data],0
+je code
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+  push rsi
+  push rdi
+  sub rsp,30
+
+  call surface.find
+  test rax,rax
+  jz changesurface_end
+
+  mov rsi,rax // Found Surface
+  call getcharactercontroller
+  test rax,rax
+  jz changesurface_end
+  mov rcx,rax // CharacterController
+  mov rdx,rsi // Found Surface
+  lea r8,[changesurface_data+4] // X/Y Pos
+  call Factorio.CharacterController::changeSurfaceAndPosition
+
+changesurface_end:
+
+add rsp,30
+pop rdi
+pop rsi
+pop r11
+pop r10
+pop r9
+pop r8
+pop rdx
+pop rcx
+pop rax
+
+mov dword ptr [changesurface_data],0
+
+code:
+  mov [rsp+10],rsi
+  jmp return
+
+align 4 CC
+
+surface.getall:
+call Factorio.Global.GetSurfaces
+ret
+
+surface.getcount:
+call Factorio.Global.GetSurfaces
+test rax,rax
+jz short @f
+mov rcx,rax
+call Factorio.Global.GetSurfacesEnd
+test rax,rax
+jz short @f
+sub rax,rcx
+sar rax,3
+@@:
+ret
+
+getcharactercontroller:
+call Factorio.Global.GetCharacterController
+ret
+
+surface.find:
+sub rsp,28
+call surface.getall
+test rax,rax
+jz surface.find_end
+  mov rsi,rax // Factorio.Surface[]
+  or edi,-1
+  surface.find_loop: // Loop
+  inc edi
+  call surface.getcount
+  cmp edi,eax
+  jge surface.find_error
+  xor eax,eax
+  mov rcx,[rsi+rdi*8]
+  cmp [changesurface_data],2
+  jne short @f
+    // Get By Index
+    lea ecx,[edi+1]
+    cmp [changesurface_data+10],ecx // Index to change to
+    jne surface.find_loop
+    mov rax,[rsi+rdi*8] // Surface
+    jmp surface.find_end
+  @@:
+  // Get By Name
+  mov rcx,[rsi+rdi*8]
+  lea rcx,[rcx+40] // Surface name
+  call Factorio.String.GetString
+  test rax,rax
+  jz surface.find_loop
+  mov rcx,rax
+  lea rdx,[changesurface_data+18] // Name to search for
+  mov r8,ntdll.strcmp
+  mov r9,ntdll.stricmp
+  cmp [changesurface_data+14],0 // case-sensitive search
+  cmove r8,r9
+  call r8
+  test eax,eax
+  jnz surface.find_loop
+  mov rax,[rsi+rdi*8]
+  jmp surface.find_end
+surface.find_error:
+// Surface not found
+cmp [changesurface_data],1
+jne short @f
+  // Name not found
+  lea rcx,[newmem+900]
+  call Factorio.PrintToLua
+@@:
+cmp [changesurface_data],2
+jne short @f
+  // Index not found
+  lea rcx,[newmem+800]
+  call Factorio.PrintToLua
+@@:
+xor rax,rax
+surface.find_end:
+add rsp,28
+ret
+
+align 4 CC
+
+changesurface_data:
+dd 0 // Switch Value +0
+dd 0 // X +4
+dd 0 // Y +8
+dd 0 // Reserved +C
+dd 1 // Index to change to // 1 is first Index +10
+dd 0 // Case-sensitive search +14
+db '' // Name to search for +18
+
+newmem+800:
+db 'Error:A Surface with this index does not exist!',0
+newmem+900:
+db 'Error:A Surface with this name does not exist!',0
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+unregistersymbol(changesurface_data)"""
+
+[[cheat]]
+id = "change-surface"
+name = "Change Surface"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Do Nothing",
+    "1:Change Surface by Name",
+    "2:Change Surface by Index",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "changesurface_data"
+hops = []
+
+[[cheat]]
+id = "x-pos-2"
+name = "X-Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "changesurface_data"
+hops = []
+
+[[cheat]]
+id = "y-pos-2"
+name = "Y-Pos"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "changesurface_data"
+hops = []
+
+[[cheat]]
+id = "index"
+name = "Index"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "changesurface_data"
+hops = []
+
+[[cheat]]
+id = "case-sensitive-search"
+name = "Case-sensitive Search"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "changesurface_data"
+hops = []
+
+[[cheat]]
+id = "find-surface"
+name = "Find Surface"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.MainLoop::mainLoopStep+A)
+define(bytes,55 57 41 56 48 8D 6C 24 B9)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.MainLoop::mainLoopStep+B)
+
+label(code)
+label(return)
+label(surface.getall)
+label(surface.getcount)
+label(surface.getsurfacebyindex)
+label(surface.getsurfacebyname)
+label(surface.find_loop)
+label(surface.find_end)
+label(surface.find_error)
+label(surface.storedata)
+label(getsurfaces_data)
+label(getsurfacesbyindex)
+label(getsurfacesbyname)
+label(getsurfaces_end)
+label(getsurfaces_retstring)
+registersymbol(getsurfaces_retstring)
+registersymbol(getsurfaces_data)
+
+newmem:
+cmp [getsurfaces_data],1
+jne getsurfacesbyindex
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+  push rbp
+  mov rbp,rsp
+  sub rsp,20
+  and spl,F0
+
+  call surface.getall
+
+  test rax,rax
+  je getsurfaces_end
+
+    mov rcx,rax
+    call surface.getcount
+    mov [getsurfaces_data+4],eax
+    jmp getsurfaces_end
+
+getsurfacesbyindex:
+cmp [getsurfaces_data],2
+jne getsurfacesbyname
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+  push rbp
+  mov rbp,rsp
+  sub rsp,20
+  and spl,F0
+
+  call surface.getall
+
+  test rax,rax
+  je getsurfaces_end
+    mov rcx,rax
+    mov edx,[getsurfaces_data+8]
+    call long surface.getsurfacebyindex
+    test rax,rax
+    je getsurfaces_end
+      mov rcx,rax
+      call long surface.storedata
+      jmp getsurfaces_end
+
+getsurfacesbyname:
+cmp [getsurfaces_data],3
+jne code
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+  push rbp
+  mov rbp,rsp
+  sub rsp,20
+  and spl,F0
+
+  call surface.getall
+
+  test rax,rax
+  je getsurfaces_end
+    mov rcx,rax
+    call surface.getsurfacebyname
+    test rax,rax
+    je getsurfaces_end
+      mov rcx,rax
+      call long surface.storedata
+      jmp short getsurfaces_end
+
+getsurfaces_end:
+and [getsurfaces_data],0
+
+mov rsp,rbp
+pop rbp
+pop r11
+pop r10
+pop r9
+pop r8
+pop rdx
+pop rcx
+pop rax
+
+code:
+  push rbp
+  push rdi
+  push r14
+  lea rbp,[rsp-47]
+  jmp return
+
+surface.getall:
+call Factorio.Global.GetSurfaces
+ret
+
+surface.getcount:
+call Factorio.Global.GetSurfaces
+test rax,rax
+jz short @f
+mov rcx,rax
+call Factorio.Global.GetSurfacesEnd
+test rax,rax
+jz short @f
+sub rax,rcx
+sar rax,3
+@@:
+ret
+
+surface.getsurfacebyindex:
+push rcx
+push rdx
+call surface.getcount
+pop rdx
+pop rcx
+cmp edx,eax
+jge short @f
+  mov rax,[rcx+rdx*8]
+  ret
+@@:
+xor rax,rax
+ret
+
+
+surface.getsurfacebyname:
+push rsi
+push rdi
+sub rsp,28
+mov rsi,rax // Factorio.Surface[]
+or edi,-1
+surface.find_loop: // Loop
+inc edi
+call surface.getcount
+cmp edi,eax
+jge surface.find_error
+xor eax,eax
+mov rcx,[rsi+rdi*8]
+lea rcx,[rcx+40] // Surface name
+call Factorio.String.GetString
+test rax,rax
+jz surface.find_loop
+mov rcx,rax
+lea rdx,[getsurfaces_data+1C] // Name to search for
+mov r8,ntdll.strcmp
+  mov r9,ntdll.stricmp
+  cmp [getsurfaces_data+18],0 // case-sensitive search
+  cmove r8,r9
+  call r8
+  test eax,eax
+  jnz surface.find_loop
+  mov rax,[rsi+rdi*8]
+  jmp surface.find_end
+surface.find_error:
+xor rax,rax
+surface.find_end:
+add rsp,28
+pop rdi
+pop rsi
+ret
+
+surface.storedata:
+sub rsp,28
+mov [getsurfaces_data+10],rcx
+mov edx,[rcx+28]
+//inc edx
+mov [getsurfaces_data+C],edx
+lea rcx,[rcx+40]
+call Factorio.String.GetString
+mov rdx,rax
+lea rcx,[getsurfaces_retstring]
+test rcx,rcx
+je short @f
+test rdx,rdx
+je short @f
+  call ntdll.strcpy
+@@:
+add rsp,28
+ret
+
+getsurfaces_data:
+dd 1 // Get Count // Get Data +0
+dd 0 // Count +4
+dd 0 // Index to Search for +8
+dd 0 // Returned Index +C
+dq 0 // Returned Address +10
+dd 0 // Case Sensitive +18
+db '' // String to Search for +1C
+
+newmem+600:
+getsurfaces_retstring:
+db '' // Returned String
+
+address:
+  jmp newmem
+  nop 4
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+unregistersymbol(getsurfaces_data)
+unregistersymbol(getsurfaces_retstring)"""
+
+[[cheat]]
+id = "search-for-surface"
+name = "Search For Surface"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:Do Nothing",
+    "1:Find Surface Count",
+    "2:Find Surface with Index",
+    "3:Find Surface with Name",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "getsurfaces_data"
+hops = []
+
+[[cheat]]
+id = "surface-count"
+name = "Surface Count"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "getsurfaces_data"
+hops = []
+
+[[cheat]]
+id = "index-to-search-for-0-indexed"
+name = "Index to Search for(0 Indexed)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "getsurfaces_data"
+hops = []
+
+[[cheat]]
+id = "case-sensitive-search-2"
+name = "Case-Sensitive Search"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "getsurfaces_data"
+hops = []
+
+[[cheat]]
+id = "returned-index-0-indexed"
+name = "Returned Index(0 Indexed)"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "getsurfaces_data"
+hops = []
+
+[[cheat]]
+id = "returned-address"
+name = "Returned Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+hex = true
+
+[cheat.locator]
+find = "symbol"
+symbol = "getsurfaces_data"
+hops = []
+
+[[cheat]]
+id = "research-stuff"
+name = "Research Stuff"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.MainLoop::mainLoopStep+13)
+define(bytes,48 81 EC C0 00 00 00)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.MainLoop::mainLoopStep)
+
+label(code)
+label(return)
+label(technology_getall)
+label(technology_data)
+label(technology_end)
+registersymbol(technology_data)
+
+newmem:
+cmp [technology_data],1
+jne short @f
+
+  and [technology_data],0
+
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+
+  call long technology_getall
+  test rax,rax
+  je long technology_end
+    mov rcx,rax
+    mov edx,1
+    sub rsp,28
+    call Factorio.ForceData::researchAllTechnologies
+    add rsp,28
+    jmp long technology_end
+@@:
+cmp [technology_data+4],1
+jne long code
+
+  and [technology_data+4],0
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push r10
+  push r11
+
+  call long technology_getall
+  test rax,rax
+  je long technology_end
+    mov rcx,rax
+    sub rsp,28
+    call Factorio.ForceData::resetResearchAndEffects
+    add rsp,28
+
+  technology_end:
+  pop r11
+  pop r10
+  pop r9
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+
+code:
+  sub rsp,C0
+  jmp return
+
+technology_getall:
+call Factorio.Global.GetForceDataPlayer
+ret
+
+technology_data:
+dd 0
+
+address:
+  jmp newmem
+  nop 2
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+unregistersymbol(technology_data)"""
+
+[[cheat]]
+id = "unlock-all-technologies"
+name = "Unlock All Technologies"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "technology_data"
+hops = []
+
+[[cheat]]
+id = "reset-all-technologies"
+name = "Reset All Technologies"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "technology_data"
+hops = []
+
+[[cheat]]
+id = "item-id"
+name = "Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "static"
+module = "giveitem.main.data"
+offset = "0x4"
+hops = []
+
+[[cheat]]
+id = "item-count"
+name = "Item Count"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "giveitem.main.data"
+offset = "0x6"
+hops = []
+
+[[cheat]]
+id = "item-health"
+name = "Item Health"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "giveitem.main.data"
+offset = "0xa"
+hops = []
+
+[[cheat]]
+id = "item-quality"
+name = "Item Quality"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 1
+choices = [
+    "1:Normal",
+    "2:Uncommon",
+    "3:Rare",
+    "4:Epic",
+    "5:Legendary",
+]
+
+[cheat.locator]
+find = "static"
+module = "giveitem.main.data"
+offset = "0x1a"
+hops = []
+
+[[cheat]]
+id = "print-errors-warnings"
+name = "Print Errors/Warnings"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "static"
+module = "giveitem.main.data"
+offset = "0xe"
+hops = []
+
+[[cheat]]
+id = "force-cursor-replacement"
+name = "Force Cursor Replacement"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "static"
+module = "giveitem.main.data"
+offset = "0x12"
+hops = []
+
+[[cheat]]
+id = "name-scan-case-sensitive"
+name = "Name Scan Case-sensitive?"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "static"
+module = "giveitem.main.data"
+offset = "0x16"
+hops = []
+
+[[cheat]]
+id = "infinite-ore-deposits"
+name = "Infinite Ore Deposits"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.ResourceEntity::mineMe+121)
+define(bytes,83 E8 01)
+
+[ENABLE]
+assert(address,bytes)
+
+address:
+  nop 3
+
+[DISABLE]
+
+address:
+  db bytes
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ResourceEntity::mineMe+121
+
+Factorio.ResourceEntity::mineMe+100: E8 CB 77 66 00        - call Factorio.Map::sendGameAction
+Factorio.ResourceEntity::mineMe+105: 90                    - nop
+Factorio.ResourceEntity::mineMe+106: 48 8D 4C 24 40        - lea rcx,[rsp+40]
+Factorio.ResourceEntity::mineMe+10B: E8 F0 E5 C2 FF        - call Factorio.GameAction::destroyValue
+Factorio.ResourceEntity::mineMe+110: EB 64                 - jmp Factorio.ResourceEntity::mineMe+176
+Factorio.ResourceEntity::mineMe+112: 45 85 C0              - test r8d,r8d
+Factorio.ResourceEntity::mineMe+115: 75 6E                 - jne Factorio.ResourceEntity::mineMe+185
+Factorio.ResourceEntity::mineMe+117: 8B 81 88 00 00 00     - mov eax,[rcx+Factorio.dtor_list_head+58]
+Factorio.ResourceEntity::mineMe+11D: 85 C0                 - test eax,eax
+Factorio.ResourceEntity::mineMe+11F: 74 64                 - je Factorio.ResourceEntity::mineMe+185
+// ---------- INJECTING HERE ----------
+Factorio.ResourceEntity::mineMe+121: 83 E8 01              - sub eax,01
+// ---------- DONE INJECTING  ----------
+Factorio.ResourceEntity::mineMe+124: 89 81 88 00 00 00     - mov [rcx+Factorio.dtor_list_head+58],eax
+Factorio.ResourceEntity::mineMe+12A: 75 59                 - jne Factorio.ResourceEntity::mineMe+185
+Factorio.ResourceEntity::mineMe+12C: C6 44 24 40 5F        - mov byte ptr [rsp+40],5F
+Factorio.ResourceEntity::mineMe+131: 48 89 5C 24 48        - mov [rsp+48],rbx
+Factorio.ResourceEntity::mineMe+136: 48 8D 54 24 40        - lea rdx,[rsp+40]
+Factorio.ResourceEntity::mineMe+13B: 48 8B 89 80 00 00 00  - mov rcx,[rcx+Factorio.dtor_list_head+50]
+Factorio.ResourceEntity::mineMe+142: E8 89 77 66 00        - call Factorio.Map::sendGameAction
+Factorio.ResourceEntity::mineMe+147: 90                    - nop
+Factorio.ResourceEntity::mineMe+148: 48 8D 4C 24 40        - lea rcx,[rsp+40]
+Factorio.ResourceEntity::mineMe+14D: E8 AE E5 C2 FF        - call Factorio.GameAction::destroyValue
+}"""
+
+[[cheat]]
+id = "infinite-mouse-cursor-items"
+name = "Infinite Mouse Cursor Items"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.ItemStack::swapWith)
+define(bytes,40 55 41 54 41 57)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.ItemStack::swapWith)
+
+label(code)
+label(return)
+label(getcursor)
+label(getcharacter)
+label(placeholder)
+label(clonetoplaceholder)
+
+newmem:
+sub rsp,8
+call long getcursor
+cmp rcx,rax
+je @f
+cmp rdx,rax
+jne code
+cmp word ptr [rcx+4],0
+jne code
+mov [rsp],rcx
+mov rcx,rdx
+call clonetoplaceholder
+mov rcx,[rsp]
+mov rdx,rax
+jmp code
+@@:
+cmp word ptr [rcx+4],0
+jne code
+call clonetoplaceholder
+mov rcx,rax
+
+code:
+  add rsp,8
+  push rbp
+  push r12
+  push r15
+  jmp return
+
+getcursor:
+call Factorio.Global.GetCursor
+ret
+
+getcharacter:
+call Factorio.Global.GetCharacter
+ret
+
+clonetoplaceholder:
+push rbx
+push r12
+mov r12,6
+lea rbx,[placeholder]
+@@:
+dec r12
+js short @f
+mov rax,[rcx+r12*8]
+mov [rbx+r12*8],rax
+jmp short @b
+@@:
+mov rax,rbx
+pop r12
+pop rbx
+ret
+
+align 4 CC
+
+placeholder:
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ItemStack::swapWith
+
+"Factorio.exe"+6AE0E6: CC                       -  int 3
+"Factorio.exe"+6AE0E7: CC                       -  int 3
+"Factorio.exe"+6AE0E8: CC                       -  int 3
+"Factorio.exe"+6AE0E9: CC                       -  int 3
+"Factorio.exe"+6AE0EA: CC                       -  int 3
+"Factorio.exe"+6AE0EB: CC                       -  int 3
+"Factorio.exe"+6AE0EC: CC                       -  int 3
+"Factorio.exe"+6AE0ED: CC                       -  int 3
+"Factorio.exe"+6AE0EE: CC                       -  int 3
+"Factorio.exe"+6AE0EF: CC                       -  int 3
+// ---------- INJECTING HERE ----------
+"Factorio.exe"+6AE0F0: 40 55                    -  push rbp
+"Factorio.exe"+6AE0F2: 56                       -  push rsi
+"Factorio.exe"+6AE0F3: 41 56                    -  push r14
+// ---------- DONE INJECTING  ----------
+"Factorio.exe"+6AE0F5: 48 8D 6C 24 B9           -  lea rbp,[rsp-47]
+"Factorio.exe"+6AE0FA: 48 81 EC 90 00 00 00     -  sub rsp,00000090
+"Factorio.exe"+6AE101: 48 8B 42 10              -  mov rax,[rdx+10]
+"Factorio.exe"+6AE105: 48 8B F2                 -  mov rsi,rdx
+"Factorio.exe"+6AE108: 4C 8B F1                 -  mov r14,rcx
+"Factorio.exe"+6AE10B: 48 39 41 10              -  cmp [rcx+10],rax
+"Factorio.exe"+6AE10F: 75 49                    -  jne Factorio.exe+6AE15A
+"Factorio.exe"+6AE111: 0F B7 41 06              -  movzx eax,word ptr [rcx+06]
+"Factorio.exe"+6AE115: 0F B7 4A 06              -  movzx ecx,word ptr [rdx+06]
+"Factorio.exe"+6AE119: 66 41 89 4E 06           -  mov [r14+06],cx
+}"""
+
+[[cheat]]
+id = "inf-powerarmor-battery"
+name = "Inf PowerArmor Battery"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.BatteryEquipment::availableInBatteries)
+define(bytes,48 8B 41 30 F2 0F 10 40 20)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.BatteryEquipment::availableInBatteries)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  mov rax,[rcx+30]
+  movsd xmm0,[rax+28]
+  movsd [rax+20],xmm0
+  movsd xmm0,[rax+20]
+  jmp return
+
+address:
+  jmp newmem
+  nop 4
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.BatteryEquipment::availableInBatteries
+
+"Factorio.exe"+2ED476: CC                          -  int 3 
+"Factorio.exe"+2ED477: CC                          -  int 3 
+"Factorio.exe"+2ED478: CC                          -  int 3 
+"Factorio.exe"+2ED479: CC                          -  int 3 
+"Factorio.exe"+2ED47A: CC                          -  int 3 
+"Factorio.exe"+2ED47B: CC                          -  int 3 
+"Factorio.exe"+2ED47C: CC                          -  int 3 
+"Factorio.exe"+2ED47D: CC                          -  int 3 
+"Factorio.exe"+2ED47E: CC                          -  int 3 
+"Factorio.exe"+2ED47F: CC                          -  int 3 
+// ---------- INJECTING HERE ----------
+"Factorio.exe"+2ED480: 48 8B 41 20                 -  mov rax,[rcx+20]
+"Factorio.exe"+2ED484: F2 0F 10 40 20              -  movsd xmm0,[rax+20]
+// ---------- DONE INJECTING  ----------
+"Factorio.exe"+2ED489: C3                          -  ret 
+"Factorio.exe"+2ED48A: CC                          -  int 3 
+"Factorio.exe"+2ED48B: CC                          -  int 3 
+"Factorio.exe"+2ED48C: CC                          -  int 3 
+"Factorio.exe"+2ED48D: CC                          -  int 3 
+"Factorio.exe"+2ED48E: CC                          -  int 3 
+"Factorio.exe"+2ED48F: CC                          -  int 3 
+"Factorio.exe"+2ED490: 48 8B 41 20                 -  mov rax,[rcx+20]
+"Factorio.exe"+2ED494: F2 0F 10 40 28              -  movsd xmm0,[rax+28]
+"Factorio.exe"+2ED499: C3                          -  ret 
+}"""
+
+[[cheat]]
+id = "bug-repellent"
+name = "Bug Repellent"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Unit::update)
+define(bytes,40 53 55 56 57)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.Unit::update)
+
+label(return)
+label(pUnitMagnetData)
+registersymbol(pUnitMagnetData)
+
+label(get_Character)
+
+label(end)
+
+newmem:
+push rbx
+push rbp
+push rsi
+push rdi
+cmp dword ptr [pUnitMagnetData],0
+je return
+push rcx
+push rdx
+sub rsp,48
+call Factorio.Unit::asEntity
+mov rdi,rax
+// Get Player Coords
+call get_Character
+test rax,rax
+jz end
+mov rbx,rax // Player Character
+// Calculate Distance from Player to Unit
+db 66 0f 2a 40 50 // cvtpi2pd xmm0,QWORD PTR [rax+0x50]
+db 66 0f 2a 4f 50 // cvtpi2pd xmm1,QWORD PTR [rdi+0x50]
+subpd xmm1,xmm0 // xmm1: dx,dy
+movupd xmm0,xmm1
+mulpd xmm0,xmm0
+movhlps xmm2,xmm0
+addsd xmm0,xmm2
+sqrtsd xmm0,xmm0 // distance between player and unit
+ucomisd xmm0,[pUnitMagnetData+8]
+jp end
+jae end
+movlhps xmm0,xmm0
+divpd xmm1,xmm0 // Normalized Direction Vector
+//movsd xmm2,[pUnitMagnetData+10]
+//movlhps xmm2,xmm2
+//mulpd xmm1,xmm2
+//db 66 0f 2a 47 50 // cvtpi2pd xmm0,QWORD PTR [rdi+0x50]
+//addpd xmm0,xmm1
+//db 66 0f 2d c0 // cvtpd2pi mm0,xmm0
+//db 41 0f 7f 46 50 // movq qword ptr [r14+50],mm0
+movupd [rsp+20],xmm1
+lea rdx,[rsp+20]
+mov rcx,rdi
+call Factorio.Entity::changePosition
+end:
+add rsp,48
+pop rdx
+pop rcx
+jmp return
+
+align 4 CC
+
+get_Character:
+call Factorio.Global.GetCharacter
+ret
+
+align 4 CC
+
+pUnitMagnetData:
+dd 0 // Magnet Active +0
+dd 0 // Reserved +4
+dq (double)3000 // Magnet Radius +8
+//dq (double)100 // Magnet Strength +10
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Unit::update
+
+Factorio.Unit::attack+2F2: E8 79 7F 97 00        - call Factorio.Logging::logAndAbortOrThrow
+Factorio.Unit::attack+2F7: CC                    - int 3
+Factorio.exe+5173E8: CC                    - int 3
+Factorio.exe+5173E9: CC                    - int 3
+Factorio.exe+5173EA: CC                    - int 3
+Factorio.exe+5173EB: CC                    - int 3
+Factorio.exe+5173EC: CC                    - int 3
+Factorio.exe+5173ED: CC                    - int 3
+Factorio.exe+5173EE: CC                    - int 3
+Factorio.exe+5173EF: CC                    - int 3
+// ---------- INJECTING HERE ----------
+Factorio.Unit::update: 40 53                 - push rbx
+// ---------- DONE INJECTING  ----------
+Factorio.Unit::update+2: 55                    - push rbp
+Factorio.Unit::update+3: 56                    - push rsi
+Factorio.Unit::update+4: 57                    - push rdi
+Factorio.Unit::update+5: 41 56                 - push r14
+Factorio.Unit::update+7: 41 57                 - push r15
+Factorio.Unit::update+9: 48 81 EC 88 00 00 00  - sub rsp,Factorio.dtor_list_head+58
+Factorio.Unit::update+10: 0F 29 74 24 70        - movaps [rsp+70],xmm6
+Factorio.Unit::update+15: 0F 29 7C 24 60        - movaps [rsp+60],xmm7
+Factorio.Unit::update+1A: 44 0F 29 44 24 50     - movaps [rsp+50],xmm8
+Factorio.Unit::update+20: 48 8B F9              - mov rdi,rcx
+}"""
+
+[[cheat]]
+id = "enable"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+pUnitMagnetData:
+dd 1
+[DISABLE]
+pUnitMagnetData:
+dd 0"""
+
+[[cheat]]
+id = "repellent-radius"
+name = "Repellent Radius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitMagnetData"
+hops = []
+
+[[cheat]]
+id = "bug-repellent-no-collision-check"
+name = "Bug Repellent No Collision Check"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Unit::update)
+define(bytes,40 53 55 56 57)
+
+[ENABLE]
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.Unit::update)
+
+label(return)
+label(pUnitMagnetData)
+registersymbol(pUnitMagnetData)
+
+label(get_Character)
+
+label(end)
+
+newmem:
+push rbx
+push rbp
+push rsi
+push rdi
+cmp dword ptr [pUnitMagnetData],0
+je return
+push rcx
+push rdx
+sub rsp,48
+call Factorio.Unit::asEntity
+mov rdi,rax
+// Get Player Coords
+call get_Character
+test rax,rax
+jz end
+mov rbx,rax // Player Character
+// Calculate Distance from Player to Unit
+db 66 0f 2a 40 50 // cvtpi2pd xmm0,QWORD PTR [rax+0x50]
+db 66 0f 2a 4f 50 // cvtpi2pd xmm1,QWORD PTR [rdi+0x50]
+subpd xmm1,xmm0 // xmm1: dx,dy
+movupd xmm0,xmm1
+mulpd xmm0,xmm0
+movhlps xmm2,xmm0
+addsd xmm0,xmm2
+sqrtsd xmm0,xmm0 // distance between player and unit
+ucomisd xmm0,[pUnitMagnetData+8]
+jp end
+jae end
+movlhps xmm0,xmm0
+divpd xmm1,xmm0 // Normalized Direction Vector
+movsd xmm2,[pUnitMagnetData+10]
+movlhps xmm2,xmm2
+mulpd xmm1,xmm2
+db 66 0f 2a 47 50 // cvtpi2pd xmm0,QWORD PTR [rdi+0x50]
+addpd xmm0,xmm1
+db 66 0f 2d c0 // cvtpd2pi mm0,xmm0
+//db 41 0f 7f 46 50 // movq qword ptr [r14+50],mm0
+mov r8d,1
+xor r9,r9
+db 48 0f 7e c2 // movq rdx,mm0
+mov rcx,rdi
+call Factorio.Entity::teleport
+end:
+add rsp,48
+pop rdx
+pop rcx
+jmp return
+
+align 4 CC
+
+get_Character:
+call Factorio.Global.GetCharacter
+ret
+
+align 4 CC
+
+pUnitMagnetData:
+dd 0 // Magnet Active +0
+dd 0 // Reserved +4
+dq (double)3000 // Magnet Radius +8
+dq (double)100 // Magnet Strength +10
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [rsp+20],rbx
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Unit::update
+
+Factorio.exe+43AC16: CC                       - int 3 
+Factorio.exe+43AC17: CC                       - int 3 
+Factorio.exe+43AC18: CC                       - int 3 
+Factorio.exe+43AC19: CC                       - int 3 
+Factorio.exe+43AC1A: CC                       - int 3 
+Factorio.exe+43AC1B: CC                       - int 3 
+Factorio.exe+43AC1C: CC                       - int 3 
+Factorio.exe+43AC1D: CC                       - int 3 
+Factorio.exe+43AC1E: CC                       - int 3 
+Factorio.exe+43AC1F: CC                       - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.Unit::update: 48 89 5C 24 20           - mov [rsp+20],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.Unit::update+5: 55                       - push rbp
+Factorio.Unit::update+6: 56                       - push rsi
+Factorio.Unit::update+7: 57                       - push rdi
+Factorio.Unit::update+8: 41 54                    - push r12
+Factorio.Unit::update+A: 41 55                    - push r13
+Factorio.Unit::update+C: 41 56                    - push r14
+Factorio.Unit::update+E: 41 57                    - push r15
+Factorio.Unit::update+10: 48 81 EC 90 00 00 00     - sub rsp,Factorio.dtor_list_head+60
+Factorio.Unit::update+17: 0F 29 B4 24 80 00 00 00  - movaps [rsp+Factorio.dtor_list_head+50],xmm6
+Factorio.Unit::update+1F: 0F 29 7C 24 70           - movaps [rsp+70],xmm7
+}"""
+
+[[cheat]]
+id = "enable-2"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+pUnitMagnetData:
+dd 1
+[DISABLE]
+pUnitMagnetData:
+dd 0"""
+
+[[cheat]]
+id = "repellent-radius-2"
+name = "Repellent Radius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitMagnetData"
+hops = []
+
+[[cheat]]
+id = "repellent-strength"
+name = "Repellent Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitMagnetData"
+hops = []
+
+[[cheat]]
+id = "evolution-on-current-surface"
+name = "Evolution On Current Surface"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanregion(evolution_factor_aob,Factorio.ExpansionPlanner::shouldExpandNow+50,Factorio.ExpansionPlanner::shouldExpandNow+200,F2 0F 10 41 28 48) // should be unique
+alloc(newmem,$1000,evolution_factor_aob)
+
+label(code)
+label(return)
+label(pEvolution)
+registersymbol(pEvolution)
+
+newmem:
+mov [pEvolution],rcx
+
+code:
+  movsd xmm0,[rcx+28]
+  jmp return
+
+align 4 CC
+
+pEvolution:
+dq 0
+
+evolution_factor_aob:
+  jmp newmem
+return:
+registersymbol(evolution_factor_aob)
+
+[DISABLE]
+
+evolution_factor_aob:
+  db F2 0F 10 41 28
+
+unregistersymbol(evolution_factor_aob)
+dealloc(newmem)
+
+unregistersymbol(pEvolution)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ExpansionPlanner::shouldExpandNow+99
+
+Factorio.ExpansionPlanner::shouldExpandNow+6B: 4C 8D 43 28           - lea r8,[rbx+28]
+Factorio.ExpansionPlanner::shouldExpandNow+6F: 48 8B 86 D0 03 00 00  - mov rax,[rsi+000003D0]
+Factorio.ExpansionPlanner::shouldExpandNow+76: 48 8D 54 24 20        - lea rdx,[rsp+20]
+Factorio.ExpansionPlanner::shouldExpandNow+7B: 0F 29 74 24 40        - movaps [rsp+40],xmm6
+Factorio.ExpansionPlanner::shouldExpandNow+80: 0F 29 7C 24 30        - movaps [rsp+30],xmm7
+Factorio.ExpansionPlanner::shouldExpandNow+85: 48 8B 0C C8           - mov rcx,[rax+rcx*8]
+Factorio.ExpansionPlanner::shouldExpandNow+89: 48 83 C1 38           - add rcx,38
+Factorio.ExpansionPlanner::shouldExpandNow+8D: E8 9E 6D 16 01        - call "Factorio.std::map<SurfaceIndex,EvolutionFactors,std::less<SurfaceIndex>,std::allocator<std::pair<SurfaceIndex const ,EvolutionFactors> > >::_Try_emplace<SurfaceIndex const &>"
+Factorio.ExpansionPlanner::shouldExpandNow+92: 48 8B 08              - mov rcx,[rax]
+Factorio.ExpansionPlanner::shouldExpandNow+95: 48 8B 47 10           - mov rax,[rdi+10]
+// ---------- INJECTING HERE ----------
+Factorio.ExpansionPlanner::shouldExpandNow+99: F2 0F 10 41 28        - movsd xmm0,[rcx+28]
+// ---------- DONE INJECTING  ----------
+Factorio.ExpansionPlanner::shouldExpandNow+9E: 48 8B B0 D0 00 00 00  - mov rsi,[rax+Factorio.dtor_list_head+A0]
+Factorio.ExpansionPlanner::shouldExpandNow+A5: 0F 28 F8              - movaps xmm7,xmm0
+Factorio.ExpansionPlanner::shouldExpandNow+A8: F2 0F 58 F8           - addsd xmm7,xmm0
+Factorio.ExpansionPlanner::shouldExpandNow+AC: F2 0F 59 C0           - mulsd xmm0,xmm0
+Factorio.ExpansionPlanner::shouldExpandNow+B0: 48 8B 9E 10 02 00 00  - mov rbx,[rsi+Factorio.ssprintf_buffer+C0]
+Factorio.ExpansionPlanner::shouldExpandNow+B7: F2 0F 5C F8           - subsd xmm7,xmm0
+Factorio.ExpansionPlanner::shouldExpandNow+BB: 80 BB 04 03 00 00 00  - cmp byte ptr [rbx+Factorio.ssprintf_buffer+1B4],00
+Factorio.ExpansionPlanner::shouldExpandNow+C2: 74 09                 - je Factorio.ExpansionPlanner::shouldExpandNow+CD
+Factorio.ExpansionPlanner::shouldExpandNow+C4: 48 8D 83 00 03 00 00  - lea rax,[rbx+Factorio.ssprintf_buffer+1B0]
+Factorio.ExpansionPlanner::shouldExpandNow+CB: EB 0C                 - jmp Factorio.ExpansionPlanner::shouldExpandNow+D9
+}"""
+
+[[cheat]]
+id = "current-evolution-factor"
+name = "Current Evolution Factor"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pEvolution"
+hops = ["+0x28"]
+
+[[cheat]]
+id = "items-don-t-spoil"
+name = "Items don't spoil"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(spoilage_aob,Factorio.exe,48 8B 7C CD 00)
+alloc(newmem,$1000,spoilage_aob)
+
+label(code)
+label(return)
+label(spoil_end)
+label(spoil_data)
+
+newmem:
+
+code:
+  mov rdi,[rbp+rcx*8+00] // Targeter<Item,3,0>
+  push rax
+  push rcx
+  push rdx
+  push r8
+  push r9
+  push rsi
+  push rbp
+  mov rbp,rsp
+  and spl,F0
+  sub rsp,30
+  test rdi,rdi
+  jz spoil_end
+  mov rsi,[rdi+8] // Item
+  test rsi,rsi
+  jz spoil_end
+
+  mov rcx,rsi
+  movsd xmm1,[spoil_data]
+  call Factorio.Item::setSpoilPercent
+
+  spoil_end:
+  mov rsp,rbp
+  pop rbp
+  pop rsi
+  pop r9
+  pop r8
+  pop rdx
+  pop rcx
+  pop rax
+  jmp return
+
+align 4 CC
+
+spoil_data:
+dq 0 // New Spoil Percent
+
+spoilage_aob:
+  jmp newmem
+return:
+registersymbol(spoilage_aob)
+
+[DISABLE]
+
+spoilage_aob:
+  db 48 8B 7C CD 00
+
+unregistersymbol(spoilage_aob)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ItemSpoilQueue::updateBuckets+9B
+
+Factorio.ItemSpoilQueue::updateBuckets+7E: 66 90           - nop 2
+Factorio.ItemSpoilQueue::updateBuckets+80: 41 8D 04 34     - lea eax,[r12+rsi]
+Factorio.ItemSpoilQueue::updateBuckets+84: 41 3B C7        - cmp eax,r15d
+Factorio.ItemSpoilQueue::updateBuckets+87: 72 08           - jb Factorio.ItemSpoilQueue::updateBuckets+91
+Factorio.ItemSpoilQueue::updateBuckets+89: 41 8B C4        - mov eax,r12d
+Factorio.ItemSpoilQueue::updateBuckets+8C: 41 2B C7        - sub eax,r15d
+Factorio.ItemSpoilQueue::updateBuckets+8F: 03 C6           - add eax,esi
+Factorio.ItemSpoilQueue::updateBuckets+91: 8B C8           - mov ecx,eax
+Factorio.ItemSpoilQueue::updateBuckets+93: 48 03 C9        - add rcx,rcx
+Factorio.ItemSpoilQueue::updateBuckets+96: 4C 8B 4C CD 08  - mov r9,[rbp+rcx*8+08]
+// ---------- INJECTING HERE ----------
+Factorio.ItemSpoilQueue::updateBuckets+9B: 48 8B 7C CD 00  - mov rdi,[rbp+rcx*8+00]
+// ---------- DONE INJECTING  ----------
+Factorio.ItemSpoilQueue::updateBuckets+A0: 4C 3B CB        - cmp r9,rbx
+Factorio.ItemSpoilQueue::updateBuckets+A3: 74 0C           - je Factorio.ItemSpoilQueue::updateBuckets+B1
+Factorio.ItemSpoilQueue::updateBuckets+A5: B8 01 00 00 00  - mov eax,00000001
+Factorio.ItemSpoilQueue::updateBuckets+AA: 0F 42 C2        - cmovb eax,edx
+Factorio.ItemSpoilQueue::updateBuckets+AD: 84 C0           - test al,al
+Factorio.ItemSpoilQueue::updateBuckets+AF: 7F 62           - jg Factorio.ItemSpoilQueue::updateBuckets+113
+Factorio.ItemSpoilQueue::updateBuckets+B1: 48 8B 6F 08     - mov rbp,[rdi+08]
+Factorio.ItemSpoilQueue::updateBuckets+B5: 48 8B 07        - mov rax,[rdi]
+Factorio.ItemSpoilQueue::updateBuckets+B8: 33 D2           - xor edx,edx
+Factorio.ItemSpoilQueue::updateBuckets+BA: 48 8B CF        - mov rcx,rdi
+}"""
+
+[[cheat]]
+id = "no-inventory-limit-on-rocket-launch"
+name = "No Inventory Limit On Rocket Launch"
+category = "resources"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.Character::canEnterCargoUnit)
+define(bytes,48 89 74)
+
+[ENABLE]
+assert(address,bytes)
+
+address:
+  db B0 01 C3
+
+[DISABLE]
+
+address:
+  db bytes
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Character::canEnterCargoUnit
+
+Factorio.exe+35CEF6: CC                    - int 3 
+Factorio.exe+35CEF7: CC                    - int 3 
+Factorio.exe+35CEF8: CC                    - int 3 
+Factorio.exe+35CEF9: CC                    - int 3 
+Factorio.exe+35CEFA: CC                    - int 3 
+Factorio.exe+35CEFB: CC                    - int 3 
+Factorio.exe+35CEFC: CC                    - int 3 
+Factorio.exe+35CEFD: CC                    - int 3 
+Factorio.exe+35CEFE: CC                    - int 3 
+Factorio.exe+35CEFF: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.Character::canEnterCargoUnit: 48 89 74 24 18        - mov [rsp+18],rsi
+// ---------- DONE INJECTING  ----------
+Factorio.Character::canEnterCargoUnit+5: 57                    - push rdi
+Factorio.Character::canEnterCargoUnit+6: 48 83 EC 20           - sub rsp,20
+Factorio.Character::canEnterCargoUnit+A: 80 B9 C0 04 00 00 00  - cmp byte ptr [rcx+000004C0],00
+Factorio.Character::canEnterCargoUnit+11: 48 8B F2              - mov rsi,rdx
+Factorio.Character::canEnterCargoUnit+14: 48 8B F9              - mov rdi,rcx
+Factorio.Character::canEnterCargoUnit+17: 0F 85 A1 01 00 00     - jne Factorio.Character::canEnterCargoUnit+1BE
+Factorio.Character::canEnterCargoUnit+1D: 48 8B 4A 28           - mov rcx,[rdx+28]
+Factorio.Character::canEnterCargoUnit+21: 48 8D 54 24 30        - lea rdx,[rsp+30]
+Factorio.Character::canEnterCargoUnit+26: 48 89 5C 24 38        - mov [rsp+38],rbx
+Factorio.Character::canEnterCargoUnit+2B: 48 8B 01              - mov rax,[rcx]
+}"""
+
+[[cheat]]
+id = "current-space-platform"
+name = "Current Space Platform"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.SpacePlatformHub::getStatus)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.SpacePlatformHub::getStatus)
+
+label(code)
+label(return)
+label(pSpaceStation)
+registersymbol(pSpaceStation)
+
+label(skipInventory)
+
+newmem:
+mov [rsp+08],rbx
+mov [pSpaceStation],rcx
+mov ebx,[pSpaceStation+10]
+cmp [rcx+C8],ebx
+jle code
+// Index in Range
+mov [rsp+10],rsi
+mov [rsp+18],rdi
+mov rsi,[rcx+C0] // Inventory
+test rsi,rsi
+jz skipInventory
+  imul rbx,rbx,18
+  add rsi,rbx
+  mov [pSpaceStation+8],rsi
+  // Check if ID was set and update other values
+  cmp word ptr [rsi+4],0
+  je skipInventory
+  // Check if ID is in Range
+  mov rdi,Factorio.PrototypeList<ItemPrototype>::indexToPrototype+8
+  mov rdi,[rdi]
+  mov rbx,Factorio.PrototypeList<ItemPrototype>::indexToPrototype
+  mov rbx,[rbx]
+  sub rdi,rbx
+  dec rdi
+  shr rdi,3
+  movzx ebx,word ptr [rsi+4]
+  cmp edi,ebx
+  cmovs ebx,edi
+  mov word ptr [rsi+4],bx
+  cmp dword ptr [rsi],0
+  jne short @f
+    mov dword ptr [rsi],1
+  @@:
+  cmp byte ptr [rsi+6],0
+  jne short @f
+    mov byte ptr [rsi+6],1
+  @@:
+  //cmp byte ptr [rsi+7],0
+  //jne skipInventory
+    // Set Max Value
+    mov rdi,Factorio.PrototypeList<ItemPrototype>::indexToPrototype
+    mov rdi,[rdi]
+    mov rdi,[rdi+rbx*8]
+    test rdi,rdi
+    mov bl,-1
+    jz short @f
+      mov edi,[rdi+384] // Max Stack
+      cmp edi,000000FF
+      cmovb ebx,edi
+    @@:
+    mov byte ptr [rsi+7],bl
+skipInventory:
+mov rdi,[rsp+18]
+mov rsi,[rsp+10]
+jmp return
+
+code:
+  mov qword ptr [pSpaceStation+8],0
+  jmp return
+
+align 4 CC
+
+pSpaceStation:
+dq 0 // Current SpaceStation
+dq 0 // Current Selected Slot
+dd 0 // Selected Slot Index
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [rsp+08],rbx
+
+dealloc(newmem)
+
+unregistersymbol(pSpaceStation)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.SpacePlatformHub::getStatus
+
+Factorio.SpacePlatformHub::deleteControlBehaviorInternal+26: CC              - int 3 
+Factorio.exe+4D36C7: CC              - int 3 
+Factorio.exe+4D36C8: CC              - int 3 
+Factorio.exe+4D36C9: CC              - int 3 
+Factorio.exe+4D36CA: CC              - int 3 
+Factorio.exe+4D36CB: CC              - int 3 
+Factorio.exe+4D36CC: CC              - int 3 
+Factorio.exe+4D36CD: CC              - int 3 
+Factorio.exe+4D36CE: CC              - int 3 
+Factorio.exe+4D36CF: CC              - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.SpacePlatformHub::getStatus: 48 89 5C 24 08  - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.SpacePlatformHub::getStatus+5: 48 89 74 24 10  - mov [rsp+10],rsi
+Factorio.SpacePlatformHub::getStatus+A: 57              - push rdi
+Factorio.SpacePlatformHub::getStatus+B: 48 83 EC 30     - sub rsp,30
+Factorio.SpacePlatformHub::getStatus+F: 48 8B DA        - mov rbx,rdx
+Factorio.SpacePlatformHub::getStatus+12: C6 02 01        - mov byte ptr [rdx],01
+Factorio.SpacePlatformHub::getStatus+15: 33 F6           - xor esi,esi
+Factorio.SpacePlatformHub::getStatus+17: 48 8B F9        - mov rdi,rcx
+Factorio.SpacePlatformHub::getStatus+1A: 48 89 72 08     - mov [rdx+08],rsi
+Factorio.SpacePlatformHub::getStatus+1E: 48 8D 54 24 20  - lea rdx,[rsp+20]
+Factorio.SpacePlatformHub::getStatus+23: E8 98 10 ED FF  - call Factorio.Entity::getStatus
+}"""
+
+[[cheat]]
+id = "item-count-2"
+name = "Item Count"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSpaceStation"
+hops = [
+    "+0xc0",
+    "+0x0",
+]
+
+[[cheat]]
+id = "item-id-2"
+name = "Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i16"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSpaceStation"
+hops = [
+    "+0xc0",
+    "+0x4",
+]
+
+[[cheat]]
+id = "quality"
+name = "Quality"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 0
+choices = [
+    "0:Invalid",
+    "1:Normal",
+    "2:Uncommon",
+    "3:Rare",
+    "4:Epic",
+    "5:Legendary",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSpaceStation"
+hops = [
+    "+0xc0",
+    "+0x6",
+]
+
+[[cheat]]
+id = "max-item-stack"
+name = "Max Item Stack"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+value = 255
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSpaceStation"
+hops = [
+    "+0xc0",
+    "+0x7",
+]
+
+[[cheat]]
+id = "selected-slot-id"
+name = "Selected Slot ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSpaceStation"
+hops = []
+
+[[cheat]]
+id = "current-inventory-size-read-only"
+name = "Current Inventory Size(Read Only)"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSpaceStation"
+hops = ["+0xc8"]
+
+[[cheat]]
+id = "no-weight-limit-in-rocket"
+name = "No Weight Limit in Rocket"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.InventoryWithWeightLimit::getWeight)
+define(bytes,48 83 EC 08 4C 8B 42 08 4C 8B C9)
+
+[ENABLE]
+assert(address,bytes)
+
+address:
+  db 48 C7 01 00 00 00 00 48 89 C8 C3
+
+[DISABLE]
+
+address:
+  db bytes
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.InventoryWithWeightLimit::getWeight
+
+Factorio.InventoryWithWeightLimit::canInsertAt+4E6: E8 65 DD E5 00           - call Factorio._invalid_parameter_noinfo_noreturn
+Factorio.InventoryWithWeightLimit::canInsertAt+4EB: 90                       - nop 
+Factorio.InventoryWithWeightLimit::canInsertAt+4EC: E8 5F DD E5 00           - call Factorio._invalid_parameter_noinfo_noreturn
+Factorio.InventoryWithWeightLimit::canInsertAt+4F1: 90                       - nop 
+Factorio.InventoryWithWeightLimit::canInsertAt+4F2: E8 59 DD E5 00           - call Factorio._invalid_parameter_noinfo_noreturn
+Factorio.InventoryWithWeightLimit::canInsertAt+4F7: 90                       - nop 
+Factorio.InventoryWithWeightLimit::canInsertAt+4F8: E8 53 DD E5 00           - call Factorio._invalid_parameter_noinfo_noreturn
+Factorio.InventoryWithWeightLimit::canInsertAt+4FD: CC                       - int 3 
+Factorio.InventoryWithWeightLimit::canInsertAt+4FE: CC                       - int 3 
+Factorio.exe+A4F4EF: CC                       - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.InventoryWithWeightLimit::getWeight: 48 83 EC 08              - sub rsp,08
+// ---------- DONE INJECTING  ----------
+Factorio.InventoryWithWeightLimit::getWeight+4: 4C 8B 42 08              - mov r8,[rdx+08]
+Factorio.InventoryWithWeightLimit::getWeight+8: 4C 8B C9                 - mov r9,rcx
+Factorio.InventoryWithWeightLimit::getWeight+B: 8B 42 10                 - mov eax,[rdx+10]
+Factorio.InventoryWithWeightLimit::getWeight+E: 48 C7 01 00 00 00 00     - mov qword ptr [rcx],00000000
+Factorio.InventoryWithWeightLimit::getWeight+15: 48 8D 14 40              - lea rdx,[rax+rax*2]
+Factorio.InventoryWithWeightLimit::getWeight+19: 4D 8D 14 D0              - lea r10,[r8+rdx*8]
+Factorio.InventoryWithWeightLimit::getWeight+1D: 4D 3B C2                 - cmp r8,r10
+Factorio.InventoryWithWeightLimit::getWeight+20: 0F 84 96 00 00 00        - je Factorio.InventoryWithWeightLimit::getWeight+BC
+Factorio.InventoryWithWeightLimit::getWeight+26: 4C 8B 1D 8B 95 89 01     - mov r11,[Factorio.PrototypeList<ItemPrototype>::indexToPrototype]
+Factorio.InventoryWithWeightLimit::getWeight+2D: F2 0F 10 15 93 F1 33 01  - movsd xmm2,[Factorio.exe+1D8E6B8]
+}"""
+
+[[cheat]]
+id = "one-hit-kill-demolisher"
+name = "One Hit Kill Demolisher"
+category = "combat"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(OHKSegmentedEnemy,Factorio.exe,F3 41 0F 5C F1 0F) // should be unique
+
+OHKSegmentedEnemy:
+  db 0F 57 F6 90 90
+registersymbol(OHKSegmentedEnemy)
+
+[DISABLE]
+
+OHKSegmentedEnemy:
+  db F3 41 0F 5C F1
+
+unregistersymbol(OHKSegmentedEnemy)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.SegmentedUnitController::damage+512
+
+Factorio.SegmentedUnitController::damage+4E9: F3 0F 10 46 5C     - movss xmm0,[rsi+5C]
+Factorio.SegmentedUnitController::damage+4EE: 41 0F 2E C2        - ucomiss xmm0,xmm10
+Factorio.SegmentedUnitController::damage+4F2: 7A 06              - jp Factorio.SegmentedUnitController::damage+4FA
+Factorio.SegmentedUnitController::damage+4F4: 0F 84 29 01 00 00  - je Factorio.SegmentedUnitController::damage+623
+Factorio.SegmentedUnitController::damage+4FA: 0F B6 56 68        - movzx edx,byte ptr [rsi+68]
+Factorio.SegmentedUnitController::damage+4FE: 48 8B 4E 30        - mov rcx,[rsi+30]
+Factorio.SegmentedUnitController::damage+502: E8 E9 68 E8 FF     - call Factorio.EntityWithHealthPrototype::getMaxHealth
+Factorio.SegmentedUnitController::damage+507: 0F 28 F8           - movaps xmm7,xmm0
+Factorio.SegmentedUnitController::damage+50A: F3 0F 59 7E 5C     - mulss xmm7,[rsi+5C]
+Factorio.SegmentedUnitController::damage+50F: 0F 28 F7           - movaps xmm6,xmm7
+// ---------- INJECTING HERE ----------
+Factorio.SegmentedUnitController::damage+512: F3 41 0F 5C F1     - subss xmm6,xmm9
+// ---------- DONE INJECTING  ----------
+Factorio.SegmentedUnitController::damage+517: 0F B6 56 68        - movzx edx,byte ptr [rsi+68]
+Factorio.SegmentedUnitController::damage+51B: 48 8B 4E 30        - mov rcx,[rsi+30]
+Factorio.SegmentedUnitController::damage+51F: E8 CC 68 E8 FF     - call Factorio.EntityWithHealthPrototype::getMaxHealth
+Factorio.SegmentedUnitController::damage+524: F3 0F 5E F0        - divss xmm6,xmm0
+Factorio.SegmentedUnitController::damage+528: 0F 28 CE           - movaps xmm1,xmm6
+Factorio.SegmentedUnitController::damage+52B: 48 8B CE           - mov rcx,rsi
+Factorio.SegmentedUnitController::damage+52E: E8 9D 06 00 00     - call Factorio.SegmentedUnitController::setHealthRatio
+Factorio.SegmentedUnitController::damage+533: 48 85 FF           - test rdi,rdi
+Factorio.SegmentedUnitController::damage+536: 0F 84 9A 00 00 00  - je Factorio.SegmentedUnitController::damage+5D6
+Factorio.SegmentedUnitController::damage+53C: 48 89 7C 24 30     - mov [rsp+30],rdi
+}"""
+
+[[cheat]]
+id = "destroy-all-enemies-on-current-surface"
+name = "Destroy all Enemies on current Surface"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSurfaceData"
+hops = []
+
+[[cheat]]
+id = "do-destroy-all-enemy-types"
+name = "Do Destroy ALL Enemy Types"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSurfaceData"
+hops = []
+
+[[cheat]]
+id = "do-destroy-spawners"
+name = "Do Destroy Spawners"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSurfaceData"
+hops = []
+
+[[cheat]]
+id = "do-destroy-units"
+name = "Do Destroy Units"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "pSurfaceData"
+hops = []
+
+[[cheat]]
+id = "parameter-1"
+name = "Parameter 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x4"
+hops = []
+
+[[cheat]]
+id = "parameter-2"
+name = "Parameter 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0xc"
+hops = []
+
+[[cheat]]
+id = "parameter-3"
+name = "Parameter 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x14"
+hops = []
+
+[[cheat]]
+id = "parameter-4"
+name = "Parameter 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x1c"
+hops = []
+
+[[cheat]]
+id = "parameter-1-2"
+name = "Parameter 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x4"
+hops = []
+
+[[cheat]]
+id = "parameter-2-2"
+name = "Parameter 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0xc"
+hops = []
+
+[[cheat]]
+id = "parameter-3-2"
+name = "Parameter 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x14"
+hops = []
+
+[[cheat]]
+id = "parameter-4-2"
+name = "Parameter 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x1c"
+hops = []
+
+[[cheat]]
+id = "parameter-1-3"
+name = "Parameter 1"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x4"
+hops = []
+
+[[cheat]]
+id = "parameter-2-3"
+name = "Parameter 2"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0xc"
+hops = []
+
+[[cheat]]
+id = "parameter-3-3"
+name = "Parameter 3"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x14"
+hops = []
+
+[[cheat]]
+id = "parameter-4-3"
+name = "Parameter 4"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x1c"
+hops = []
+
+[[cheat]]
+id = "item-id-3"
+name = "Item ID"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "static"
+module = "bloodybone.main.data"
+offset = "0x28"
+hops = []
+
+[[cheat]]
+id = "bug-repellent-alt-deprecated"
+name = "Bug Repellent_Alt_Deprecated"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(unit_pos_aob,Factorio.exe,48 C1 ED 20 3B 5F 50)
+alloc(newmem,$1000,unit_pos_aob)
+
+label(code)
+label(return)
+label(pUnitMagnetData)
+registersymbol(pUnitMagnetData)
+
+label(get_Character)
+
+label(end)
+
+newmem:
+cmp dword ptr [pUnitMagnetData],0
+je code
+push rax
+push rbx
+push rbp
+mov rbp,rsp
+and spl,F0
+sub rsp,50
+movups [rsp+20],xmm0
+movups [rsp+30],xmm1
+movups [rsp+40],xmm2
+// Get Player Coords
+call get_Character
+test rax,rax
+jz end
+mov rbx,rax // Player Character
+// Calculate Distance from Player to Unit
+db 66 0f 2a 43 50 // cvtpi2pd xmm0,qword ptr [rbx+50]
+db 66 0f 2a 4f 50 // cvtpi2pd xmm1,qword ptr [rdi+50]
+subpd xmm1,xmm0 // xmm1: dx,dy
+movupd xmm0,xmm1
+mulpd xmm0,xmm0
+movhlps xmm2,xmm0
+addsd xmm0,xmm2
+sqrtsd xmm0,xmm0 // distance between player and unit
+ucomisd xmm0,[pUnitMagnetData+8]
+jp end
+jae end
+movlhps xmm0,xmm0
+divpd xmm1,xmm0 // Normalized Direction Vector
+movsd xmm2,[pUnitMagnetData+10]
+movlhps xmm2,xmm2
+mulpd xmm1,xmm2
+db 66 0f 2a 47 50 // cvtpi2pd xmm0,qword ptr [rdi+50]
+addpd xmm0,xmm1
+db 66 0f 2d c0 // cvtpd2pi mm0,xmm0
+db 0f 7f 47 50 // movq qword ptr [rdi+50],mm0
+end:
+movups xmm2,[rsp+40]
+movups xmm1,[rsp+30]
+movups xmm0,[rsp+20]
+mov rsp,rbp
+pop rbp
+pop rbx
+pop rax
+
+code:
+  shr rbp,20
+  cmp ebx,[rdi+50]
+  jmp return
+
+align 4 CC
+
+get_Character:
+mov rax,[Factorio.Global]
+test rax,rax
+jz @f
+  mov rax,[rax+78] // Factorio.Game
+  test rax,rax
+  jz @f
+    mov rax,[rax+B0] // Factorio.Player
+    test rax,rax
+    jz @f
+      mov rax,[rax+60] // Factorio.CharacterController
+      test rax,rax
+      jz @f
+        mov rax,[rax+198] // Factorio.Character
+@@:
+ret
+
+align 4 CC
+
+pUnitMagnetData:
+dd 0 // Magnet Active +0
+dd 0 // Reserved +4
+dq (double)3000 // Magnet Radius +8
+dq (double)100 // Magnet Strength +10
+
+unit_pos_aob:
+  jmp newmem
+  nop 2
+return:
+registersymbol(unit_pos_aob)
+
+[DISABLE]
+
+unit_pos_aob:
+  db 48 C1 ED 20 3B 5F 50
+
+unregistersymbol(unit_pos_aob)
+unregistersymbol(pUnitMagnetData)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Unit::changePosition+159
+
+Factorio.Unit::changePosition+12D: 4C 8B EB              - mov r13,rbx
+Factorio.Unit::changePosition+130: 49 C1 ED 20           - shr r13,20
+Factorio.Unit::changePosition+134: 48 8D 54 24 30        - lea rdx,[rsp+30]
+Factorio.Unit::changePosition+139: 48 8B CF              - mov rcx,rdi
+Factorio.Unit::changePosition+13C: E8 3F 63 EC FF        - call Factorio.Entity::changePosition
+Factorio.Unit::changePosition+141: 88 84 24 F0 00 00 00  - mov [rsp+Factorio.dtor_list_head+C0],al
+Factorio.Unit::changePosition+148: 89 9C 24 00 01 00 00  - mov [rsp+Factorio.dtor_list_head+D0],ebx
+Factorio.Unit::changePosition+14F: 4C 8B F3              - mov r14,rbx
+Factorio.Unit::changePosition+152: 49 C1 EE 20           - shr r14,20
+Factorio.Unit::changePosition+156: 48 8B EB              - mov rbp,rbx
+// ---------- INJECTING HERE ----------
+Factorio.Unit::changePosition+159: 48 C1 ED 20           - shr rbp,20
+// ---------- DONE INJECTING  ----------
+Factorio.Unit::changePosition+15D: 3B 5F 50              - cmp ebx,[rdi+50]
+Factorio.Unit::changePosition+160: 75 17                 - jne Factorio.Unit::changePosition+179
+Factorio.Unit::changePosition+162: 89 9C 24 00 01 00 00  - mov [rsp+Factorio.dtor_list_head+D0],ebx
+Factorio.Unit::changePosition+169: 45 8B F4              - mov r14d,r12d
+Factorio.Unit::changePosition+16C: 41 8B EF              - mov ebp,r15d
+Factorio.Unit::changePosition+16F: 44 3B 6F 54           - cmp r13d,[rdi+54]
+Factorio.Unit::changePosition+173: 0F 84 FF 00 00 00     - je Factorio.Unit::changePosition+278
+Factorio.Unit::changePosition+179: 48 8B 47 48           - mov rax,[rdi+48]
+Factorio.Unit::changePosition+17D: 48 8D B0 68 08 00 00  - lea rsi,[rax+00000868]
+Factorio.Unit::changePosition+184: 48 8D 98 D8 06 00 00  - lea rbx,[rax+000006D8]
+}"""
+
+[[cheat]]
+id = "enable-3"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+pUnitMagnetData:
+dd 1
+[DISABLE]
+pUnitMagnetData:
+dd 0"""
+
+[[cheat]]
+id = "repellent-radius-3"
+name = "Repellent Radius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitMagnetData"
+hops = []
+
+[[cheat]]
+id = "repellent-strength-2"
+name = "Repellent Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitMagnetData"
+hops = []
+
+[[cheat]]
+id = "bug-repellent-2-deprecated"
+name = "Bug Repellent 2 Deprecated"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+aobscanmodule(entity_pos_aob,Factorio.exe,41 2B 46 50 66 0F 6E C8)
+alloc(newmem,$1000,entity_pos_aob)
+
+label(code)
+label(return)
+label(pUnitMagnetData)
+registersymbol(pUnitMagnetData)
+
+label(get_Character)
+
+label(end)
+
+newmem:
+cmp dword ptr [pUnitMagnetData],0
+je code
+push rax
+push rbx
+push rbp
+mov rbp,rsp
+and spl,F0
+sub rsp,50
+movups [rsp+20],xmm0
+movups [rsp+30],xmm1
+movups [rsp+40],xmm2
+// Check if entity is unit
+mov rax,[r14+48] // <T>Prototype
+test rax,rax
+jz end
+mov rax,[rax] // <T>Prototype.VTable
+test rax,rax
+jz end
+call [rax+8] // Factorio.<T>Prototype::getType()
+test rax,rax
+jz end
+mov rax,[rax]
+mov rbx,FF74696E75
+xor rax,rbx
+shr rax,20
+cmp al,FF
+jne end
+// Get Player Coords
+call get_Character
+test rax,rax
+jz end
+mov rbx,rax // Player Character
+// Calculate Distance from Player to Unit
+db 66 0f 2a 43 50 // cvtpi2pd xmm0,qword ptr [rbx+50]
+db 66 41 0f 2a 4e 50 // cvtpi2pd xmm1,qword ptr [r14+50]
+subpd xmm1,xmm0 // xmm1: dx,dy
+movupd xmm0,xmm1
+mulpd xmm0,xmm0
+movhlps xmm2,xmm0
+addsd xmm0,xmm2
+sqrtsd xmm0,xmm0 // distance between player and unit
+ucomisd xmm0,[pUnitMagnetData+8]
+jp end
+jae end
+movlhps xmm0,xmm0
+divpd xmm1,xmm0 // Normalized Direction Vector
+movsd xmm2,[pUnitMagnetData+10]
+movlhps xmm2,xmm2
+mulpd xmm1,xmm2
+db 66 41 0f 2a 46 50 // cvtpi2pd xmm0,qword ptr [r14+50]
+addpd xmm0,xmm1
+db 66 0f 2d c0 // cvtpd2pi mm0,xmm0
+db 41 0f 7f 46 50 // movq qword ptr [r14+50],mm0
+end:
+movups xmm2,[rsp+40]
+movups xmm1,[rsp+30]
+movups xmm0,[rsp+20]
+mov rsp,rbp
+pop rbp
+pop rbx
+pop rax
+
+code:
+  sub eax,[r14+50]
+  movd xmm1,eax
+  jmp return
+
+align 4 CC
+
+get_Character:
+mov rax,[Factorio.Global]
+test rax,rax
+jz @f
+  mov rax,[rax+78] // Factorio.Game
+  test rax,rax
+  jz @f
+    mov rax,[rax+B0] // Factorio.Player
+    test rax,rax
+    jz @f
+      mov rax,[rax+60] // Factorio.CharacterController
+      test rax,rax
+      jz @f
+        mov rax,[rax+198] // Factorio.Character
+@@:
+ret
+
+align 4 CC
+
+pUnitMagnetData:
+dd 0 // Magnet Active +0
+dd 0 // Reserved +4
+dq (double)3000 // Magnet Radius +8
+dq (double)100 // Magnet Strength +10
+
+entity_pos_aob:
+  jmp newmem
+  nop 3
+return:
+registersymbol(entity_pos_aob)
+
+[DISABLE]
+
+entity_pos_aob:
+  db 41 2B 46 50 66 0F 6E C8
+
+unregistersymbol(entity_pos_aob)
+unregistersymbol(pUnitMagnetData)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.Surface::listFriendlyEntities+36F
+
+Factorio.Surface::listFriendlyEntities+349: 49 C1 E7 04        - shl r15,04
+Factorio.Surface::listFriendlyEntities+34D: 4C 03 FA           - add r15,rdx
+Factorio.Surface::listFriendlyEntities+350: 0F 84 A0 00 00 00  - je Factorio.Surface::listFriendlyEntities+3F6
+Factorio.Surface::listFriendlyEntities+356: 49 8B 1F           - mov rbx,[r15]
+Factorio.Surface::listFriendlyEntities+359: 49 3B DF           - cmp rbx,r15
+Factorio.Surface::listFriendlyEntities+35C: 0F 84 94 00 00 00  - je Factorio.Surface::listFriendlyEntities+3F6
+Factorio.Surface::listFriendlyEntities+362: 4C 8B 73 10        - mov r14,[rbx+10]
+Factorio.Surface::listFriendlyEntities+366: 40 84 F6           - test sil,sil
+Factorio.Surface::listFriendlyEntities+369: 75 3A              - jne Factorio.Surface::listFriendlyEntities+3A5
+Factorio.Surface::listFriendlyEntities+36B: 41 8B 45 00        - mov eax,[r13+00]
+// ---------- INJECTING HERE ----------
+Factorio.Surface::listFriendlyEntities+36F: 41 2B 46 50        - sub eax,[r14+50]
+// ---------- DONE INJECTING  ----------
+Factorio.Surface::listFriendlyEntities+373: 66 0F 6E C8        - movd xmm1,eax
+Factorio.Surface::listFriendlyEntities+377: F3 0F E6 C9        - cvtdq2pd xmm1,xmm1
+Factorio.Surface::listFriendlyEntities+37B: F2 0F 59 CE        - mulsd xmm1,xmm6
+Factorio.Surface::listFriendlyEntities+37F: 41 8B 45 04        - mov eax,[r13+04]
+Factorio.Surface::listFriendlyEntities+383: 41 2B 46 54        - sub eax,[r14+54]
+Factorio.Surface::listFriendlyEntities+387: 66 0F 6E C0        - movd xmm0,eax
+Factorio.Surface::listFriendlyEntities+38B: F3 0F E6 C0        - cvtdq2pd xmm0,xmm0
+Factorio.Surface::listFriendlyEntities+38F: F2 0F 59 C6        - mulsd xmm0,xmm6
+Factorio.Surface::listFriendlyEntities+393: F2 0F 59 C0        - mulsd xmm0,xmm0
+Factorio.Surface::listFriendlyEntities+397: F2 0F 59 C9        - mulsd xmm1,xmm1
+}"""
+
+[[cheat]]
+id = "enable-4"
+name = "Enable"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+pUnitMagnetData:
+dd 1
+[DISABLE]
+pUnitMagnetData:
+dd 0"""
+
+[[cheat]]
+id = "repellent-radius-4"
+name = "Repellent Radius"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitMagnetData"
+hops = []
+
+[[cheat]]
+id = "repellent-strength-3"
+name = "Repellent Strength"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f64"
+
+[cheat.locator]
+find = "symbol"
+symbol = "pUnitMagnetData"
+hops = []
+
+[[cheat]]
+id = "no-desync"
+name = "No Desync"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.ServerMultiplayerManager::receivePlayerDesynced)
+define(bytes,48)
+[ENABLE]
+assert(address,bytes)
+
+address:
+  ret
+
+[DISABLE]
+
+address:
+  db bytes
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ServerMultiplayerManager::receivePlayerDesynced
+
+Factorio.ServerMultiplayerManager::startSendingMap+4F2: 90                    - nop 
+Factorio.ServerMultiplayerManager::startSendingMap+4F3: E8 E8 7D D1 00        - call Factorio._invalid_parameter_noinfo_noreturn
+Factorio.ServerMultiplayerManager::startSendingMap+4F8: CC                    - int 3 
+Factorio.exe+B88E49: CC                    - int 3 
+Factorio.exe+B88E4A: CC                    - int 3 
+Factorio.exe+B88E4B: CC                    - int 3 
+Factorio.exe+B88E4C: CC                    - int 3 
+Factorio.exe+B88E4D: CC                    - int 3 
+Factorio.exe+B88E4E: CC                    - int 3 
+Factorio.exe+B88E4F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.ServerMultiplayerManager::receivePlayerDesynced: 48 89 5C 24 20        - mov [rsp+20],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+5: 66 89 54 24 10        - mov [rsp+10],dx
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+A: 55                    - push rbp
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+B: 56                    - push rsi
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+C: 57                    - push rdi
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+D: 48 8D 6C 24 B9        - lea rbp,[rsp-47]
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+12: 48 81 EC E0 00 00 00  - sub rsp,Factorio.dtor_list_head+B0
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+19: 48 8B F9              - mov rdi,rcx
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+1C: 0F B7 D2              - movzx edx,dx
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+1F: 48 8D 4D 27           - lea rcx,[rbp+27]
+Factorio.ServerMultiplayerManager::receivePlayerDesynced+23: E8 C8 99 49 FF        - call Factorio.std::to_string
+}"""
+
+[[cheat]]
+id = "lua-hook"
+name = "Lua Hook"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.LuaContext::update)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.LuaContext::update)
+
+label(code)
+label(return)
+label(luaend)
+label(LuaData)
+registersymbol(LuaData)
+
+label(LuaString)
+registersymbol(LuaString)
+
+newmem:
+push rcx
+push rdx
+push r8
+push r9
+sub rsp,38
+mov rcx,Factorio_MainLuaState
+mov rcx,[rcx]
+jz luaend
+mov [rsp+30],rcx
+cmp dword ptr [LuaData],0
+je luaend
+  mov [LuaData],0
+  lea rdx,[LuaString]
+  call luaL_loadstring
+  test eax,eax
+  jz short @f
+    // Error occured
+    mov rcx,[rsp+30]
+    call Factorio.Lua.LuaPop
+    jmp luaend
+  @@:
+  mov rcx,[rsp+30]
+  xor rdx,rdx
+  xor r8,r8
+  xor r9,r9
+  mov [rsp+20],r9
+  call lua_pcallk
+  test eax,eax
+  jz short @f
+    // Error occured
+    mov rcx,[rsp+30]
+    mov edx,-1
+    xor r8,r8
+    call lua_tolstring
+  @@:
+luaend:
+add rsp,38
+pop r9
+pop r8
+pop rdx
+pop rcx
+
+code:
+  mov [rsp+08],rbx
+  jmp return
+
+align 4 CC
+
+LuaData:
+dd 0 // Run String
+
+LuaString:
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [rsp+08],rbx
+
+dealloc(newmem)
+
+unregistersymbol(*)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.LuaContext::update
+
+Factorio.LuaContext::save+B6: CC                    - int 3 
+Factorio.exe+C1EA97: CC                    - int 3 
+Factorio.exe+C1EA98: CC                    - int 3 
+Factorio.exe+C1EA99: CC                    - int 3 
+Factorio.exe+C1EA9A: CC                    - int 3 
+Factorio.exe+C1EA9B: CC                    - int 3 
+Factorio.exe+C1EA9C: CC                    - int 3 
+Factorio.exe+C1EA9D: CC                    - int 3 
+Factorio.exe+C1EA9E: CC                    - int 3 
+Factorio.exe+C1EA9F: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.LuaContext::update: 48 89 5C 24 08        - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.LuaContext::update+5: 48 89 6C 24 10        - mov [rsp+10],rbp
+Factorio.LuaContext::update+A: 48 89 74 24 18        - mov [rsp+18],rsi
+Factorio.LuaContext::update+F: 57                    - push rdi
+Factorio.LuaContext::update+10: 48 83 EC 30           - sub rsp,30
+Factorio.LuaContext::update+14: 48 8B F1              - mov rsi,rcx
+Factorio.LuaContext::update+17: 48 8B 41 78           - mov rax,[rcx+78]
+Factorio.LuaContext::update+1B: 48 8B 88 98 01 00 00  - mov rcx,[rax+Factorio.ssprintf_buffer+48]
+Factorio.LuaContext::update+22: 80 79 60 00           - cmp byte ptr [rcx+60],00
+Factorio.LuaContext::update+26: 74 06                 - je Factorio.LuaContext::update+2E
+Factorio.LuaContext::update+28: 83 79 64 00           - cmp dword ptr [rcx+64],00
+}"""
+
+[[cheat]]
+id = "run"
+name = "Run"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "LuaData"
+hops = []
+
+[[cheat]]
+id = "disable-electric-network-load-check"
+name = "Disable Electric Network Load Check"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.ElectricNetwork::checkStatisticsConsistency+1F)
+define(bytes,74 05)
+
+[ENABLE]
+assert(address,bytes)
+
+address:
+  db 90 90
+
+[DISABLE]
+
+address:
+  db bytes
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ElectricNetwork::checkStatisticsConsistency+1F
+
+Factorio.ElectricNetwork::checkStatisticsConsistency: 48 83 EC 58           - sub rsp,58
+Factorio.ElectricNetwork::checkStatisticsConsistency+4: 0F B6 51 20           - movzx edx,byte ptr [rcx+20]
+Factorio.ElectricNetwork::checkStatisticsConsistency+8: 85 D2                 - test edx,edx
+Factorio.ElectricNetwork::checkStatisticsConsistency+A: 74 0E                 - je Factorio.ElectricNetwork::checkStatisticsConsistency+1A
+Factorio.ElectricNetwork::checkStatisticsConsistency+C: 83 FA 01              - cmp edx,01
+Factorio.ElectricNetwork::checkStatisticsConsistency+F: 75 10                 - jne Factorio.ElectricNetwork::checkStatisticsConsistency+21
+Factorio.ElectricNetwork::checkStatisticsConsistency+11: 48 83 79 70 00        - cmp qword ptr [rcx+70],00
+Factorio.ElectricNetwork::checkStatisticsConsistency+16: 75 45                 - jne Factorio.ElectricNetwork::checkStatisticsConsistency+5D
+Factorio.ElectricNetwork::checkStatisticsConsistency+18: EB 07                 - jmp Factorio.ElectricNetwork::checkStatisticsConsistency+21
+Factorio.ElectricNetwork::checkStatisticsConsistency+1A: 48 83 79 70 00        - cmp qword ptr [rcx+70],00
+// ---------- INJECTING HERE ----------
+Factorio.ElectricNetwork::checkStatisticsConsistency+1F: 74 05                 - je Factorio.ElectricNetwork::checkStatisticsConsistency+26
+// ---------- DONE INJECTING  ----------
+Factorio.ElectricNetwork::checkStatisticsConsistency+21: 48 83 C4 58           - add rsp,58
+Factorio.ElectricNetwork::checkStatisticsConsistency+25: C3                    - ret 
+Factorio.ElectricNetwork::checkStatisticsConsistency+26: 48 8D 54 24 30        - lea rdx,[rsp+30]
+Factorio.ElectricNetwork::checkStatisticsConsistency+2B: E8 20 ED FF FF        - call Factorio.ElectricNetwork::getConnectedEntitiesDump
+Factorio.ElectricNetwork::checkStatisticsConsistency+30: 90                    - nop 
+Factorio.ElectricNetwork::checkStatisticsConsistency+31: 48 8B C8              - mov rcx,rax
+Factorio.ElectricNetwork::checkStatisticsConsistency+34: E8 E7 61 D8 00        - call "Factorio.std::basic_string<char,std::char_traits<char>,std::allocator<char> >::data"
+Factorio.ElectricNetwork::checkStatisticsConsistency+39: 48 89 44 24 20        - mov [rsp+20],rax
+Factorio.ElectricNetwork::checkStatisticsConsistency+3E: 4C 8D 0D 1B 80 93 01  - lea r9,[Factorio.exe+1C24350]
+Factorio.ElectricNetwork::checkStatisticsConsistency+45: BA 81 02 00 00        - mov edx,Factorio.ssprintf_buffer+141
+}"""
+
+[[cheat]]
+id = "electric-network-update-on-load-fail"
+name = "Electric Network Update on Load Fail"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Factorio.exe
+  Version: 
+  Date   : 2025-08-17
+  Author : Bloodybone
+
+  This script does blah blah blah
+}
+
+define(address,Factorio.ElectricNetwork::update+1025)
+define(bytes,0F 84 BB 01 00 00)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.ElectricNetwork::update+1025)
+
+label(code)
+label(return)
+
+newmem:
+
+code:
+  je Factorio.ElectricNetwork::update+1127
+  jmp return
+
+address:
+  jmp newmem
+  nop
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // je Factorio.ElectricNetwork::update+11E6
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ElectricNetwork::update+1025
+
+Factorio.ElectricNetwork::update+FF6: 48 8D 95 C8 00 00 00  - lea rdx,[rbp+Factorio.dtor_list_head+98]
+Factorio.ElectricNetwork::update+FFD: E8 FE A6 DB 00        - call "Factorio.FlatMap<IDWithQuality<ID<EntityPrototype,unsigned short> >,double,std::less<void> >::operator[]"
+Factorio.ElectricNetwork::update+1002: F2 0F 58 30           - addsd xmm6,[rax]
+Factorio.ElectricNetwork::update+1006: F2 0F 11 30           - movsd [rax],xmm6
+Factorio.ElectricNetwork::update+100A: 48 83 C6 08           - add rsi,08
+Factorio.ElectricNetwork::update+100E: 49 3B F6              - cmp rsi,r14
+Factorio.ElectricNetwork::update+1011: 0F 85 AD FE FF FF     - jne Factorio.ElectricNetwork::update+EC4
+Factorio.ElectricNetwork::update+1017: 4C 8B BD B8 00 00 00  - mov r15,[rbp+Factorio.dtor_list_head+88]
+Factorio.ElectricNetwork::update+101E: 49 8B 75 70           - mov rsi,[r13+70]
+Factorio.ElectricNetwork::update+1022: 48 85 F6              - test rsi,rsi
+// ---------- INJECTING HERE ----------
+Factorio.ElectricNetwork::update+1025: 0F 84 BB 01 00 00     - je Factorio.ElectricNetwork::update+11E6
+// ---------- DONE INJECTING  ----------
+Factorio.ElectricNetwork::update+102B: 4C 8D A6 80 04 00 00  - lea r12,[rsi+00000480]
+Factorio.ElectricNetwork::update+1032: 49 3B F4              - cmp rsi,r12
+Factorio.ElectricNetwork::update+1035: 0F 84 EC 00 00 00     - je Factorio.ElectricNetwork::update+1127
+Factorio.ElectricNetwork::update+103B: 48 83 C6 70           - add rsi,70
+Factorio.ElectricNetwork::update+103F: 90                    - nop 
+Factorio.ElectricNetwork::update+1040: 8B 4E 90              - mov ecx,[rsi-70]
+Factorio.ElectricNetwork::update+1043: 33 D2                 - xor edx,edx
+Factorio.ElectricNetwork::update+1045: 49 8B C7              - mov rax,r15
+Factorio.ElectricNetwork::update+1048: 48 F7 F1              - div rcx
+Factorio.ElectricNetwork::update+104B: 85 D2                 - test edx,edx
+}"""
+
+[[cheat]]
+id = "electric-network-no-energy-production"
+name = "Electric Network No Energy Production"
+category = "movement"
+description = ""
+hint = ""
+type = "script"
+source = """
+{ Game   : Factorio.exe
+  Version: 
+  Date   : 2025-08-17
+  Author : Bloodybone
+
+  This script does blah blah blah
+}
+
+define(address,Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour)
+define(bytes,48 89 4C 24 08)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour)
+
+label(code)
+label(return)
+
+newmem:
+xorps xmm0,xmm0
+ret
+
+code:
+  mov [rsp+08],rcx
+  jmp return
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+  // mov [rsp+08],rcx
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour
+
+Factorio.exe+2EBEC6: CC                    - int 3 
+Factorio.exe+2EBEC7: CC                    - int 3 
+Factorio.exe+2EBEC8: CC                    - int 3 
+Factorio.exe+2EBEC9: CC                    - int 3 
+Factorio.exe+2EBECA: CC                    - int 3 
+Factorio.exe+2EBECB: CC                    - int 3 
+Factorio.exe+2EBECC: CC                    - int 3 
+Factorio.exe+2EBECD: CC                    - int 3 
+Factorio.exe+2EBECE: CC                    - int 3 
+Factorio.exe+2EBECF: CC                    - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour: 48 89 4C 24 08        - mov [rsp+08],rcx
+// ---------- DONE INJECTING  ----------
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+5: 57                    - push rdi
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+6: 41 56                 - push r14
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+8: 41 57                 - push r15
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+A: 48 83 EC 50           - sub rsp,50
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+E: 4C 8B 3D 9B 7E 16 02  - mov r15,[Factorio.PrototypeList<QualityPrototype>::prototypes+8]
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+15: 0F B7 FA              - movzx edi,dx
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+18: 4C 8B 35 89 7E 16 02  - mov r14,[Factorio.PrototypeList<QualityPrototype>::prototypes]
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+1F: 0F 57 C0              - xorps xmm0,xmm0
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+22: 4D 3B F7              - cmp r14,r15
+Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+25: 0F 84 F0 00 00 00     - je Factorio.ElectricNetwork::energyProducedByEntitiesInLastHour+11B
+}"""
+
+[[cheat]]
+id = "fix-electric-network"
+name = "Fix Electric Network"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+define(address,Factorio.ElectricNetworkManager::update)
+define(bytes,48 89 5C 24 08)
+
+[ENABLE]
+
+assert(address,bytes)
+alloc(newmem,$1000,Factorio.ElectricNetworkManager::update)
+
+label(code)
+label(return)
+label(data)
+label(l1)
+label(l2)
+label(l3)
+
+newmem:
+cmp dword ptr [data],0
+jne code
+mov dword ptr [data],1
+push rbx
+push rsi
+sub rsp,48
+mov [rsp+20],rcx
+mov [rsp+28],rdx
+mov [rsp+30],r8
+mov [rsp+38],r9
+mov rbx,[rcx+10] // First/Last ElectricNetwork
+xor rsi,rsi
+l1:
+cmp rbx,rsi
+je l2
+  test rsi,rsi
+  cmovz rsi,rbx // nextNetwork
+  cmp byte ptr [rsi+20],0
+  jg l3
+    // Should have Statistics
+    cmp qword ptr [rsi+70],0 // Statistics
+    je short @f
+      // Check for Valid Address
+      mov rcx,[rsi+70]
+      mov edx,8
+      call Kernel32.IsBadReadPtr
+      test al,al
+      jz l3 // Valid Address
+    @@:
+    // Invalid Address
+    // Create New
+    mov ecx,[data+4] // Alloc Size
+    call [data+8] // Allocator
+    mov rcx,rax
+    //mov [rsp+40],rax
+    test rax,rax
+    jnz short @f
+      int 3
+    @@:
+    call "Factorio.FlowStatistics<IDWithQuality<ID<EntityPrototype,unsigned short> >,double,ElectricityTag>::FlowStatistics<IDWithQuality<ID<EntityPrototype,unsigned short> >,double,ElectricityTag>"
+    mov [rsi+70],rax
+    test rax,rax
+    jnz l3
+    int 3
+  l3:
+  mov rsi,[rsi] // nextNetwork.nextNetwork
+  test rsi,rsi
+  jnz l1
+l2:
+mov r9,[rsp+38]
+mov r8,[rsp+30]
+mov rdx,[rsp+28]
+mov rcx,[rsp+20]
+add rsp,48
+pop rsi
+pop rbx
+
+code:
+  mov [rsp+08],rbx
+  jmp return
+
+align 10 CC
+
+data:
+dd 0 // Was run +0
+dd 4C8 // Alloc Size +4
+dq Factorio.exe+19ACA00 // Allocator +8
+
+address:
+  jmp newmem
+return:
+
+[DISABLE]
+
+address:
+  db bytes
+
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: Factorio.ElectricNetworkManager::update
+
+Factorio.ElectricNetworkManager::prepare: 33 C0           - xor eax,eax
+Factorio.ElectricNetworkManager::prepare+2: 48 89 51 58     - mov [rcx+58],rdx
+Factorio.ElectricNetworkManager::prepare+6: 86 41 60        - xchg [rcx+60],al
+Factorio.ElectricNetworkManager::prepare+9: C3              - ret 
+Factorio.ElectricNetworkManager::prepare+A: CC              - int 3 
+Factorio.exe+2ECB4B: CC              - int 3 
+Factorio.exe+2ECB4C: CC              - int 3 
+Factorio.exe+2ECB4D: CC              - int 3 
+Factorio.exe+2ECB4E: CC              - int 3 
+Factorio.exe+2ECB4F: CC              - int 3 
+// ---------- INJECTING HERE ----------
+Factorio.ElectricNetworkManager::update: 48 89 5C 24 08  - mov [rsp+08],rbx
+// ---------- DONE INJECTING  ----------
+Factorio.ElectricNetworkManager::update+5: 48 89 6C 24 10  - mov [rsp+10],rbp
+Factorio.ElectricNetworkManager::update+A: 48 89 74 24 18  - mov [rsp+18],rsi
+Factorio.ElectricNetworkManager::update+F: 48 89 7C 24 20  - mov [rsp+20],rdi
+Factorio.ElectricNetworkManager::update+14: 41 55           - push r13
+Factorio.ElectricNetworkManager::update+16: 41 56           - push r14
+Factorio.ElectricNetworkManager::update+18: 41 57           - push r15
+Factorio.ElectricNetworkManager::update+1A: 48 83 EC 30     - sub rsp,30
+Factorio.ElectricNetworkManager::update+1E: 4C 8B E9        - mov r13,rcx
+Factorio.ElectricNetworkManager::update+21: B8 01 00 00 00  - mov eax,00000001
+Factorio.ElectricNetworkManager::update+26: 86 41 60        - xchg [rcx+60],al
+}"""

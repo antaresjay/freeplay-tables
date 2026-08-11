@@ -1,0 +1,1246 @@
+[game]
+name = "Death Skid Marks (Mullet Edition)"
+exe = "shinkansen_death_skid_marks_mullet_edition.exe"
+notes = "Converted from a Cheat Engine table by Shinkansen. Source: https://fearlessrevolution.com/viewtopic.php?t=11862"
+verified = []
+author = "Shinkansen"
+
+[meta]
+source = "community"
+submitted_by = ""
+checked_at = ""
+checked_build = ""
+
+[[cheat]]
+id = "player-stats-base-address-scan-initialization-activate-this-first"
+name = "Player Stats Base Address Scan Initialization (Activate This First)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(playerstats_basepointer)
+registersymbol(playerstats_update_enable)
+registersymbol(playerstats_moneyset_enable)
+
+//00419AB5 - BD 01000000           - mov ebp,00000001
+//00419ABA - 01 2D E8BB0202        - add [0202BBE8],ebp
+// Accesses Timer
+//00419AC0 - 33 DB                 - xor ebx,ebx
+//00419AC2 - 6A 1B                 - push 1B
+//00419AC4 - 89 1D B4BC0202        - mov [0202BCB4],ebx
+//00419ACA - E8 A1AE0900           - call 004B4970
+//00419ACF - 83 C4 04              - add esp,04
+//00419AD2 - 84 C0                 - test al,al
+//00419AD4 - 0F84 E2000000         - je 00419BBC
+//00419ADA - 80 35 09BC0202 01     - xor byte ptr [0202BC09],01
+aobscan(playerstats_initialization_searchedAOB, 33 DB 6A 1B * * * * * * * * * * * 83 C4 04 84 C0)
+
+alloc(playerstats_basepointer, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_update_enable, 4, playerstats_initialization_searchedAOB)
+alloc(playerstats_moneyset_enable, 4, playerstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(playerstats_basepointer)
+unregistersymbol(playerstats_update_enable)
+unregistersymbol(playerstats_moneyset_enable)
+
+dealloc(playerstats_basepointer)
+dealloc(playerstats_update_enable)
+dealloc(playerstats_moneyset_enable)"""
+
+[[cheat]]
+id = "player-stats-base-address-scan-to-update-play-level"
+name = "Player Stats Base Address Scan (To Update: Play Level)"
+category = "player"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(playerstats_savedAOB)
+label(playerstats_returnhere)
+label(playerstats_originalcode)
+label(playerstats_exit)
+
+label(playerstats_update_exit)
+label(playerstats_moneyset_exit)
+
+registersymbol(playerstats_originalcode)
+registersymbol(playerstats_savedAOB)
+
+//00419AB5 - BD 01000000           - mov ebp,00000001
+//00419ABA - 01 2D E8BB0202        - add [0202BBE8],ebp
+// Accesses Timer
+//00419AC0 - 33 DB                 - xor ebx,ebx
+//00419AC2 - 6A 1B                 - push 1B
+//00419AC4 - 89 1D B4BC0202        - mov [0202BCB4],ebx
+//00419ACA - E8 A1AE0900           - call 004B4970
+//00419ACF - 83 C4 04              - add esp,04
+//00419AD2 - 84 C0                 - test al,al
+//00419AD4 - 0F84 E2000000         - je 00419BBC
+//00419ADA - 80 35 09BC0202 01     - xor byte ptr [0202BC09],01
+aobscan(playerstats_searchedAOB, 33 DB 6A 1B * * * * * * * * * * * 83 C4 04 84 C0)
+
+alloc(playerstats_newmem, 2048, playerstats_searchedAOB)
+alloc(playerstats_temp1, 4, playerstats_searchedAOB)
+alloc(playerstats_temp2, 4, playerstats_searchedAOB)
+alloc(playerstats_temp3, 4, playerstats_searchedAOB)
+alloc(playerstats_temp4, 4, playerstats_searchedAOB)
+alloc(playerstats_temp5, 4, playerstats_searchedAOB)
+
+
+playerstats_newmem:
+mov [playerstats_temp1], eax
+mov [playerstats_temp2], ebx
+mov [playerstats_temp3], ecx
+mov [playerstats_temp4], edx
+
+mov ebx, [playerstats_savedAOB-4]
+
+cmp dword ptr [playerstats_update_enable], #0
+je playerstats_update_exit
+mov [playerstats_basepointer], ebx
+playerstats_update_exit:
+
+cmp dword ptr [playerstats_moneyset_enable], #0
+je playerstats_moneyset_exit
+mov [ebx+2c], #99999
+playerstats_moneyset_exit:
+
+mov eax, [playerstats_temp1]
+mov ebx, [playerstats_temp2]
+mov ecx, [playerstats_temp3]
+mov edx, [playerstats_temp4]
+
+
+playerstats_originalcode:
+readmem(playerstats_searchedAOB, 10)
+
+
+playerstats_exit:
+jmp playerstats_returnhere
+
+
+playerstats_searchedAOB:
+playerstats_savedAOB:
+jmp playerstats_newmem
+nop
+nop
+nop
+nop
+nop
+playerstats_returnhere:
+
+
+[DISABLE]
+playerstats_savedAOB:
+readmem(playerstats_originalcode, 10)
+
+unregistersymbol(playerstats_originalcode)
+unregistersymbol(playerstats_savedAOB)
+
+dealloc(playerstats_newmem)
+dealloc(playerstats_temp1)
+dealloc(playerstats_temp2)
+dealloc(playerstats_temp3)
+dealloc(playerstats_temp4)
+dealloc(playerstats_temp5)"""
+
+[[cheat]]
+id = "money-set-to-massive"
+name = "Money Set to Massive?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_moneyset_enable"
+hops = []
+
+[[cheat]]
+id = "player-stats-update-base-address"
+name = "Player Stats Update Base Address?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address"
+name = "Base Address"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "timer"
+name = "Timer"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "money"
+name = "Money"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "playerstats_basepointer"
+hops = ["+0x2c"]
+
+[[cheat]]
+id = "car-stats-base-address-scan-initialization-activate-this-first"
+name = "Car Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(carstats_basepointer)
+registersymbol(carstats_update_enable)
+registersymbol(carstats_healthset_enable)
+registersymbol(carstats_upgradesset_enable)
+
+//0049DED2 - F3 0F11 44 24 68      - movss [esp+68],xmm0
+//0049DED8 - E8 13C4F6FF           - call 0040A2F0
+// Accesses Car Front Left Damage
+//0049DEDD - F3 0F10 80 E0000000   - movss xmm0,[eax+000000E0]
+//0049DEE5 - F3 0F10 4C 24 14      - movss xmm1,[esp+14]
+//0049DEEB - F3 0F5C 0D 68264E00   - subss xmm1,[004E2668] : [(float)0.0250]
+//0049DEF3 - F3 0F59 44 24 68      - mulss xmm0,[esp+68]
+aobscan(carstats_initialization_searchedAOB, F3 0F 10 80 E0 00 00 00 F3 0F 10 4C 24 14)
+
+alloc(carstats_basepointer, 4, carstats_initialization_searchedAOB)
+alloc(carstats_update_enable, 4, carstats_initialization_searchedAOB)
+alloc(carstats_healthset_enable, 4, carstats_initialization_searchedAOB)
+alloc(carstats_upgradesset_enable, 4, carstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(carstats_basepointer)
+unregistersymbol(carstats_update_enable)
+unregistersymbol(carstats_healthset_enable)
+unregistersymbol(carstats_upgradesset_enable)
+
+dealloc(carstats_basepointer)
+dealloc(carstats_update_enable)
+dealloc(carstats_healthset_enable)
+dealloc(carstats_upgradesset_enable)"""
+
+[[cheat]]
+id = "car-stats-base-address-scan-to-update-play-level"
+name = "Car Stats Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(carstats_savedAOB)
+label(carstats_returnhere)
+label(carstats_originalcode)
+label(carstats_exit)
+
+label(carstats_update_exit)
+label(carstats_healthset_exit)
+label(carstats_upgradesset_exit)
+
+registersymbol(carstats_originalcode)
+registersymbol(carstats_savedAOB)
+
+//0049DED2 - F3 0F11 44 24 68      - movss [esp+68],xmm0
+//0049DED8 - E8 13C4F6FF           - call 0040A2F0
+// Accesses Car Front Left Damage
+//0049DEDD - F3 0F10 80 E0000000   - movss xmm0,[eax+000000E0]
+//0049DEE5 - F3 0F10 4C 24 14      - movss xmm1,[esp+14]
+//0049DEEB - F3 0F5C 0D 68264E00   - subss xmm1,[004E2668] : [(float)0.0250]
+//0049DEF3 - F3 0F59 44 24 68      - mulss xmm0,[esp+68]
+aobscan(carstats_searchedAOB, F3 0F 10 80 E0 00 00 00 F3 0F 10 4C 24 14)
+
+alloc(carstats_newmem, 2048, carstats_searchedAOB)
+alloc(carstats_temp1, 4, carstats_searchedAOB)
+alloc(carstats_temp2, 4, carstats_searchedAOB)
+alloc(carstats_temp3, 4, carstats_searchedAOB)
+alloc(carstats_temp4, 4, carstats_searchedAOB)
+alloc(carstats_temp5, 4, carstats_searchedAOB)
+
+
+carstats_newmem:
+mov [carstats_temp1], eax
+mov [carstats_temp2], ebx
+mov [carstats_temp3], ecx
+mov [carstats_temp4], edx
+
+cmp dword ptr [carstats_update_enable], #0
+je carstats_update_exit
+mov [carstats_basepointer], eax
+carstats_update_exit:
+
+cmp dword ptr [carstats_healthset_enable], #0
+je carstats_healthset_exit
+fld [eax+130]
+fst [eax+e0]
+fst [eax+e4]
+fst [eax+e8]
+fstp [eax+ec]
+carstats_healthset_exit:
+
+cmp dword ptr [carstats_upgradesset_enable], #0
+je carstats_upgradesset_exit
+mov [eax+6c], #4
+mov [eax+70], #4
+mov [eax+74], #4
+mov [eax+78], #4
+carstats_upgradesset_exit:
+
+mov eax, [carstats_temp1]
+mov ebx, [carstats_temp2]
+mov ecx, [carstats_temp3]
+mov edx, [carstats_temp4]
+
+
+carstats_originalcode:
+readmem(carstats_searchedAOB, 8)
+
+
+carstats_exit:
+jmp carstats_returnhere
+
+
+carstats_searchedAOB:
+carstats_savedAOB:
+jmp carstats_newmem
+nop
+nop
+nop
+carstats_returnhere:
+
+
+[DISABLE]
+carstats_savedAOB:
+readmem(carstats_originalcode, 8)
+
+unregistersymbol(carstats_originalcode)
+unregistersymbol(carstats_savedAOB)
+
+dealloc(carstats_newmem)
+dealloc(carstats_temp1)
+dealloc(carstats_temp2)
+dealloc(carstats_temp3)
+dealloc(carstats_temp4)
+dealloc(carstats_temp5)"""
+
+[[cheat]]
+id = "health-set-to-max"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "upgrades-set-to-massive"
+name = "Upgrades Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_upgradesset_enable"
+hops = []
+
+[[cheat]]
+id = "car-stats-update-base-address"
+name = "Car Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-2"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "armor"
+name = "Armor"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "steer"
+name = "Steer"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "brake"
+name = "Brake"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "engine"
+name = "Engine"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "front-left-health"
+name = "Front Left Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0xe0"]
+
+[[cheat]]
+id = "front-right-health"
+name = "Front Right Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0xe4"]
+
+[[cheat]]
+id = "rear-left-health"
+name = "Rear Left Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0xe8"]
+
+[[cheat]]
+id = "rear-right-health"
+name = "Rear Right Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0xec"]
+
+[[cheat]]
+id = "max-health"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x130"]
+
+[[cheat]]
+id = "cheat"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x134"]
+
+[[cheat]]
+id = "cheat-2"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x138"]
+
+[[cheat]]
+id = "cheat-3"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "carstats_basepointer"
+hops = ["+0x13c"]
+
+[[cheat]]
+id = "crew-stats-base-address-scan-initialization-activate-this-first"
+name = "Crew Stats Base Address Scan Initialization (Activate This First)"
+category = "misc"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+registersymbol(crewstats_basepointer)
+registersymbol(crewstats_update_enable)
+registersymbol(crewstats_healthset_enable)
+registersymbol(crewstats_statsset_enable)
+registersymbol(crewstats_wesponset_enable)
+
+//00423ADE - EB 04                 - jmp 00423AE4
+//00423AE0 - 8B 44 24 14           - mov eax,[esp+14]
+//00423AE4 - 33 ED                 - xor ebp,ebp
+//00423AE6 - 83 F8 03              - cmp eax,03
+//00423AE9 - 77 19                 - ja 00423B04
+//00423AEB - FF 24 85 C03E4200     - jmp dword ptr [eax*4+00423EC0]
+// Accesses Melee DEF
+//00423AF2 - 8B 6F 6C              - mov ebp,[edi+6C]
+//00423AF5 - EB 0D                 - jmp 00423B04
+//00423AF7 - 8B 6F 70              - mov ebp,[edi+70]
+//00423AFA - EB 08                 - jmp 00423B04
+//00423AFC - 8B 6F 74              - mov ebp,[edi+74]
+//00423AFF - EB 03                 - jmp 00423B04
+//00423B01 - 8B 6F 78              - mov ebp,[edi+78]
+//00423B04 - 33 DB                 - xor ebx,ebx
+//00423B06 - 89 5C 24 10           - mov [esp+10],ebx
+//00423B0A - 85 ED                 - test ebp,ebp
+//00423B0C - 0F8E 80000000         - jng 00423B92
+//00423B12 - F3 0F2A C0            - cvtsi2ss xmm0,eax
+//00423B16 - F3 0F11 44 24 20      - movss [esp+20],xmm0
+//00423B1C - 8D 64 24 00           - lea esp,[esp+00]
+//00423B20 - 8B 0D A8090A02        - mov ecx,[020A09A8] : [09DB8830]
+//00423B26 - 89 4C 24 24           - mov [esp+24],ecx
+//00423B2A - E8 61E3FCFF           - call 003F1E90
+//00423B2F - DA 4C 24 10           - fimul [esp+10]
+aobscan(crewstats_initialization_searchedAOB, 33 ED 83 F8 03 77 19 * * * * * * * 8B 6F 6C EB 0D 8B 6F 70 EB 08 8B 6F 74 EB 03 8B 6F 78 33 DB 89 5C 24 10 85 ED * * * * * * F3 0F 2A C0 * * * * * * 8D 64 24 00 * * * * * * 89 4C 24 24)
+
+alloc(crewstats_basepointer, 4, crewstats_initialization_searchedAOB)
+alloc(crewstats_update_enable, 4, crewstats_initialization_searchedAOB)
+alloc(crewstats_healthset_enable, 4, crewstats_initialization_searchedAOB)
+alloc(crewstats_statsset_enable, 4, crewstats_initialization_searchedAOB)
+alloc(crewstats_wesponset_enable, 4, crewstats_initialization_searchedAOB)
+
+
+[DISABLE]
+unregistersymbol(crewstats_basepointer)
+unregistersymbol(crewstats_update_enable)
+unregistersymbol(crewstats_healthset_enable)
+unregistersymbol(crewstats_statsset_enable)
+unregistersymbol(crewstats_wesponset_enable)
+
+dealloc(crewstats_basepointer)
+dealloc(crewstats_update_enable)
+dealloc(crewstats_healthset_enable)
+dealloc(crewstats_statsset_enable)
+dealloc(crewstats_wesponset_enable)"""
+
+[[cheat]]
+id = "crew-stats-shop-base-address-scan-to-update-play-level"
+name = "Crew Stats Shop Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(crewstats_shop_savedAOB)
+label(crewstats_shop_returnhere)
+label(crewstats_shop_originalcode)
+label(crewstats_shop_exit)
+
+label(crewstats_shop_update_exit)
+label(crewstats_shop_healthset_exit)
+label(crewstats_shop_statsset_exit)
+label(crewstats_shop_wesponset_exit)
+
+registersymbol(crewstats_shop_originalcode)
+registersymbol(crewstats_shop_savedAOB)
+
+//00423ADE - EB 04                 - jmp 00423AE4
+//00423AE0 - 8B 44 24 14           - mov eax,[esp+14]
+//00423AE4 - 33 ED                 - xor ebp,ebp
+//00423AE6 - 83 F8 03              - cmp eax,03
+//00423AE9 - 77 19                 - ja 00423B04
+//00423AEB - FF 24 85 C03E4200     - jmp dword ptr [eax*4+00423EC0]
+// Accesses Melee DEF
+//00423AF2 - 8B 6F 6C              - mov ebp,[edi+6C]
+//00423AF5 - EB 0D                 - jmp 00423B04
+//00423AF7 - 8B 6F 70              - mov ebp,[edi+70]
+//00423AFA - EB 08                 - jmp 00423B04
+//00423AFC - 8B 6F 74              - mov ebp,[edi+74]
+//00423AFF - EB 03                 - jmp 00423B04
+//00423B01 - 8B 6F 78              - mov ebp,[edi+78]
+//00423B04 - 33 DB                 - xor ebx,ebx
+//00423B06 - 89 5C 24 10           - mov [esp+10],ebx
+//00423B0A - 85 ED                 - test ebp,ebp
+//00423B0C - 0F8E 80000000         - jng 00423B92
+//00423B12 - F3 0F2A C0            - cvtsi2ss xmm0,eax
+//00423B16 - F3 0F11 44 24 20      - movss [esp+20],xmm0
+//00423B1C - 8D 64 24 00           - lea esp,[esp+00]
+//00423B20 - 8B 0D A8090A02        - mov ecx,[020A09A8] : [09DB8830]
+//00423B26 - 89 4C 24 24           - mov [esp+24],ecx
+//00423B2A - E8 61E3FCFF           - call 003F1E90
+//00423B2F - DA 4C 24 10           - fimul [esp+10]
+aobscan(crewstats_shop_searchedAOB, 33 ED 83 F8 03 77 19 * * * * * * * 8B 6F 6C EB 0D 8B 6F 70 EB 08 8B 6F 74 EB 03 8B 6F 78 33 DB 89 5C 24 10 85 ED * * * * * * F3 0F 2A C0 * * * * * * 8D 64 24 00 * * * * * * 89 4C 24 24)
+
+alloc(crewstats_shop_newmem, 2048, crewstats_shop_searchedAOB)
+alloc(crewstats_shop_temp1, 4, crewstats_shop_searchedAOB)
+alloc(crewstats_shop_temp2, 4, crewstats_shop_searchedAOB)
+alloc(crewstats_shop_temp3, 4, crewstats_shop_searchedAOB)
+alloc(crewstats_shop_temp4, 4, crewstats_shop_searchedAOB)
+alloc(crewstats_shop_temp5, 4, crewstats_shop_searchedAOB)
+
+
+crewstats_shop_newmem:
+mov [crewstats_shop_temp1], eax
+mov [crewstats_shop_temp2], ebx
+mov [crewstats_shop_temp3], ecx
+mov [crewstats_shop_temp4], edx
+
+cmp dword ptr [crewstats_update_enable], #0
+je crewstats_shop_update_exit
+mov [crewstats_basepointer], edi
+crewstats_shop_update_exit:
+
+cmp dword ptr [crewstats_healthset_enable], #0
+je crewstats_shop_healthset_exit
+fld [edi+84]
+fstp [edi+7c]
+crewstats_shop_healthset_exit:
+
+cmp dword ptr [crewstats_statsset_enable], #0
+je crewstats_shop_statsset_exit
+mov [edi+6c], #4
+mov [edi+70], #4
+mov [edi+74], #4
+mov [edi+78], #4
+crewstats_shop_statsset_exit:
+
+cmp dword ptr [crewstats_wesponset_enable], #0
+je crewstats_shop_wesponset_exit
+mov byte ptr [edi+a4], #250
+mov byte ptr [edi+a5], #250
+crewstats_shop_wesponset_exit:
+
+mov eax, [crewstats_shop_temp1]
+mov ebx, [crewstats_shop_temp2]
+mov ecx, [crewstats_shop_temp3]
+mov edx, [crewstats_shop_temp4]
+
+
+crewstats_shop_originalcode:
+readmem(crewstats_shop_searchedAOB, 5)
+
+
+crewstats_shop_exit:
+jmp crewstats_shop_returnhere
+
+
+crewstats_shop_searchedAOB:
+crewstats_shop_savedAOB:
+jmp crewstats_shop_newmem
+crewstats_shop_returnhere:
+
+
+[DISABLE]
+crewstats_shop_savedAOB:
+readmem(crewstats_shop_originalcode, 5)
+
+unregistersymbol(crewstats_shop_originalcode)
+unregistersymbol(crewstats_shop_savedAOB)
+
+dealloc(crewstats_shop_newmem)
+dealloc(crewstats_shop_temp1)
+dealloc(crewstats_shop_temp2)
+dealloc(crewstats_shop_temp3)
+dealloc(crewstats_shop_temp4)
+dealloc(crewstats_shop_temp5)"""
+
+[[cheat]]
+id = "crew-stats-road-base-address-scan-to-update-play-level"
+name = "Crew Stats Road Base Address Scan (To Update: Play Level)"
+category = "game"
+description = ""
+hint = ""
+type = "script"
+source = """
+[ENABLE]
+label(crewstats_road_savedAOB)
+label(crewstats_road_returnhere)
+label(crewstats_road_originalcode)
+label(crewstats_road_exit)
+
+label(crewstats_road_update_exit)
+label(crewstats_road_healthset_exit)
+label(crewstats_road_statsset_exit)
+label(crewstats_road_wesponset_exit)
+
+registersymbol(crewstats_road_originalcode)
+registersymbol(crewstats_road_savedAOB)
+
+//004946BB - 8B 4C 24 1C           - mov ecx,[esp+1C]
+//004946BF - 8B BC 28 94FAFFFF     - mov edi,[eax+ebp-0000056C]
+//004946C6 - 8B 81 B0000000        - mov eax,[ecx+000000B0]
+//004946CC - 83 F8 44              - cmp eax,44
+//004946CF - 74 05                 - je 004946D6
+//004946D1 - 83 F8 45              - cmp eax,45
+//004946D4 - 75 0A                 - jne 004946E0
+//004946D6 - 39 5C 24 14           - cmp [esp+14],ebx
+//004946DA - 0F85 77030000         - jne 00494A57
+//004946E0 - 38 5F 10              - cmp [edi+10],bl
+//004946E3 - 0F84 6E030000         - je 00494A57
+//004946E9 - F3 0F10 8F 84000000   - movss xmm1,[edi+00000084]
+//004946F1 - F3 0F59 0D E8017800   - mulss xmm1,[007801E8] : [(float)0.2500]
+// Accesses Health
+//004946F9 - F3 0F10 47 7C         - movss xmm0,[edi+7C]
+aobscan(crewstats_road_searchedAOB, 8B 81 B0 00 00 00 83 F8 44 74 05)
+
+alloc(crewstats_road_newmem, 2048, crewstats_road_searchedAOB)
+alloc(crewstats_road_temp1, 4, crewstats_road_searchedAOB)
+alloc(crewstats_road_temp2, 4, crewstats_road_searchedAOB)
+alloc(crewstats_road_temp3, 4, crewstats_road_searchedAOB)
+alloc(crewstats_road_temp4, 4, crewstats_road_searchedAOB)
+alloc(crewstats_road_temp5, 4, crewstats_road_searchedAOB)
+
+
+crewstats_road_newmem:
+mov [crewstats_road_temp1], eax
+mov [crewstats_road_temp2], ebx
+mov [crewstats_road_temp3], ecx
+mov [crewstats_road_temp4], edx
+
+cmp dword ptr [crewstats_update_enable], #0
+je crewstats_road_update_exit
+mov [crewstats_basepointer], edi
+crewstats_road_update_exit:
+
+cmp dword ptr [crewstats_healthset_enable], #0
+je crewstats_road_healthset_exit
+fld [edi+84]
+fstp [edi+7c]
+crewstats_road_healthset_exit:
+
+cmp dword ptr [crewstats_statsset_enable], #0
+je crewstats_road_statsset_exit
+mov [edi+6c], #4
+mov [edi+70], #4
+mov [edi+74], #4
+mov [edi+78], #4
+crewstats_road_statsset_exit:
+
+cmp dword ptr [crewstats_wesponset_enable], #0
+je crewstats_road_wesponset_exit
+mov byte ptr [edi+a4], #250
+mov byte ptr [edi+a5], #250
+crewstats_road_wesponset_exit:
+
+mov eax, [crewstats_road_temp1]
+mov ebx, [crewstats_road_temp2]
+mov ecx, [crewstats_road_temp3]
+mov edx, [crewstats_road_temp4]
+
+
+crewstats_road_originalcode:
+readmem(crewstats_road_searchedAOB, 6)
+
+
+crewstats_road_exit:
+jmp crewstats_road_returnhere
+
+
+crewstats_road_searchedAOB:
+crewstats_road_savedAOB:
+jmp crewstats_road_newmem
+nop
+crewstats_road_returnhere:
+
+
+[DISABLE]
+crewstats_road_savedAOB:
+readmem(crewstats_road_originalcode, 6)
+
+unregistersymbol(crewstats_road_originalcode)
+unregistersymbol(crewstats_road_savedAOB)
+
+dealloc(crewstats_road_newmem)
+dealloc(crewstats_road_temp1)
+dealloc(crewstats_road_temp2)
+dealloc(crewstats_road_temp3)
+dealloc(crewstats_road_temp4)
+dealloc(crewstats_road_temp5)"""
+
+[[cheat]]
+id = "health-set-to-max-2"
+name = "Health Set to Max?"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_healthset_enable"
+hops = []
+
+[[cheat]]
+id = "stat-upgrades-set-to-massive"
+name = "Stat Upgrades Set to Massive?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_statsset_enable"
+hops = []
+
+[[cheat]]
+id = "weapon-upgrades-set-to-massive"
+name = "Weapon Upgrades Set to Massive?"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_wesponset_enable"
+hops = []
+
+[[cheat]]
+id = "crew-stats-update-base-address"
+name = "Crew Stats Update Base Address?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:No",
+    "1:Yes",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_update_enable"
+hops = []
+
+[[cheat]]
+id = "base-address-3"
+name = "Base Address"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x0"]
+
+[[cheat]]
+id = "crew-id"
+name = "Crew ID"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x4"]
+
+[[cheat]]
+id = "melee-def"
+name = "Melee DEF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x6c"]
+
+[[cheat]]
+id = "range-atk"
+name = "Range ATK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x70"]
+
+[[cheat]]
+id = "melee-atk"
+name = "Melee ATK"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x74"]
+
+[[cheat]]
+id = "melee-def-2"
+name = "Melee DEF"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x78"]
+
+[[cheat]]
+id = "health"
+name = "Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x7c"]
+
+[[cheat]]
+id = "cheat-4"
+name = "?"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x80"]
+
+[[cheat]]
+id = "max-health-2"
+name = "Max Health"
+category = "player"
+description = ""
+hint = ""
+type = "value"
+value_type = "f32"
+value = 9999.0
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x84"]
+
+[[cheat]]
+id = "ticket"
+name = "Ticket"
+category = "misc"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 256
+choices = ["256:SHOW TICKET"]
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x90"]
+
+[[cheat]]
+id = "weapon"
+name = "Weapon"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 0
+choices = [
+    "0:PISTOL",
+    "1:ASSAULT RIFLE",
+    "2:SHOTGUN",
+    "3:REVOLVER .44",
+    "4:FLAMETHROWER",
+    "5:MACHINE CANNON",
+    "6:RIFLE",
+    "7:SUB MACHINE GUN",
+    "8:BASEBALL BAT",
+    "9:CHAINSAW",
+    "10:CROWBAR",
+    "11:SLEDGEHAMMER",
+    "12:HAMMER",
+    "13:JACKHAMMER",
+    "14:WELDING TORCH",
+    "15:HEDGE TRIMMER",
+    "16:LUGIE 08",
+    "17:MY LITTLE FRIEND",
+    "18:BOOMSTICK",
+    "19:MULE .50",
+    "20:TOASTY",
+    "21:MK666",
+    "22:WHITMAN'S RIFLE",
+    "23:KURTZ",
+    "24:BAT AND NAILS",
+    "25:GUNNAR'S SAW",
+    "26:DEMOLITION BAR",
+    "27:OLD BREED",
+    "28:HAMMERTIME",
+    "29:ANAL INTRUDER",
+    "30:TRIMMY!",
+    "31:TORCH AND CAN",
+    "68:None",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0x9c"]
+
+[[cheat]]
+id = "special-item"
+name = "Special Item"
+category = "resources"
+description = ""
+hint = ""
+type = "value"
+value_type = "i32"
+value = 32
+choices = [
+    "32:GRENADE",
+    "33:GAS GRENADE",
+    "34:WRENCH",
+    "35:MEDKIT",
+    "36:ROCKET PROPELLED GRENADE",
+    "37:BRICK",
+    "38:NITRO BOOST",
+    "39:MINE",
+    "40:CYCLOSARIN GAS GRENADE",
+    "41:SHOW TICKET",
+    "42:KEVLAR JACKET",
+    "43:HOCKET PADS",
+    "44:SCOPE",
+    "45:DUCT TAPE",
+    "46:INSULATION FOAM CAN",
+    "47:EPIPEN",
+    "48:STEEL KNUCKLES",
+    "49:TOWING VOUCHER",
+    "50:TOWING VOUCHER",
+    "51:TOWING VOUCHER",
+    "52:TOWING VOUCHER",
+    "68:None",
+]
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0xa0"]
+
+[[cheat]]
+id = "weapon-damage-5"
+name = "Weapon Damage (*5%)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0xa4"]
+
+[[cheat]]
+id = "weapon-speed-5"
+name = "Weapon Speed (*5%)"
+category = "combat"
+description = ""
+hint = ""
+type = "value"
+value_type = "u8"
+
+[cheat.locator]
+find = "symbol"
+symbol = "crewstats_basepointer"
+hops = ["+0xa5"]
