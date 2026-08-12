@@ -1194,6 +1194,15 @@ account, `neo`, which says who put them here and nothing about who wrote them.
 - |LegenD| (1 table)
 - 五想象 (1 table)
 
+## Your name is held for you
+
+Publishing a list of names is an invitation to impersonate the people on it,
+so every name above is registered on the service pointing at nothing. Nobody
+can upload under it, including us.
+
+It is held, not taken. Open an issue and it is yours: the placeholder gets
+deleted and `freeplay claim <name>` registers it to a key only you have.
+
 ## Taking one down
 
 If you wrote one of these and would rather it was not here, open an issue and
